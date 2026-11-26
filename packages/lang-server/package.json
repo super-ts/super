@@ -22,7 +22,7 @@
   },
   "type": "module",
   "bin": {
-    "super-language-server": "./dist/server.js"
+    "super-language-server": "dist/server.js"
   },
   "files": [
     "dist"

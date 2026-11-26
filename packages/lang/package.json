@@ -29,8 +29,8 @@
     }
   },
   "bin": {
-    "super-tsc": "./dist/cli.js",
-    "super-fmt": "./dist/format-cli.js"
+    "super-tsc": "dist/cli.js",
+    "super-fmt": "dist/format-cli.js"
   },
   "files": [
     "dist"
