@@ -58,8 +58,12 @@ But : versionner et sauvegarder, sans rien publier. Le câblage local reste tel 
 - [x] `.gitignore` racine complété (`.claude/settings.local.json`, `editors/tree-sitter-super` le temps de le brancher en sous-module).
 - [x] Mémoire déplacée dans `./.claude/memory` du dépôt ; `~/.claude/projects/-Users-dimitrilahaye-Documents-perso-super/memory` est un lien symbolique vers elle. Elle est versionnée avec le reste.
 - [x] `git init` et premier commit du dépôt Super, branche `main`.
-- [ ] L'utilisateur crée deux dépôts GitHub **privés** (Super et la grammaire) ; je pousse.
-- [ ] La grammaire devient un sous-module du dépôt Super (retirer `editors/tree-sitter-super` du `.gitignore`), et le README de Super cite son dépôt.
+- [x] Organisation GitHub `super-ts` ; dépôts privés `super-ts/super` et `super-ts/tree-sitter-super`, tous deux sur `main`, poussés le 2026-11-26 par l'hôte SSH `github.perso` (clé perso `dimitrilahaye`). Commits signés `dimitrilahaye <contact@dimitrilahaye.net>` (config locale des deux dépôts).
+- [x] La grammaire est un sous-module de Super (`.gitmodules` en HTTPS, URL locale surchargée en `github.perso`), citée dans le README.
+- [x] Une autre session a réécrit l'historique local des deux dépôts (messages en anglais, Conventional Commits, mon commit fourre-tout `d2fb748` scindé). L'ancien historique de la grammaire reste dans sa branche locale `backup/pre-conventional-commits`.
+- [x] Grammaire passée sur `main` en local et poussée (nouvelle branche) ; `.gitmodules` en `branch = main`.
+- [ ] Reste : l'utilisateur met `main` en branche par défaut de `super-ts/tree-sitter-super` sur GitHub ; puis je supprime `master` sur GitHub et je `push --force` le `main` réécrit de Super (accord explicite demandé, pas encore donné au 2026-11-26).
+- Leçon : dans ce dossier, d'autres sessions travaillent en parallèle. Ne jamais faire `git add -A` : n'ajouter que les fichiers touchés soi-même.
 
 ## Passage en public (plus tard, après les phases 2 à 8)
 
