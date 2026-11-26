@@ -169,7 +169,7 @@
           <tr><td><code>stores</code></td><td>Les stores à fournir (vrais ou faux), trouvés par le nom de leur contrat comme avec <code>createApp</code>.</td></tr>
           <tr><td><code>router</code></td><td>Un router, en général <code>createRouter(Router, { mode: 'memory', initialPath })</code>. Un écran monté seul y lit sa route : <code>initialPath: '/counters/cafes'</code> lui donne <code>id === 'cafes'</code>.</td></tr>
           <tr><td><code>on</code></td><td>Des écouteurs pour les événements du composant, typés par ses <code>emits</code>.</td></tr>
-          <tr><td><code>onError</code></td><td>Reçoit les erreurs des composants montés, comme <code>createApp({ onError })</code>. Voir <a href="erreurs.html#tester-les-erreurs">Tester les erreurs</a>.</td></tr>
+          <tr><td><code>onError</code></td><td>Reçoit les erreurs des composants montés, comme <code>createApp({ onError })</code>. Voir <a href="errors.html#tester-les-erreurs">Tester les erreurs</a>.</td></tr>
         </tbody>
       </table>
       <table>
@@ -326,7 +326,7 @@
         directement (props d'un enfant, attributs, événements, interpolations). Les types qu'un test voit d'un composant
         <code>.super</code> (ses props pour <code>mount</code>, ses <code>emits</code> pour <code>on</code>) viennent du TS
         virtuel, par la déclaration que <code>super-tsc</code> écrit dans <code>.super/types/</code> (voir
-        <a href="outillage.html#verifier-les-types">Outillage</a>).
+        <a href="tooling.html#verifier-les-types">Outillage</a>).
       </p>
 
       <h2 id="qui-teste-quoi">Qui teste quoi</h2>

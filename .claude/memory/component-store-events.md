@@ -13,7 +13,7 @@ metadata:
 - API : `this.cart.on('emptied' | 'add:done' | 'add:failed', listener)` (`ContractView.on`, packages/dom/src/element.ts ~l.124 et ~l.544). Typé par le contrat : événements `emit` du contrat + cycle de vie des commandes `nom:done` `{ input, result }` / `nom:failed` `{ input, reason, error }`.
 - Posé dans le constructeur : mis en attente, rejoué à chaque montage. Posé une fois monté (gestionnaire, `mounted`) : vit jusqu'au démontage, pas reposé ensuite. Interdit pendant `render` (erreur runtime). Désabonnement automatique via l'AbortSignal du composant. Erreur d'écouteur → `onError`, phase `'listener'`.
 - Un store écoute un autre store pareil (`cart.on(...)` dans le constructeur de CheckoutStore), arrêté à son `dispose()`.
-- Usages démo : shop/index.super (emptied, add:done), profile/index.super (save:done), kit/forms.super (notices sur save:done / reset:done). Doc : composants.html, stores.html, formulaires.html.
+- Usages démo : shop/index.super (emptied, add:done), profile/index.super (save:done), kit/forms.super (notices sur save:done / reset:done). Doc : components.html, stores.html, forms.html.
 - Règle de conception : `on` pour un fait ponctuel (notification, navigation après sauvegarde) ; l'affichage de l'état passe par les sélecteurs lus dans render.
 
 Trou connu : côté composant `on` renvoie `void` (le `on` du store renvoie `Unsubscribe`). Impossible de retirer un écouteur avant le démontage. Piste si un cas réel apparaît : renvoyer `Unsubscribe` ou accepter `{ signal }`.

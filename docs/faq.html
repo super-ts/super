@@ -51,12 +51,12 @@
         Pour qu'il ne voie un store qu'à travers son contrat. Une fonction utilitaire (<code>countOf</code>,
         <code>findCounter</code>) ou une constante (<code>MIN_COUNT</code>, le catalogue) devient un sélecteur du contrat :
         le composant y accède par <code>this.counter.selectors</code>. Une règle métier sans lien avec un store peut aussi
-        vivre dans <code>domain/</code>, en user-land. <a href="selecteurs.html#quoi-mettre-dans-un-selecteur">Quoi mettre dans un sélecteur</a>.
+        vivre dans <code>domain/</code>, en user-land. <a href="selectors.html#quoi-mettre-dans-un-selecteur">Quoi mettre dans un sélecteur</a>.
       </p>
 
       <h3 id="ou-mettre-un-repository">Où mettre un repository, un client HTTP, un port ?</h3>
       <p>
-        En user-land, où tu veux. L'<a href="exemples.html">app d'exemples</a> utilise <a href="../examples/demo/src/ports/"><code>ports/</code></a> pour les interfaces et <a href="../examples/demo/src/adapters/"><code>adapters/</code></a> pour
+        En user-land, où tu veux. L'<a href="examples.html">app d'exemples</a> utilise <a href="../examples/demo/src/ports/"><code>ports/</code></a> pour les interfaces et <a href="../examples/demo/src/adapters/"><code>adapters/</code></a> pour
         les implémentations, mais Super ne connaît pas ces dossiers. <a href="ports-adapters.html">Ports et adapters</a>.
       </p>
 
@@ -79,7 +79,7 @@
       <p>
         Branche le serveur de langage des <code>.super</code> (<code>packages/lang-server</code>) : erreurs, complétion,
         survol, aller à la définition. En ligne de commande, <code>npm run typecheck</code> vérifie les <code>.super</code>
-        avec le reste. <a href="outillage.html#editeur">Outillage</a>.
+        avec le reste. <a href="tooling.html#editeur">Outillage</a>.
       </p>
 
       <h2 id="faq-stores">Contrats et stores</h2>
@@ -87,52 +87,52 @@
       <h3 id="state-commands-events-obligatoires">state, commands et events sont-ils obligatoires ?</h3>
       <p>
         <code>state</code> oui ; <code>commands</code> et <code>events</code> non. Attention : une clé mal orthographiée
-        n'est pas signalée. <a href="contrats.html#les-trois-cles">Les trois clés</a>.
+        n'est pas signalée. <a href="contracts.html#les-trois-cles">Les trois clés</a>.
       </p>
 
       <h3 id="commands-mutent-le-state">Les commandes sont-elles les actions qui modifient l'état ?</h3>
       <p>
         Souvent, mais pas forcément : une commande peut aussi seulement appeler un adapter et émettre un événement. La règle
-        qui compte : seul le store modifie son état, un composant envoie une commande. <a href="contrats.html#commands">commands</a>.
+        qui compte : seul le store modifie son état, un composant envoie une commande. <a href="contracts.html#commands">commands</a>.
       </p>
 
       <h3 id="pourquoi-une-commande-ne-renvoie-rien">Pourquoi une commande ne renvoie-t-elle rien ?</h3>
       <p>
         Pour que la vue n'attende jamais. Le store fait le travail asynchrone et publie le résultat par son état ou un
-        événement, que tous les composants concernés voient. <a href="flux.html#pourquoi-pas-d-await-dans-un-composant">Pourquoi pas d'await</a>.
+        événement, que tous les composants concernés voient. <a href="commands-and-events.html#pourquoi-pas-d-await-dans-un-composant">Pourquoi pas d'await</a>.
       </p>
 
       <h3 id="faq-en-cours">Comment savoir qu'une commande est en cours, pour désactiver un bouton ?</h3>
       <p>
         Avec <code>@selector incrementing = () =&gt; this.counter.selectors.pending('increment', { id: this.counterId() });</code> : Super
-        suit chaque commande, il n'y a aucun drapeau à gérer dans le store. <a href="flux.html#en-cours">pending</a>.
+        suit chaque commande, il n'y a aucun drapeau à gérer dans le store. <a href="commands-and-events.html#en-cours">pending</a>.
       </p>
 
       <h3 id="faq-issue">Comment savoir qu'une commande a réussi ou échoué ?</h3>
       <p>
         Super publie <code>increment:done</code> (avec le body et le résultat) et <code>increment:failed</code> (avec le
         body et la raison). Le contrat déclare l'un et l'autre avec <code>Outcome&lt;Résultat, Raisons&gt;</code>.
-        <a href="flux.html#le-cycle-de-vie">Le cycle de vie</a>.
+        <a href="commands-and-events.html#le-cycle-de-vie">Le cycle de vie</a>.
       </p>
 
       <h3 id="faq-return-fail">Faut-il écrire return this.fail(…) ?</h3>
       <p>
         Ce n'est pas obligatoire : <code>this.fail</code> est déclaré comme ne revenant jamais, et le type se resserre
         après un <code>if (!result.ok) this.fail(result.reason)</code>. Le <code>return</code> rend seulement la sortie
-        visible à la lecture. <a href="flux.html#return-fail">Détails</a>.
+        visible à la lecture. <a href="commands-and-events.html#return-fail">Détails</a>.
       </p>
 
       <h3 id="faq-raisons">À quoi servent les raisons comme 'unknown' | 'below-min' | 'storage' ?</h3>
       <p>
         Ce sont les causes possibles d'échec, déclarées par le contrat. Le store échoue avec <code>this.fail('below-min')</code>,
         et le composant associe à chaque raison le message de son choix. Le compilateur vérifie les deux côtés.
-        <a href="flux.html#raisons-d-echec">Les raisons d'échec</a>.
+        <a href="commands-and-events.html#raisons-d-echec">Les raisons d'échec</a>.
       </p>
 
       <h3 id="etat-ou-evenement">Je publie le résultat par l'état ou par un événement ?</h3>
       <p>
         Par l'état si c'est une donnée qui dure (une valeur, un « en cours », une erreur de chargement). Par un événement si
-        c'est un fait ponctuel (« enregistré », « refusé »). <a href="flux.html#recevoir-le-resultat">Le tableau de décision</a>.
+        c'est un fait ponctuel (« enregistré », « refusé »). <a href="commands-and-events.html#recevoir-le-resultat">Le tableau de décision</a>.
       </p>
 
       <h3 id="selecteurs-sur-le-contrat">Pourquoi ne pas appeler les sélecteurs sur le contrat ?</h3>
@@ -140,14 +140,14 @@
         Un contrat n'a pas d'état : il peut exister plusieurs stores pour le même contrat. Les sélecteurs se lisent donc
         sur un store, déjà liés à son état : <code>this.selectors.count(id)</code> dans le store,
         <code>this.counter.selectors.count(id)</code> dans un composant, <code>store.selectors.count(id)</code> dans un
-        test. <a href="selecteurs.html#dans-un-test">Sélecteurs</a>.
+        test. <a href="selectors.html#dans-un-test">Sélecteurs</a>.
       </p>
 
       <h3 id="selecteur-sans-parametre">Pourquoi certains sélecteurs n'ont pas de paramètre ?</h3>
       <p>
         Un sélecteur ne prend un paramètre que si la réponse en dépend. <code>loadErrorMessage</code> ne dépend que de l'état
         global, <code>canDecrement</code> dépend du compteur. Sans paramètre, il se passe tel quel :
-        <code>@selector loadError = this.counter.selectors.loadErrorMessage;</code>. <a href="selecteurs.html#un-selecteur-sans-parametre">Détails</a>.
+        <code>@selector loadError = this.counter.selectors.loadErrorMessage;</code>. <a href="selectors.html#un-selecteur-sans-parametre">Détails</a>.
       </p>
 
       <h3 id="store-send-autre-store">Un store peut-il envoyer une commande à un autre store ?</h3>
@@ -171,7 +171,7 @@
         (<code>@contract</code>), créent l'état local (<code>@state</code>), les lectures
         (<code>@selector</code>), les références (<code>@ref</code>) et les formulaires (<code>@form</code>), et posent
         les écouteurs (<code>@on</code>).
-        <code>render</code> s'exécute à chaque rendu et écrit les éléments à afficher. <a href="composants.html#les-deux-phases">Préparer, puis rendre</a>.
+        <code>render</code> s'exécute à chaque rendu et écrit les éléments à afficher. <a href="components.html#les-deux-phases">Préparer, puis rendre</a>.
       </p>
 
       <h3 id="champ-ou-render">Comment savoir si une ligne va dans un champ ou dans render ?</h3>
@@ -182,14 +182,14 @@
         <code>render</code>. Ces déclarations ne s'écrivent pas dans <code>render</code> ; dans un composant écrit en
         <code>.ts</code>, Super lève une erreur si tu appelles <code>this.contract</code>, <code>this.state</code>,
         <code>this.selector</code> ou <code>on</code> pendant le rendu.
-        <a href="composants.html#preparation-ou-render">Le tableau ligne par ligne</a>.
+        <a href="components.html#preparation-ou-render">Le tableau ligne par ligne</a>.
       </p>
 
       <h3 id="au-montage">Où lancer une commande au montage, ou poser un écouteur sur window ?</h3>
       <p>
         Dans <code>mounted()</code>, appelé après le premier rendu, à chaque montage : la coquille de l'exemple y envoie
         <code>this.counter.send('load')</code>. Un écouteur sur <code>window</code> prend <code>{ signal: this.signal }</code>,
-        et disparaît au démontage. <a href="composants.html#un-composant-pour-un-effet-de-bord">Exemples</a>.
+        et disparaît au démontage. <a href="components.html#un-composant-pour-un-effet-de-bord">Exemples</a>.
       </p>
 
       <h3 id="props-dans-le-constructeur">Puis-je lire une prop dans le constructeur ?</h3>
@@ -207,12 +207,12 @@
         <code>@prop title: string;</code> (« « title » est déjà une propriété des éléments HTML : choisis un autre nom ») ;
         choisis un nom qui dit ce que c'est (<code>heading</code>, <code>counterId</code>). Pour le titre de l'onglet, c'est
         <code>@title</code>, une déclaration du composant et pas une prop.
-        <a href="parents-enfants.html#noms-de-props-refuses">Les noms déjà pris</a>.
+        <a href="parents-and-children.html#noms-de-props-refuses">Les noms déjà pris</a>.
       </p>
 
       <h3 id="mon-composant-ne-se-met-pas-a-jour">Mon composant ne se met pas à jour. Pourquoi ?</h3>
       <ul>
-        <li>Tu as copié une valeur du store dans un champ ordinaire (dans <code>mounted</code>, par exemple) : elle est figée. Déclare un <code>@selector</code> et lis <code>.value</code> dans <code>render</code>. <a href="composants.html#preparation-ou-render">L'erreur classique</a>.</li>
+        <li>Tu as copié une valeur du store dans un champ ordinaire (dans <code>mounted</code>, par exemple) : elle est figée. Déclare un <code>@selector</code> et lis <code>.value</code> dans <code>render</code>. <a href="components.html#preparation-ou-render">L'erreur classique</a>.</li>
         <li>Ton <code>selector</code> ne lit pas la valeur que tu affiches : le composant ne se re-rend que si la valeur du sélecteur change.</li>
         <li>Tu lis l'état local avec une valeur copiée au lieu d'appeler <code>this.local.get()</code> dans <code>render</code>.</li>
       </ul>
@@ -221,32 +221,32 @@
       <p>
         Oui. Un <code>selector</code> abonne le composant ; à chaque changement, Super recalcule la valeur et re-rend si
         elle a changé. Un sélecteur lu directement dans <code>render</code> abonne de la même façon : le composant ne se
-        re-rend que si la valeur lue a changé. Rien à écrire de ton côté. <a href="lire-un-store.html#quand-le-composant-se-re-rend">Détails</a>.
+        re-rend que si la valeur lue a changé. Rien à écrire de ton côté. <a href="reading-a-store.html#quand-le-composant-se-re-rend">Détails</a>.
       </p>
 
       <h3 id="composant-lit-etat-brut">Un composant peut-il lire l'état brut du store ?</h3>
       <p>
         Non. <code>@contract counter;</code> ne donne que les sélecteurs, <code>send</code> et <code>on</code> :
-        jamais l'état brut, jamais l'instance du store. <a href="lire-un-store.html#l-etat-brut-reste-cache">Détails</a>.
+        jamais l'état brut, jamais l'instance du store. <a href="reading-a-store.html#l-etat-brut-reste-cache">Détails</a>.
       </p>
 
       <h3 id="pourquoi-une-ligne-par-compteur">Pourquoi la liste des compteurs a-t-elle un composant par ligne ?</h3>
       <p>
         Une liste lue d'un bloc se re-rend en entier dès qu'une valeur change. Un composant par ligne (<a href="../examples/demo/src/@components/counter-list/counter-list-item.super"><code>counter-list-item.super</code></a>) lit sa propre valeur et ne se re-rend que pour elle.
-        <a href="lire-un-store.html#ce-qui-compte-comme-un-changement">Ce qui compte comme un changement</a>.
+        <a href="reading-a-store.html#ce-qui-compte-comme-un-changement">Ce qui compte comme un changement</a>.
       </p>
 
       <h3 id="null-as">Pourquoi écrire <code>null as string | null</code> ?</h3>
       <p>
         Le type de l'état local est déduit de la valeur initiale :
         <code>@state local = { message: null as string | null };</code>. Sans le <code>as</code>, le champ serait de type
-        <code>null</code> et ne pourrait jamais recevoir de texte. <a href="etat-local.html#le-type-et-null-as">Détails</a>.
+        <code>null</code> et ne pourrait jamais recevoir de texte. <a href="local-state.html#le-type-et-null-as">Détails</a>.
       </p>
 
       <h3 id="etat-local-ou-store-faq">Ce message, je le mets dans l'état local ou dans le store ?</h3>
       <p>
         Dans l'état local s'il ne concerne que ce composant et peut disparaître avec lui. Dans le store si un autre composant
-        en a besoin ou s'il doit survivre à la navigation. <a href="etat-local.html#local-ou-store">Le tableau</a>.
+        en a besoin ou s'il doit survivre à la navigation. <a href="local-state.html#local-ou-store">Le tableau</a>.
       </p>
 
       <h2 id="faq-formulaires">Formulaires</h2>
@@ -255,32 +255,32 @@
       <p>
         Avec <code>@form edit = { … };</code> dans la classe, puis <code>&lt;input {this.edit.field('email')} /&gt;</code> dans le template. Le type
         d'élément décide de la valeur : texte, nombre (ou <code>null</code>), booléen, tableau, fichier.
-        <a href="formulaires.html#lier-les-champs">Tous les types de champs</a>.
+        <a href="forms.html#lier-les-champs">Tous les types de champs</a>.
       </p>
 
       <h3 id="faq-form-radio">Comment gérer des boutons radio ou un groupe de cases à cocher ?</h3>
       <p>
         Passe la valeur de chaque bouton ou case en second argument : <code>field('plan', 'pro')</code>,
-        <code>field('interests', 'sport')</code>. <a href="formulaires.html#boutons-radio">Radios</a>,
-        <a href="formulaires.html#cases-a-cocher">cases à cocher</a>.
+        <code>field('interests', 'sport')</code>. <a href="forms.html#boutons-radio">Radios</a>,
+        <a href="forms.html#cases-a-cocher">cases à cocher</a>.
       </p>
 
       <h3 id="faq-form-zod">Puis-je utiliser Zod ou une autre bibliothèque de validation ?</h3>
       <p>
         Oui : une règle est une simple fonction qui renvoie <code>true</code> ou un message. Super n'impose rien.
-        <a href="formulaires.html#regles">Les règles</a>.
+        <a href="forms.html#regles">Les règles</a>.
       </p>
 
       <h3 id="faq-form-serveur">Comment afficher une erreur du serveur sous le bon champ ?</h3>
       <p>
         Rattache la raison d'échec de la commande à un champ dans <code>failures.fields</code>, ou au formulaire dans
-        <code>failures.form</code>. <a href="formulaires.html#erreurs-du-serveur">Les erreurs du serveur</a>.
+        <code>failures.form</code>. <a href="forms.html#erreurs-du-serveur">Les erreurs du serveur</a>.
       </p>
 
       <h3 id="faq-form-async">Comment vérifier une valeur côté serveur pendant la saisie ?</h3>
       <p>
         Avec <code>checks</code> : une commande du store, déclenchée après une pause dans la frappe, dont les réponses
-        périmées sont ignorées. <a href="formulaires.html#verifications-asynchrones">Les vérifications asynchrones</a>.
+        périmées sont ignorées. <a href="forms.html#verifications-asynchrones">Les vérifications asynchrones</a>.
       </p>
 
       <h3 id="pourquoi-form-pas-composant">Pourquoi @form et pas un composant &lt;Form&gt; ?</h3>
@@ -290,13 +290,13 @@
         « Enregistrement… »). La balise existe déjà : c'est le <code>&lt;form&gt;</code> natif, relié par
         <code>&lt;form {this.edit.bind()}&gt;</code>. Un composant <code>&lt;Form&gt;</code> cacherait cet état et ferait
         perdre le typage des champs. <code>&lt;Table&gt;</code> est un autre cas : un composant d'affichage.
-        <a href="formulaires.html#pourquoi-pas-un-composant-form">Une déclaration plutôt qu'un composant</a>.
+        <a href="forms.html#pourquoi-pas-un-composant-form">Une déclaration plutôt qu'un composant</a>.
       </p>
 
       <h3 id="faq-form-liste">Comment gérer un nombre variable de lignes (téléphones, adresses) ?</h3>
       <p>
         Déclare un tableau d'objets dans <code>initial</code>, puis <code>phones = this.edit.list('phones')</code> dans un champ, avec
-        <code>item.key</code> comme clé de la boucle : <code>for (const item of this.phones.items(); key item.key) { … }</code>. <a href="formulaires.html#listes-dynamiques">Les listes dynamiques</a>.
+        <code>item.key</code> comme clé de la boucle : <code>for (const item of this.phones.items(); key item.key) { … }</code>. <a href="forms.html#listes-dynamiques">Les listes dynamiques</a>.
       </p>
 
       <h2 id="faq-evenements">Événements et asynchrone</h2>
@@ -304,7 +304,7 @@
       <h3 id="await-dans-un-composant">Je peux écrire <code>await this.counter.send(…)</code> dans un composant ?</h3>
       <p>
         Non : dans un composant, <code>send</code> renvoie <code>void</code>, il n'y a rien à attendre. Le résultat revient
-        par l'état ou un événement. <a href="flux.html">Commandes et événements</a>.
+        par l'état ou un événement. <a href="commands-and-events.html">Commandes et événements</a>.
       </p>
 
       <h3 id="a-quoi-sert-signal">À quoi sert signal ? Dois-je le passer à on ?</h3>
@@ -313,14 +313,14 @@
         un store. Il sert uniquement aux écouteurs posés hors de Super, comme
         <code>window.addEventListener('keydown', …, { signal: this.signal })</code> dans <code>mounted</code>. Entre Super
         et Super, jamais : les écouteurs déclarés par <code>@on</code>, comme ceux posés par un store sur un store
-        reçu en dépendance, s'arrêtent tout seuls. <a href="composants.html#les-outils-d-un-composant">Les outils d'un composant</a>,
+        reçu en dépendance, s'arrêtent tout seuls. <a href="components.html#les-outils-d-un-composant">Les outils d'un composant</a>,
         <a href="stores.html#un-store-qui-depend-d-un-autre">un store qui dépend d'un autre</a>.
       </p>
 
       <h3 id="composant-emet-evenement-store">Un composant peut-il émettre un événement de store, comme increment:done ?</h3>
       <p>
         Non. La vue que donne <code>@contract</code> n'a pas d'<code>emit</code>. Le <code>this.emit</code> du
-        composant émet ses propres événements, vers son parent, sur un autre canal. <a href="flux.html#qui-peut-emettre">Qui peut émettre</a>.
+        composant émet ses propres événements, vers son parent, sur un autre canal. <a href="commands-and-events.html#qui-peut-emettre">Qui peut émettre</a>.
       </p>
 
       <h3 id="pourquoi-on-dans-le-parent">Pourquoi <code>on</code> apparaît dans le parent et pas dans l'enfant ?</h3>
@@ -328,13 +328,13 @@
         L'enfant émet (<code>this.emit('increment')</code>), le parent écoute
         (<code>&lt;CounterControls … on:increment={…} /&gt;</code>). L'enfant ne sait
         pas qui l'écoute, comme un bouton HTML ne sait pas qui écoute son <code>click</code>.
-        <a href="parents-enfants.html#emit-et-on">emit et on</a>.
+        <a href="parents-and-children.html#emit-et-on">emit et on</a>.
       </p>
 
       <h3 id="ouvrir-un-dialogue">Comment ouvrir un dialogue et récupérer la réponse sans await ?</h3>
       <p>
         Le parent ouvre le dialogue en lui passant une prop (<code>question</code>), le dialogue répond par un événement
-        (<code>answered</code>). <a href="parents-enfants.html#un-dialogue">Le motif complet</a>.
+        (<code>answered</code>). <a href="parents-and-children.html#un-dialogue">Le motif complet</a>.
       </p>
 
       <h3 id="erreur-dans-un-handler">Que se passe-t-il si une commande du store lève une erreur ?</h3>
@@ -421,14 +421,14 @@
       <h3 id="faq-composant-plante">Un composant plante et laisse une zone blanche. Comment afficher autre chose ?</h3>
       <p>
         Donne-lui une méthode <code>renderError(error)</code>, ou à un de ses ancêtres. Pour tous les écrans d'un coup, déclare l'écran
-        <code>'!'</code> dans le router. <a href="erreurs.html#qui-rattrape-quoi">Qui rattrape quoi</a>.
+        <code>'!'</code> dans le router. <a href="errors.html#qui-rattrape-quoi">Qui rattrape quoi</a>.
       </p>
 
       <h3 id="render-error-ou-ecran-erreur">renderError ou écran '!' : lequel s'affiche ?</h3>
       <p>
         Le plus proche du composant qui a planté : son propre <code>renderError</code>, puis celui d'un ancêtre, puis l'écran
         <code>'!'</code> s'il atteint le <code>RouterOutlet</code>. Une erreur de constructeur n'est rattrapée que par un ancêtre.
-        <a href="erreurs.html#qui-rattrape-quoi">Le tableau</a>.
+        <a href="errors.html#qui-rattrape-quoi">Le tableau</a>.
       </p>
 
       <h3 id="faq-erreur-clic">Une erreur dans un on:click ou un écouteur on est-elle rattrapée ?</h3>
@@ -436,19 +436,19 @@
         Elle est signalée à <code>onError</code> (phase <code>'event'</code>, <code>'listener'</code>, ou <code>'mount'</code>
         pour <code>mounted</code> et <code>unmounted</code>),
         mais l'affichage ne change pas : une action qui échoue ne casse pas l'écran.
-        <a href="erreurs.html#erreurs-d-action">Les erreurs d'action</a>.
+        <a href="errors.html#erreurs-d-action">Les erreurs d'action</a>.
       </p>
 
       <h3 id="faq-sortir-ecran-erreur">Comment revenir à la page après l'écran '!' ?</h3>
       <p>
         Toute navigation le referme et remonte un écran neuf : un autre lien, ou un nouveau clic sur le lien de la page en
-        erreur. <a href="erreurs.html#l-ecran-d-erreur">L'écran '!'</a>.
+        erreur. <a href="errors.html#l-ecran-d-erreur">L'écran '!'</a>.
       </p>
 
       <h3 id="faq-signaler-erreurs">Comment envoyer les erreurs à un outil de suivi ?</h3>
       <p>
         Avec <code>onError</code> dans <code>createApp</code> : il reçoit toute erreur de composant, rattrapée ou non, avec
-        le composant, la phase et ce qui l'a rattrapée. <a href="erreurs.html#onerror">onError</a>.
+        le composant, la phase et ce qui l'a rattrapée. <a href="errors.html#onerror">onError</a>.
       </p>
 
       <h2 id="faq-tests">Tests</h2>
@@ -457,26 +457,26 @@
       <p>
         Ce sont des tests de types, vérifiés par <code>npm run typecheck</code> et jamais exécutés. Chaque
         <code>// @ts-expect-error</code> affirme qu'une ligne doit être refusée par le compilateur. Le « d » vient de
-        <code>.d.ts</code>, c'est la convention de Vitest. <a href="tests.html#tests-de-types">Tests de types</a>.
+        <code>.d.ts</code>, c'est la convention de Vitest. <a href="testing.html#tests-de-types">Tests de types</a>.
       </p>
 
       <h3 id="tester-le-router-dans-l-app">Dois-je tester le router ou les sélecteurs dans mon app ?</h3>
       <p>
         Non : le fonctionnement de Super est testé dans les paquets. Ton app teste son propre comportement.
-        <a href="tests.html#qui-teste-quoi">Qui teste quoi</a>.
+        <a href="testing.html#qui-teste-quoi">Qui teste quoi</a>.
       </p>
 
       <h3 id="aucun-store-fourni">Mon test échoue avec « aucun store fourni pour le contrat ».</h3>
       <p>
         Passe le store, vrai (<code>CounterStore.create(…)</code>) ou faux (<code>fakeStore('counter', { state })</code>), à
         <code>mount(Composant, { stores: [counter] })</code>. Si le composant contient des
-        liens ou lit le router, passe aussi <code>router</code>. <a href="tests.html#mount">mount</a>.
+        liens ou lit le router, passe aussi <code>router</code>. <a href="testing.html#mount">mount</a>.
       </p>
 
       <h3 id="localstorage-clear">« localStorage.clear is not a function » dans les tests.</h3>
       <p>
         Node 25 expose un <code>localStorage</code> natif qui masque celui de happy-dom. Ajoute
-        <code>execArgv: ['--no-experimental-webstorage']</code> à la configuration de Vitest. <a href="tests.html#la-configuration">Configuration</a>.
+        <code>execArgv: ['--no-experimental-webstorage']</code> à la configuration de Vitest. <a href="testing.html#la-configuration">Configuration</a>.
       </p>
     </article>
     <script src="assets/search-index.js"></script>

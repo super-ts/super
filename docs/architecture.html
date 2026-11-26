@@ -106,7 +106,7 @@
         }
       </script>
       <p>
-        Qui écrit ce TS virtuel, et quand : voir <a href="outillage.html#verifier-les-types">Outillage</a>.
+        Qui écrit ce TS virtuel, et quand : voir <a href="tooling.html#verifier-les-types">Outillage</a>.
       </p>
       <h2 id="ordre-des-imports">L'ordre des imports</h2>
       <p>Super fixe aussi l'ordre des imports, vérifié au lint :</p>
@@ -149,7 +149,7 @@
         Dans ce dépôt, la configuration de Super est dans <code>packages/lint/config.json</code>. La configuration de Super ne
         touche qu'à l'ordre des imports : le formatage et les autres règles de lint restent au choix du projet. Le dépôt, lui,
         active le formateur de Biome (deux espaces, guillemets simples, 140 colonnes) et formate les <code>.super</code> avec
-        les mêmes règles (voir <a href="outillage.html#formater">Outillage</a>).
+        les mêmes règles (voir <a href="tooling.html#formater">Outillage</a>).
       </p>
 
       <div class="callout warn">
@@ -210,7 +210,7 @@
         </li>
         <li>
           fournit une source map du JS final vers le <code>.super</code> : traces d'erreur et débogueur pointent la ligne
-          et la colonne de la source (voir <a href="outillage.html#source-maps">Source maps</a>) ;
+          et la colonne de la source (voir <a href="tooling.html#source-maps">Source maps</a>) ;
         </li>
         <li>
           applique les règles d'architecture au code compilé : un <code>.super</code> est vérifié comme le serait un
@@ -275,11 +275,11 @@
       <p>
         Le plugin lit le code comme du texte (pour un <code>.super</code>, le code compilé) : il reconnaît les imports nommés (y compris renommés avec <code>as</code>), un
         contrat à sa déclaration <code>export class X extends SuperContract</code> et le router à
-        <code>export const Router = defineRouter(…)</code>. Voir <a href="limites.html">Limites</a>.
+        <code>export const Router = defineRouter(…)</code>. Voir <a href="limitations.html">Limites</a>.
       </p>
 
       <h2 id="le-user-land">Le user-land</h2>
-      <p>Hors de <code>@core/</code> et <code>@components/</code>, tu organises comme tu veux. Dans l'<a href="exemples.html">app d'exemples</a> :</p>
+      <p>Hors de <code>@core/</code> et <code>@components/</code>, tu organises comme tu veux. Dans l'<a href="examples.html">app d'exemples</a> :</p>
       <ul>
         <li><strong><a href="../examples/demo/src/domain/"><code>domain/</code></a></strong> : les types et les règles métier (<code>Product</code>, <code>CartLine</code>, le catalogue des compteurs, la page de produits demandée à une API), sans Super ni DOM. Les contrats s'en servent ; un composant peut en importer les types.</li>
         <li><strong><a href="../examples/demo/src/ports/"><code>ports/</code></a></strong> : les interfaces dont les stores ont besoin (ici <code>CounterRepository</code>, <code>ProfileClient</code>, <code>OrderClient</code>, <code>ProductCatalog</code>). C'est un choix inspiré de l'architecture hexagonale ; un autre projet pourrait mettre ces interfaces à côté du store, dans <code>@core/</code>.</li>

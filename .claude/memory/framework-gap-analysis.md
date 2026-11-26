@@ -8,7 +8,7 @@ metadata:
   modified: 2026-11-25T20:45:28.380Z
 ---
 
-Analyse faite le 2026-11-25 à la demande de l'utilisateur (vérifiée par grep dans packages/*/src et docs/limites.html). Aucun de ces chantiers n'est décidé : ce sont des pistes. Contexte : [[class-api-migration]].
+Analyse faite le 2026-11-25 à la demande de l'utilisateur (vérifiée par grep dans packages/*/src et docs/limitations.html). Aucun de ces chantiers n'est décidé : ce sont des pistes. Contexte : [[class-api-migration]].
 
 **Why:** servir de base quand l'utilisateur choisit le prochain chantier, sans refaire l'inventaire.
 **How to apply:** avant de proposer une fonctionnalité, vérifier qu'elle n'a pas été ajoutée depuis (grep) ; respecter la philosophie « le reste au user-land » ([[super-internals-stay-in-packages]]).
@@ -32,7 +32,7 @@ Guards async ; guard de sortie (modifs non enregistrées) ; base path (/app/) ; 
 ## Composants
 - (Fait 2026-11-26 : contenu `content` + emplacements `<:nom>`.)
 - Pas de contexte/injection hiérarchique (thème, locale, store limité à un sous-arbre) : seulement des stores globaux par nom.
-- Pas de portails (overlays : déjà question ouverte dans limites.html).
+- Pas de portails (overlays : déjà question ouverte dans limitations.html).
 - Pas de transitions/animations (entrée/sortie, View Transitions API).
 - Pas de computed/effect locaux : `reactive()` = valeur brute d'un sélecteur (choix assumé, mais surprendra les gens de Vue/Solid).
 - Pas d'interop custom element : `<tag>` en HTML brut non supporté, pas d'observedAttributes.
@@ -45,4 +45,4 @@ Persistance (localStorage, faite en user-land dans la démo par `subscribe` + ad
 Paquets non publiés ; pas de `create-super` ni de CLI de scaffolding ; pas d'i18n ; pas de Storybook ; templates en `.super` avec serveur de langage (2026-11-26, voir [[super-template-language]]) ; pas encore d'extension Zed dédiée.
 
 ## Fait dans la foulée
-Ligne obsolète « clé mal orthographiée non signalée » retirée de docs/limites.html le 2026-11-25 (corrigé par `KnownKeys<T>`), llms*.txt régénérés.
+Ligne obsolète « clé mal orthographiée non signalée » retirée de docs/limitations.html le 2026-11-25 (corrigé par `KnownKeys<T>`), llms*.txt régénérés.

@@ -89,7 +89,7 @@
           <tr><td><code>root</code></td><td>L'élément HTML sous lequel l'application vit.</td></tr>
           <tr><td><code>stores</code></td><td>Les handles de store à fournir aux composants rendus sous <code>root</code>, chacun sous le nom de son contrat.</td></tr>
           <tr><td><code>router</code></td><td>Le router créé par <code>createRouter</code>. Il est fourni sous le nom <code>'router'</code>, les clics sur les liens internes deviennent des navigations, et ses guards lisent les stores de cette application.</td></tr>
-          <tr><td><code>onError</code></td><td>Reçoit toute erreur de composant rendu sous <code>root</code>, rattrapée ou non : <code>(error, { tag, phase, caughtBy })</code>. Voir <a href="erreurs.html#onerror">Gérer les erreurs</a>.</td></tr>
+          <tr><td><code>onError</code></td><td>Reçoit toute erreur de composant rendu sous <code>root</code>, rattrapée ou non : <code>(error, { tag, phase, caughtBy })</code>. Voir <a href="errors.html#onerror">Gérer les erreurs</a>.</td></tr>
         </tbody>
       </table>
       <table>
@@ -114,7 +114,7 @@
       </ul>
 
       <h2 id="applications-imbriquees">Plusieurs applications</h2>
-      <p class="example-link">Dans l'<a href="exemples.html#widget">exemple Widget</a> : <a href="../examples/demo/src/widgets/timer-widget.ts"><code>widgets/timer-widget.ts</code></a>, <a href="../examples/demo/src/@components/widget/index.super"><code>@components/widget/index.super</code></a>. Le minuteur vit dans une seconde application, imbriquée dans la première, avec son propre store.</p>
+      <p class="example-link">Dans l'<a href="examples.html#widget">exemple Widget</a> : <a href="../examples/demo/src/widgets/timer-widget.ts"><code>widgets/timer-widget.ts</code></a>, <a href="../examples/demo/src/@components/widget/index.super"><code>@components/widget/index.super</code></a>. Le minuteur vit dans une seconde application, imbriquée dans la première, avec son propre store.</p>
       <p>
         On peut créer plusieurs applications, et même les imbriquer : la plus proche du composant répond en premier. C'est
         utile pour un widget qui a ses propres stores au milieu d'une page. Dans l'exemple, une fonction user-land monte le

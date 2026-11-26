@@ -33,7 +33,7 @@
       <ul>
         <li><strong>Les attributs sont les props.</strong> Le compilateur les vérifie contre les <code>@prop</code> de l'enfant : une prop requise manquante, une prop en trop ou une valeur mal typée est une erreur. Une valeur fixe s'écrit entre guillemets (<code>question="Vider le panier ?"</code>, une chaîne), une valeur calculée entre accolades.</li>
         <li><strong><code>on:nom</code></strong> branche un événement de l'enfant sur une fonction du parent. Le nom et le payload sont vérifiés contre les <code>@emit</code> de l'enfant.</li>
-        <li>La balise est l'équivalent de <code>CounterControls.create({ count, … }, { on: { increment, … } })</code>, l'appel qui sert hors template (voir <a href="composants.html#creer-un-element-hors-template">Créer un élément hors template</a>).</li>
+        <li>La balise est l'équivalent de <code>CounterControls.create({ count, … }, { on: { increment, … } })</code>, l'appel qui sert hors template (voir <a href="components.html#creer-un-element-hors-template">Créer un élément hors template</a>).</li>
         <li>L'élément enfant est <strong>créé une fois</strong> par emplacement, puis ses props sont mises à jour à chaque rendu du parent. Il garde son état local. S'il reçoit des props égales (comparées clé par clé), il ne se re-rend pas.</li>
         <li>Un composant peut aussi recevoir des éléments entre ses balises, s'il les déclare (voir <a href="#composer">Composer : des enfants</a>).</li>
       </ul>
@@ -42,7 +42,7 @@
       <p>
         Une prop se déclare dans le corps de la classe par <code>@prop</code>, avec son type, et se lit par
         <code>this.nom</code>. Le tag, les props et les événements s'écrivent au même endroit, sans générique (le détail
-        de chaque déclaration est dans <a href="composants.html#declarations">Composants : les déclarations</a>) :
+        de chaque déclaration est dans <a href="components.html#declarations">Composants : les déclarations</a>) :
       </p>
       <script type="text/x-code" data-title="src/@components/counter-list/counter-list-item.super (extrait)" data-source="examples/demo/src/@components/counter-list/counter-list-item.super">
         export class CounterListItem extends SuperElement {
@@ -144,7 +144,7 @@
       </p>
 
       <h2 id="un-dialogue">Un dialogue : le parent le rend, il répond par un événement</h2>
-      <p class="example-link">Dans l'<a href="exemples.html#boutique">exemple Boutique</a> : <a href="../examples/demo/src/@components/shared/confirm-dialog.super"><code>shared/confirm-dialog.super</code></a>, <a href="../examples/demo/src/@components/shop/index.super"><code>shop/index.super</code></a>. « Vider le panier ? » est rendu par le parent et répond par un événement.</p>
+      <p class="example-link">Dans l'<a href="examples.html#boutique">exemple Boutique</a> : <a href="../examples/demo/src/@components/shared/confirm-dialog.super"><code>shared/confirm-dialog.super</code></a>, <a href="../examples/demo/src/@components/shop/index.super"><code>shop/index.super</code></a>. « Vider le panier ? » est rendu par le parent et répond par un événement.</p>
       <p>
         Même un dialogue de confirmation suit cette règle. Le parent l'ouvre en le rendant, avec sa question en prop ; le dialogue
         émet la réponse. Monté, il est ouvert : pas de prop nullable qui voudrait dire « fermé ». Personne n'attend rien, il n'y a
@@ -283,7 +283,7 @@
       <ul>
         <li><strong>Les enfants appartiennent au parent</strong> : le clic sur « Remettre à zéro » appelle une méthode du parent, et <code>this.count</code> est lu par le parent. Les enfants suivent son rendu ; la carte les garde quand elle se re-rend seule.</li>
         <li><strong>Le compilateur vérifie le contrat</strong> : des enfants pour un composant qui ne déclare pas <code>content</code>, des enfants obligatoires qui manquent, un emplacement qui n'est pas une prop du composant sont des erreurs.</li>
-        <li>La syntaxe complète est dans <a href="templates.html#content">Templates : des enfants</a> et <a href="templates.html#emplacements">des emplacements nommés</a>. L'exemple <a href="exemples.html#composition">Composition</a> de l'app d'exemples montre les deux façons côte à côte.</li>
+        <li>La syntaxe complète est dans <a href="templates.html#content">Templates : des enfants</a> et <a href="templates.html#emplacements">des emplacements nommés</a>. L'exemple <a href="examples.html#composition">Composition</a> de l'app d'exemples montre les deux façons côte à côte.</li>
       </ul>
 
       <h2 id="ce-qui-n-existe-pas">Ce qui n'existe pas, volontairement</h2>

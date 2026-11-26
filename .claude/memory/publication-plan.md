@@ -52,7 +52,7 @@ Ordre retenu : dépôts privés d'abord (phase 1), puis les phases 2 à 8, puis 
   - grammaire en `file:///Users/…/editors/tree-sitter-super` + `rev` ;
   - pas de licence.
 - `editors/zed/src/lib.rs` cherche `node_modules/super-language-server/src/server.ts` puis `packages/lang-server/src/server.ts`. Il lance le serveur en TS brut, et ses messages sont en français. Il accepte déjà `lsp.super-language-server.binary`.
-- La doc dit que les paquets ne sont pas publiés : `docs/llms.txt`, `docs/chantiers.html`, la partie alias de `llms-full.txt`, et l'installation dans le README.
+- La doc dit que les paquets ne sont pas publiés : `docs/llms.txt`, `docs/roadmap.html`, la partie alias de `llms-full.txt`, et l'installation dans le README.
 
 ## Phase 1 : dépôts privés, tout câblé en local (décidé le 2026-11-26)
 
@@ -104,7 +104,7 @@ But : versionner et sauvegarder, sans rien publier. Le câblage local reste tel 
 
 ## Phase 4 : test d'installation comme un vrai utilisateur (faite le 2026-11-26, sauf la CI)
 
-- [x] `npm run smoke` → `scripts/smoke-install.mjs` : build, `npm pack` des 7 paquets, app Vite vierge dans un dossier temporaire qui installe les tarballs (outils aux versions du dépôt, `--prefer-offline`), l'exemple du bouton de thème de `docs/demarrer.html` (contrat, store, `.super`, test) plus un `.super` qui utilise `Button` du kit, puis `vite build`, `super-tsc`, `super-tsc` sur un `.super` cassé (doit signaler l'erreur sur le `.super`), `vitest run`, `biome format`, `super-fmt --write/--check`, `biome check` avec `@super-ts/lint`. Contrôles en plus : aucun paquet ne livre `src/`, le plugin écrit `contracts.d.ts`, la CSS du kit est dans le build. `--keep` garde l'app ; elle est gardée en cas d'échec.
+- [x] `npm run smoke` → `scripts/smoke-install.mjs` : build, `npm pack` des 7 paquets, app Vite vierge dans un dossier temporaire qui installe les tarballs (outils aux versions du dépôt, `--prefer-offline`), l'exemple du bouton de thème de `docs/getting-started.html` (contrat, store, `.super`, test) plus un `.super` qui utilise `Button` du kit, puis `vite build`, `super-tsc`, `super-tsc` sur un `.super` cassé (doit signaler l'erreur sur le `.super`), `vitest run`, `biome format`, `super-fmt --write/--check`, `biome check` avec `@super-ts/lint`. Contrôles en plus : aucun paquet ne livre `src/`, le plugin écrit `contracts.d.ts`, la CSS du kit est dans le build. `--keep` garde l'app ; elle est gardée en cas d'échec.
   - Le script retire `NODE_OPTIONS` et les variables `npm_*` de l'environnement : sinon la condition `@super-ts/source` du `.npmrc` du dépôt fuit dans l'app et pointe vers des `src/` absents des tarballs.
 - [ ] Le faire tourner en CI : avec la phase 8 (il n'y a pas encore de workflow).
 - Bugs trouvés et corrigés par ce test :
@@ -121,7 +121,7 @@ But : versionner et sauvegarder, sans rien publier. Le câblage local reste tel 
 - [x] Testé assemblé : `server.test.ts` pilote `SUPER_LS_SERVER` s'il est défini. `npm run smoke` installe le tarball du serveur dans l'app (TS 6 et Volar venus de npm) et lance les 25 tests sur ce serveur installé.
 - [ ] Groupe `fixed` de Changesets : avec la phase 8.
 - Doc : tableau des paquets de `docs/index.html` mis à jour.
-- Pour la phase 7 : `editors/zed/src/lib.rs` cherche encore `node_modules/super-language-server/src/server.ts`, chemin mort depuis le renommage (repli sur `packages/lang-server/src/server.ts` dans le dépôt) ; `docs/outillage.html` décrit ce comportement. Le nom du serveur LSP côté Zed (`super-language-server`, réglage `lsp.super-language-server.binary`) ne change pas.
+- Pour la phase 7 : `editors/zed/src/lib.rs` cherche encore `node_modules/super-language-server/src/server.ts`, chemin mort depuis le renommage (repli sur `packages/lang-server/src/server.ts` dans le dépôt) ; `docs/tooling.html` décrit ce comportement. Le nom du serveur LSP côté Zed (`super-language-server`, réglage `lsp.super-language-server.binary`) ne change pas.
 
 ## Phase 6 : grammaire publique (l'utilisateur, puis moi)
 
@@ -160,8 +160,8 @@ Préparé le 2026-11-26 dans `editors/tree-sitter-super` (commits locaux, à pou
 - [ ] Script racine `"version": "changeset version && node scripts/sync-version.mjs"`, et un test qui vérifie que le README et la doc annoncent la version des paquets.
 - [ ] La doc :
   - une section d'installation (`npm i @super-ts/core @super-ts/dom`, `npm i -D @super-ts/vite @super-ts/lang @super-ts/testing`) ;
-  - retirer « non publiés » de `llms.txt`, de `chantiers.html` et des passages sur les alias ;
-  - mettre à jour `outillage.html#zed` (installation depuis le registre Zed).
+  - retirer « non publiés » de `llms.txt`, de `roadmap.html` et des passages sur les alias ;
+  - mettre à jour `tooling.html#zed` (installation depuis le registre Zed).
 - [ ] `.github/workflows/ci.yml`, sur chaque PR : `npm run check`, `npm run build`, le test d'installation, `changeset status --since=origin/main`, la compilation de l'extension.
 - [ ] `.github/workflows/release.yml`, sur `main` : `changesets/action`. Il ouvre la PR « Version packages » ; son merge lance le build et `changeset publish` avec provenance (`permissions: id-token: write`).
 

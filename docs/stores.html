@@ -97,7 +97,7 @@
         <li><strong>Une méthode pour chaque commande</strong> : en oublier une ne compile pas.</li>
         <li><strong>Les paramètres du contrat, exactement</strong> : <code>increment({ id }: { id: string })</code>. Annote-les à la main, TypeScript n'infère pas les paramètres d'une méthode de classe. Un paramètre plus étroit (<code>{ id: 'cafes' }</code>) ne compile pas.</li>
         <li><strong>Synchrone ou asynchrone</strong> : une méthode peut être <code>async</code>. C'est dans le store, et seulement là, qu'on attend un adapter.</li>
-        <li><strong>Elle retourne le résultat déclaré</strong> par l'<code>Outcome</code> de sa commande (rien pour une commande <code>void</code>), ou échoue avec <code>this.fail(raison)</code>. Super publie l'issue (<code>increment:done</code>, <code>increment:failed</code>) et suit la commande en cours : pas de drapeau à gérer. Voir <a href="flux.html#declarer-l-issue">Déclarer l'issue</a>.</li>
+        <li><strong>Elle retourne le résultat déclaré</strong> par l'<code>Outcome</code> de sa commande (rien pour une commande <code>void</code>), ou échoue avec <code>this.fail(raison)</code>. Super publie l'issue (<code>increment:done</code>, <code>increment:failed</code>) et suit la commande en cours : pas de drapeau à gérer. Voir <a href="commands-and-events.html#declarer-l-issue">Déclarer l'issue</a>.</li>
         <li><strong>Aucune autre méthode publique</strong> : le code partagé entre commandes s'écrit en méthode <code>#privée</code>, comme <code>#write</code>. Une méthode publique hors contrat ne compile pas.</li>
       </ul>
       <p>
@@ -176,7 +176,7 @@
       </div>
 
       <h3 id="subscribe">subscribe : être prévenu de chaque changement d'état</h3>
-      <p class="example-link">Dans l'<a href="exemples.html#boutique">exemple Boutique</a> : <a href="../examples/demo/src/main.ts"><code>main.ts</code></a>, <a href="../examples/demo/src/adapters/saved-cart.ts"><code>adapters/saved-cart.ts</code></a>. Le panier est enregistré dans le <code>localStorage</code> à chaque changement, et survit au rechargement de la page.</p>
+      <p class="example-link">Dans l'<a href="examples.html#boutique">exemple Boutique</a> : <a href="../examples/demo/src/main.ts"><code>main.ts</code></a>, <a href="../examples/demo/src/adapters/saved-cart.ts"><code>adapters/saved-cart.ts</code></a>. Le panier est enregistré dans le <code>localStorage</code> à chaque changement, et survit au rechargement de la page.</p>
       <p>
         <code>subscribe</code> appelle ta fonction après chaque changement d'état, avec le nouvel état (plusieurs
         <code>set</code> dans la même tâche ne donnent qu'un appel). Il renvoie une fonction qui arrête l'écoute.
@@ -210,7 +210,7 @@
       </p>
 
       <h3 id="dispose">dispose : mettre fin à la vie du store</h3>
-      <p class="example-link">Dans l'<a href="exemples.html#widget">exemple Widget</a> : <a href="../examples/demo/src/widgets/timer-widget.ts"><code>timer-widget.ts</code></a>. Fermer le minuteur libère son application et son store.</p>
+      <p class="example-link">Dans l'<a href="examples.html#widget">exemple Widget</a> : <a href="../examples/demo/src/widgets/timer-widget.ts"><code>timer-widget.ts</code></a>. Fermer le minuteur libère son application et son store.</p>
       <p>
         <code>dispose</code> retire les écouteurs internes du store et avorte son <code>signal</code> : s'il écoutait un
         autre store, cette écoute s'arrête. Les commandes envoyées ensuite sont rejetées.
@@ -237,7 +237,7 @@
       </script>
 
       <h2 id="un-store-qui-depend-d-un-autre">Un store qui dépend d'un autre store</h2>
-      <p class="example-link">Dans l'<a href="exemples.html#boutique">exemple Boutique</a> : <a href="../examples/demo/src/@core/checkout/store.ts"><code>checkout/store.ts</code></a>, <a href="../examples/demo/src/@core/checkout/store.test.ts"><code>checkout/store.test.ts</code></a>. Le store de commande reçoit le panier, le lit, lui envoie <code>clear</code> et écoute ses événements.</p>
+      <p class="example-link">Dans l'<a href="examples.html#boutique">exemple Boutique</a> : <a href="../examples/demo/src/@core/checkout/store.ts"><code>checkout/store.ts</code></a>, <a href="../examples/demo/src/@core/checkout/store.test.ts"><code>checkout/store.test.ts</code></a>. Le store de commande reçoit le panier, le lit, lui envoie <code>clear</code> et écoute ses événements.</p>
       <p>
         Un store peut recevoir un autre store en dépendance, écouter ses événements ou lui envoyer des commandes. Le type
         de la dépendance se déduit du nom du contrat : <code>StoreOfContract&lt;'cart'&gt;</code>. Rien à nettoyer : Super

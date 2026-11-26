@@ -105,7 +105,7 @@ Le composant est un fichier `.super` : du TypeScript dont les méthodes écriven
 | `@super-ts/testing` | `mount`, `fakeStore`, `record`, `flush`, `cleanup`. |
 | `@super-ts/ui` | Le kit d'interface : champs reliés aux formulaires, `CommandButton`, `RouteLink`, toasts, fenêtres, menus, table. Voir [Kit d'interface](ui.html). |
 | `@super-ts/vite` | Le plugin qui compile les `.super`, fait respecter l'architecture et génère le dictionnaire des contrats (`@core/contracts.d.ts`). |
-| `@super-ts/lang` | Le langage des `.super` : parser, compilation vers lit, vérification des types (`super-tsc`). Voir [Outillage](outillage.html). |
+| `@super-ts/lang` | Le langage des `.super` : parser, compilation vers lit, vérification des types (`super-tsc`). Voir [Outillage](tooling.html). |
 | `@super-ts/language-server` | Le serveur de langage des `.super` pour l'éditeur (`packages/lang-server`), commande `super-language-server`. |
 | `@super-ts/lint` | La configuration Biome qui fixe l'ordre des imports. |
 
@@ -141,7 +141,7 @@ npm run check        # lint, typecheck, tests, puis index de la doc
 
 Les paquets `@super-ts/core`, `@super-ts/dom`, `@super-ts/testing`, `@super-ts/ui` et `@super-ts/vite` sont résolus par des alias déclarés dans les `tsconfig.json` et `vite.config.ts`. Dans l'app, les dossiers Super s'importent eux aussi par alias, depuis n'importe quel fichier : `'@core/counter/contract'`, `'@components/app-shell'` (voir [Architecture](architecture.html#importer-depuis-core-et-components)).
 
-Les composants s'écrivent dans des fichiers `.super` : le plugin Vite les compile, et `npm run typecheck` les vérifie. Pour avoir les erreurs et la complétion dans ton éditeur, branche le serveur de langage des `.super` (voir [Outillage](outillage.html#editeur)).
+Les composants s'écrivent dans des fichiers `.super` : le plugin Vite les compile, et `npm run typecheck` les vérifie. Pour avoir les erreurs et la complétion dans ton éditeur, branche le serveur de langage des `.super` (voir [Outillage](tooling.html#editeur)).
 
 ## Ta première fonctionnalité : un bouton de thème
 
@@ -175,7 +175,7 @@ export class ThemeContract extends SuperContract<ThemeTypes> {
 }
 ```
 
-Le plugin Vite repère le contrat et l'inscrit dans `src/@core/contracts.d.ts`, un fichier généré (à committer, jamais à écrire à la main). C'est ce qui fait connaître `'theme'` au compilateur partout dans l'app. Voir [Contrats](contrats.html) et [Sélecteurs](selecteurs.html).
+Le plugin Vite repère le contrat et l'inscrit dans `src/@core/contracts.d.ts`, un fichier généré (à committer, jamais à écrire à la main). C'est ce qui fait connaître `'theme'` au compilateur partout dans l'app. Voir [Contrats](contracts.html) et [Sélecteurs](selectors.html).
 
 ### Étape 2 : le store
 
@@ -223,7 +223,7 @@ export class ThemeToggle extends SuperElement {
 }
 ```
 
-`render()` ne renvoie rien : le bouton est écrit comme une instruction, `on:click` pose l'écouteur et `{…}` affiche une valeur (voir [Templates](templates.html)). Le composant n'importe rien de `src/@core/` : `@contract theme;` suffit, et le compilateur connaît les sélecteurs et les commandes du contrat. Voir [Composants](composants.html) et [Lire un store](lire-un-store.html).
+`render()` ne renvoie rien : le bouton est écrit comme une instruction, `on:click` pose l'écouteur et `{…}` affiche une valeur (voir [Templates](templates.html)). Le composant n'importe rien de `src/@core/` : `@contract theme;` suffit, et le compilateur connaît les sélecteurs et les commandes du contrat. Voir [Composants](components.html) et [Lire un store](reading-a-store.html).
 
 ### Étape 4 : le branchement
 
@@ -262,7 +262,7 @@ test('le bouton bascule le thème', async () => {
 });
 ```
 
-Le test reste un `.ts` : il importe le composant `.super` sans extension et le monte avec `mount`. Un test peut importer un store : le plugin ne vérifie pas les fichiers `*.test.ts`. Pour tester le composant seul, remplace le vrai store par `fakeStore('theme', { state: { mode: 'dark' } })`. Voir [Tester](tests.html).
+Le test reste un `.ts` : il importe le composant `.super` sans extension et le monte avec `mount`. Un test peut importer un store : le plugin ne vérifie pas les fichiers `*.test.ts`. Pour tester le composant seul, remplace le vrai store par `fakeStore('theme', { state: { mode: 'dark' } })`. Voir [Tester](testing.html).
 
 ---
 
@@ -332,7 +332,7 @@ Plus de `'../../@core/…'` à recompter quand un fichier change de dossier. Les
 }
 ```
 
-Qui écrit ce TS virtuel, et quand : voir [Outillage](outillage.html#verifier-les-types).
+Qui écrit ce TS virtuel, et quand : voir [Outillage](tooling.html#verifier-les-types).
 
 ## L'ordre des imports
 
@@ -372,7 +372,7 @@ npm run lint       # vérifie l'ordre des imports et le formatage (lancé aussi 
 npm run lint:fix   # corrige les deux
 ```
 
-Dans ce dépôt, la configuration de Super est dans `packages/lint/config.json`. La configuration de Super ne touche qu'à l'ordre des imports : le formatage et les autres règles de lint restent au choix du projet. Le dépôt, lui, active le formateur de Biome (deux espaces, guillemets simples, 140 colonnes) et formate les `.super` avec les mêmes règles (voir [Outillage](outillage.html#formater)).
+Dans ce dépôt, la configuration de Super est dans `packages/lint/config.json`. La configuration de Super ne touche qu'à l'ordre des imports : le formatage et les autres règles de lint restent au choix du projet. Le dépôt, lui, active le formateur de Biome (deux espaces, guillemets simples, 140 colonnes) et formate les `.super` avec les mêmes règles (voir [Outillage](tooling.html#formater)).
 
 > **Les autres dossiers n'ont pas d'alias**
 >
@@ -406,7 +406,7 @@ export default defineConfig({
 Le même plugin :
 
 - compile chaque `.super` en TypeScript (des gabarits lit-html), puis en retire les types ; une erreur de compilation arrête le chargement du module, avec sa position dans le `.super` ;
-- fournit une source map du JS final vers le `.super` : traces d'erreur et débogueur pointent la ligne et la colonne de la source (voir [Source maps](outillage.html#source-maps)) ;
+- fournit une source map du JS final vers le `.super` : traces d'erreur et débogueur pointent la ligne et la colonne de la source (voir [Source maps](tooling.html#source-maps)) ;
 - applique les règles d'architecture au code compilé : un `.super` est vérifié comme le serait un `.ts` ;
 - en dev, réécrit le TS virtuel d'un `.super` à chaque transformation, pour que les `.ts` qui l'importent en voient les types à jour ;
 - déclare les alias `@core/` et `@components/`, et ajoute `.super` aux extensions résolues (voir plus haut) ;
@@ -444,11 +444,11 @@ Ce module n'est pas chargé.
 - **Les imports de type** (`import type { CounterState } from '@core/counter/contract'`) : ils disparaissent à la compilation, ils sont libres partout.
 - **Le user-land** : `domain/`, `ports/`, `adapters/`, `routes.ts`, `main.ts` importent ce qu'ils veulent.
 
-Le plugin lit le code comme du texte (pour un `.super`, le code compilé) : il reconnaît les imports nommés (y compris renommés avec `as`), un contrat à sa déclaration `export class X extends SuperContract` et le router à `export const Router = defineRouter(…)`. Voir [Limites](limites.html).
+Le plugin lit le code comme du texte (pour un `.super`, le code compilé) : il reconnaît les imports nommés (y compris renommés avec `as`), un contrat à sa déclaration `export class X extends SuperContract` et le router à `export const Router = defineRouter(…)`. Voir [Limites](limitations.html).
 
 ## Le user-land
 
-Hors de `@core/` et `@components/`, tu organises comme tu veux. Dans l'[app d'exemples](exemples.html) :
+Hors de `@core/` et `@components/`, tu organises comme tu veux. Dans l'[app d'exemples](examples.html) :
 
 - **[`domain/`](../examples/demo/src/domain/)** : les types et les règles métier (`Product`, `CartLine`, le catalogue des compteurs, la page de produits demandée à une API), sans Super ni DOM. Les contrats s'en servent ; un composant peut en importer les types.
 - **[`ports/`](../examples/demo/src/ports/)** : les interfaces dont les stores ont besoin (ici `CounterRepository`, `ProfileClient`, `OrderClient`, `ProductCatalog`). C'est un choix inspiré de l'architecture hexagonale ; un autre projet pourrait mettre ces interfaces à côté du store, dans `@core/`.
@@ -514,7 +514,7 @@ Un contrat tient en trois morceaux :
 
 1. **Un type** (`CounterTypes`) qui décrit son état, ses commandes et ses événements, pour le compilateur.
 2. **Une classe** qui étend `SuperContract<CounterTypes>` et se nomme dans son constructeur : `super({ name: 'counter' })`. Ce nom est la clé du contrat dans toute l'app : un composant déclare `@contract counter;`, un store déclare `super({ contract: 'counter', … })`.
-3. **Des méthodes**, facultatives : chacune est un sélecteur, une lecture autorisée de l'état (voir [Sélecteurs](selecteurs.html)).
+3. **Des méthodes**, facultatives : chacune est un sélecteur, une lecture autorisée de l'état (voir [Sélecteurs](selectors.html)).
 
 Un contrat vit dans `src/@core/<nom>/contract.ts`, un dossier par contrat, à côté de son store. Le plugin Vite lit ces fichiers et génère `src/@core/contracts.d.ts`, le dictionnaire nom → classe qui type `@contract counter;`, `@on('counter', …)` et `StoreOfContract<'counter'>`. Ce fichier se committe, mais ne s'écrit jamais à la main.
 
@@ -554,7 +554,7 @@ commands: {
 Une commande déclare l'un ou l'autre :
 
 - **`void`** : elle n'a pas d'issue particulière à publier (en dehors d'un échec inattendu).
-- **`Outcome<Résultat, Raisons>`** : ce que produit son succès (publié dans `increment:done`), et la liste fermée de ses raisons d'échec (publiées dans `increment:failed`). Voir [Déclarer l'issue](flux.html#declarer-l-issue).
+- **`Outcome<Résultat, Raisons>`** : ce que produit son succès (publié dans `increment:done`), et la liste fermée de ses raisons d'échec (publiées dans `increment:failed`). Voir [Déclarer l'issue](commands-and-events.html#declarer-l-issue).
 
 > **Rien ne revient à l'appelant**
 >
@@ -596,7 +596,7 @@ Un événement avec payload s'écrit `synced: { at: number }` et s'émet par `th
 | Qui | Pour quoi |
 | --- | --- |
 | Le store | `class CounterStore extends SuperStore<CounterContract> implements Commands<CounterStore>` : le compilateur exige une méthode par commande et vérifie les événements émis. |
-| Les composants | `@contract counter;` pour lire par les sélecteurs et envoyer, `@on('counter', …)` pour écouter (voir [les déclarations](composants.html#declarations-de-preparation)). |
+| Les composants | `@contract counter;` pour lire par les sélecteurs et envoyer, `@on('counter', …)` pour écouter (voir [les déclarations](components.html#declarations-de-preparation)). |
 | `createApp` | Retrouve le bon store pour un composant : le nom du contrat sert de clé. |
 | Le plugin Vite | Lit les contrats de `src/@core/`, génère `contracts.d.ts`, refuse deux contrats du même nom. |
 | Les tests | `fakeStore('counter', …)` pour un composant ; `store.selectors.count('cafes')` sur le handle d'un vrai store. |
@@ -659,7 +659,7 @@ export class CounterContract extends SuperContract<CounterTypes> {
 
 ### Un sélecteur sans paramètre
 
-Un sélecteur ne prend un paramètre que si la réponse en dépend. `canDecrement` a besoin de l'`id` (il faut savoir si *ce* compteur est au-dessus de 0). `loadErrorMessage` n'en a pas besoin : la réponse ne dépend que de l'état global. Côté composant, la différence se voit : un sélecteur sans paramètre se passe tel quel à `@selector loadErrorMessage = this.counter.selectors.loadErrorMessage;`, un sélecteur à paramètre s'appelle dans une fonction (voir [Dans un composant](selecteurs.html#dans-un-composant)).
+Un sélecteur ne prend un paramètre que si la réponse en dépend. `canDecrement` a besoin de l'`id` (il faut savoir si *ce* compteur est au-dessus de 0). `loadErrorMessage` n'en a pas besoin : la réponse ne dépend que de l'état global. Côté composant, la différence se voit : un sélecteur sans paramètre se passe tel quel à `@selector loadErrorMessage = this.counter.selectors.loadErrorMessage;`, un sélecteur à paramètre s'appelle dans une fonction (voir [Dans un composant](selectors.html#dans-un-composant)).
 
 ## Pourquoi des sélecteurs
 
@@ -671,7 +671,7 @@ Un sélecteur ne prend un paramètre que si la réponse en dépend. `canDecremen
 
 | Où | Comment | Exemple |
 | --- | --- | --- |
-| Composant | La vue du contrat, en général dans un `@selector` (voir [les déclarations](composants.html#declarations-de-preparation)) | `@selector count = () => this.counter.selectors.count(this.counterId);` |
+| Composant | La vue du contrat, en général dans un `@selector` (voir [les déclarations](components.html#declarations-de-preparation)) | `@selector count = () => this.counter.selectors.count(this.counterId);` |
 | Store | L'outil protégé `this.selectors` | `this.selectors.count(id) + 1` |
 | Test, autre store, `main.ts` | Le handle du store | `store.selectors.count('cafes')` |
 
@@ -690,7 +690,7 @@ counterId = this.router.current.params.id;
 @selector busy = () => this.counter.selectors.pending();
 ```
 
-Un `@selector` lit la valeur d'un sélecteur telle quelle ; la condition ou le calcul se font dans `render`, ou dans un nouveau sélecteur du contrat. Voir [Lire un store](lire-un-store.html) pour les règles de re-rendu.
+Un `@selector` lit la valeur d'un sélecteur telle quelle ; la condition ou le calcul se font dans `render`, ou dans un nouveau sélecteur du contrat. Voir [Lire un store](reading-a-store.html) pour les règles de re-rendu.
 
 ### Dans le store
 
@@ -846,7 +846,7 @@ Chaque commande du contrat est une **méthode publique** du store, du même nom.
 - **Une méthode pour chaque commande** : en oublier une ne compile pas.
 - **Les paramètres du contrat, exactement** : `increment({ id }: { id: string })`. Annote-les à la main, TypeScript n'infère pas les paramètres d'une méthode de classe. Un paramètre plus étroit (`{ id: 'cafes' }`) ne compile pas.
 - **Synchrone ou asynchrone** : une méthode peut être `async`. C'est dans le store, et seulement là, qu'on attend un adapter.
-- **Elle retourne le résultat déclaré** par l'`Outcome` de sa commande (rien pour une commande `void`), ou échoue avec `this.fail(raison)`. Super publie l'issue (`increment:done`, `increment:failed`) et suit la commande en cours : pas de drapeau à gérer. Voir [Déclarer l'issue](flux.html#declarer-l-issue).
+- **Elle retourne le résultat déclaré** par l'`Outcome` de sa commande (rien pour une commande `void`), ou échoue avec `this.fail(raison)`. Super publie l'issue (`increment:done`, `increment:failed`) et suit la commande en cours : pas de drapeau à gérer. Voir [Déclarer l'issue](commands-and-events.html#declarer-l-issue).
 - **Aucune autre méthode publique** : le code partagé entre commandes s'écrit en méthode `#privée`, comme `#write`. Une méthode publique hors contrat ne compile pas.
 
 Sans `implements Commands<Self>`, rien de cela n'est vérifié : Super prendrait toute méthode publique pour une commande. Garde-le sur chaque store.
@@ -1205,10 +1205,10 @@ onIncrementFailed({ input, reason }) {
 }
 ```
 
-- **Une méthode par événement** : `@on('counter', 'increment:done')` appelle la méthode à chaque issue, avec un paramètre typé par l'événement (`{ input, result }`). Le nom de l'événement s'écrit tel quel, sans gabarit : pour plusieurs commandes, une méthode chacune, qui délèguent à une méthode privée. `@on` n'exige pas de `@contract` (voir [les déclarations](composants.html#declarations-de-preparation)).
+- **Une méthode par événement** : `@on('counter', 'increment:done')` appelle la méthode à chaque issue, avec un paramètre typé par l'événement (`{ input, result }`). Le nom de l'événement s'écrit tel quel, sans gabarit : pour plusieurs commandes, une méthode chacune, qui délèguent à une méthode privée. `@on` n'exige pas de `@contract` (voir [les déclarations](components.html#declarations-de-preparation)).
 - **Le body est joint à l'issue** (`input`) : l'écran de « Cafés » reconnaît ses propres commandes, sans que le store ait à recopier l'`id`.
 - **La route se lit dans la méthode** (`this.counterId()`), au moment où l'issue arrive : elle voit la route à jour.
-- **Transforme l'issue en état local** pour l'afficher : un événement ne dure pas, l'état local si (voir [État local](etat-local.html)).
+- **Transforme l'issue en état local** pour l'afficher : un événement ne dure pas, l'état local si (voir [État local](local-state.html)).
 - **Rien à nettoyer** : une méthode `@on` est appelée tant que le composant est monté, et plus après. Dans un composant écrit en `.ts`, l'équivalent est `this.counter.on(…)` dans un champ ou le constructeur ; `on` est interdit pendant `render`.
 
 ## Une issue durable : l'état
@@ -1258,7 +1258,7 @@ this.emit('synced', { at: Date.now() });
 | Écouté par | tout ce qui a accès au store : `@on('counter', 'increment:done')` dans un composant, `counter.on('increment:done', …)` ailleurs | le parent seulement : `<CounterControls … on:increment={…} />` |
 | Sert à | annoncer ce qui s'est passé dans le store | signaler une interaction au parent |
 
-Voir [Parents et enfants](parents-enfants.html) pour les événements de composant.
+Voir [Parents et enfants](parents-and-children.html) pour les événements de composant.
 
 ## Les commandes dans les tests
 
@@ -1397,15 +1397,15 @@ Une classe de composant se compose de quatre éléments :
 | Élément | Rôle |
 | --- | --- |
 | `extends SuperElement` | La classe de base, sans générique dans un `.super` : le compilateur tire les types du composant de ses déclarations. |
-| Les déclarations | `@tag` (le nom du custom element, obligatoire, avec un tiret), puis selon les besoins `@prop` pour les props reçues, `@emit` pour les événements émis vers le parent, `@title` pour le titre de la page. Voir [Déclarations du composant](composants.html#declarations). Un écran ne reçoit pas de props du router : il lit sa route par `this.router.current`, typé d'après sa route sans rien déclarer (voir [L'écran et sa route](router.html#l-ecran-et-sa-route)). |
-| La préparation | Les contrats (`@contract`), les valeurs lues (`@selector`), l'état local (`@state`), le formulaire (`@form`), les références (`@ref`), les écouteurs (`@on` sur une méthode), et les actions en champs. Voir [Préparer](composants.html#declarations-de-preparation). |
-| `render()` | Le HTML du composant, obligatoire, écrit en éléments dans le corps de la méthode, sans `return`. Une méthode facultative `renderError(error)` le remplace si le composant ou un descendant plante (voir [Gérer les erreurs](erreurs.html#render-error)). |
+| Les déclarations | `@tag` (le nom du custom element, obligatoire, avec un tiret), puis selon les besoins `@prop` pour les props reçues, `@emit` pour les événements émis vers le parent, `@title` pour le titre de la page. Voir [Déclarations du composant](components.html#declarations). Un écran ne reçoit pas de props du router : il lit sa route par `this.router.current`, typé d'après sa route sans rien déclarer (voir [L'écran et sa route](router.html#l-ecran-et-sa-route)). |
+| La préparation | Les contrats (`@contract`), les valeurs lues (`@selector`), l'état local (`@state`), le formulaire (`@form`), les références (`@ref`), les écouteurs (`@on` sur une méthode), et les actions en champs. Voir [Préparer](components.html#declarations-de-preparation). |
+| `render()` | Le HTML du composant, obligatoire, écrit en éléments dans le corps de la méthode, sans `return`. Une méthode facultative `renderError(error)` le remplace si le composant ou un descendant plante (voir [Gérer les erreurs](errors.html#render-error)). |
 
 Le composant n'importe rien de `@core/`, sauf des types : il parle aux stores par `@contract nom;` (et au router par `this.router`), et le plugin Vite le vérifie.
 
 ## Déclarations du composant
 
-Ce qui décrit le composant vu de l'extérieur s'écrit en tête du corps de sa classe : son tag, ses props, ses événements, et le titre de la page tant qu'il est monté. Pas de générique sur `SuperElement`, pas de `type Props` au-dessus de la classe : le compilateur tire les types du composant de ces lignes, et les vérifie à chaque balise qui l'utilise. Ce que le composant prépare une fois (contrats, lectures, état, formulaire, références, écouteurs) se déclare de la même façon : voir [Préparer](composants.html#declarations-de-preparation).
+Ce qui décrit le composant vu de l'extérieur s'écrit en tête du corps de sa classe : son tag, ses props, ses événements, et le titre de la page tant qu'il est monté. Pas de générique sur `SuperElement`, pas de `type Props` au-dessus de la classe : le compilateur tire les types du composant de ces lignes, et les vérifie à chaque balise qui l'utilise. Ce que le composant prépare une fois (contrats, lectures, état, formulaire, références, écouteurs) se déclare de la même façon : voir [Préparer](components.html#declarations-de-preparation).
 
 ```ts title="Exemple"
 export class ConfirmDialog extends SuperElement {
@@ -1430,19 +1430,19 @@ export class ConfirmDialog extends SuperElement {
 | `@prop nom?: T;` | Une prop facultative (`T \| undefined`). |
 | `@prop nom: T = valeur;` | Une prop facultative avec une valeur par défaut, calculée une fois par instance. |
 | `@emit nom: T;` | Un événement, émis par `this.emit('nom', payload)` (`void` s'il ne transporte rien). |
-| `@title = …;` | Le titre de la page tant que le composant est monté : une chaîne, ou une fonction suivie. Voir [Le titre de la page](composants.html#titre-de-la-page). |
+| `@title = …;` | Le titre de la page tant que le composant est monté : une chaîne, ou une fonction suivie. Voir [Le titre de la page](components.html#titre-de-la-page). |
 
 ### Les props
 
-Une prop se lit par son nom, `this.question`, partout dans la classe et dès les champs. La lecture donne toujours la valeur courante, et un changement de prop re-rend le composant. `this.props` existe toujours (toutes les props, en lecture seule), mais on écrit `this.nom`. Le détail des trois formes est dans [Parents et enfants](parents-enfants.html#declarer-les-props).
+Une prop se lit par son nom, `this.question`, partout dans la classe et dès les champs. La lecture donne toujours la valeur courante, et un changement de prop re-rend le composant. `this.props` existe toujours (toutes les props, en lecture seule), mais on écrit `this.nom`. Le détail des trois formes est dans [Parents et enfants](parents-and-children.html#declarer-les-props).
 
-- **Le contenu écrit entre les balises remplit la prop `content`.** Elle se déclare comme les autres (`@prop content: Children;`) et se lit par `this.content`. Voir [Composer : des enfants](parents-enfants.html#composer).
+- **Le contenu écrit entre les balises remplit la prop `content`.** Elle se déclare comme les autres (`@prop content: Children;`) et se lit par `this.content`. Voir [Composer : des enfants](parents-and-children.html#composer).
 - **Les noms des propriétés natives sont refusés.** Le composant est un élément du DOM : une prop ne peut pas s'appeler `id`, `title`, `hidden`, `slot`… L'erreur de type le dit : « « title » est déjà une propriété des éléments HTML : choisis un autre nom ». Dans la démo, `title` est devenu `heading` (`KitPage`, `Card`) et `id` est devenu `counterId` (`CounterListItem`). Un paramètre de route `id` se lit de même dans un champ nommé autrement : `counterId = this.router.current.params.id;`.
 - **`page` est réservé** : c'est `this.page`, qui porte le titre de la page.
 
 ### Les événements
 
-`@emit nom: T;` déclare un événement et ce qu'il transporte (`void` s'il ne transporte rien). Le composant l'émet par `this.emit('nom', payload)`, le parent l'écoute par `on:nom={…}` sur la balise. Voir [emit chez l'enfant, on chez le parent](parents-enfants.html#emit-et-on).
+`@emit nom: T;` déclare un événement et ce qu'il transporte (`void` s'il ne transporte rien). Le composant l'émet par `this.emit('nom', payload)`, le parent l'écoute par `on:nom={…}` sur la balise. Voir [emit chez l'enfant, on chez le parent](parents-and-children.html#emit-et-on).
 
 ### Ce que le compilateur refuse
 
@@ -1514,7 +1514,7 @@ Un écouteur se déclare sur une méthode : `@on('contrat', 'événement')` au-d
 - **`@on` n'exige pas de `@contract`** : il ouvre lui-même l'accès au contrat. Un composant qui ne fait qu'écouter `profile` n'a pas besoin de `@contract profile;`.
 - **Le paramètre de la méthode est typé par l'événement** : pour `save:done`, `{ input, result }` ; pour `save:failed`, `{ input, reason }`. Pas besoin de l'annoter.
 - **`@on('router', 'navigated')` écoute le router**, comme `this.router.on('navigated', …)`.
-- **Le nom de l'événement est une chaîne écrite telle quelle**, sans gabarit (`` `${change}:done` ``) : une méthode par événement. Dans la démo, `CounterScreen` déclare `onIncremented`, `onDecremented`, `onReset`, `onIncrementFailed`…, qui appellent toutes `#done` ou `#failed` (voir l'extrait en [tête de page](composants.html#definir-un-composant)).
+- **Le nom de l'événement est une chaîne écrite telle quelle**, sans gabarit (`` `${change}:done` ``) : une méthode par événement. Dans la démo, `CounterScreen` déclare `onIncremented`, `onDecremented`, `onReset`, `onIncrementFailed`…, qui appellent toutes `#done` ou `#failed` (voir l'extrait en [tête de page](components.html#definir-un-composant)).
 
 ### Pourquoi `@form` et pas un composant `<Form>`
 
@@ -1532,7 +1532,7 @@ Hors d'un composant, rien ne change : un store qui écoute un autre store garde 
 
 ### Dans l'éditeur
 
-Un `@` tapé dans le corps d'un composant propose `tag`, `title`, `prop`, `emit`, `contract`, `selector`, `state`, `form`, `ref` et `on`, avec un gabarit à compléter ; `@t` ne propose plus que `tag` et `title`, et un `@tag` ou un `@title` déjà écrit n'est plus proposé. Le survol de chaque déclaration affiche sa documentation. Après `@contract `, l'éditeur propose les contrats de l'app que le composant ne déclare pas encore. Dans `@contract x = '…'` et `@on('…', '…')`, l'éditeur complète les noms des contrats de l'app, puis ceux des événements du contrat choisi. `@prop` et `@emit` sont du TypeScript valide (des champs décorés) ; `@tag = …` et `@title = …` ne le sont pas, mais le formateur et la grammaire Tree-sitter de Zed les connaissent (voir [Outillage](outillage.html#editeur)).
+Un `@` tapé dans le corps d'un composant propose `tag`, `title`, `prop`, `emit`, `contract`, `selector`, `state`, `form`, `ref` et `on`, avec un gabarit à compléter ; `@t` ne propose plus que `tag` et `title`, et un `@tag` ou un `@title` déjà écrit n'est plus proposé. Le survol de chaque déclaration affiche sa documentation. Après `@contract `, l'éditeur propose les contrats de l'app que le composant ne déclare pas encore. Dans `@contract x = '…'` et `@on('…', '…')`, l'éditeur complète les noms des contrats de l'app, puis ceux des événements du contrat choisi. `@prop` et `@emit` sont du TypeScript valide (des champs décorés) ; `@tag = …` et `@title = …` ne le sont pas, mais le formateur et la grammaire Tree-sitter de Zed les connaissent (voir [Outillage](tooling.html#editeur)).
 
 ## Préparer, puis rendre
 
@@ -1543,7 +1543,7 @@ Un `@` tapé dans le corps d'un composant propose `tag`, `title`, `prop`, `emit`
 | S'écrit avec | `@contract`, `@selector`, `@state`, `@form`, `@ref`, `@on`, `@title` (dans un `.ts` : `this.contract`, `this.selector`, `this.state`, `this.form`, `this.ref`, `on` d'un contrat, `this.page.title`). | Les champs préparés : `.value`, `get()`, les sélecteurs, les props (`this.nom`). |
 | Produit | Rien. | Les éléments qu'il émet, ou rien du tout (`render() {}`). |
 
-**La préparation est bloquée pendant le rendu.** Dans un `.super`, elle ne s'écrit que par des déclarations, en dehors de `render`. Les méthodes qu'elles appellent (`contract`, `state`, `selector`, `ref` et `form`, écrites telles quelles dans un `.ts`) lèvent une erreur si elles sont appelées pendant `render` : on ne peut pas résoudre un store ou créer un état à chaque rendu. L'écouteur `on` d'un contrat est permis dans un gestionnaire ou dans `mounted`, mais lève une erreur pendant un rendu ; `this.page.title` de même (voir [Le titre de la page](composants.html#titre-de-la-page)). L'erreur passe par le [renderError](erreurs.html#render-error) du composant, comme toute erreur de rendu.
+**La préparation est bloquée pendant le rendu.** Dans un `.super`, elle ne s'écrit que par des déclarations, en dehors de `render`. Les méthodes qu'elles appellent (`contract`, `state`, `selector`, `ref` et `form`, écrites telles quelles dans un `.ts`) lèvent une erreur si elles sont appelées pendant `render` : on ne peut pas résoudre un store ou créer un état à chaque rendu. L'écouteur `on` d'un contrat est permis dans un gestionnaire ou dans `mounted`, mais lève une erreur pendant un rendu ; `this.page.title` de même (voir [Le titre de la page](components.html#titre-de-la-page)). L'erreur passe par le [renderError](errors.html#render-error) du composant, comme toute erreur de rendu.
 
 **Les props sont lisibles dès les déclarations et les champs** : Super les dépose avant de construire l'instance. Une valeur copiée à ce moment-là (`@state local = { draft: this.text };`, les valeurs initiales d'un formulaire d'édition) ne suit pas les changements suivants : pour une valeur toujours à jour, lis la prop (`this.text`) dans `render`, dans la fonction d'un `selector` ou dans un écouteur, comme les méthodes `@on` de `CounterScreen`, qui appellent `this.counterId()` quand l'événement arrive et lisent donc la route du moment.
 
@@ -1650,28 +1650,28 @@ Tout passe par `this`. Ce que la classe déclare, ce qu'elle utilise (les outils
 | Membre | Où | Rôle |
 | --- | --- | --- |
 | Ce que la classe déclare |
-| `@tag = 'x-y';` | en tête de la classe | Le nom du custom element, obligatoire, avec un tiret (`'counter-screen'`). Vérifié au premier `create`. Voir [Déclarations du composant](composants.html#declarations). |
+| `@tag = 'x-y';` | en tête de la classe | Le nom du custom element, obligatoire, avec un tiret (`'counter-screen'`). Vérifié au premier `create`. Voir [Déclarations du composant](components.html#declarations). |
 | `@prop nom: T;` | en tête de la classe | Une prop reçue du parent : obligatoire, facultative (`nom?: T`) ou avec une valeur par défaut (`nom: T = valeur`). |
 | `@emit nom: T;` | en tête de la classe | Un événement émis vers le parent (`void` s'il ne transporte rien). |
-| `@title = …;` | en tête de la classe | Le titre de la page tant que le composant est monté : une chaîne, ou une fonction suivie. Voir [Le titre de la page](composants.html#titre-de-la-page). |
-| `@contract nom;`, `@contract nom = 'contrat';` | dans la classe | Le store fourni pour ce contrat, vu à travers ses sélecteurs, `send` et `on`. Tous les contrats sauf le router. Dans un `.ts` : `this.contract(nom)`. Voir [Lire un store](lire-un-store.html). |
-| `@selector nom = …;` | dans la classe | Une valeur lue d'un sélecteur, lue par `.value` dans `render` ; le composant ne se re-rend que si elle change. Dans un `.ts` : `this.selector(lecture)`. Voir [Lire un store](lire-un-store.html). |
-| `@state nom = { … };` | dans la classe | L'état local, lu par `get()`, changé par `set(…)`. Dans un `.ts` : `this.state(initial)`. Voir [État local](etat-local.html). |
-| `@form nom = { … };` | dans la classe | Un formulaire : champs liés, règles, vérifications, soumission par une commande. Dans un `.ts` : `this.form(options)`. Voir [Formulaires](formulaires.html). |
+| `@title = …;` | en tête de la classe | Le titre de la page tant que le composant est monté : une chaîne, ou une fonction suivie. Voir [Le titre de la page](components.html#titre-de-la-page). |
+| `@contract nom;`, `@contract nom = 'contrat';` | dans la classe | Le store fourni pour ce contrat, vu à travers ses sélecteurs, `send` et `on`. Tous les contrats sauf le router. Dans un `.ts` : `this.contract(nom)`. Voir [Lire un store](reading-a-store.html). |
+| `@selector nom = …;` | dans la classe | Une valeur lue d'un sélecteur, lue par `.value` dans `render` ; le composant ne se re-rend que si elle change. Dans un `.ts` : `this.selector(lecture)`. Voir [Lire un store](reading-a-store.html). |
+| `@state nom = { … };` | dans la classe | L'état local, lu par `get()`, changé par `set(…)`. Dans un `.ts` : `this.state(initial)`. Voir [État local](local-state.html). |
+| `@form nom = { … };` | dans la classe | Un formulaire : champs liés, règles, vérifications, soumission par une commande. Dans un `.ts` : `this.form(options)`. Voir [Formulaires](forms.html). |
 | `@ref nom: T;` | dans la classe | Une référence vers un élément du template : `<input ref={this.input} />`, puis `this.input.value` une fois monté. Le compilateur refuse la référence si `T` n'est pas le type de la balise (voir [Références](templates.html#references)). Dans un `.ts` : `this.ref<T>()`. |
-| `@on('contrat', 'événement') méthode(payload) { … }` | sur une méthode | Un écouteur, appelé à chaque événement tant que le composant est monté, sans `@contract` nécessaire ; `'router'` écoute le router. Dans un `.ts` : `.on(…)` dans le constructeur. Voir [Les écouteurs](composants.html#declarer-un-ecouteur). |
+| `@on('contrat', 'événement') méthode(payload) { … }` | sur une méthode | Un écouteur, appelé à chaque événement tant que le composant est monté, sans `@contract` nécessaire ; `'router'` écoute le router. Dans un `.ts` : `.on(…)` dans le constructeur. Voir [Les écouteurs](components.html#declarer-un-ecouteur). |
 | `render()` | méthode obligatoire | Décrit le HTML, à chaque rendu. Ne peut ni lire un nouveau contrat ni créer d'état. |
-| `renderError(error)` | méthode facultative | Affiché à la place de `render` si `render`, un descendant, ou la résolution d'un store au montage plante. S'il plante lui-même, l'erreur remonte au parent. Voir [Gérer les erreurs](erreurs.html#render-error). |
+| `renderError(error)` | méthode facultative | Affiché à la place de `render` si `render`, un descendant, ou la résolution d'un store au montage plante. S'il plante lui-même, l'erreur remonte au parent. Voir [Gérer les erreurs](errors.html#render-error). |
 | `mounted()`, `unmounted()` | méthodes facultatives | Appelées après le premier rendu de chaque montage, et au démontage. |
 | Ce que la classe utilise |
 | `this.nom` | partout, dès les champs | Une prop déclarée par `@prop`, toujours à sa valeur courante. Un changement de prop re-rend le composant ; une copie faite à la construction ne le suit pas. `this.props` les donne toutes, en lecture seule. |
-| `this.emit(nom, payload?)` | partout | Émet un événement déclaré par `@emit`, vers le parent. Voir [Parents et enfants](parents-enfants.html). |
+| `this.emit(nom, payload?)` | partout | Émet un événement déclaré par `@emit`, vers le parent. Voir [Parents et enfants](parents-and-children.html). |
 | `this.router` | partout | Le router de l'app, sans déclaration : ses sélecteurs, `send`, `on` et `href`. Voir [Le router dans un composant](router.html#le-router-est-un-store). |
-| `this.page.title = …` | partout sauf `render` | Pose le titre de la page tant que le composant est monté, comme `@title` : une chaîne, ou une fonction suivie. En écriture seulement. Voir [Le titre de la page](composants.html#titre-de-la-page). |
+| `this.page.title = …` | partout sauf `render` | Pose le titre de la page tant que le composant est monté, comme `@title` : une chaîne, ou une fonction suivie. En écriture seulement. Voir [Le titre de la page](components.html#titre-de-la-page). |
 | `this.signal` | une fois monté | `AbortSignal` avorté au démontage, pour les écouteurs posés hors de Super (`window.addEventListener(…, { signal: this.signal })`). Inutile pour les stores : les écouteurs `@on` se nettoient seuls. |
 | `this` | partout | L'élément lui-même, pour les cas que l'API ne couvre pas (focus, mesures). |
 | Sur la classe |
-| `<Classe prop={…} on:nom={…} />` | template | Monte l'enfant à cet emplacement (même instance d'un rendu à l'autre). Les props sont vérifiées contre ses `@prop`, les écouteurs contre ses `@emit`. Voir [Parents et enfants](parents-enfants.html). |
+| `<Classe prop={…} on:nom={…} />` | template | Monte l'enfant à cet emplacement (même instance d'un rendu à l'autre). Les props sont vérifiées contre ses `@prop`, les écouteurs contre ses `@emit`. Voir [Parents et enfants](parents-and-children.html). |
 | `Classe.create(props?, { on }?)` | hors template | Renvoie l'élément, pour le montage initial, le router ou un test. Les props et les écouteurs sont typés de la même façon. |
 | `Classe.eventName(nom)` | hors template | Le nom DOM d'un événement émis (`'confirm-dialog:answered'`), pour un écouteur posé à la main. |
 
@@ -1829,7 +1829,7 @@ const router = createRouter(Router, { title: { default: 'Super · exemples', suf
 
 ## Créer un élément hors template
 
-Dans un fichier `.super`, `<CounterControls count={count} … />` monte l'enfant à cet emplacement (voir [Parents et enfants](parents-enfants.html)) ; l'outillage le traduit en `CounterControls.create(props, { on })`. Hors template, pour le montage initial ou un test, on appelle ce `create(props?, { on }?)` directement : il renvoie l'élément.
+Dans un fichier `.super`, `<CounterControls count={count} … />` monte l'enfant à cet emplacement (voir [Parents et enfants](parents-and-children.html)) ; l'outillage le traduit en `CounterControls.create(props, { on })`. Hors template, pour le montage initial ou un test, on appelle ce `create(props?, { on }?)` directement : il renvoie l'élément.
 
 ```ts
 createApp({ root, stores, router }).mount(AppShell.create());
@@ -1864,8 +1864,8 @@ export class CounterListItem extends SuperElement {
 
 - `@contract counter;` se déclare dans le corps de la classe, une fois par store utilisé, et se lit par `this.counter`. Le nom est celui du contrat, vérifié par le compilateur : `@contract compteur;` ne compile pas. Pour un autre nom de champ : `@contract shop = 'catalog';`.
 - `@selector count = …;` se déclare aussi dans le corps de la classe, après le `@contract` qu'il lit. Sa valeur est la lecture d'**un** sélecteur ; il se lit par `.value` dans `render`, avec le type du sélecteur. Pas de type à écrire : il vient de la valeur.
-- Toutes ces déclarations sont décrites dans [Composants](composants.html#declarations-de-preparation). Un composant écrit dans un `.ts` garde les méthodes : `counter = this.contract('counter')`, `count = this.selector(…)`.
-- Les sélecteurs sont ceux du contrat, avec l'état déjà fourni, plus `pending(…)` pour savoir si une commande est en cours (voir [pending](flux.html#en-cours)).
+- Toutes ces déclarations sont décrites dans [Composants](components.html#declarations-de-preparation). Un composant écrit dans un `.ts` garde les méthodes : `counter = this.contract('counter')`, `count = this.selector(…)`.
+- Les sélecteurs sont ceux du contrat, avec l'état déjà fourni, plus `pending(…)` pour savoir si une commande est en cours (voir [pending](commands-and-events.html#en-cours)).
 - Le composant n'importe pas le contrat : il le nomme. Seuls des types peuvent venir de `@core/` (`import type`).
 
 ### Un sélecteur, tel quel
@@ -1901,8 +1901,8 @@ La règle est vérifiée à la compilation : une valeur de sélecteur porte une 
 | --- | --- |
 | `selectors` | Les sélecteurs du contrat, plus `pending`, lus sur l'état courant à chaque appel. À passer à `@selector`, ou à lire directement dans `render`. |
 | `send(nom, body?)` | Envoie une commande et laisse filer. Renvoie `void` ; l'issue revient par les sélecteurs, ou par `nom:done` / `nom:failed`. |
-| `on(nom, écouteur)` | Écoute un événement du store, ou l'issue d'une commande. Dans un `.super`, il s'écrit sur une méthode, `@on('counter', 'increment:done')`, qui est appelée tant que le composant est monté : pas de `signal` à passer (voir [Écouter l'issue](flux.html#ecouter-l-issue)). Dans un `.ts`, il se déclare dans le constructeur ; il est interdit pendant `render`. |
-| `href(route, { params, query }?)` | Pour le router seulement : construit un lien typé, sans abonner le composant (voir [plus bas](lire-un-store.html#le-router)). |
+| `on(nom, écouteur)` | Écoute un événement du store, ou l'issue d'une commande. Dans un `.super`, il s'écrit sur une méthode, `@on('counter', 'increment:done')`, qui est appelée tant que le composant est monté : pas de `signal` à passer (voir [Écouter l'issue](commands-and-events.html#ecouter-l-issue)). Dans un `.ts`, il se déclare dans le constructeur ; il est interdit pendant `render`. |
+| `href(route, { params, query }?)` | Pour le router seulement : construit un lien typé, sans abonner le composant (voir [plus bas](reading-a-store.html#le-router)). |
 
 Le composant ne reçoit pas le store lui-même : pas d'état brut, pas de `subscribe`, pas de `dispose`, pas d'`emit`. Ces capacités restent à celui qui a créé le store.
 
@@ -1990,7 +1990,7 @@ Déclare autant de `@contract` et de `@selector` que nécessaire. Chaque `@selec
 
 ## Quand le store n'est pas fourni
 
-Super résout les contrats au montage. Si aucune application (ou aucun test) n'a fourni de store pour ce contrat, le composant ne s'affiche pas (son `renderError`, s'il en a un, prend la place) et l'erreur est signalée (phase `setup`, voir [Gérer les erreurs](erreurs.html#qui-rattrape-quoi)) :
+Super résout les contrats au montage. Si aucune application (ou aucun test) n'a fourni de store pour ce contrat, le composant ne s'affiche pas (son `renderError`, s'il en a un, prend la place) et l'erreur est signalée (phase `setup`, voir [Gérer les erreurs](errors.html#qui-rattrape-quoi)) :
 
 ```text
 [super] <counter-screen> : aucun store fourni pour le contrat "counter".
@@ -2019,7 +2019,7 @@ export class StatusLine extends SuperElement {
 
 | Écriture | Rôle |
 | --- | --- |
-| `@state local = initial;` | Déclare l'état dans le corps de la classe, qui se lit ensuite par `this.local` (voir [les déclarations](composants.html#declarations-de-preparation)). La valeur initiale est copiée. Dans un composant écrit en `.ts`, l'équivalent est `local = this.state(initial)`, dans un champ ou le constructeur uniquement (pendant `render`, il lève une erreur). |
+| `@state local = initial;` | Déclare l'état dans le corps de la classe, qui se lit ensuite par `this.local` (voir [les déclarations](components.html#declarations-de-preparation)). La valeur initiale est copiée. Dans un composant écrit en `.ts`, l'équivalent est `local = this.state(initial)`, dans un champ ou le constructeur uniquement (pendant `render`, il lève une erreur). |
 | `get()` | La valeur courante, figée. À appeler dans `render` pour refléter le dernier changement. |
 | `set(patch)` | Fusionne le patch (un niveau), puis re-rend le composant. Accepte un objet partiel ou une fonction `(courant) => patch`. |
 
@@ -2108,13 +2108,13 @@ Dans un template, un enfant se place en balise, au nom de sa classe : une balise
 
 - **Les attributs sont les props.** Le compilateur les vérifie contre les `@prop` de l'enfant : une prop requise manquante, une prop en trop ou une valeur mal typée est une erreur. Une valeur fixe s'écrit entre guillemets (`question="Vider le panier ?"`, une chaîne), une valeur calculée entre accolades.
 - **`on:nom`** branche un événement de l'enfant sur une fonction du parent. Le nom et le payload sont vérifiés contre les `@emit` de l'enfant.
-- La balise est l'équivalent de `CounterControls.create({ count, … }, { on: { increment, … } })`, l'appel qui sert hors template (voir [Créer un élément hors template](composants.html#creer-un-element-hors-template)).
+- La balise est l'équivalent de `CounterControls.create({ count, … }, { on: { increment, … } })`, l'appel qui sert hors template (voir [Créer un élément hors template](components.html#creer-un-element-hors-template)).
 - L'élément enfant est **créé une fois** par emplacement, puis ses props sont mises à jour à chaque rendu du parent. Il garde son état local. S'il reçoit des props égales (comparées clé par clé), il ne se re-rend pas.
-- Un composant peut aussi recevoir des éléments entre ses balises, s'il les déclare (voir [Composer : des enfants](parents-enfants.html#composer)).
+- Un composant peut aussi recevoir des éléments entre ses balises, s'il les déclare (voir [Composer : des enfants](parents-and-children.html#composer)).
 
 ## Déclarer les props
 
-Une prop se déclare dans le corps de la classe par `@prop`, avec son type, et se lit par `this.nom`. Le tag, les props et les événements s'écrivent au même endroit, sans générique (le détail de chaque déclaration est dans [Composants : les déclarations](composants.html#declarations)) :
+Une prop se déclare dans le corps de la classe par `@prop`, avec son type, et se lit par `this.nom`. Le tag, les props et les événements s'écrivent au même endroit, sans générique (le détail de chaque déclaration est dans [Composants : les déclarations](components.html#declarations)) :
 
 ```ts title="src/@components/counter-list/counter-list-item.super (extrait)"
 export class CounterListItem extends SuperElement {
@@ -2154,7 +2154,7 @@ Un composant est un élément HTML : `this.id`, `this.title`, `this.hidden` ou `
 // ✗ « title » est déjà une propriété des éléments HTML : choisis un autre nom
 ```
 
-Dans l'app d'exemples, `title` est devenu `heading` (`Card`, `KitPage`) et `id` est devenu `counterId` (`CounterListItem`). Un paramètre de route `id` se lit de même dans un champ nommé autrement : `counterId = this.router.current.params.id;`. Le nom `page` est lui aussi réservé (c'est `this.page`). Le contenu écrit entre les balises remplit pour la même raison une prop `content` (`children` est natif), voir [Composer : des enfants](parents-enfants.html#composer).
+Dans l'app d'exemples, `title` est devenu `heading` (`Card`, `KitPage`) et `id` est devenu `counterId` (`CounterListItem`). Un paramètre de route `id` se lit de même dans un champ nommé autrement : `counterId = this.router.current.params.id;`. Le nom `page` est lui aussi réservé (c'est `this.page`). Le contenu écrit entre les balises remplit pour la même raison une prop `content` (`children` est natif), voir [Composer : des enfants](parents-and-children.html#composer).
 
 ## emit chez l'enfant, on chez le parent
 
@@ -2322,7 +2322,7 @@ for (const c of this.counters.value; key c.id) {
 
 - **Les enfants appartiennent au parent** : le clic sur « Remettre à zéro » appelle une méthode du parent, et `this.count` est lu par le parent. Les enfants suivent son rendu ; la carte les garde quand elle se re-rend seule.
 - **Le compilateur vérifie le contrat** : des enfants pour un composant qui ne déclare pas `content`, des enfants obligatoires qui manquent, un emplacement qui n'est pas une prop du composant sont des erreurs.
-- La syntaxe complète est dans [Templates : des enfants](templates.html#content) et [des emplacements nommés](templates.html#emplacements). L'exemple [Composition](exemples.html#composition) de l'app d'exemples montre les deux façons côte à côte.
+- La syntaxe complète est dans [Templates : des enfants](templates.html#content) et [des emplacements nommés](templates.html#emplacements). L'exemple [Composition](examples.html#composition) de l'app d'exemples montre les deux façons côte à côte.
 
 ## Ce qui n'existe pas, volontairement
 
@@ -2359,13 +2359,13 @@ export class CounterListItem extends SuperElement {
 }
 ```
 
-- **Le composant se déclare dans sa classe** : `@tag` pour son tag, `@prop` pour ses props (lues par `this.label`), `@emit` pour ses événements, sans générique. Voir [Composants : les déclarations](composants.html#declarations).
-- **Ce qu'il prépare une fois se déclare aussi** : `@contract` pour un store, `@selector` pour une lecture (lue par `this.count.value`), et de même `@state`, `@form`, `@ref` et les écouteurs `@on('contrat', 'événement')`. Voir [Composants : les déclarations de préparation](composants.html#declarations-de-preparation).
+- **Le composant se déclare dans sa classe** : `@tag` pour son tag, `@prop` pour ses props (lues par `this.label`), `@emit` pour ses événements, sans générique. Voir [Composants : les déclarations](components.html#declarations).
+- **Ce qu'il prépare une fois se déclare aussi** : `@contract` pour un store, `@selector` pour une lecture (lue par `this.count.value`), et de même `@state`, `@form`, `@ref` et les écouteurs `@on('contrat', 'événement')`. Voir [Composants : les déclarations de préparation](components.html#declarations-de-preparation).
 - **Tout le reste est du TypeScript** : imports, types, champs, méthodes. Seuls les éléments et ces déclarations sont nouveaux.
 - **On l'importe sans extension**, comme un `.ts` : `import { ConfirmDialog } from '../shared/confirm-dialog'`, ou `@components/shop` pour `shop/index.super`.
 - **Un module sans template reste un `.ts`** : contrats, stores, domaine, routes, tests.
 
-Le plugin Vite compile le fichier, `npm run typecheck` le vérifie et l'éditeur le comprend : voir [Outillage des .super](outillage.html).
+Le plugin Vite compile le fichier, `npm run typecheck` le vérifie et l'éditeur le comprend : voir [Outillage des .super](tooling.html).
 
 ## Des éléments écrits comme des instructions
 
@@ -2438,7 +2438,7 @@ Ils suivent les règles du HTML, comme un template HTML écrit à la main :
 | `prop:value={v}` | Propriété DOM plutôt qu'attribut (`el.value = v`). |
 | `on:click={handler}` | Écouteur d'événement (voir [Événements](templates.html#evenements)). |
 | `ref={this.input}` | Référence vers l'élément (voir [Références](templates.html#references)). |
-| `{order.field('address')}` dans la balise | Directive d'élément : `form.bind()`, `form.field(…)` (voir [Formulaires](formulaires.html)). |
+| `{order.field('address')}` dans la balise | Directive d'élément : `form.bind()`, `form.field(…)` (voir [Formulaires](forms.html)). |
 
 ```ts
 render() {
@@ -2469,7 +2469,7 @@ render() {
 <button type="button" on:click={() => this.run('reset')}>Remettre à zéro</button>
 ```
 
-Sur un composant enfant, `on:` s'abonne à ses événements, déclarés par `@emit` (voir [Composants enfants](templates.html#enfants)). Une erreur levée dans un gestionnaire est signalée à `onError` (voir [Gérer les erreurs](erreurs.html)).
+Sur un composant enfant, `on:` s'abonne à ses événements, déclarés par `@emit` (voir [Composants enfants](templates.html#enfants)). Une erreur levée dans un gestionnaire est signalée à `onError` (voir [Gérer les erreurs](errors.html)).
 
 ## Afficher ou non : if
 
@@ -2501,7 +2501,7 @@ Seul `for…of` est accepté. `key`, après un `;` dans les parenthèses, identi
 </ul>
 ```
 
-Sans `key`, le rendu est positionnel : il suffit pour une liste qui ne change jamais d'ordre. Une boucle à une seule clé recrée une zone quand la clé change : `for (const _round of [round]; key _round) { … }` dans l'[écran des erreurs](erreurs.html).
+Sans `key`, le rendu est positionnel : il suffit pour une liste qui ne change jamais d'ordre. Une boucle à une seule clé recrée une zone quand la clé change : `for (const _round of [round]; key _round) { … }` dans l'[écran des erreurs](errors.html).
 
 ## Choisir : switch
 
@@ -2545,7 +2545,7 @@ Une balise qui commence par une majuscule est un composant, une classe `SuperEle
 - **`on:x` s'abonne à ses `@emit`**, avec le type de la donnée émise.
 - **Pas de directive sur un composant** : `{…}` dans la balise se place sur un élément HTML.
 
-Voir [Parents et enfants](parents-enfants.html).
+Voir [Parents et enfants](parents-and-children.html).
 
 ### Des enfants : content
 
@@ -2618,7 +2618,7 @@ La méthode sert surtout pour une liste d'emplacements, comme des onglets dont l
 - **Les enfants restent ceux du parent** : leurs écouteurs, leurs lectures de store et leur état sont ceux du parent, et ils suivent son rendu. Le composant qui les reçoit les garde quand il se re-rend seul.
 - **Un emplacement `<:nom>`** se place directement dans un composant, sans attribut, une seule fois par nom. `<:content>` n'existe pas : les enfants directs remplissent déjà `content`.
 - **Dans l'éditeur**, `<:` dans un composant propose ses emplacements.
-- **Un exemple complet** : l'écran [Composition](exemples.html#composition) de l'app d'exemples.
+- **Un exemple complet** : l'écran [Composition](examples.html#composition) de l'app d'exemples.
 
 ## Références
 
@@ -2663,7 +2663,7 @@ Une méthode qui n'émet aucun élément ne rend rien : `render() {}` est un com
 
 ## Styles d'un composant
 
-Super n'a pas de système de styles : un composant est un élément du DOM comme un autre. L'[app d'exemples](exemples.html) suit une convention simple, que tu peux reprendre : **une feuille par composant**, posée à côté de lui (`index.css` pour un écran, `counter-controls.css` pour un sous-composant), importée par le composant, et dont les règles sont imbriquées sous son tag.
+Super n'a pas de système de styles : un composant est un élément du DOM comme un autre. L'[app d'exemples](examples.html) suit une convention simple, que tu peux reprendre : **une feuille par composant**, posée à côté de lui (`index.css` pour un écran, `counter-controls.css` pour un sous-composant), importée par le composant, et dont les règles sont imbriquées sous son tag.
 
 ```text title="src/@components/app-shell/index.css"
 app-shell {
@@ -2758,7 +2758,7 @@ export class SignupScreen extends SuperElement {
 }
 ```
 
-- `@form signup = { … };` se déclare dans le corps de la classe, une fois, comme les autres [déclarations de préparation](composants.html#declarations-de-preparation). Le type des champs vient de la valeur : pas d'annotation sur `@form`. Dans un composant écrit en `.ts`, l'équivalent est `signup = this.form({ … })`, qui lève une erreur s'il est appelé pendant `render`.
+- `@form signup = { … };` se déclare dans le corps de la classe, une fois, comme les autres [déclarations de préparation](components.html#declarations-de-preparation). Le type des champs vient de la valeur : pas d'annotation sur `@form`. Dans un composant écrit en `.ts`, l'équivalent est `signup = this.form({ … })`, qui lève une erreur s'il est appelé pendant `render`.
 - Le formulaire est prêt dès la construction : `render` peut lire ses valeurs et ses erreurs au premier rendu. Il se branche sur le store au montage du composant, et s'en débranche au démontage.
 - `signup.bind()` et `signup.field('email')` sont des directives d'élément : elles s'écrivent entre accolades dans la balise, `<form {signup.bind()}>` pour le formulaire, `<input {signup.field('email')} />` pour un champ (voir [Attributs](templates.html#attributs)).
 - `disabled={signup.submitting()}` pose l'attribut tant que la soumission est en cours, et le retire ensuite.
@@ -2783,7 +2783,7 @@ initial: {
 },
 ```
 
-Un tableau d'objets est une [liste dynamique](formulaires.html#listes-dynamiques). Un tableau de valeurs simples (`string[]`) est un champ à plusieurs valeurs : liste à choix multiples ou groupe de cases à cocher.
+Un tableau d'objets est une [liste dynamique](forms.html#listes-dynamiques). Un tableau de valeurs simples (`string[]`) est un champ à plusieurs valeurs : liste à choix multiples ou groupe de cases à cocher.
 
 ## Lier les champs : field
 
@@ -2992,7 +2992,7 @@ submit: {
 Ce qui se passe à la soumission :
 
 1. Tous les champs sont marqués « touchés » : les erreurs des règles apparaissent.
-2. S'il reste une erreur (règle, `validate` ou vérification refusée), rien n'est envoyé, et le [premier champ en erreur](formulaires.html#aller-a-la-premiere-erreur) est centré à l'écran et reçoit le focus.
+2. S'il reste une erreur (règle, `validate` ou vérification refusée), rien n'est envoyé, et le [premier champ en erreur](forms.html#aller-a-la-premiere-erreur) est centré à l'écran et reçoit le focus.
 3. Si une vérification asynchrone est en cours, la soumission l'attend, puis repart toute seule.
 4. Sinon, la commande part avec `toInput(valeurs)`. `submitting()` est vrai jusqu'à son issue.
 5. En cas d'échec, l'erreur s'affiche selon `failures`. En cas de succès, le formulaire efface ses erreurs et garde ses valeurs.
@@ -3214,7 +3214,7 @@ import { Button, Checkbox, CommandButton, commandOf, createToasts, Field, fieldO
 
 - **Importer le kit charge sa feuille de styles** : il n'y a pas de CSS à ajouter à la main.
 - `@super-ts/ui` dépend de `@super-ts/dom`, et de rien d'autre.
-- Dans ce dépôt, il est résolu par alias comme les autres paquets (`packages/ui/src`, déclaré dans `vite.config.ts` et dans les `paths` du `tsconfig.json`) : voir [Distribution](limites.html#distribution).
+- Dans ce dépôt, il est résolu par alias comme les autres paquets (`packages/ui/src`, déclaré dans `vite.config.ts` et dans les `paths` du `tsconfig.json`) : voir [Distribution](limitations.html#distribution).
 - Un composant du kit s'écrit par sa classe, comme tout composant enfant : `<Button>`, pas `<super-button>`.
 
 ## Le thème et les styles
@@ -3273,7 +3273,7 @@ Pour les navigateurs qui ne connaissent pas encore `light-dark()`, rien à faire
 
 ### Surcharger le thème
 
-Les variables se règlent à la portée voulue, du plus large au plus précis. Les exemples qui suivent sont ceux de la page « Thème » du kit dans l'app d'exemples (voir [Exemples](exemples.html#kit)), qui affiche chacun à côté de son effet. Pour toute l'app, quelques variables sur `:root`, dans une feuille chargée par `main.ts` :
+Les variables se règlent à la portée voulue, du plus large au plus précis. Les exemples qui suivent sont ceux de la page « Thème » du kit dans l'app d'exemples (voir [Exemples](examples.html#kit)), qui affiche chacun à côté de son effet. Pour toute l'app, quelques variables sur `:root`, dans une feuille chargée par `main.ts` :
 
 ```css title="src/kit-theme.css"
 /* Le thème du kit pour toute la démo : quelques variables sur :root suffisent. */
@@ -3333,12 +3333,12 @@ Les classes du kit commencent toutes par `super-` (`.super-button`, `.super-fiel
 
 ## Les champs de formulaire
 
-`Field`, `Select`, `Checkbox` et `RadioGroup` se relient à un champ de `@form` (voir [Formulaires](formulaires.html)) par `fieldOf(formulaire, 'nom')`. Chacun s'occupe de ce qu'on répète d'un champ à l'autre :
+`Field`, `Select`, `Checkbox` et `RadioGroup` se relient à un champ de `@form` (voir [Formulaires](forms.html)) par `fieldOf(formulaire, 'nom')`. Chacun s'occupe de ce qu'on répète d'un champ à l'autre :
 
 - le libellé, relié au contrôle (`<label for>`, ou la légende d'un `<fieldset>` pour `RadioGroup`) ;
 - l'aide (`hint`), affichée sous le champ ;
 - l'erreur de la règle ou du serveur, affichée sous le champ quand le formulaire la montre ;
-- « Vérification… » pendant une [vérification asynchrone](formulaires.html#verifications-asynchrones) ;
+- « Vérification… » pendant une [vérification asynchrone](forms.html#verifications-asynchrones) ;
 - `aria-invalid` quand il y a une erreur, et `aria-describedby` vers l'aide et l'erreur.
 
 ```ts title="src/@components/kit/forms.super (extrait)"
@@ -3410,11 +3410,11 @@ Tous reçoivent `field`, `label`, et facultativement `hint` et `class`.
 </CommandButton>
 ```
 
-- **« En cours »** vient de `pending` sur cette commande et cette entrée (voir [pending](flux.html#en-cours)) : un autre bouton qui remet un autre compteur à zéro n'est pas désactivé.
+- **« En cours »** vient de `pending` sur cette commande et cette entrée (voir [pending](commands-and-events.html#en-cours)) : un autre bouton qui remet un autre compteur à zéro n'est pas désactivé.
 - `pendingLabel` remplace le contenu pendant l'envoi ; sans lui, le contenu reste affiché.
 - `variant` (`primary` par défaut, `secondary`, `danger`) et `disabled` fonctionnent comme sur `Button`.
-- **L'issue revient comme pour tout envoi** : par les sélecteurs, ou par `nom:done` et `nom:failed` écoutés par `@on` (voir [Écouter l'issue](flux.html#ecouter-l-issue)). Le bouton n'affiche aucune issue lui-même.
-- Le bouton lit le contrat du composant qui l'a préparé, pendant son propre rendu : c'est lui, et lui seul, qui se re-rend quand la commande commence ou se termine (voir [Lire un sélecteur directement dans render](lire-un-store.html#sans-fonction-de-lecture)).
+- **L'issue revient comme pour tout envoi** : par les sélecteurs, ou par `nom:done` et `nom:failed` écoutés par `@on` (voir [Écouter l'issue](commands-and-events.html#ecouter-l-issue)). Le bouton n'affiche aucune issue lui-même.
+- Le bouton lit le contrat du composant qui l'a préparé, pendant son propre rendu : c'est lui, et lui seul, qui se re-rend quand la commande commence ou se termine (voir [Lire un sélecteur directement dans render](reading-a-store.html#sans-fonction-de-lecture)).
 
 ### Préparer une commande : commandOf
 
@@ -3512,7 +3512,7 @@ onReset() {
 
 ## Afficher une erreur : ErrorPanel
 
-`ErrorPanel` présente une erreur : un titre, le message, et le détail technique (le chemin et la pile) replié sous « Détails ». Il s'utilise dans un `renderError` (voir [Le renderError d'un composant](erreurs.html#render-error)), ou tel quel comme écran `'!'` du router, qui lui passe `error` et `path` :
+`ErrorPanel` présente une erreur : un titre, le message, et le détail technique (le chemin et la pile) replié sous « Détails ». Il s'utilise dans un `renderError` (voir [Le renderError d'un composant](errors.html#render-error)), ou tel quel comme écran `'!'` du router, qui lui passe `error` et `path` :
 
 ```ts
 .screens(() => ({
@@ -3530,7 +3530,7 @@ Props : `error`, `path`, `title` (« Une erreur est survenue » par défaut), `c
 
 ## Les fenêtres : Dialog, Modal, ConfirmDialog
 
-Comme tout composant Super, **une fenêtre montée est ouverte** : c'est le parent qui décide de la rendre ou non, souvent selon son état local. La fenêtre ne se ferme pas d'elle-même : elle le demande au parent par un événement, qui retire la fenêtre de son rendu (voir [Un dialogue](parents-enfants.html#un-dialogue)).
+Comme tout composant Super, **une fenêtre montée est ouverte** : c'est le parent qui décide de la rendre ou non, souvent selon son état local. La fenêtre ne se ferme pas d'elle-même : elle le demande au parent par un événement, qui retire la fenêtre de son rendu (voir [Un dialogue](parents-and-children.html#un-dialogue)).
 
 ```ts title="src/@components/kit/windows.super (extrait)"
 @state local = { window: null as 'dialog' | 'modal' | 'confirm' | null };
@@ -3810,7 +3810,7 @@ Par défaut, une table trop large pour la place disponible **défile de gauche �
 
 Avec `total` (le nombre de lignes côté serveur), `rows` est la page courante, déjà triée. La table émet `request` `{ sort, page, pageSize }` au montage, puis à chaque changement de tri, de page ou de taille de page, et le parent la relie à une commande qui charge la page demandée. Dans le cas le plus simple, la table garde elle-même son tri et sa page, et le parent n'a qu'à transmettre la demande ; un nouveau tri ramène alors à la première page.
 
-Pour qu'un lien, un rechargement ou le bouton précédent du navigateur retrouvent la même page, **le parent peut piloter le tri, la page et leur taille** par les props `sort`, `page` et `pageSize`, lus dans la query de la route. C'est ce que fait la page « Table » du kit dans l'app d'exemples, branchée sur l'API publique de test dummyjson.com (voir [Exemples](exemples.html#kit)). La query est décrite dans la route, et typée :
+Pour qu'un lien, un rechargement ou le bouton précédent du navigateur retrouvent la même page, **le parent peut piloter le tri, la page et leur taille** par les props `sort`, `page` et `pageSize`, lus dans la query de la route. C'est ce que fait la page « Table » du kit dans l'app d'exemples, branchée sur l'API publique de test dummyjson.com (voir [Exemples](examples.html#kit)). La query est décrite dans la route, et typée :
 
 ```ts title="src/routes.ts (extrait)"
 // Le tri et la page de la table branchée du kit : ils vivent dans l'URL.
@@ -3904,7 +3904,7 @@ export class KitTableScreen extends SuperElement {
 - `request` est émis après le rendu, jamais deux fois de suite pour la même demande.
 - `loading` (ici `pending('load')`) pose `aria-busy` sur la table, et affiche « Chargement… » tant qu'aucune ligne n'est arrivée.
 - **L'échec reste à l'écran** : la table n'affiche pas d'erreur. Le store garde un message (`loadErrorMessage`), et l'écran l'affiche avec un bouton qui relance la même demande.
-- **Les réponses peuvent arriver dans le désordre** : un tri puis un autre envoient deux `load`. Le store du catalogue ignore une réponse dépassée par une demande plus récente (voir [Exemples](exemples.html#kit)).
+- **Les réponses peuvent arriver dans le désordre** : un tri puis un autre envoient deux `load`. Le store du catalogue ignore une réponse dépassée par une demande plus récente (voir [Exemples](examples.html#kit)).
 
 Dans les deux modes, les en-têtes triables portent `aria-sort` et une place réservée à la flèche de tri (trier ne change aucune largeur), la pagination est une `<nav>` « Pagination » avec « Précédent », « Page 2 sur 5 » et « Suivant », `caption` nomme la table, et `emptyLabel` s'affiche quand il n'y a aucune ligne (« Aucune donnée » par défaut).
 
@@ -4092,7 +4092,7 @@ export const Router = defineRouter({
 - **Une clé facultative n'en a pas** (`search?: string` se décrit `String`) : elle vaut `undefined` quand elle manque.
 - **Un paramètre de chemin n'a jamais de défaut** : il est toujours présent dans l'URL qui correspond à la route.
 - **`params` décrit exactement les paramètres du chemin**, ni plus ni moins. Sans `params`, les paramètres du chemin sont des chaînes.
-- **Une liste `oneOf` doit couvrir toute l'union** : le compilateur refuse une valeur hors de l'union, mais pas une valeur oubliée. Avec `{ oneOf: ['label'] }` pour `'label' | 'value'`, `?sort=value` serait toujours lu comme invalide. Voir [ce qui n'est pas vérifié](garanties.html#ce-qui-n-est-pas-verifie).
+- **Une liste `oneOf` doit couvrir toute l'union** : le compilateur refuse une valeur hors de l'union, mais pas une valeur oubliée. Avec `{ oneOf: ['label'] }` pour `'label' | 'value'`, `?sort=value` serait toujours lu comme invalide. Voir [ce qui n'est pas vérifié](guarantees.html#ce-qui-n-est-pas-verifie).
 - **Dans la forme objet, la query ne s'écrit pas dans le chemin** : `{ path: '/counters?sort' }` est refusé, elle se décrit par `query`.
 
 ```ts
@@ -4116,7 +4116,7 @@ Ces erreurs sont aussi vérifiées à l'exécution, avec un message explicite : 
 
 ### .screens
 
-Associe un écran à chaque route. Un écran est une classe de composant (`SuperElement`) **sans props obligatoire** : il ne reçoit pas les valeurs de sa route en props, il les lit par `this.router.current` (voir [Lire la route dans l'écran](router.html#lire-les-parametres)). Le compilateur exige un écran par route. Deux clés facultatives s'ajoutent : `'*'`, l'écran affiché quand aucun chemin ne correspond, et `'!'`, l'écran affiché quand un écran plante sans être rattrapé (il est le seul à recevoir des props, `{ error, path }`, voir [Gérer les erreurs](erreurs.html#l-ecran-d-erreur)). À la place d'un écran, une route peut recevoir une [redirection](router.html#redirections).
+Associe un écran à chaque route. Un écran est une classe de composant (`SuperElement`) **sans props obligatoire** : il ne reçoit pas les valeurs de sa route en props, il les lit par `this.router.current` (voir [Lire la route dans l'écran](router.html#lire-les-parametres)). Le compilateur exige un écran par route. Deux clés facultatives s'ajoutent : `'*'`, l'écran affiché quand aucun chemin ne correspond, et `'!'`, l'écran affiché quand un écran plante sans être rattrapé (il est le seul à recevoir des props, `{ error, path }`, voir [Gérer les erreurs](errors.html#l-ecran-d-erreur)). À la place d'un écran, une route peut recevoir une [redirection](router.html#redirections).
 
 ```ts
 class HomeScreen extends SuperElement { /* … */ }
@@ -4347,7 +4347,7 @@ this.router.send('navigate', { to: 'counters', query: { sort: sort(), tag: [...t
 
 ## Redirections
 
-Une route peut renvoyer vers une autre, en déclarant `redirect(…)` à la place de son écran. C'est utile pour une page prévue mais pas encore construite, un ancien chemin qu'on garde pour les liens existants, ou un chemin qui n'a pas d'écran propre (dans l'[app d'exemples](exemples.html), `/form` renvoie vers `/profile` : voir [`routes.ts`](../examples/demo/src/routes.ts)).
+Une route peut renvoyer vers une autre, en déclarant `redirect(…)` à la place de son écran. C'est utile pour une page prévue mais pas encore construite, un ancien chemin qu'on garde pour les liens existants, ou un chemin qui n'a pas d'écran propre (dans l'[app d'exemples](examples.html), `/form` renvoie vers `/profile` : voir [`routes.ts`](../examples/demo/src/routes.ts)).
 
 ```ts
 export const Router = defineRouter({
@@ -4397,7 +4397,7 @@ export const Router = defineRouter({
 - **Il est synchrone**. Une vérification asynchrone (« la session est-elle encore valide ? ») se fait dans le store ; le guard lit son résultat.
 - Les routes sans guard passent toujours.
 
-L'app d'exemples protège la commande de la boutique : `/shop/checkout` renvoie vers `/shop` tant que le panier est vide. Voir [`routes.ts`](../examples/demo/src/routes.ts) et l'[exemple Boutique](exemples.html#boutique).
+L'app d'exemples protège la commande de la boutique : `/shop/checkout` renvoie vers `/shop` tant que le panier est vide. Voir [`routes.ts`](../examples/demo/src/routes.ts) et l'[exemple Boutique](examples.html#boutique).
 
 ```ts title="src/routes.ts (extrait)"
 .guards(({ read }) => ({
@@ -4588,11 +4588,11 @@ export class ShopScreen extends SuperElement {
 - **Tout composant peut poser un titre**, pas seulement un écran : les titres forment une pile, le dernier composant monté qui en pose un l'emporte, et à son démontage le titre précédent revient. Dans la démo, `KitPage` donne leur titre à toutes les pages du kit (`@title = () => this.heading;`).
 - **Ailleurs que dans la déclaration** (`mounted`, un gestionnaire), `this.page.title = …` fait la même chose.
 
-Le détail (pile, titre impératif, règles) est dans [Composants : le titre de la page](composants.html#titre-de-la-page).
+Le détail (pile, titre impératif, règles) est dans [Composants : le titre de la page](components.html#titre-de-la-page).
 
 ## Le router dans un composant
 
-Un composant lit et pilote le router par `this.router`, sans rien déclarer : la route active (`current`), une route précise (`at`), la navigation (`send`) et les liens (`href`) ; ses événements s'écoutent par une méthode `@on('router', 'navigated')`. Rien à importer de `routes.ts` : la vue est typée par les routes de l'app. Elle se lit partout, `render` compris, et un composant qui ne la lit pas se monte sans router. `@contract router` est refusé : le router se lit par `this.router`. Voir [Composants : les déclarations de préparation](composants.html#declarations-de-preparation).
+Un composant lit et pilote le router par `this.router`, sans rien déclarer : la route active (`current`), une route précise (`at`), la navigation (`send`) et les liens (`href`) ; ses événements s'écoutent par une méthode `@on('router', 'navigated')`. Rien à importer de `routes.ts` : la vue est typée par les routes de l'app. Elle se lit partout, `render` compris, et un composant qui ne la lit pas se monte sans router. `@contract router` est refusé : le router se lit par `this.router`. Voir [Composants : les déclarations de préparation](components.html#declarations-de-preparation).
 
 ```ts
 @selector route = this.router.current.name;   // 'examples' | 'counters' | … | null
@@ -4951,7 +4951,7 @@ C'est un bon usage de `subscribe` : synchroniser l'état avec un système extér
 | `root` | L'élément HTML sous lequel l'application vit. |
 | `stores` | Les handles de store à fournir aux composants rendus sous `root`, chacun sous le nom de son contrat. |
 | `router` | Le router créé par `createRouter`. Il est fourni sous le nom `'router'`, les clics sur les liens internes deviennent des navigations, et ses guards lisent les stores de cette application. |
-| `onError` | Reçoit toute erreur de composant rendu sous `root`, rattrapée ou non : `(error, { tag, phase, caughtBy })`. Voir [Gérer les erreurs](erreurs.html#onerror). |
+| `onError` | Reçoit toute erreur de composant rendu sous `root`, rattrapée ou non : `(error, { tag, phase, caughtBy })`. Voir [Gérer les erreurs](errors.html#onerror). |
 
 | Retour | Rôle |
 | --- | --- |
@@ -5058,7 +5058,7 @@ void counter.send('load');
 
 # Ports et adapters
 
-Les sources de données externes (localStorage, API HTTP, IndexedDB) ne sont pas un concept Super : ce sont de simples dépendances de tes stores. L'[app d'exemples](exemples.html) les organise en ports et adapters, un choix de projet : un `localStorage` pour les compteurs, un serveur simulé pour le formulaire, une vraie API HTTP (dummyjson.com) pour la table branchée du kit.
+Les sources de données externes (localStorage, API HTTP, IndexedDB) ne sont pas un concept Super : ce sont de simples dépendances de tes stores. L'[app d'exemples](examples.html) les organise en ports et adapters, un choix de projet : un `localStorage` pour les compteurs, un serveur simulé pour le formulaire, une vraie API HTTP (dummyjson.com) pour la table branchée du kit.
 
 ## Le principe
 
@@ -5351,7 +5351,7 @@ test('affiche la valeur et émet increment / decrement', async () => {
 | `stores` | Les stores à fournir (vrais ou faux), trouvés par le nom de leur contrat comme avec `createApp`. |
 | `router` | Un router, en général `createRouter(Router, { mode: 'memory', initialPath })`. Un écran monté seul y lit sa route : `initialPath: '/counters/cafes'` lui donne `id === 'cafes'`. |
 | `on` | Des écouteurs pour les événements du composant, typés par ses `emits`. |
-| `onError` | Reçoit les erreurs des composants montés, comme `createApp({ onError })`. Voir [Tester les erreurs](erreurs.html#tester-les-erreurs). |
+| `onError` | Reçoit les erreurs des composants montés, comme `createApp({ onError })`. Voir [Tester les erreurs](errors.html#tester-les-erreurs). |
 
 | Retour | Rôle |
 | --- | --- |
@@ -5487,7 +5487,7 @@ test('Router.href est typé par les chemins', () => {
 - **Chaque `// @ts-expect-error`** affirme « cette ligne doit être refusée ». Si un changement la rend acceptable, la compilation échoue (« Unused '@ts-expect-error' directive »).
 - `npm run check` lance le typecheck puis les tests : ces fichiers sont vérifiés à chaque passage.
 
-Le template d'un `.super` n'a pas besoin de tests de types : `npm run typecheck` le vérifie directement (props d'un enfant, attributs, événements, interpolations). Les types qu'un test voit d'un composant `.super` (ses props pour `mount`, ses `emits` pour `on`) viennent du TS virtuel, par la déclaration que `super-tsc` écrit dans `.super/types/` (voir [Outillage](outillage.html#verifier-les-types)).
+Le template d'un `.super` n'a pas besoin de tests de types : `npm run typecheck` le vérifie directement (props d'un enfant, attributs, événements, interpolations). Les types qu'un test voit d'un composant `.super` (ses props pour `mount`, ses `emits` pour `on`) viennent du TS virtuel, par la déclaration que `super-tsc` écrit dans `.super/types/` (voir [Outillage](tooling.html#verifier-les-types)).
 
 ## Qui teste quoi
 
@@ -5526,7 +5526,7 @@ src/@components/shop/index.super(29,48): error TS2339: Property 'prix' does not 
 src/@components/shop/index.super(42,10): error SUPER: Texte lu comme `for`, qui n’est pas valide (…). Si c’est du texte, entoure-le d’accolades : {'for (more info) see below'}
 ```
 
-Ce qui est vérifié est détaillé dans [Ce que le compilateur vérifie](garanties.html).
+Ce qui est vérifié est détaillé dans [Ce que le compilateur vérifie](guarantees.html).
 
 ## Compiler : le plugin Vite
 
@@ -5547,7 +5547,7 @@ Le code compilé garde les numéros de ligne du `.super`, et le plugin fournit u
 - **La complétion** dans les expressions, y compris pendant la frappe (`if (this.`, une clé de boucle, une déclaration pas encore terminée).
 - **La complétion dans les balises** : après `<`, les composants (ceux du projet pas encore importés ajoutent leur import) et les balises HTML ; après `</`, la balise à fermer ; dans une balise, ses attributs, `ref` et ses événements, ou les props (obligatoires d'abord) et les événements d'un composant.
 - **Le survol et l'aller à la définition** ; le survol de `@tag`, `@title`, `@prop`, `@emit` et des déclarations de préparation (`@contract`, `@on`…) affiche leur documentation (forme, valeurs permises, exemple).
-- **Le formatage du fichier** (voir [Formater](outillage.html#formater)).
+- **Le formatage du fichier** (voir [Formater](tooling.html#formater)).
 - **Le TS virtuel écrit sur disque à chaque frappe** : un `.ts` ouvert à côté voit tout de suite une nouvelle prop.
 
 > **TypeScript 6 dans l'éditeur, TypeScript 7 en ligne de commande**
@@ -5581,11 +5581,11 @@ L'extension de `editors/zed` déclare le langage « Super » pour les fichiers `
 - **Coloration** : la grammaire Tree-sitter des `.super` (`editors/tree-sitter-super`), celle de TSX étendue aux instructions écrites entre les balises : `if`, `for … ; key`, `switch` et les déclarations y sont colorés comme du code, pas comme du texte. Elle connaît aussi `@tag = …;` et `@title = …;` dans le corps d'une classe (règle `super_declaration`), que TSX refuserait.
 - **Commentaires** : entre des balises, `cmd+/` écrit `{/* … */}`.
 - **Formatage** : par le serveur, à l'enregistrement ; jamais par Prettier.
-- **Aller à la définition depuis un `.ts`** : vtsls suit la source map de la déclaration du composant et ouvre le `.super` (voir [le principe](outillage.html#ts-virtuel)).
+- **Aller à la définition depuis un `.ts`** : vtsls suit la source map de la déclaration du composant et ouvre le `.super` (voir [le principe](tooling.html#ts-virtuel)).
 
 Après une mise à jour du serveur, relance-le depuis un `.super` ouvert : `editor: restart language server`. Après une modification de l'extension elle-même : *Rebuild* dans le panneau des extensions. Après une mise à jour de la grammaire (comme l'ajout de `@tag` et `@title`), réinstalle l'extension : `zed: install dev extension` sur `editors/zed`.
 
-Les limites de ce montage sont listées dans [Limites](limites.html).
+Les limites de ce montage sont listées dans [Limites](limitations.html).
 
 ## Les paquets
 
@@ -5601,7 +5601,7 @@ Les limites de ce montage sont listées dans [Limites](limites.html).
 
 La plupart des erreurs d'usage de Super sont détectées avant l'exécution : par TypeScript, ou par le plugin Vite. Cette page liste ce qui est vérifié, où, et ce qui ne l'est pas.
 
-Sauf la section sur les [templates](garanties.html#templates-super), chaque extrait ci-dessous vient des tests de types du dépôt (`packages/*/src/*.test-d.ts`) : chaque `@ts-expect-error` y fait échouer `npm run typecheck` si l'erreur attendue disparaît. Les extraits utilisent leur contrat d'essai `basket` : commandes `add({ sku })`, `clear()` et `save({ id })` (qui déclare `Outcome<{ count: number }, 'empty' | 'offline'>`), événements `emptied` et `saved: { id }`, sélecteurs `quantity(sku)`, `count()`, `entries()`.
+Sauf la section sur les [templates](guarantees.html#templates-super), chaque extrait ci-dessous vient des tests de types du dépôt (`packages/*/src/*.test-d.ts`) : chaque `@ts-expect-error` y fait échouer `npm run typecheck` si l'erreur attendue disparaît. Les extraits utilisent leur contrat d'essai `basket` : commandes `add({ sku })`, `clear()` et `save({ id })` (qui déclare `Outcome<{ count: number }, 'empty' | 'offline'>`), événements `emptied` et `saved: { id }`, sélecteurs `quantity(sku)`, `count()`, `entries()`.
 
 ## Contrats et stores
 
@@ -5730,7 +5730,7 @@ render() {
 
 ## Composants
 
-Ces tests écrivent `Dialog.create(…)` : c'est ce que devient `<Dialog … />` dans le TS virtuel d'un `.super`, d'où les mêmes erreurs dans un template (voir [plus bas](garanties.html#templates-super)).
+Ces tests écrivent `Dialog.create(…)` : c'est ce que devient `<Dialog … />` dans le TS virtuel d'un `.super`, d'où les mêmes erreurs dans un template (voir [plus bas](guarantees.html#templates-super)).
 
 ```ts
 class Dialog extends SuperElement<{ props: { question: string }; emits: { answered: { confirmed: boolean }; closed: void } }> {
@@ -5881,7 +5881,7 @@ Le TS virtuel en tire les champs qu'on écrivait à la main (`virtual.test.ts`) 
 - `this.page.title` ne se lit pas : « `` `this.page.title` se pose, il ne se lit pas `` » ;
 - la pile est testée : le dernier composant monté qui pose un titre l'emporte, celui du dessous suit ses données sans s'afficher et revient au démontage ; un titre en fonction suit les valeurs qu'il lit, comme `render`.
 
-Le code compilé garde les numéros de ligne de la source, et sa source map ramène le JS final à la ligne et à la colonne du `.super` (`compile.test.ts`). Voir [Templates](templates.html) et [Outillage](outillage.html).
+Le code compilé garde les numéros de ligne de la source, et sa source map ramène le JS final à la ligne et à la colonne du `.super` (`compile.test.ts`). Voir [Templates](templates.html) et [Outillage](tooling.html).
 
 ## Router
 
@@ -6055,7 +6055,7 @@ Voir [Architecture](architecture.html#les-regles).
 - Un composant écrit par son tag (`<counter-screen>` dans un template) au lieu de sa classe (`<CounterScreen />`) : une balise avec tiret est un élément personnalisé quelconque, ni ses attributs ni ses événements ne sont vérifiés, et ce n'est pas supporté.
 - Un `import * as` de `@super-ts/dom` ou `@super-ts/core` hors des dossiers imposés : la règle de placement ne voit que les imports nommés.
 
-Voir [Limites](limites.html).
+Voir [Limites](limitations.html).
 
 ---
 
@@ -6086,7 +6086,7 @@ export class CounterContract extends SuperContract<CounterTypes> {
 }
 ```
 
-Une commande a au plus un paramètre, le body, et déclare `void` ou `Outcome<Résultat, Raisons>`. Les sélecteurs sont mémoïsés ; `pending` est fourni par Super et ne peut pas être déclaré. Voir [Contrats](contrats.html) et [Sélecteurs](selecteurs.html).
+Une commande a au plus un paramètre, le body, et déclare `void` ou `Outcome<Résultat, Raisons>`. Les sélecteurs sont mémoïsés ; `pending` est fourni par Super et ne peut pas être déclaré. Voir [Contrats](contracts.html) et [Sélecteurs](selectors.html).
 
 ### SuperStore
 
@@ -6141,7 +6141,7 @@ pending('increment', { id })   // sur les sélecteurs : this.counter.selectors.p
 new CommandFailure(command, reason, input)   // l'erreur de la promesse de send pour un échec déclaré
 ```
 
-Voir [Le cycle de vie d'une commande](flux.html#le-cycle-de-vie).
+Voir [Le cycle de vie d'une commande](commands-and-events.html#le-cycle-de-vie).
 
 ### Types
 
@@ -6188,10 +6188,10 @@ export class NotFoundScreen extends SuperElement {
 
 - **Un import sans extension trouve le `.super`** : `import { NotFoundScreen } from '@components/not-found'` charge `not-found/index.super`, depuis un `.super` comme depuis un `.ts` (`routes.ts`, `main.ts`, un test), avec les types.
 - **Une méthode qui émet des éléments** (`render`, `renderError`, une méthode `#privée`) ne renvoie rien : `return;` s'arrête en gardant ce qui est émis, `return x;` ne compile pas.
-- **Les déclarations s'écrivent dans la classe**, sans générique : `@tag`, `@prop`, `@emit`, `@title`, et pour la préparation `@contract`, `@selector`, `@state`, `@form`, `@ref`, `@on` (voir [Déclarations du composant](composants.html#declarations) et [Préparer](composants.html#declarations-de-preparation)). Un composant écrit dans un `.ts` garde `static tag`, le générique `SuperElement<{ props; emits }>` et les méthodes (`this.contract(…)`, `this.selector(…)`…).
+- **Les déclarations s'écrivent dans la classe**, sans générique : `@tag`, `@prop`, `@emit`, `@title`, et pour la préparation `@contract`, `@selector`, `@state`, `@form`, `@ref`, `@on` (voir [Déclarations du composant](components.html#declarations) et [Préparer](components.html#declarations-de-preparation)). Un composant écrit dans un `.ts` garde `static tag`, le générique `SuperElement<{ props; emits }>` et les méthodes (`this.contract(…)`, `this.selector(…)`…).
 - **Un module sans template** (contrat, store, domaine, routes, `main.ts`, test) reste un `.ts`.
 
-Voir [Templates](templates.html#fichiers-super) pour la syntaxe, et [Outillage](outillage.html#verifier-les-types) pour la vérification des types et l'éditeur.
+Voir [Templates](templates.html#fichiers-super) pour la syntaxe, et [Outillage](tooling.html#verifier-les-types) pour la vérification des types et l'éditeur.
 
 ### SuperElement
 
@@ -6230,26 +6230,26 @@ CounterCard.eventName('answered')     // nom DOM d'un événement émis, pour un
 | Membre | Rôle |
 | --- | --- |
 | `@tag = 'x-y';` | Le nom du custom element : obligatoire (sauf classe `abstract`), une chaîne en minuscules avec un tiret. Remplace `static tag` dans un `.super`. |
-| `@prop nom: T;` | Une prop : obligatoire (`nom: T`), facultative (`nom?: T`) ou avec une valeur par défaut calculée une fois par instance (`nom: T = valeur`). Pas de nom de propriété des éléments HTML (`id`, `title`…) ; `page` est réservé. Voir [Déclarations du composant](composants.html#declarations). |
+| `@prop nom: T;` | Une prop : obligatoire (`nom: T`), facultative (`nom?: T`) ou avec une valeur par défaut calculée une fois par instance (`nom: T = valeur`). Pas de nom de propriété des éléments HTML (`id`, `title`…) ; `page` est réservé. Voir [Déclarations du composant](components.html#declarations). |
 | `@emit nom: T;` | Un événement émis vers le parent (`void` s'il ne transporte rien). |
-| `@title = …;` | Le titre de la page tant que le composant est monté : une chaîne, ou une fonction suivie (recalculée après chaque rendu). Voir [Le titre de la page](composants.html#titre-de-la-page). |
+| `@title = …;` | Le titre de la page tant que le composant est monté : une chaîne, ou une fonction suivie (recalculée après chaque rendu). Voir [Le titre de la page](components.html#titre-de-la-page). |
 | `this.nom` | Une prop déclarée, lisible dès les champs, toujours à sa valeur courante. Une copie faite à la construction ne suit pas les changements : lire dans `render` ou `selector` pour une valeur à jour. |
 | `this.props` | Toutes les props, en lecture seule, en un objet. Dans un `.super`, on lit chaque prop par `this.nom`. |
-| `@contract nom;`, `@contract nom = 'contrat';` | La vue du store fourni pour ce contrat, lue par `this.nom` : `selectors`, `send` (sans attente), `on`. Une fois par contrat, tous les contrats sauf le router. Forme `.ts` : `this.contract(nom)`. Voir [Lire un store](lire-un-store.html). |
+| `@contract nom;`, `@contract nom = 'contrat';` | La vue du store fourni pour ce contrat, lue par `this.nom` : `selectors`, `send` (sans attente), `on`. Une fois par contrat, tous les contrats sauf le router. Forme `.ts` : `this.contract(nom)`. Voir [Lire un store](reading-a-store.html). |
 | `this.router` | La vue du router de l'app, sans déclaration et lisible partout (`render` compris) : la route active `current` (`name()`, `path()`, `params.x()`, `query.x()`), une route précise `at(nom)`, commandes `navigate`, `visit`, `back`, et `href`. Voir [Le router dans un composant](router.html#le-router-est-un-store). |
 | `this.page.title = …` | Pose le titre de la page (`TitleValue` : une chaîne ou une fonction suivie) tant que le composant est monté. Dans un champ ou le constructeur, repris à chaque montage (ce que fait `@title`) ; une fois monté, remplace le titre du composant jusqu'au démontage. En écriture seulement ; interdit pendant `render`. Le dernier composant monté qui pose un titre l'emporte. |
 | `@selector nom = lecture;` | `{ value }` : la valeur d'un sélecteur, telle quelle ; le composant ne se re-rend que si elle change. Sur une valeur de route (`@selector id = this.router.current.params.id;`), aussi `isValid()`. Forme `.ts` : `this.selector(lecture)`. |
-| `@state nom = initial;` | `{ get(), set(patch) }`. Forme `.ts` : `this.state(initial)`. Voir [État local](etat-local.html). |
-| `@form nom = options;` | Un formulaire. Forme `.ts` : `this.form(options)`. Voir [Formulaires](formulaires.html). |
+| `@state nom = initial;` | `{ get(), set(patch) }`. Forme `.ts` : `this.state(initial)`. Voir [État local](local-state.html). |
+| `@form nom = options;` | Un formulaire. Forme `.ts` : `this.form(options)`. Voir [Formulaires](forms.html). |
 | `@ref nom: T;` | Une référence vers un élément du template, posée par `ref={this.nom}` (refusée si la balise n'est pas un `T`) ; `.value` vaut `undefined` tant que l'élément n'est pas rendu. Forme `.ts` : `this.ref<T>()`. |
-| `@on('contrat', 'événement') méthode(payload) { … }` | Un écouteur sur une méthode, appelée à chaque événement tant que le composant est monté ; le paramètre est typé par l'événement. Pas besoin de `@contract` ; `'router'` écoute le router. Forme `.ts` : `this.contract('contrat').on('événement', …)` dans le constructeur. Voir [Les écouteurs](composants.html#declarer-un-ecouteur). |
+| `@on('contrat', 'événement') méthode(payload) { … }` | Un écouteur sur une méthode, appelée à chaque événement tant que le composant est monté ; le paramètre est typé par l'événement. Pas besoin de `@contract` ; `'router'` écoute le router. Forme `.ts` : `this.contract('contrat').on('événement', …)` dans le constructeur. Voir [Les écouteurs](components.html#declarer-un-ecouteur). |
 | `this.emit(nom, payload?)` | Événement déclaré par `@emit`, vers le parent, écouté par `on:nom={…}` sur la balise (ou `{ on: { nom } }` avec `create`). |
 | `this.signal` | Avorté au démontage. |
 | `mounted()`, `unmounted()` | Après le premier rendu, à chaque montage ; au démontage. |
 | `render()` | Émet le HTML du composant, à chaque rendu. `render() {}` ne rend rien. |
-| `renderError(error)` | Facultatif : émet ses éléments à la place de `render` si `render` ou un descendant plante. Voir [Gérer les erreurs](erreurs.html). |
+| `renderError(error)` | Facultatif : émet ses éléments à la place de `render` si `render` ou un descendant plante. Voir [Gérer les erreurs](errors.html). |
 
-`@contract`, `@selector`, `@state`, `@form`, `@ref` et `@on` se déclarent dans le corps de la classe ; dans un `.ts`, leurs méthodes s'appellent dans un champ ou le constructeur, jamais pendant `render`, et lèvent une erreur sinon ; `this.page.title` ne se pose pas non plus pendant `render`. Voir [Composants](composants.html) et [Parents et enfants](parents-enfants.html).
+`@contract`, `@selector`, `@state`, `@form`, `@ref` et `@on` se déclarent dans le corps de la classe ; dans un `.ts`, leurs méthodes s'appellent dans un champ ou le constructeur, jamais pendant `render`, et lèvent une erreur sinon ; `this.page.title` ne se pose pas non plus pendant `render`. Voir [Composants](components.html) et [Parents et enfants](parents-and-children.html).
 
 ### Formulaires
 
@@ -6268,7 +6268,7 @@ CounterCard.eventName('answered')     // nom DOM d'un événement émis, pour un
 // list(nom) → items() (key, index, value, field, error) · add(ligne) · remove(ligne | index)
 ```
 
-`submit.to` est une vue déclarée par `@contract` avant le formulaire (`this.contract(…)` dans un `.ts`). Voir [Formulaires](formulaires.html).
+`submit.to` est une vue déclarée par `@contract` avant le formulaire (`this.contract(…)` dans un `.ts`). Voir [Formulaires](forms.html).
 
 ### Templates
 
@@ -6301,7 +6301,7 @@ onError: (error, { tag, phase, caughtBy }) => void   // phase : setup · render 
 CONTEXT_REQUEST                                    // nom de l'événement DOM par lequel un composant demande un store
 ```
 
-Voir [Brancher l'application](application.html) et [Gérer les erreurs](erreurs.html).
+Voir [Brancher l'application](application.html) et [Gérer les erreurs](errors.html).
 
 ### Router
 
@@ -6382,7 +6382,7 @@ FakeCommands<'nom'>                                  // le type des commands d'u
 SentCommand                                          // une entrée de sent : { name, args }
 ```
 
-Voir [Tester](tests.html).
+Voir [Tester](testing.html).
 
 ## @super-ts/ui
 
@@ -6418,7 +6418,7 @@ Les briques du plugin sont exportées aussi, pour un outillage maison :
 | `contractsModule`, `contractsDeclaration` | Produisent le module qui inscrit les contrats, et le contenu de `contracts.d.ts`. |
 | `hotModuleCode` | `(code)` : le code ajouté en dev à un module de composant pour le remplacement à chaud, `null` s'il ne déclare aucun composant. |
 
-Le plugin compile aussi chaque `.super` en TypeScript, puis en JS, avec une source map vers le `.super`, et ajoute `.super` aux extensions résolues. Voir [Architecture](architecture.html#le-plugin-vite) et [Outillage](outillage.html#vite).
+Le plugin compile aussi chaque `.super` en TypeScript, puis en JS, avec une source map vers le `.super`, et ajoute `.super` aux extensions résolues. Voir [Architecture](architecture.html#le-plugin-vite) et [Outillage](tooling.html#vite).
 
 ## @super-ts/lint
 
@@ -6432,7 +6432,7 @@ Voir [L'ordre des imports](architecture.html#ordre-des-imports).
 
 # Limites
 
-Super est un draft. Voici ce qu'il fait mal ou vérifie mal aujourd'hui. Ce qu'il ne fait pas encore est dans [Chantiers et questions ouvertes](chantiers.html).
+Super est un draft. Voici ce qu'il fait mal ou vérifie mal aujourd'hui. Ce qu'il ne fait pas encore est dans [Chantiers et questions ouvertes](roadmap.html).
 
 ## Limites connues
 
@@ -6463,7 +6463,7 @@ La syntaxe est en version 0 (`packages/lang/SPEC.md`). Ses limites assumées :
 - Sur une balise native, `on:` n'accepte que les événements de cette balise : écouter sur un `<div>` un événement personnalisé remonté d'un enfant n'est pas permis.
 - Une signature d'appel générique dans un type littéral (`{ <T>(x: T): T }`) est prise pour un élément : sors-la dans un `type` ou une `interface` d'un fichier `.ts`.
 
-Et côté outillage (voir [Outillage](outillage.html)) :
+Et côté outillage (voir [Outillage](tooling.html)) :
 
 - Biome ne lit pas les `.super` : leur TS est formaté par Biome à travers le formateur des `.super`, mais l'ordre de leurs imports n'est pas contrôlé.
 - Dans Zed, l'extension des `.super` (`editors/zed`) s'installe en extension de développement, et sa grammaire (`editors/tree-sitter-super`) est compilée depuis un dépôt git local, désigné par un chemin absolu dans `extension.toml` tant que la grammaire n'est pas publiée.
@@ -6496,13 +6496,13 @@ Et côté outillage (voir [Outillage](outillage.html)) :
 
 - Les paquets ne sont pas publiés : ils sont résolus par alias depuis `packages/*/src`.
 
-Ce qui manque encore, les suites mises de côté et les questions en discussion sont dans [Chantiers et questions ouvertes](chantiers.html).
+Ce qui manque encore, les suites mises de côté et les questions en discussion sont dans [Chantiers et questions ouvertes](roadmap.html).
 
 ---
 
 # Chantiers et questions ouvertes
 
-Ce qui manque à Super pour une vraie app, les suites mises de côté, et les questions encore en discussion. Rien de tout cela n'est décidé : c'est la liste d'où partira le prochain chantier. Ce que Super ne fait pas bien aujourd'hui est dans [Limites](limites.html).
+Ce qui manque à Super pour une vraie app, les suites mises de côté, et les questions encore en discussion. Rien de tout cela n'est décidé : c'est la liste d'où partira le prochain chantier. Ce que Super ne fait pas bien aujourd'hui est dans [Limites](limitations.html).
 
 ## Les chantiers qui manquent le plus
 

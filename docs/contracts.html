@@ -54,7 +54,7 @@
       <ol>
         <li><strong>Un type</strong> (<code>CounterTypes</code>) qui décrit son état, ses commandes et ses événements, pour le compilateur.</li>
         <li><strong>Une classe</strong> qui étend <code>SuperContract&lt;CounterTypes&gt;</code> et se nomme dans son constructeur : <code>super({ name: 'counter' })</code>. Ce nom est la clé du contrat dans toute l'app : un composant déclare <code>@contract counter;</code>, un store déclare <code>super({ contract: 'counter', … })</code>.</li>
-        <li><strong>Des méthodes</strong>, facultatives : chacune est un sélecteur, une lecture autorisée de l'état (voir <a href="selecteurs.html">Sélecteurs</a>).</li>
+        <li><strong>Des méthodes</strong>, facultatives : chacune est un sélecteur, une lecture autorisée de l'état (voir <a href="selectors.html">Sélecteurs</a>).</li>
       </ol>
       <p>
         Un contrat vit dans <code>src/@core/&lt;nom&gt;/contract.ts</code>, un dossier par contrat, à côté de son store. Le
@@ -105,7 +105,7 @@
       <p>Une commande déclare l'un ou l'autre :</p>
       <ul>
         <li><strong><code>void</code></strong> : elle n'a pas d'issue particulière à publier (en dehors d'un échec inattendu).</li>
-        <li><strong><code>Outcome&lt;Résultat, Raisons&gt;</code></strong> : ce que produit son succès (publié dans <code>increment:done</code>), et la liste fermée de ses raisons d'échec (publiées dans <code>increment:failed</code>). Voir <a href="flux.html#declarer-l-issue">Déclarer l'issue</a>.</li>
+        <li><strong><code>Outcome&lt;Résultat, Raisons&gt;</code></strong> : ce que produit son succès (publié dans <code>increment:done</code>), et la liste fermée de ses raisons d'échec (publiées dans <code>increment:failed</code>). Voir <a href="commands-and-events.html#declarer-l-issue">Déclarer l'issue</a>.</li>
       </ul>
       <div class="callout warn">
         <strong>Rien ne revient à l'appelant</strong>
@@ -123,7 +123,7 @@
       </div>
 
       <h3 id="events">events : les annonces</h3>
-      <p class="example-link">Dans l'<a href="exemples.html#boutique">exemple Boutique</a> : <a href="../examples/demo/src/@core/cart/contract.ts"><code>cart/contract.ts</code></a>.</p>
+      <p class="example-link">Dans l'<a href="examples.html#boutique">exemple Boutique</a> : <a href="../examples/demo/src/@core/cart/contract.ts"><code>cart/contract.ts</code></a>.</p>
       <p>
         Chaque commande a déjà ses événements, publiés par Super : <code>increment:done</code> et
         <code>increment:failed</code>. La clé <code>events</code> sert aux autres faits que le store annonce, ceux qui ne
@@ -156,7 +156,7 @@
         <thead><tr><th>Qui</th><th>Pour quoi</th></tr></thead>
         <tbody>
           <tr><td>Le store</td><td><code>class CounterStore extends SuperStore&lt;CounterContract&gt; implements Commands&lt;CounterStore&gt;</code> : le compilateur exige une méthode par commande et vérifie les événements émis.</td></tr>
-          <tr><td>Les composants</td><td><code>@contract counter;</code> pour lire par les sélecteurs et envoyer, <code>@on('counter', …)</code> pour écouter (voir <a href="composants.html#declarations-de-preparation">les déclarations</a>).</td></tr>
+          <tr><td>Les composants</td><td><code>@contract counter;</code> pour lire par les sélecteurs et envoyer, <code>@on('counter', …)</code> pour écouter (voir <a href="components.html#declarations-de-preparation">les déclarations</a>).</td></tr>
           <tr><td><code>createApp</code></td><td>Retrouve le bon store pour un composant : le nom du contrat sert de clé.</td></tr>
           <tr><td>Le plugin Vite</td><td>Lit les contrats de <code>src/@core/</code>, génère <code>contracts.d.ts</code>, refuse deux contrats du même nom.</td></tr>
           <tr><td>Les tests</td><td><code>fakeStore('counter', …)</code> pour un composant ; <code>store.selectors.count('cafes')</code> sur le handle d'un vrai store.</td></tr>

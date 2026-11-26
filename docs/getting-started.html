@@ -34,7 +34,7 @@
       <p>
         Les composants s'écrivent dans des fichiers <code>.super</code> : le plugin Vite les compile, et
         <code>npm run typecheck</code> les vérifie. Pour avoir les erreurs et la complétion dans ton éditeur, branche le
-        serveur de langage des <code>.super</code> (voir <a href="outillage.html#editeur">Outillage</a>).
+        serveur de langage des <code>.super</code> (voir <a href="tooling.html#editeur">Outillage</a>).
       </p>
 
       <h2 id="l-app-d-exemple" data-llm="skip">L'app d'exemple</h2>
@@ -52,7 +52,7 @@
       </ul>
       <p>
         Presque tous les extraits de cette doc en viennent : quand un extrait est tiré de l'exemple, un lien mène au fichier
-        complet. La page <a href="exemples.html">Exemples</a> détaille ce que montre chaque fichier.
+        complet. La page <a href="examples.html">Exemples</a> détaille ce que montre chaque fichier.
       </p>
       <script type="text/x-code" data-lang="text">
         examples/demo/src/
@@ -111,7 +111,7 @@
       <p>
         Le plugin Vite repère le contrat et l'inscrit dans <code>src/@core/contracts.d.ts</code>, un fichier généré
         (à committer, jamais à écrire à la main). C'est ce qui fait connaître <code>'theme'</code> au compilateur partout
-        dans l'app. Voir <a href="contrats.html">Contrats</a> et <a href="selecteurs.html">Sélecteurs</a>.
+        dans l'app. Voir <a href="contracts.html">Contrats</a> et <a href="selectors.html">Sélecteurs</a>.
       </p>
 
       <h3 id="etape-2-le-store">Étape 2 : le store</h3>
@@ -165,8 +165,8 @@
         <code>render()</code> ne renvoie rien : le bouton est écrit comme une instruction, <code>on:click</code> pose
         l'écouteur et <code>{…}</code> affiche une valeur (voir <a href="templates.html">Templates</a>). Le composant
         n'importe rien de <code>src/@core/</code> : <code>@contract theme;</code> suffit, et le compilateur connaît
-        les sélecteurs et les commandes du contrat. Voir <a href="composants.html">Composants</a> et
-        <a href="lire-un-store.html">Lire un store</a>.
+        les sélecteurs et les commandes du contrat. Voir <a href="components.html">Composants</a> et
+        <a href="reading-a-store.html">Lire un store</a>.
       </p>
 
       <h3 id="etape-4-le-branchement">Étape 4 : le branchement</h3>
@@ -213,13 +213,13 @@
         avec <code>mount</code>. Un test peut importer un store : le plugin ne vérifie pas les fichiers
         <code>*.test.ts</code>. Pour tester le
         composant seul, remplace le vrai store par <code>fakeStore('theme', { state: { mode: 'dark' } })</code>. Voir
-        <a href="tests.html">Tester</a>.
+        <a href="testing.html">Tester</a>.
       </p>
 
       <h2 id="et-ensuite" data-llm="skip">Et ensuite</h2>
       <ul>
         <li>Persister le thème : ajoute un port <code>ThemeStorage</code> et un adapter <code>localStorage</code> (voir <a href="ports-adapters.html">Ports et adapters</a>).</li>
-        <li>Comprendre le trajet complet d'une action : <a href="flux.html">Commandes et événements</a>.</li>
+        <li>Comprendre le trajet complet d'une action : <a href="commands-and-events.html">Commandes et événements</a>.</li>
         <li>Ajouter des pages : <a href="router.html">Router</a>.</li>
       </ul>
     </article>

@@ -2,7 +2,7 @@
 //
 // 1. build, puis `npm pack` de chaque paquet ;
 // 2. une app Vite vierge dans un dossier temporaire, qui installe les tarballs ;
-// 3. l'exemple de docs/demarrer.html : contrat, store, composant .super, test ;
+// 3. l'exemple de docs/getting-started.html : contrat, store, composant .super, test ;
 // 4. vite build, super-tsc, vitest, super-fmt, biome avec @super-ts/lint ;
 // 5. les tests du serveur de langage, sur le serveur installé.
 //
@@ -152,7 +152,7 @@ write(
 `,
 );
 
-// 3. l'exemple de docs/demarrer.html
+// 3. l'exemple de docs/getting-started.html
 write(
   'src/@core/theme/contract.ts',
   `

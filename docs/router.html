@@ -190,7 +190,7 @@
         <li><strong>Une clé facultative n'en a pas</strong> (<code>search?: string</code> se décrit <code>String</code>) : elle vaut <code>undefined</code> quand elle manque.</li>
         <li><strong>Un paramètre de chemin n'a jamais de défaut</strong> : il est toujours présent dans l'URL qui correspond à la route.</li>
         <li><strong><code>params</code> décrit exactement les paramètres du chemin</strong>, ni plus ni moins. Sans <code>params</code>, les paramètres du chemin sont des chaînes.</li>
-        <li><strong>Une liste <code>oneOf</code> doit couvrir toute l'union</strong> : le compilateur refuse une valeur hors de l'union, mais pas une valeur oubliée. Avec <code>{ oneOf: ['label'] }</code> pour <code>'label' | 'value'</code>, <code>?sort=value</code> serait toujours lu comme invalide. Voir <a href="garanties.html#ce-qui-n-est-pas-verifie">ce qui n'est pas vérifié</a>.</li>
+        <li><strong>Une liste <code>oneOf</code> doit couvrir toute l'union</strong> : le compilateur refuse une valeur hors de l'union, mais pas une valeur oubliée. Avec <code>{ oneOf: ['label'] }</code> pour <code>'label' | 'value'</code>, <code>?sort=value</code> serait toujours lu comme invalide. Voir <a href="guarantees.html#ce-qui-n-est-pas-verifie">ce qui n'est pas vérifié</a>.</li>
         <li><strong>Dans la forme objet, la query ne s'écrit pas dans le chemin</strong> : <code>{ path: '/counters?sort' }</code> est refusé, elle se décrit par <code>query</code>.</li>
       </ul>
       <script type="text/x-code">
@@ -221,7 +221,7 @@
         <code>this.router.current</code> (voir <a href="#lire-les-parametres">Lire la route dans l'écran</a>). Le
         compilateur exige un écran par route. Deux clés facultatives s'ajoutent : <code>'*'</code>, l'écran affiché quand
         aucun chemin ne correspond, et <code>'!'</code>, l'écran affiché quand un écran plante sans être rattrapé (il est le
-        seul à recevoir des props, <code>{ error, path }</code>, voir <a href="erreurs.html#l-ecran-d-erreur">Gérer les
+        seul à recevoir des props, <code>{ error, path }</code>, voir <a href="errors.html#l-ecran-d-erreur">Gérer les
         erreurs</a>). À la place d'un écran, une route peut recevoir une <a href="#redirections">redirection</a>.
       </p>
       <script type="text/x-code">
@@ -495,7 +495,7 @@
       <p>
         Une route peut renvoyer vers une autre, en déclarant <code>redirect(…)</code> à la place de son écran. C'est utile
         pour une page prévue mais pas encore construite, un ancien chemin qu'on garde pour les liens existants, ou un
-        chemin qui n'a pas d'écran propre (dans l'<a href="exemples.html">app d'exemples</a>, <code>/form</code> renvoie vers <code>/profile</code> : voir <a href="../examples/demo/src/routes.ts"><code>routes.ts</code></a>).
+        chemin qui n'a pas d'écran propre (dans l'<a href="examples.html">app d'exemples</a>, <code>/form</code> renvoie vers <code>/profile</code> : voir <a href="../examples/demo/src/routes.ts"><code>routes.ts</code></a>).
       </p>
       <script type="text/x-code">
         export const Router = defineRouter({
@@ -551,7 +551,7 @@
 
       <p>
         L'app d'exemples protège la commande de la boutique : <code>/shop/checkout</code> renvoie vers <code>/shop</code>
-        tant que le panier est vide. Voir <a href="../examples/demo/src/routes.ts"><code>routes.ts</code></a> et l'<a href="exemples.html#boutique">exemple Boutique</a>.
+        tant que le panier est vide. Voir <a href="../examples/demo/src/routes.ts"><code>routes.ts</code></a> et l'<a href="examples.html#boutique">exemple Boutique</a>.
       </p>
       <script type="text/x-code" data-title="src/routes.ts (extrait)" data-source="examples/demo/src/routes.ts">
         .guards(({ read }) => ({
@@ -772,7 +772,7 @@
         <li><strong>Tout composant peut poser un titre</strong>, pas seulement un écran : les titres forment une pile, le dernier composant monté qui en pose un l'emporte, et à son démontage le titre précédent revient. Dans la démo, <code>KitPage</code> donne leur titre à toutes les pages du kit (<code>@title = () =&gt; this.heading;</code>).</li>
         <li><strong>Ailleurs que dans la déclaration</strong> (<code>mounted</code>, un gestionnaire), <code>this.page.title = …</code> fait la même chose.</li>
       </ul>
-      <p>Le détail (pile, titre impératif, règles) est dans <a href="composants.html#titre-de-la-page">Composants : le titre de la page</a>.</p>
+      <p>Le détail (pile, titre impératif, règles) est dans <a href="components.html#titre-de-la-page">Composants : le titre de la page</a>.</p>
 
       <h2 id="le-router-est-un-store">Le router dans un composant</h2>
       <p>
@@ -781,7 +781,7 @@
         (<code>href</code>) ; ses événements s'écoutent par une méthode <code>@on('router', 'navigated')</code>. Rien à importer de <code>routes.ts</code> : la vue est typée par
         les routes de l'app. Elle se lit partout, <code>render</code> compris, et un composant qui ne la lit pas se monte
         sans router. <code>@contract router</code> est refusé : le router se lit par <code>this.router</code>. Voir
-        <a href="composants.html#declarations-de-preparation">Composants : les déclarations de préparation</a>.
+        <a href="components.html#declarations-de-preparation">Composants : les déclarations de préparation</a>.
       </p>
       <script type="text/x-code">
         @selector route = this.router.current.name;   // 'examples' | 'counters' | … | null

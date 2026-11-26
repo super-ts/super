@@ -6,49 +6,49 @@ Statut : draft exploratoire. L'API peut encore bouger et les paquets (`@super-ts
 
 ## Documentation en un fichier
 
-- [Documentation complète](llms-full.txt) : toutes les pages en markdown, code compris (439 Ko).
+- [Documentation complète](llms-full.txt) : toutes les pages en markdown, code compris (440 Ko).
 - [Documentation courte](llms-small.txt) : la même, sans les renvois vers l'app d'exemples ni les passages secondaires, pour les petites fenêtres de contexte (374 Ko).
 
 ## Commencer
 
 - [Introduction](index.html) : Un framework front minimaliste, typé de bout en bout, qui encadre trois choses : les stores, les composants et le routing. Tout le reste appartient à ton projet.
-- [Démarrer](demarrer.html) : Installer le dépôt, lancer l'exemple, puis écrire une fonctionnalité complète de bout en bout.
-- [Exemples](exemples.html) : Les exemples de Super vivent dans une seule app, [`examples/demo`](../examples/demo/). Sa page d'accueil mène à chacun : compteurs, formulaire, boutique, erreurs, widget, composition, kit d'interface. Cette page dit quel fichier montre quel concept.
+- [Démarrer](getting-started.html) : Installer le dépôt, lancer l'exemple, puis écrire une fonctionnalité complète de bout en bout.
+- [Exemples](examples.html) : Les exemples de Super vivent dans une seule app, [`examples/demo`](../examples/demo/). Sa page d'accueil mène à chacun : compteurs, formulaire, boutique, erreurs, widget, composition, kit d'interface. Cette page dit quel fichier montre quel concept.
 - [Architecture](architecture.html) : Super impose deux dossiers et quatre règles. Tout le reste de ton `src` est du user-land : Super ne le regarde pas.
 
 ## Les stores
 
-- [Contrats](contrats.html) : Un contrat décrit un store vu de l'extérieur : ce qu'on peut lire, ce qu'on peut lui demander, ce qu'il annonce. C'est la seule chose qu'un composant connaît d'un store.
-- [Sélecteurs](selecteurs.html) : Les sélecteurs sont les lectures autorisées de l'état. Ce sont les méthodes du contrat, utilisées telles quelles par les composants, le store et les tests. Tu les écris avec l'état en premier paramètre, et Super le fournit à l'appel : tu écris `count(s, id)` dans le contrat, puis `selectors.count(id)` partout ailleurs.
+- [Contrats](contracts.html) : Un contrat décrit un store vu de l'extérieur : ce qu'on peut lire, ce qu'on peut lui demander, ce qu'il annonce. C'est la seule chose qu'un composant connaît d'un store.
+- [Sélecteurs](selectors.html) : Les sélecteurs sont les lectures autorisées de l'état. Ce sont les méthodes du contrat, utilisées telles quelles par les composants, le store et les tests. Tu les écris avec l'état en premier paramètre, et Super le fournit à l'appel : tu écris `count(s, id)` dans le contrat, puis `selectors.count(id)` partout ailleurs.
 - [Stores](stores.html) : Un store implémente un contrat. Il garde l'état, traite les commandes, attend ce qu'il doit attendre (un adapter, le réseau), puis met à jour son état et annonce ce qui s'est passé.
-- [Commandes et événements](flux.html) : La vue envoie et laisse filer. Le store fait le travail, attend ce qu'il doit attendre, puis réussit ou échoue. Super suit chaque commande de bout en bout : il sait quand elle est en cours, et publie son issue.
+- [Commandes et événements](commands-and-events.html) : La vue envoie et laisse filer. Le store fait le travail, attend ce qu'il doit attendre, puis réussit ou échoue. Super suit chaque commande de bout en bout : il sait quand elle est en cours, et publie son issue.
 
 ## Les composants
 
-- [Composants : setup et render](composants.html) : Un composant est un custom element typé, écrit comme une classe qui étend `SuperElement`. Ses déclarations et ses champs préparent l'instance une fois ; `render()` affiche à chaque rendu.
-- [Lire un store](lire-un-store.html) : `@contract nom;` donne au composant la vue du store fourni par l'application. `@selector` choisit ce qu'il en lit : le composant ne se re-rend que si cette valeur change.
-- [État local](etat-local.html) : L'état local appartient à une instance de composant : privé, créé avec elle, perdu avec elle. Il sert aux données d'interface ; les données de l'app vivent dans un store.
-- [Parents et enfants](parents-enfants.html) : Props vers le bas, événements vers le haut. Un parent ne pilote jamais un enfant en appelant ses méthodes : il lui passe des props, et l'enfant répond par des événements.
+- [Composants : setup et render](components.html) : Un composant est un custom element typé, écrit comme une classe qui étend `SuperElement`. Ses déclarations et ses champs préparent l'instance une fois ; `render()` affiche à chaque rendu.
+- [Lire un store](reading-a-store.html) : `@contract nom;` donne au composant la vue du store fourni par l'application. `@selector` choisit ce qu'il en lit : le composant ne se re-rend que si cette valeur change.
+- [État local](local-state.html) : L'état local appartient à une instance de composant : privé, créé avec elle, perdu avec elle. Il sert aux données d'interface ; les données de l'app vivent dans un store.
+- [Parents et enfants](parents-and-children.html) : Props vers le bas, événements vers le haut. Un parent ne pilote jamais un enfant en appelant ses méthodes : il lui passe des props, et l'enfant répond par des événements.
 - [Templates : les fichiers .super](templates.html) : Un composant s'écrit dans un fichier `.super` : du TypeScript dont les méthodes contiennent des éléments HTML écrits comme des instructions. Le contrôle de flux est celui de TypeScript (`if`, `for`, `switch`), et tout le template est vérifié par le compilateur : props, événements, attributs, références.
-- [Formulaires](formulaires.html) : `@form` relie des champs à des valeurs typées, applique tes règles, vérifie au besoin côté serveur pendant la saisie, et soumet par une commande de store. « En cours » et les erreurs du serveur viennent du cycle de vie de cette commande.
+- [Formulaires](forms.html) : `@form` relie des champs à des valeurs typées, applique tes règles, vérifie au besoin côté serveur pendant la saisie, et soumet par une commande de store. « En cours » et les erreurs du serveur viennent du cycle de vie de cette commande.
 - [Kit d'interface](ui.html) : `@super-ts/ui` rassemble les composants qu'une app finit toujours par écrire : champs reliés à un formulaire, bouton qui envoie une commande, lien de navigation, messages, fenêtres, menus, table. Ils ont une apparence sobre réglée par des variables CSS, sont accessibles au clavier et aux lecteurs d'écran, et se branchent directement sur les contrats, les formulaires et le router de Super.
 
 ## L'application
 
 - [Router](router.html) : Le router est intégré à `@super-ts/dom`. Les routes sont nommées et typées : un lien sans son paramètre, une valeur du mauvais type ou une description de query fausse ne compilent pas. Et le router est un store comme un autre.
-- [Gérer les erreurs](erreurs.html) : Quand un composant plante, Super peut afficher un rendu de repli à la place de la partie cassée, et signaler l'erreur à un endroit unique. Trois niveaux, du plus local au plus global : le `renderError` d'un composant, l'écran `'!'` du router, et `onError` dans l'application.
+- [Gérer les erreurs](errors.html) : Quand un composant plante, Super peut afficher un rendu de repli à la place de la partie cassée, et signaler l'erreur à un endroit unique. Trois niveaux, du plus local au plus global : le `renderError` d'un composant, l'écran `'!'` du router, et `onError` dans l'application.
 - [Brancher l'application](application.html) : La racine de composition, `main.ts`, est le seul endroit qui choisit les adapters, crée les stores et le router, et les fournit aux composants.
-- [Ports et adapters](ports-adapters.html) : Les sources de données externes (localStorage, API HTTP, IndexedDB) ne sont pas un concept Super : ce sont de simples dépendances de tes stores. L'[app d'exemples](exemples.html) les organise en ports et adapters, un choix de projet : un `localStorage` pour les compteurs, un serveur simulé pour le formulaire, une vraie API HTTP (dummyjson.com) pour la table branchée du kit.
+- [Ports et adapters](ports-adapters.html) : Les sources de données externes (localStorage, API HTTP, IndexedDB) ne sont pas un concept Super : ce sont de simples dépendances de tes stores. L'[app d'exemples](examples.html) les organise en ports et adapters, un choix de projet : un `localStorage` pour les compteurs, un serveur simulé pour le formulaire, une vraie API HTTP (dummyjson.com) pour la table branchée du kit.
 
 ## Qualité
 
-- [Tester](tests.html) : Chaque brique se teste à son niveau : le store sans DOM, l'adapter seul, le composant avec un faux store, l'app entière avec un router en mémoire. Et les garanties de typage ont leurs propres tests.
-- [Outillage des .super](outillage.html) : Un fichier `.super` n'est pas du TypeScript que `tsc` ou ton éditeur savent lire seuls. Trois outils s'en chargent : la vérification en ligne de commande, le plugin Vite qui le compile, et un serveur de langage pour l'éditeur. Tous partent du même principe : un **TS virtuel**.
-- [Ce que le compilateur vérifie](garanties.html) : La plupart des erreurs d'usage de Super sont détectées avant l'exécution : par TypeScript, ou par le plugin Vite. Cette page liste ce qui est vérifié, où, et ce qui ne l'est pas.
+- [Tester](testing.html) : Chaque brique se teste à son niveau : le store sans DOM, l'adapter seul, le composant avec un faux store, l'app entière avec un router en mémoire. Et les garanties de typage ont leurs propres tests.
+- [Outillage des .super](tooling.html) : Un fichier `.super` n'est pas du TypeScript que `tsc` ou ton éditeur savent lire seuls. Trois outils s'en chargent : la vérification en ligne de commande, le plugin Vite qui le compile, et un serveur de langage pour l'éditeur. Tous partent du même principe : un **TS virtuel**.
+- [Ce que le compilateur vérifie](guarantees.html) : La plupart des erreurs d'usage de Super sont détectées avant l'exécution : par TypeScript, ou par le plugin Vite. Cette page liste ce qui est vérifié, où, et ce qui ne l'est pas.
 
 ## Référence
 
 - [API](api.html) : Tout ce que les paquets de Super exportent, paquet par paquet. Chaque entrée renvoie vers la page qui l'explique.
 - [Questions fréquentes](faq.html) : Les questions qu'on se pose en découvrant Super, avec une réponse courte et un lien vers le détail.
-- [Limites](limites.html) : Super est un draft. Voici ce qu'il fait mal ou vérifie mal aujourd'hui. Ce qu'il ne fait pas encore est dans [Chantiers et questions ouvertes](chantiers.html).
-- [Chantiers et questions ouvertes](chantiers.html) : Ce qui manque à Super pour une vraie app, les suites mises de côté, et les questions encore en discussion. Rien de tout cela n'est décidé : c'est la liste d'où partira le prochain chantier. Ce que Super ne fait pas bien aujourd'hui est dans [Limites](limites.html).
+- [Limites](limitations.html) : Super est un draft. Voici ce qu'il fait mal ou vérifie mal aujourd'hui. Ce qu'il ne fait pas encore est dans [Chantiers et questions ouvertes](roadmap.html).
+- [Chantiers et questions ouvertes](roadmap.html) : Ce qui manque à Super pour une vraie app, les suites mises de côté, et les questions encore en discussion. Rien de tout cela n'est décidé : c'est la liste d'où partira le prochain chantier. Ce que Super ne fait pas bien aujourd'hui est dans [Limites](limitations.html).

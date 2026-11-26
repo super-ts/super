@@ -195,10 +195,10 @@
         }
       </script>
       <ul>
-        <li><strong>Une méthode par événement</strong> : <code>@on('counter', 'increment:done')</code> appelle la méthode à chaque issue, avec un paramètre typé par l'événement (<code>{ input, result }</code>). Le nom de l'événement s'écrit tel quel, sans gabarit : pour plusieurs commandes, une méthode chacune, qui délèguent à une méthode privée. <code>@on</code> n'exige pas de <code>@contract</code> (voir <a href="composants.html#declarations-de-preparation">les déclarations</a>).</li>
+        <li><strong>Une méthode par événement</strong> : <code>@on('counter', 'increment:done')</code> appelle la méthode à chaque issue, avec un paramètre typé par l'événement (<code>{ input, result }</code>). Le nom de l'événement s'écrit tel quel, sans gabarit : pour plusieurs commandes, une méthode chacune, qui délèguent à une méthode privée. <code>@on</code> n'exige pas de <code>@contract</code> (voir <a href="components.html#declarations-de-preparation">les déclarations</a>).</li>
         <li><strong>Le body est joint à l'issue</strong> (<code>input</code>) : l'écran de « Cafés » reconnaît ses propres commandes, sans que le store ait à recopier l'<code>id</code>.</li>
         <li><strong>La route se lit dans la méthode</strong> (<code>this.counterId()</code>), au moment où l'issue arrive : elle voit la route à jour.</li>
-        <li><strong>Transforme l'issue en état local</strong> pour l'afficher : un événement ne dure pas, l'état local si (voir <a href="etat-local.html">État local</a>).</li>
+        <li><strong>Transforme l'issue en état local</strong> pour l'afficher : un événement ne dure pas, l'état local si (voir <a href="local-state.html">État local</a>).</li>
         <li><strong>Rien à nettoyer</strong> : une méthode <code>@on</code> est appelée tant que le composant est monté, et plus après. Dans un composant écrit en <code>.ts</code>, l'équivalent est <code>this.counter.on(…)</code> dans un champ ou le constructeur ; <code>on</code> est interdit pendant <code>render</code>.</li>
       </ul>
 
@@ -220,7 +220,7 @@
       </p>
 
       <h2 id="evenements-ecrits-a-la-main">Les événements écrits à la main</h2>
-      <p class="example-link">Dans l'<a href="exemples.html#boutique">exemple Boutique</a> : <a href="../examples/demo/src/@core/cart/contract.ts"><code>@core/cart/contract.ts</code></a>, <a href="../examples/demo/src/@core/cart/store.ts"><code>@core/cart/store.ts</code></a>, <a href="../examples/demo/src/@components/shop/index.super"><code>@components/shop/index.super</code></a>. Le panier émet <code>emptied</code> quand il devient vide, que ce soit par <code>clear</code> ou par le dernier <code>remove</code>.</p>
+      <p class="example-link">Dans l'<a href="examples.html#boutique">exemple Boutique</a> : <a href="../examples/demo/src/@core/cart/contract.ts"><code>@core/cart/contract.ts</code></a>, <a href="../examples/demo/src/@core/cart/store.ts"><code>@core/cart/store.ts</code></a>, <a href="../examples/demo/src/@components/shop/index.super"><code>@components/shop/index.super</code></a>. Le panier émet <code>emptied</code> quand il devient vide, que ce soit par <code>clear</code> ou par le dernier <code>remove</code>.</p>
       <p>
         Le cycle de vie couvre l'issue des commandes. Pour un fait qui n'est pas l'issue d'une commande (une synchronisation
         de fond terminée, une donnée arrivée d'un serveur), le contrat déclare ses propres événements, et le store les émet :
@@ -260,7 +260,7 @@
           <tr><td>Sert à</td><td>annoncer ce qui s'est passé dans le store</td><td>signaler une interaction au parent</td></tr>
         </tbody>
       </table>
-      <p>Voir <a href="parents-enfants.html">Parents et enfants</a> pour les événements de composant.</p>
+      <p>Voir <a href="parents-and-children.html">Parents et enfants</a> pour les événements de composant.</p>
 
       <h2 id="les-commandes-dans-les-tests">Les commandes dans les tests</h2>
       <p>

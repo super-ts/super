@@ -6,29 +6,29 @@ const NAV = [
     title: 'Commencer',
     items: [
       ['index.html', 'Introduction'],
-      ['demarrer.html', 'Démarrer'],
-      ['exemples.html', 'Exemples'],
+      ['getting-started.html', 'Démarrer'],
+      ['examples.html', 'Exemples'],
       ['architecture.html', 'Architecture'],
     ],
   },
   {
     title: 'Les stores',
     items: [
-      ['contrats.html', 'Contrats'],
-      ['selecteurs.html', 'Sélecteurs'],
+      ['contracts.html', 'Contrats'],
+      ['selectors.html', 'Sélecteurs'],
       ['stores.html', 'Stores'],
-      ['flux.html', 'Commandes et événements'],
+      ['commands-and-events.html', 'Commandes et événements'],
     ],
   },
   {
     title: 'Les composants',
     items: [
-      ['composants.html', 'Composants : setup et render'],
-      ['lire-un-store.html', 'Lire un store'],
-      ['etat-local.html', 'État local'],
-      ['parents-enfants.html', 'Parents et enfants'],
+      ['components.html', 'Composants : setup et render'],
+      ['reading-a-store.html', 'Lire un store'],
+      ['local-state.html', 'État local'],
+      ['parents-and-children.html', 'Parents et enfants'],
       ['templates.html', 'Templates : les fichiers .super'],
-      ['formulaires.html', 'Formulaires'],
+      ['forms.html', 'Formulaires'],
       ['ui.html', "Kit d'interface"],
     ],
   },
@@ -36,7 +36,7 @@ const NAV = [
     title: "L'application",
     items: [
       ['router.html', 'Router'],
-      ['erreurs.html', 'Gérer les erreurs'],
+      ['errors.html', 'Gérer les erreurs'],
       ['application.html', "Brancher l'application"],
       ['ports-adapters.html', 'Ports et adapters'],
     ],
@@ -44,9 +44,9 @@ const NAV = [
   {
     title: 'Qualité',
     items: [
-      ['tests.html', 'Tester'],
-      ['outillage.html', 'Outillage des .super'],
-      ['garanties.html', 'Ce que le compilateur vérifie'],
+      ['testing.html', 'Tester'],
+      ['tooling.html', 'Outillage des .super'],
+      ['guarantees.html', 'Ce que le compilateur vérifie'],
     ],
   },
   {
@@ -54,8 +54,8 @@ const NAV = [
     items: [
       ['api.html', 'API'],
       ['faq.html', 'Questions fréquentes'],
-      ['limites.html', 'Limites'],
-      ['chantiers.html', 'Chantiers et questions ouvertes'],
+      ['limitations.html', 'Limites'],
+      ['roadmap.html', 'Chantiers et questions ouvertes'],
     ],
   },
 ];

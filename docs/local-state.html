@@ -31,7 +31,7 @@
       <table>
         <thead><tr><th>Écriture</th><th>Rôle</th></tr></thead>
         <tbody>
-          <tr><td><code>@state local = initial;</code></td><td>Déclare l'état dans le corps de la classe, qui se lit ensuite par <code>this.local</code> (voir <a href="composants.html#declarations-de-preparation">les déclarations</a>). La valeur initiale est copiée. Dans un composant écrit en <code>.ts</code>, l'équivalent est <code>local = this.state(initial)</code>, dans un champ ou le constructeur uniquement (pendant <code>render</code>, il lève une erreur).</td></tr>
+          <tr><td><code>@state local = initial;</code></td><td>Déclare l'état dans le corps de la classe, qui se lit ensuite par <code>this.local</code> (voir <a href="components.html#declarations-de-preparation">les déclarations</a>). La valeur initiale est copiée. Dans un composant écrit en <code>.ts</code>, l'équivalent est <code>local = this.state(initial)</code>, dans un champ ou le constructeur uniquement (pendant <code>render</code>, il lève une erreur).</td></tr>
           <tr><td><code>get()</code></td><td>La valeur courante, figée. À appeler dans <code>render</code> pour refléter le dernier changement.</td></tr>
           <tr><td><code>set(patch)</code></td><td>Fusionne le patch (un niveau), puis re-rend le composant. Accepte un objet partiel ou une fonction <code>(courant) => patch</code>.</td></tr>
         </tbody>

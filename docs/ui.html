@@ -45,7 +45,7 @@
       <ul>
         <li><strong>Importer le kit charge sa feuille de styles</strong> : il n'y a pas de CSS à ajouter à la main.</li>
         <li><code>@super-ts/ui</code> dépend de <code>@super-ts/dom</code>, et de rien d'autre.</li>
-        <li>Dans ce dépôt, il est résolu par alias comme les autres paquets (<code>packages/ui/src</code>, déclaré dans <code>vite.config.ts</code> et dans les <code>paths</code> du <code>tsconfig.json</code>) : voir <a href="limites.html#distribution">Distribution</a>.</li>
+        <li>Dans ce dépôt, il est résolu par alias comme les autres paquets (<code>packages/ui/src</code>, déclaré dans <code>vite.config.ts</code> et dans les <code>paths</code> du <code>tsconfig.json</code>) : voir <a href="limitations.html#distribution">Distribution</a>.</li>
         <li>Un composant du kit s'écrit par sa classe, comme tout composant enfant : <code>&lt;Button&gt;</code>, pas <code>&lt;super-button&gt;</code>.</li>
       </ul>
 
@@ -119,7 +119,7 @@
       <h3 id="surcharger">Surcharger le thème</h3>
       <p>
         Les variables se règlent à la portée voulue, du plus large au plus précis. Les exemples qui suivent sont ceux de la
-        page « Thème » du kit dans l'app d'exemples (voir <a href="exemples.html#kit">Exemples</a>), qui affiche chacun à
+        page « Thème » du kit dans l'app d'exemples (voir <a href="examples.html#kit">Exemples</a>), qui affiche chacun à
         côté de son effet. Pour toute l'app, quelques variables sur <code>:root</code>, dans une feuille chargée par
         <code>main.ts</code> :
       </p>
@@ -183,14 +183,14 @@
       <h2 id="champs">Les champs de formulaire</h2>
       <p>
         <code>Field</code>, <code>Select</code>, <code>Checkbox</code> et <code>RadioGroup</code> se relient à un champ de
-        <code>@form</code> (voir <a href="formulaires.html">Formulaires</a>) par <code>fieldOf(formulaire, 'nom')</code>.
+        <code>@form</code> (voir <a href="forms.html">Formulaires</a>) par <code>fieldOf(formulaire, 'nom')</code>.
         Chacun s'occupe de ce qu'on répète d'un champ à l'autre :
       </p>
       <ul>
         <li>le libellé, relié au contrôle (<code>&lt;label for&gt;</code>, ou la légende d'un <code>&lt;fieldset&gt;</code> pour <code>RadioGroup</code>) ;</li>
         <li>l'aide (<code>hint</code>), affichée sous le champ ;</li>
         <li>l'erreur de la règle ou du serveur, affichée sous le champ quand le formulaire la montre ;</li>
-        <li>« Vérification… » pendant une <a href="formulaires.html#verifications-asynchrones">vérification asynchrone</a> ;</li>
+        <li>« Vérification… » pendant une <a href="forms.html#verifications-asynchrones">vérification asynchrone</a> ;</li>
         <li><code>aria-invalid</code> quand il y a une erreur, et <code>aria-describedby</code> vers l'aide et l'erreur.</li>
       </ul>
       <script type="text/x-code" data-title="src/@components/kit/forms.super (extrait)" data-source="examples/demo/src/@components/kit/forms.super">
@@ -272,11 +272,11 @@
         </CommandButton>
       </script>
       <ul>
-        <li><strong>« En cours »</strong> vient de <code>pending</code> sur cette commande et cette entrée (voir <a href="flux.html#en-cours">pending</a>) : un autre bouton qui remet un autre compteur à zéro n'est pas désactivé.</li>
+        <li><strong>« En cours »</strong> vient de <code>pending</code> sur cette commande et cette entrée (voir <a href="commands-and-events.html#en-cours">pending</a>) : un autre bouton qui remet un autre compteur à zéro n'est pas désactivé.</li>
         <li><code>pendingLabel</code> remplace le contenu pendant l'envoi ; sans lui, le contenu reste affiché.</li>
         <li><code>variant</code> (<code>primary</code> par défaut, <code>secondary</code>, <code>danger</code>) et <code>disabled</code> fonctionnent comme sur <code>Button</code>.</li>
-        <li><strong>L'issue revient comme pour tout envoi</strong> : par les sélecteurs, ou par <code>nom:done</code> et <code>nom:failed</code> écoutés par <code>@on</code> (voir <a href="flux.html#ecouter-l-issue">Écouter l'issue</a>). Le bouton n'affiche aucune issue lui-même.</li>
-        <li>Le bouton lit le contrat du composant qui l'a préparé, pendant son propre rendu : c'est lui, et lui seul, qui se re-rend quand la commande commence ou se termine (voir <a href="lire-un-store.html#sans-fonction-de-lecture">Lire un sélecteur directement dans render</a>).</li>
+        <li><strong>L'issue revient comme pour tout envoi</strong> : par les sélecteurs, ou par <code>nom:done</code> et <code>nom:failed</code> écoutés par <code>@on</code> (voir <a href="commands-and-events.html#ecouter-l-issue">Écouter l'issue</a>). Le bouton n'affiche aucune issue lui-même.</li>
+        <li>Le bouton lit le contrat du composant qui l'a préparé, pendant son propre rendu : c'est lui, et lui seul, qui se re-rend quand la commande commence ou se termine (voir <a href="reading-a-store.html#sans-fonction-de-lecture">Lire un sélecteur directement dans render</a>).</li>
       </ul>
 
       <h3 id="commandof">Préparer une commande : commandOf</h3>
@@ -384,7 +384,7 @@
       <h2 id="errorpanel">Afficher une erreur : ErrorPanel</h2>
       <p>
         <code>ErrorPanel</code> présente une erreur : un titre, le message, et le détail technique (le chemin et la pile)
-        replié sous « Détails ». Il s'utilise dans un <code>renderError</code> (voir <a href="erreurs.html#render-error">Le
+        replié sous « Détails ». Il s'utilise dans un <code>renderError</code> (voir <a href="errors.html#render-error">Le
         renderError d'un composant</a>), ou tel quel comme écran <code>'!'</code> du router, qui lui passe <code>error</code>
         et <code>path</code> :
       </p>
@@ -409,7 +409,7 @@
       <p>
         Comme tout composant Super, <strong>une fenêtre montée est ouverte</strong> : c'est le parent qui décide de la
         rendre ou non, souvent selon son état local. La fenêtre ne se ferme pas d'elle-même : elle le demande au parent
-        par un événement, qui retire la fenêtre de son rendu (voir <a href="parents-enfants.html#un-dialogue">Un dialogue</a>).
+        par un événement, qui retire la fenêtre de son rendu (voir <a href="parents-and-children.html#un-dialogue">Un dialogue</a>).
       </p>
       <script type="text/x-code" data-title="src/@components/kit/windows.super (extrait)" data-source="examples/demo/src/@components/kit/windows.super">
         @state local = { window: null as 'dialog' | 'modal' | 'confirm' | null };
@@ -719,7 +719,7 @@
         Pour qu'un lien, un rechargement ou le bouton précédent du navigateur retrouvent la même page, <strong>le parent
         peut piloter le tri, la page et leur taille</strong> par les props <code>sort</code>, <code>page</code> et <code>pageSize</code>, lus dans la query
         de la route. C'est ce que fait la page « Table » du kit dans l'app d'exemples, branchée sur l'API publique de
-        test dummyjson.com (voir <a href="exemples.html#kit">Exemples</a>). La query est décrite dans la route, et
+        test dummyjson.com (voir <a href="examples.html#kit">Exemples</a>). La query est décrite dans la route, et
         typée :
       </p>
       <script type="text/x-code" data-title="src/routes.ts (extrait)" data-source="examples/demo/src/routes.ts">
@@ -816,7 +816,7 @@
         <li><code>request</code> est émis après le rendu, jamais deux fois de suite pour la même demande.</li>
         <li><code>loading</code> (ici <code>pending('load')</code>) pose <code>aria-busy</code> sur la table, et affiche « Chargement… » tant qu'aucune ligne n'est arrivée.</li>
         <li><strong>L'échec reste à l'écran</strong> : la table n'affiche pas d'erreur. Le store garde un message (<code>loadErrorMessage</code>), et l'écran l'affiche avec un bouton qui relance la même demande.</li>
-        <li><strong>Les réponses peuvent arriver dans le désordre</strong> : un tri puis un autre envoient deux <code>load</code>. Le store du catalogue ignore une réponse dépassée par une demande plus récente (voir <a href="exemples.html#kit">Exemples</a>).</li>
+        <li><strong>Les réponses peuvent arriver dans le désordre</strong> : un tri puis un autre envoient deux <code>load</code>. Le store du catalogue ignore une réponse dépassée par une demande plus récente (voir <a href="examples.html#kit">Exemples</a>).</li>
       </ul>
       <p>
         Dans les deux modes, les en-têtes triables portent <code>aria-sort</code> et une place réservée à la flèche de tri
@@ -846,7 +846,7 @@
       <h2 id="tester" data-llm="skip">Tester un écran qui utilise le kit</h2>
       <p>
         Rien de particulier : les composants du kit rendent dans le DOM de l'écran, et se trouvent par leur rôle et leur
-        libellé, comme le reste (voir <a href="tests.html">Tester</a>). Les tests des pages du kit montent le router sur
+        libellé, comme le reste (voir <a href="testing.html">Tester</a>). Les tests des pages du kit montent le router sur
         le chemin de la page, avec des stores factices ou en mémoire :
       </p>
       <script type="text/x-code" data-title="src/@components/kit/index.test.ts (extrait)" data-source="examples/demo/src/@components/kit/index.test.ts">

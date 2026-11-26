@@ -36,8 +36,8 @@
       <ul>
         <li><code>@contract counter;</code> se déclare dans le corps de la classe, une fois par store utilisé, et se lit par <code>this.counter</code>. Le nom est celui du contrat, vérifié par le compilateur : <code>@contract compteur;</code> ne compile pas. Pour un autre nom de champ : <code>@contract shop = 'catalog';</code>.</li>
         <li><code>@selector count = …;</code> se déclare aussi dans le corps de la classe, après le <code>@contract</code> qu'il lit. Sa valeur est la lecture d'<strong>un</strong> sélecteur ; il se lit par <code>.value</code> dans <code>render</code>, avec le type du sélecteur. Pas de type à écrire : il vient de la valeur.</li>
-        <li>Toutes ces déclarations sont décrites dans <a href="composants.html#declarations-de-preparation">Composants</a>. Un composant écrit dans un <code>.ts</code> garde les méthodes : <code>counter = this.contract('counter')</code>, <code>count = this.selector(…)</code>.</li>
-        <li>Les sélecteurs sont ceux du contrat, avec l'état déjà fourni, plus <code>pending(…)</code> pour savoir si une commande est en cours (voir <a href="flux.html#en-cours">pending</a>).</li>
+        <li>Toutes ces déclarations sont décrites dans <a href="components.html#declarations-de-preparation">Composants</a>. Un composant écrit dans un <code>.ts</code> garde les méthodes : <code>counter = this.contract('counter')</code>, <code>count = this.selector(…)</code>.</li>
+        <li>Les sélecteurs sont ceux du contrat, avec l'état déjà fourni, plus <code>pending(…)</code> pour savoir si une commande est en cours (voir <a href="commands-and-events.html#en-cours">pending</a>).</li>
         <li>Le composant n'importe pas le contrat : il le nomme. Seuls des types peuvent venir de <code>@core/</code> (<code>import type</code>).</li>
       </ul>
 
@@ -81,7 +81,7 @@
         <tbody>
           <tr><td><code>selectors</code></td><td>Les sélecteurs du contrat, plus <code>pending</code>, lus sur l'état courant à chaque appel. À passer à <code>@selector</code>, ou à lire directement dans <code>render</code>.</td></tr>
           <tr><td><code>send(nom, body?)</code></td><td>Envoie une commande et laisse filer. Renvoie <code>void</code> ; l'issue revient par les sélecteurs, ou par <code>nom:done</code> / <code>nom:failed</code>.</td></tr>
-          <tr><td><code>on(nom, écouteur)</code></td><td>Écoute un événement du store, ou l'issue d'une commande. Dans un <code>.super</code>, il s'écrit sur une méthode, <code>@on('counter', 'increment:done')</code>, qui est appelée tant que le composant est monté : pas de <code>signal</code> à passer (voir <a href="flux.html#ecouter-l-issue">Écouter l'issue</a>). Dans un <code>.ts</code>, il se déclare dans le constructeur ; il est interdit pendant <code>render</code>.</td></tr>
+          <tr><td><code>on(nom, écouteur)</code></td><td>Écoute un événement du store, ou l'issue d'une commande. Dans un <code>.super</code>, il s'écrit sur une méthode, <code>@on('counter', 'increment:done')</code>, qui est appelée tant que le composant est monté : pas de <code>signal</code> à passer (voir <a href="commands-and-events.html#ecouter-l-issue">Écouter l'issue</a>). Dans un <code>.ts</code>, il se déclare dans le constructeur ; il est interdit pendant <code>render</code>.</td></tr>
           <tr><td><code>href(route, { params, query }?)</code></td><td>Pour le router seulement : construit un lien typé, sans abonner le composant (voir <a href="#le-router">plus bas</a>).</td></tr>
         </tbody>
       </table>
@@ -209,7 +209,7 @@
       <p>
         Super résout les contrats au montage. Si aucune application (ou aucun test) n'a fourni de store pour ce contrat, le
         composant ne s'affiche pas (son <code>renderError</code>, s'il en a un, prend la place) et l'erreur est signalée
-        (phase <code>setup</code>, voir <a href="erreurs.html#qui-rattrape-quoi">Gérer les erreurs</a>) :
+        (phase <code>setup</code>, voir <a href="errors.html#qui-rattrape-quoi">Gérer les erreurs</a>) :
       </p>
       <script type="text/x-code" data-lang="text">
         [super] <counter-screen> : aucun store fourni pour le contrat "counter".

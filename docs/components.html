@@ -141,7 +141,7 @@
           <tr><td><code>extends SuperElement</code></td><td>La classe de base, sans générique dans un <code>.super</code> : le compilateur tire les types du composant de ses déclarations.</td></tr>
           <tr><td>Les déclarations</td><td><code>@tag</code> (le nom du custom element, obligatoire, avec un tiret), puis selon les besoins <code>@prop</code> pour les props reçues, <code>@emit</code> pour les événements émis vers le parent, <code>@title</code> pour le titre de la page. Voir <a href="#declarations">Déclarations du composant</a>. Un écran ne reçoit pas de props du router : il lit sa route par <code>this.router.current</code>, typé d'après sa route sans rien déclarer (voir <a href="router.html#l-ecran-et-sa-route">L'écran et sa route</a>).</td></tr>
           <tr><td>La préparation</td><td>Les contrats (<code>@contract</code>), les valeurs lues (<code>@selector</code>), l'état local (<code>@state</code>), le formulaire (<code>@form</code>), les références (<code>@ref</code>), les écouteurs (<code>@on</code> sur une méthode), et les actions en champs. Voir <a href="#declarations-de-preparation">Préparer</a>.</td></tr>
-          <tr><td><code>render()</code></td><td>Le HTML du composant, obligatoire, écrit en éléments dans le corps de la méthode, sans <code>return</code>. Une méthode facultative <code>renderError(error)</code> le remplace si le composant ou un descendant plante (voir <a href="erreurs.html#render-error">Gérer les erreurs</a>).</td></tr>
+          <tr><td><code>render()</code></td><td>Le HTML du composant, obligatoire, écrit en éléments dans le corps de la méthode, sans <code>return</code>. Une méthode facultative <code>renderError(error)</code> le remplace si le composant ou un descendant plante (voir <a href="errors.html#render-error">Gérer les erreurs</a>).</td></tr>
         </tbody>
       </table>
       <p>
@@ -190,13 +190,13 @@
         Une prop se lit par son nom, <code>this.question</code>, partout dans la classe et dès les champs. La lecture donne
         toujours la valeur courante, et un changement de prop re-rend le composant. <code>this.props</code> existe toujours
         (toutes les props, en lecture seule), mais on écrit <code>this.nom</code>. Le détail des trois formes est dans
-        <a href="parents-enfants.html#declarer-les-props">Parents et enfants</a>.
+        <a href="parents-and-children.html#declarer-les-props">Parents et enfants</a>.
       </p>
       <ul>
         <li>
           <strong>Le contenu écrit entre les balises remplit la prop <code>content</code>.</strong> Elle se déclare
           comme les autres (<code>@prop content: Children;</code>) et se lit par <code>this.content</code>. Voir
-          <a href="parents-enfants.html#composer">Composer : des enfants</a>.
+          <a href="parents-and-children.html#composer">Composer : des enfants</a>.
         </li>
         <li>
           <strong>Les noms des propriétés natives sont refusés.</strong> Le composant est un élément du DOM : une prop ne
@@ -213,7 +213,7 @@
       <p>
         <code>@emit nom: T;</code> déclare un événement et ce qu'il transporte (<code>void</code> s'il ne transporte rien).
         Le composant l'émet par <code>this.emit('nom', payload)</code>, le parent l'écoute par <code>on:nom={…}</code> sur
-        la balise. Voir <a href="parents-enfants.html#emit-et-on">emit chez l'enfant, on chez le parent</a>.
+        la balise. Voir <a href="parents-and-children.html#emit-et-on">emit chez l'enfant, on chez le parent</a>.
       </p>
 
       <h3 id="erreurs-de-declaration">Ce que le compilateur refuse</h3>
@@ -371,7 +371,7 @@
         <code>@on('…', '…')</code>, l'éditeur complète les noms des contrats de l'app, puis ceux des événements du contrat
         choisi. <code>@prop</code> et <code>@emit</code> sont du TypeScript valide (des champs décorés) ;
         <code>@tag = …</code> et <code>@title = …</code> ne le sont pas, mais le formateur et la grammaire Tree-sitter de
-        Zed les connaissent (voir <a href="outillage.html#editeur">Outillage</a>).
+        Zed les connaissent (voir <a href="tooling.html#editeur">Outillage</a>).
       </p>
 
       <h2 id="les-deux-phases">Préparer, puis rendre</h2>
@@ -391,7 +391,7 @@
         <code>.ts</code>) lèvent une erreur si elles sont appelées pendant <code>render</code> : on ne peut pas résoudre
         un store ou créer un état à chaque rendu. L'écouteur <code>on</code>
         d'un contrat est permis dans un gestionnaire ou dans <code>mounted</code>, mais lève une erreur pendant un rendu ;
-        <code>this.page.title</code> de même (voir <a href="#titre-de-la-page">Le titre de la page</a>). L'erreur passe par le <a href="erreurs.html#render-error">renderError</a> du composant, comme toute erreur de rendu.
+        <code>this.page.title</code> de même (voir <a href="#titre-de-la-page">Le titre de la page</a>). L'erreur passe par le <a href="errors.html#render-error">renderError</a> du composant, comme toute erreur de rendu.
       </p>
       <p>
         <strong>Les props sont lisibles dès les déclarations et les champs</strong> : Super les dépose avant de construire
@@ -464,7 +464,7 @@
       <p>Il ne connaît aucun store : il reste réutilisable et se teste seul.</p>
 
       <h2 id="un-composant-pour-un-effet-de-bord">Un composant pour un effet de bord</h2>
-      <p class="example-link">Dans l'<a href="exemples.html#widget">exemple Widget</a> : <a href="../examples/demo/src/@components/widget/timer-shortcuts.super"><code>timer-shortcuts.super</code></a>. Un raccourci clavier sur <code>window</code>, nettoyé par <code>signal</code>.</p>
+      <p class="example-link">Dans l'<a href="examples.html#widget">exemple Widget</a> : <a href="../examples/demo/src/@components/widget/timer-shortcuts.super"><code>timer-shortcuts.super</code></a>. Un raccourci clavier sur <code>window</code>, nettoyé par <code>signal</code>.</p>
       <p>
         Certains composants existent surtout pour ce qu'ils font au montage, pas pour ce qu'ils affichent. Tout ce qu'ils
         posent avec <code>this.signal</code>, ou par un écouteur <code>@on</code>, est nettoyé au démontage.
@@ -511,24 +511,24 @@
           <tr><td><code>@prop nom: T;</code></td><td>en tête de la classe</td><td>Une prop reçue du parent : obligatoire, facultative (<code>nom?: T</code>) ou avec une valeur par défaut (<code>nom: T = valeur</code>).</td></tr>
           <tr><td><code>@emit nom: T;</code></td><td>en tête de la classe</td><td>Un événement émis vers le parent (<code>void</code> s'il ne transporte rien).</td></tr>
           <tr><td><code>@title = …;</code></td><td>en tête de la classe</td><td>Le titre de la page tant que le composant est monté : une chaîne, ou une fonction suivie. Voir <a href="#titre-de-la-page">Le titre de la page</a>.</td></tr>
-          <tr><td><code>@contract nom;</code>, <code>@contract nom = 'contrat';</code></td><td>dans la classe</td><td>Le store fourni pour ce contrat, vu à travers ses sélecteurs, <code>send</code> et <code>on</code>. Tous les contrats sauf le router. Dans un <code>.ts</code> : <code>this.contract(nom)</code>. Voir <a href="lire-un-store.html">Lire un store</a>.</td></tr>
-          <tr><td><code>@selector nom = …;</code></td><td>dans la classe</td><td>Une valeur lue d'un sélecteur, lue par <code>.value</code> dans <code>render</code> ; le composant ne se re-rend que si elle change. Dans un <code>.ts</code> : <code>this.selector(lecture)</code>. Voir <a href="lire-un-store.html">Lire un store</a>.</td></tr>
-          <tr><td><code>@state nom = { … };</code></td><td>dans la classe</td><td>L'état local, lu par <code>get()</code>, changé par <code>set(…)</code>. Dans un <code>.ts</code> : <code>this.state(initial)</code>. Voir <a href="etat-local.html">État local</a>.</td></tr>
-          <tr><td><code>@form nom = { … };</code></td><td>dans la classe</td><td>Un formulaire : champs liés, règles, vérifications, soumission par une commande. Dans un <code>.ts</code> : <code>this.form(options)</code>. Voir <a href="formulaires.html">Formulaires</a>.</td></tr>
+          <tr><td><code>@contract nom;</code>, <code>@contract nom = 'contrat';</code></td><td>dans la classe</td><td>Le store fourni pour ce contrat, vu à travers ses sélecteurs, <code>send</code> et <code>on</code>. Tous les contrats sauf le router. Dans un <code>.ts</code> : <code>this.contract(nom)</code>. Voir <a href="reading-a-store.html">Lire un store</a>.</td></tr>
+          <tr><td><code>@selector nom = …;</code></td><td>dans la classe</td><td>Une valeur lue d'un sélecteur, lue par <code>.value</code> dans <code>render</code> ; le composant ne se re-rend que si elle change. Dans un <code>.ts</code> : <code>this.selector(lecture)</code>. Voir <a href="reading-a-store.html">Lire un store</a>.</td></tr>
+          <tr><td><code>@state nom = { … };</code></td><td>dans la classe</td><td>L'état local, lu par <code>get()</code>, changé par <code>set(…)</code>. Dans un <code>.ts</code> : <code>this.state(initial)</code>. Voir <a href="local-state.html">État local</a>.</td></tr>
+          <tr><td><code>@form nom = { … };</code></td><td>dans la classe</td><td>Un formulaire : champs liés, règles, vérifications, soumission par une commande. Dans un <code>.ts</code> : <code>this.form(options)</code>. Voir <a href="forms.html">Formulaires</a>.</td></tr>
           <tr><td><code>@ref nom: T;</code></td><td>dans la classe</td><td>Une référence vers un élément du template : <code>&lt;input ref={this.input} /&gt;</code>, puis <code>this.input.value</code> une fois monté. Le compilateur refuse la référence si <code>T</code> n'est pas le type de la balise (voir <a href="templates.html#references">Références</a>). Dans un <code>.ts</code> : <code>this.ref&lt;T&gt;()</code>.</td></tr>
           <tr><td><code>@on('contrat', 'événement') méthode(payload) { … }</code></td><td>sur une méthode</td><td>Un écouteur, appelé à chaque événement tant que le composant est monté, sans <code>@contract</code> nécessaire ; <code>'router'</code> écoute le router. Dans un <code>.ts</code> : <code>.on(…)</code> dans le constructeur. Voir <a href="#declarer-un-ecouteur">Les écouteurs</a>.</td></tr>
           <tr><td><code>render()</code></td><td>méthode obligatoire</td><td>Décrit le HTML, à chaque rendu. Ne peut ni lire un nouveau contrat ni créer d'état.</td></tr>
-          <tr><td><code>renderError(error)</code></td><td>méthode facultative</td><td>Affiché à la place de <code>render</code> si <code>render</code>, un descendant, ou la résolution d'un store au montage plante. S'il plante lui-même, l'erreur remonte au parent. Voir <a href="erreurs.html#render-error">Gérer les erreurs</a>.</td></tr>
+          <tr><td><code>renderError(error)</code></td><td>méthode facultative</td><td>Affiché à la place de <code>render</code> si <code>render</code>, un descendant, ou la résolution d'un store au montage plante. S'il plante lui-même, l'erreur remonte au parent. Voir <a href="errors.html#render-error">Gérer les erreurs</a>.</td></tr>
           <tr><td><code>mounted()</code>, <code>unmounted()</code></td><td>méthodes facultatives</td><td>Appelées après le premier rendu de chaque montage, et au démontage.</td></tr>
           <tr><th colspan="3">Ce que la classe utilise</th></tr>
           <tr><td><code>this.nom</code></td><td>partout, dès les champs</td><td>Une prop déclarée par <code>@prop</code>, toujours à sa valeur courante. Un changement de prop re-rend le composant ; une copie faite à la construction ne le suit pas. <code>this.props</code> les donne toutes, en lecture seule.</td></tr>
-          <tr><td><code>this.emit(nom, payload?)</code></td><td>partout</td><td>Émet un événement déclaré par <code>@emit</code>, vers le parent. Voir <a href="parents-enfants.html">Parents et enfants</a>.</td></tr>
+          <tr><td><code>this.emit(nom, payload?)</code></td><td>partout</td><td>Émet un événement déclaré par <code>@emit</code>, vers le parent. Voir <a href="parents-and-children.html">Parents et enfants</a>.</td></tr>
           <tr><td><code>this.router</code></td><td>partout</td><td>Le router de l'app, sans déclaration : ses sélecteurs, <code>send</code>, <code>on</code> et <code>href</code>. Voir <a href="router.html#le-router-est-un-store">Le router dans un composant</a>.</td></tr>
           <tr><td><code>this.page.title = …</code></td><td>partout sauf <code>render</code></td><td>Pose le titre de la page tant que le composant est monté, comme <code>@title</code> : une chaîne, ou une fonction suivie. En écriture seulement. Voir <a href="#titre-de-la-page">Le titre de la page</a>.</td></tr>
           <tr><td><code>this.signal</code></td><td>une fois monté</td><td><code>AbortSignal</code> avorté au démontage, pour les écouteurs posés hors de Super (<code>window.addEventListener(…, { signal: this.signal })</code>). Inutile pour les stores : les écouteurs <code>@on</code> se nettoient seuls.</td></tr>
           <tr><td><code>this</code></td><td>partout</td><td>L'élément lui-même, pour les cas que l'API ne couvre pas (focus, mesures).</td></tr>
           <tr><th colspan="3">Sur la classe</th></tr>
-          <tr><td><code>&lt;Classe prop={…} on:nom={…} /&gt;</code></td><td>template</td><td>Monte l'enfant à cet emplacement (même instance d'un rendu à l'autre). Les props sont vérifiées contre ses <code>@prop</code>, les écouteurs contre ses <code>@emit</code>. Voir <a href="parents-enfants.html">Parents et enfants</a>.</td></tr>
+          <tr><td><code>&lt;Classe prop={…} on:nom={…} /&gt;</code></td><td>template</td><td>Monte l'enfant à cet emplacement (même instance d'un rendu à l'autre). Les props sont vérifiées contre ses <code>@prop</code>, les écouteurs contre ses <code>@emit</code>. Voir <a href="parents-and-children.html">Parents et enfants</a>.</td></tr>
           <tr><td><code>Classe.create(props?, { on }?)</code></td><td>hors template</td><td>Renvoie l'élément, pour le montage initial, le router ou un test. Les props et les écouteurs sont typés de la même façon.</td></tr>
           <tr><td><code>Classe.eventName(nom)</code></td><td>hors template</td><td>Le nom DOM d'un événement émis (<code>'confirm-dialog:answered'</code>), pour un écouteur posé à la main.</td></tr>
         </tbody>
@@ -541,7 +541,7 @@
       </p>
 
       <h3 id="mounted-et-unmounted">mounted et unmounted</h3>
-      <p class="example-link">Dans l'<a href="exemples.html#widget">exemple Widget</a> : <a href="../examples/demo/src/@components/widget/timer-widget.super"><code>timer-widget.super</code></a>. Un intervalle démarré au montage, arrêté au démontage.</p>
+      <p class="example-link">Dans l'<a href="examples.html#widget">exemple Widget</a> : <a href="../examples/demo/src/@components/widget/timer-widget.super"><code>timer-widget.super</code></a>. Un intervalle démarré au montage, arrêté au démontage.</p>
       <script type="text/x-code" data-title="src/@components/app-shell/index.super" data-source="examples/demo/src/@components/app-shell/index.super">
         import { RouterOutlet, SuperElement } from '@super-ts/dom';
         import { RouteLink } from '@super-ts/ui';
@@ -719,7 +719,7 @@
       <h2 id="creer-un-element-hors-template">Créer un élément hors template</h2>
       <p>
         Dans un fichier <code>.super</code>, <code>&lt;CounterControls count={count} … /&gt;</code> monte l'enfant à cet
-        emplacement (voir <a href="parents-enfants.html">Parents et enfants</a>) ; l'outillage le traduit en
+        emplacement (voir <a href="parents-and-children.html">Parents et enfants</a>) ; l'outillage le traduit en
         <code>CounterControls.create(props, { on })</code>. Hors template, pour le montage initial ou un test, on appelle ce
         <code>create(props?, { on }?)</code> directement : il renvoie l'élément.
       </p>

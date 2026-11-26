@@ -73,7 +73,7 @@
       <table>
         <thead><tr><th>Où</th><th>Comment</th><th>Exemple</th></tr></thead>
         <tbody>
-          <tr><td>Composant</td><td>La vue du contrat, en général dans un <code>@selector</code> (voir <a href="composants.html#declarations-de-preparation">les déclarations</a>)</td><td><code>@selector count = () =&gt; this.counter.selectors.count(this.counterId);</code></td></tr>
+          <tr><td>Composant</td><td>La vue du contrat, en général dans un <code>@selector</code> (voir <a href="components.html#declarations-de-preparation">les déclarations</a>)</td><td><code>@selector count = () =&gt; this.counter.selectors.count(this.counterId);</code></td></tr>
           <tr><td>Store</td><td>L'outil protégé <code>this.selectors</code></td><td><code>this.selectors.count(id) + 1</code></td></tr>
           <tr><td>Test, autre store, <code>main.ts</code></td><td>Le handle du store</td><td><code>store.selectors.count('cafes')</code></td></tr>
         </tbody>
@@ -94,7 +94,7 @@
       </script>
       <p>
         Un <code>@selector</code> lit la valeur d'un sélecteur telle quelle ; la condition ou le calcul se font dans
-        <code>render</code>, ou dans un nouveau sélecteur du contrat. Voir <a href="lire-un-store.html">Lire un store</a>
+        <code>render</code>, ou dans un nouveau sélecteur du contrat. Voir <a href="reading-a-store.html">Lire un store</a>
         pour les règles de re-rendu.
       </p>
 

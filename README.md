@@ -91,7 +91,7 @@ npm run docs       # la documentation sur http://localhost:5174
 
 Les paquets sont des workspaces npm (`packages/*`). Dans ce dépôt, `@super-ts/…` se résout vers les sources (`packages/*/src`), sans build : par les alias de `tsconfig.json` et `vite.config.ts` dans l'app et les tests, et par la condition d'export `@super-ts/source` pour Node (le `.npmrc` la passe à tous les scripts npm, et Vite charge sa config avec `--configLoader native` pour en profiter). Lance donc Vite et Vitest par `npm run …`.
 
-Pour les erreurs et la complétion dans les `.super`, branche ton éditeur sur le serveur de langage de `packages/lang-server`. Sous Zed, installe l'extension de `editors/zed` comme extension de développement (`zed: install dev extension`). Voir [Outillage](docs/outillage.html).
+Pour les erreurs et la complétion dans les `.super`, branche ton éditeur sur le serveur de langage de `packages/lang-server`. Sous Zed, installe l'extension de `editors/zed` comme extension de développement (`zed: install dev extension`). Voir [Outillage](docs/tooling.html).
 
 La grammaire Tree-sitter des `.super`, utilisée par l'extension Zed, vit dans son propre dépôt : [super-ts/tree-sitter-super](https://github.com/super-ts/tree-sitter-super). Elle est branchée ici en sous-module, dans `editors/tree-sitter-super` : clone avec `git clone --recurse-submodules`, ou lance `git submodule update --init` après coup.
 
@@ -99,17 +99,17 @@ La grammaire Tree-sitter des `.super`, utilisée par l'extension Zed, vit dans s
 
 La documentation est un site statique dans [`docs/`](docs/index.html). Ouvre `docs/index.html` dans un navigateur, ou lance `npm run docs`. Elle a une recherche intégrée (touche `/`).
 
-- [Démarrer](docs/demarrer.html) : ta première fonctionnalité, du contrat au test.
-- [Exemples](docs/exemples.html) : ce que montre chaque fichier de l'app d'exemples.
+- [Démarrer](docs/getting-started.html) : ta première fonctionnalité, du contrat au test.
+- [Exemples](docs/examples.html) : ce que montre chaque fichier de l'app d'exemples.
 - [Architecture](docs/architecture.html) : ce que Super impose, ce qui reste à toi.
-- [Commandes et événements](docs/flux.html) : le trajet d'une action, du clic à l'écran.
-- [Composants](docs/composants.html) : préparation et `render`, et où mettre quoi.
-- [Templates](docs/templates.html) : la syntaxe des fichiers `.super` ; et [Outillage](docs/outillage.html) : `super-tsc`, serveur de langage, éditeur, Vite.
-- [Router](docs/router.html) : chemins typés, redirections, guards ; et [Gérer les erreurs](docs/erreurs.html).
-- [Formulaires](docs/formulaires.html) : tous les types de champs, règles, vérifications asynchrones, listes, erreurs du serveur.
+- [Commandes et événements](docs/commands-and-events.html) : le trajet d'une action, du clic à l'écran.
+- [Composants](docs/components.html) : préparation et `render`, et où mettre quoi.
+- [Templates](docs/templates.html) : la syntaxe des fichiers `.super` ; et [Outillage](docs/tooling.html) : `super-tsc`, serveur de langage, éditeur, Vite.
+- [Router](docs/router.html) : chemins typés, redirections, guards ; et [Gérer les erreurs](docs/errors.html).
+- [Formulaires](docs/forms.html) : tous les types de champs, règles, vérifications asynchrones, listes, erreurs du serveur.
 - [Questions fréquentes](docs/faq.html) et [API](docs/api.html).
-- [Limites](docs/limites.html).
-- [Chantiers et questions ouvertes](docs/chantiers.html).
+- [Limites](docs/limitations.html).
+- [Chantiers et questions ouvertes](docs/roadmap.html).
 
 ### Pour un LLM ou un agent de code
 

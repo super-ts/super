@@ -75,7 +75,7 @@
         }
       </script>
       <ul>
-        <li><code>@form signup = { … };</code> se déclare dans le corps de la classe, une fois, comme les autres <a href="composants.html#declarations-de-preparation">déclarations de préparation</a>. Le type des champs vient de la valeur : pas d'annotation sur <code>@form</code>. Dans un composant écrit en <code>.ts</code>, l'équivalent est <code>signup = this.form({ … })</code>, qui lève une erreur s'il est appelé pendant <code>render</code>.</li>
+        <li><code>@form signup = { … };</code> se déclare dans le corps de la classe, une fois, comme les autres <a href="components.html#declarations-de-preparation">déclarations de préparation</a>. Le type des champs vient de la valeur : pas d'annotation sur <code>@form</code>. Dans un composant écrit en <code>.ts</code>, l'équivalent est <code>signup = this.form({ … })</code>, qui lève une erreur s'il est appelé pendant <code>render</code>.</li>
         <li>Le formulaire est prêt dès la construction : <code>render</code> peut lire ses valeurs et ses erreurs au premier rendu. Il se branche sur le store au montage du composant, et s'en débranche au démontage.</li>
         <li><code>signup.bind()</code> et <code>signup.field('email')</code> sont des directives d'élément : elles s'écrivent entre accolades dans la balise, <code>&lt;form {signup.bind()}&gt;</code> pour le formulaire, <code>&lt;input {signup.field('email')} /&gt;</code> pour un champ (voir <a href="templates.html#attributs">Attributs</a>).</li>
         <li><code>disabled={signup.submitting()}</code> pose l'attribut tant que la soumission est en cours, et le retire ensuite.</li>
