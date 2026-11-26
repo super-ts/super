@@ -74,7 +74,7 @@ export class CounterButton extends SuperElement {
 - **A minimal, checked architecture.** Two required folders (`src/@core/`, `src/@components/`), and the Vite plugin rejects anything outside the frame. Everything else is up to you.
 - **Typed templates.** In a `.super` file, an unknown tag, a missing or mistyped prop, an event the child does not emit or an object displayed by mistake are compile errors, reported in the editor and by `npm run typecheck`.
 - **The page title follows the data.** ``@title = () => `Counter ${this.label.value}`;`` is recomputed on every render; the last mounted component that sets a title wins, and the previous one comes back when it unmounts.
-- **The web standard first.** A store is an `EventTarget`, a component is a custom element. `.super` files are compiled to lit-html, without you ever importing it. The complete demo app (six examples) weighs 24.6 KB gzipped, lit-html included.
+- **The web standard first.** A store is an `EventTarget`, a component is a custom element. `.super` files are compiled to lit-html, without you ever importing it. The whole demo app weighs 37.4 KB of gzipped JavaScript, lit-html included.
 
 ## Getting started
 
