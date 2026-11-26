@@ -84,7 +84,9 @@ npm run check      # lint, typecheck, tests, puis index de la doc
 npm run docs       # la documentation sur http://localhost:5174
 ```
 
-Pour les erreurs et la complétion dans les `.super`, branche ton éditeur sur le serveur de langage de `packages/lang-server` (réglages Zed fournis dans `.zed/settings.json`). Voir [Outillage](docs/outillage.html).
+Pour les erreurs et la complétion dans les `.super`, branche ton éditeur sur le serveur de langage de `packages/lang-server`. Sous Zed, installe l'extension de `editors/zed` comme extension de développement (`zed: install dev extension`). Voir [Outillage](docs/outillage.html).
+
+La grammaire Tree-sitter des `.super`, utilisée par l'extension Zed, vit dans son propre dépôt : [super-ts/tree-sitter-super](https://github.com/super-ts/tree-sitter-super). Elle est branchée ici en sous-module, dans `editors/tree-sitter-super` : clone avec `git clone --recurse-submodules`, ou lance `git submodule update --init` après coup.
 
 ## Documentation
 
@@ -126,5 +128,7 @@ packages/lang      le langage .super : parser, compilation vers lit, TS virtuel,
 packages/lang-server  le serveur de langage des .super (Volar sur TypeScript 6)
 packages/lint      la configuration Biome (ordre des imports)
 examples/demo      l'app d'exemples : compteurs, formulaire, boutique, erreurs, widget, composition, kit
+editors/zed        l'extension Zed des .super (langage « Super » et lancement du serveur de langage)
+editors/tree-sitter-super  la grammaire Tree-sitter des .super (sous-module, dépôt super-ts/tree-sitter-super)
 docs/              le site de documentation et les fichiers llms*.txt (docs/tools : génération de l'index et des llms*.txt)
 ```

@@ -1,0 +1,4 @@
+[submodule "editors/tree-sitter-super"]
+	path = editors/tree-sitter-super
+	url = https://github.com/super-ts/tree-sitter-super.git
+	branch = master
