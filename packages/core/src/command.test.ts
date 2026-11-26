@@ -1,8 +1,8 @@
 import { CommandFailure, type Commands, SuperStore } from '@super-ts/core';
 import { record } from '@super-ts/testing';
 import { describe, expect, test } from 'vitest';
-import type { CounterContract } from './__fixtures__/counter';
-import './__fixtures__/counter';
+import type { CounterContract } from './__fixtures__/counter.ts';
+import './__fixtures__/counter.ts';
 
 class CounterStore extends SuperStore<CounterContract> implements Commands<CounterStore> {
   #loading: Promise<void>;

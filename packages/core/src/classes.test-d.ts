@@ -5,7 +5,7 @@
 
 import { type Commands, type StoreOfContract, SuperContract, SuperStore } from '@super-ts/core';
 import { expectTypeOf, test } from 'vitest';
-import type { BasketContract, BasketState } from './__fixtures__/basket';
+import type { BasketContract, BasketState } from './__fixtures__/basket.ts';
 
 const init = { contract: 'basket', initialState: { items: {} } } as const;
 

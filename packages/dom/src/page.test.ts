@@ -2,9 +2,9 @@ import { type Commands, SuperStore } from '@super-ts/core';
 import { createRouter, defineRouter, html, SuperElement } from '@super-ts/dom';
 import { flush, mount } from '@super-ts/testing';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
-import type { BasketContract } from '../../core/src/__fixtures__/basket';
-import '../../core/src/__fixtures__/basket';
-import { configureTitle } from './page';
+import type { BasketContract } from '../../core/src/__fixtures__/basket.ts';
+import '../../core/src/__fixtures__/basket.ts';
+import { configureTitle } from './page.ts';
 
 class BasketStore extends SuperStore<BasketContract> implements Commands<BasketStore> {
   constructor() {

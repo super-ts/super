@@ -1,8 +1,8 @@
 import { type StoreOfContract, SuperStore } from '@super-ts/core';
 import { describe, expect, test } from 'vitest';
-import type { BasketContract } from './__fixtures__/basket';
-import './__fixtures__/basket';
-import type { Commands } from './classes';
+import type { BasketContract } from './__fixtures__/basket.ts';
+import './__fixtures__/basket.ts';
+import type { Commands } from './classes.ts';
 
 type Backend = { save(id: string, count: number): Promise<boolean> };
 

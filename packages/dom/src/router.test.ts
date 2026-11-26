@@ -1,7 +1,7 @@
 import { createApp, createRouter, defineRouter, html, params, query, RouterOutlet, redirect, SuperElement } from '@super-ts/dom';
 import { fakeStore, flush, mount, record } from '@super-ts/testing';
 import { describe, expect, test, vi } from 'vitest';
-import './__fixtures__/rt-session';
+import './__fixtures__/rt-session.ts';
 
 /**
  * Les routers de ces tests ne sont pas celui de l'app (typé par le fixture `app-router`) : leurs

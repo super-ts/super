@@ -1,6 +1,6 @@
 import { type Children, html, nothing, SuperElement } from '@super-ts/dom';
-import type { Choice } from './fields';
-import { classes, uniqueId } from './shared';
+import type { Choice } from './fields.ts';
+import { classes, uniqueId } from './shared.ts';
 
 /** Après le prochain rendu : pour déplacer le focus sur un élément que le rendu vient d'afficher. */
 const afterRender = (run: () => void) => void Promise.resolve().then(() => queueMicrotask(run));

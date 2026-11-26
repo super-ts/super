@@ -1,5 +1,5 @@
 import { type FieldName, type FormHandle, html, nothing, SuperElement } from '@super-ts/dom';
-import { classes, uniqueId } from './shared';
+import { classes, uniqueId } from './shared.ts';
 
 declare const VALUE: unique symbol;
 

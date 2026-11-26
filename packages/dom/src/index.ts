@@ -1,10 +1,10 @@
 // Le moteur de template (lit-html) est un détail d'implémentation : seuls ces symboles sont publics.
 export { nothing } from 'lit-html';
 export { repeat } from 'lit-html/directives/repeat.js';
-export type { ChildOptions, ErrorDetail, ErrorPhase, LocalState } from './component';
-export { html } from './component';
-export type { App, AppOptions, ErrorInfo } from './context';
-export { CONTEXT_REQUEST, createApp } from './context';
+export type { ChildOptions, ErrorDetail, ErrorPhase, LocalState } from './component.ts';
+export { html } from './component.ts';
+export type { App, AppOptions, ErrorInfo } from './context.ts';
+export { CONTEXT_REQUEST, createApp } from './context.ts';
 export type {
   AppRouterView,
   AppRoutes,
@@ -28,8 +28,8 @@ export type {
   StoreContractName,
   Unselected,
   ViewOf,
-} from './element';
-export { SuperElement } from './element';
+} from './element.ts';
+export { SuperElement } from './element.ts';
 export type {
   FieldCheck,
   FieldName,
@@ -42,8 +42,8 @@ export type {
   FormOptions,
   FormRules,
   ListName,
-} from './form';
-export type { Page, TitleOptions, TitleValue } from './page';
+} from './form.ts';
+export type { Page, TitleOptions, TitleValue } from './page.ts';
 export type {
   CurrentRoute,
   ErrorScreen,
@@ -75,6 +75,6 @@ export type {
   ScreenRoutes,
   ScreensDeclaration,
   ScreensFor,
-} from './router';
-export { createRouter, defineRouter, params, query, RouterOutlet, redirect } from './router';
-export type { AppRouteNames, AppRouterContract, AppRouterContractOf, RouteOfTag } from './router-contract';
+} from './router.ts';
+export { createRouter, defineRouter, params, query, RouterOutlet, redirect } from './router.ts';
+export type { AppRouteNames, AppRouterContract, AppRouterContractOf, RouteOfTag } from './router-contract.ts';

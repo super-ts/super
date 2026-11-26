@@ -2,8 +2,8 @@ import { type Commands, SuperStore } from '@super-ts/core';
 import { html, repeat, SuperElement } from '@super-ts/dom';
 import { fakeStore, flush, mount } from '@super-ts/testing';
 import { describe, expect, test, vi } from 'vitest';
-import type { FormAccountContract, FormCrashyContract } from './__fixtures__/form-contracts';
-import './__fixtures__/form-contracts';
+import type { FormAccountContract, FormCrashyContract } from './__fixtures__/form-contracts.ts';
+import './__fixtures__/form-contracts.ts';
 
 /** Ce que le test pilote : commandes reçues, réponse à la soumission en cours, réponses aux vérifications. */
 type Probe = {

@@ -1,6 +1,6 @@
 import { SuperElement } from '@super-ts/dom';
 import { expectTypeOf, test } from 'vitest';
-import './__fixtures__/form-contracts';
+import './__fixtures__/form-contracts.ts';
 
 test('form : types inférés des valeurs initiales et de la commande', () => {
   class ProfileForm extends SuperElement {

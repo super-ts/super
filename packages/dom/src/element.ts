@@ -31,11 +31,11 @@ import {
   REPORT,
   renderingAs,
   toError,
-} from './component';
-import { requestStore } from './context';
-import { createForm, type FormHandle, type FormOptions } from './form';
-import { mountChild } from './mount-directive';
-import { type Page, pushTitle, removeTitle, type TitleEntry, type TitleValue, updateTitle } from './page';
+} from './component.ts';
+import { requestStore } from './context.ts';
+import { createForm, type FormHandle, type FormOptions } from './form.ts';
+import { mountChild } from './mount-directive.ts';
+import { type Page, pushTitle, removeTitle, type TitleEntry, type TitleValue, updateTitle } from './page.ts';
 import {
   type AppRouteNames,
   type CurrentRoute,
@@ -48,8 +48,8 @@ import {
   type RouterEvents,
   type RouteValue,
   routeValues,
-} from './router-contract';
-import { routerHrefs } from './router-link';
+} from './router-contract.ts';
+import { routerHrefs } from './router-link.ts';
 
 /* ------------------------------------------------------------------------------------------ */
 /* Types publics                                                                               */

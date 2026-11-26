@@ -2,7 +2,7 @@ import { type Children, html } from '@super-ts/dom';
 import { flush, mount } from '@super-ts/testing';
 import { Badge, Button, columns, EmptyState, Skeleton, Spinner, Table } from '@super-ts/ui';
 import { describe, expect, test, vi } from 'vitest';
-import type { Book } from './__fixtures__/ui-contracts';
+import type { Book } from './__fixtures__/ui-contracts.ts';
 
 const text = (strings: TemplateStringsArray, ...values: unknown[]) => html(strings, ...values) as unknown as Children;
 

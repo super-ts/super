@@ -4,7 +4,7 @@
  */
 import { html, type RouteOfTag, SuperElement, type Unselected } from '@super-ts/dom';
 import { expectTypeOf, test } from 'vitest';
-import './__fixtures__/app-router';
+import './__fixtures__/app-router.ts';
 
 test('ailleurs qu’un écran : toutes les routes réunies', () => {
   class Nav extends SuperElement<{ route: RouteOfTag<'t-nav'> }> {

@@ -2,8 +2,8 @@ import { type Commands, SuperStore } from '@super-ts/core';
 import { html, repeat, SuperElement } from '@super-ts/dom';
 import { flush, mount } from '@super-ts/testing';
 import { describe, expect, test, vi } from 'vitest';
-import type { BasketContract } from '../../core/src/__fixtures__/basket';
-import '../../core/src/__fixtures__/basket';
+import type { BasketContract } from '../../core/src/__fixtures__/basket.ts';
+import '../../core/src/__fixtures__/basket.ts';
 
 class BasketStore extends SuperStore<BasketContract> implements Commands<BasketStore> {
   constructor() {

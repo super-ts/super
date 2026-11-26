@@ -5,7 +5,7 @@
 
 import { type Commands, type StoreOfContract, SuperContract, SuperStore } from '@super-ts/core';
 import { expectTypeOf, test } from 'vitest';
-import type { ShopContract } from './__fixtures__/shop';
+import type { ShopContract } from './__fixtures__/shop.ts';
 
 declare const shop: StoreOfContract<'core-shop'>;
 

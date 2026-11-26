@@ -5,7 +5,7 @@
 
 import { type Commands, type StoreOfContract, SuperContract, SuperStore } from '@super-ts/core';
 import { expectTypeOf, test } from 'vitest';
-import type { CartContract, CartState } from './__fixtures__/cart';
+import type { CartContract, CartState } from './__fixtures__/cart.ts';
 
 declare const cart: StoreOfContract<'core-cart'>;
 

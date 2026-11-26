@@ -1,8 +1,8 @@
 import { type Commands, SuperContract, SuperStore } from '@super-ts/core';
 import { compileContract, share } from '@super-ts/core/internal';
 import { beforeEach, describe, expect, test } from 'vitest';
-import type { CartContract, LinesContract } from './__fixtures__/cart';
-import { calls } from './__fixtures__/cart';
+import type { CartContract, LinesContract } from './__fixtures__/cart.ts';
+import { calls } from './__fixtures__/cart.ts';
 
 class CartStore extends SuperStore<CartContract> implements Commands<CartStore> {
   #seen: number[];

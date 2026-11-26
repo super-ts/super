@@ -1,7 +1,7 @@
 import type { AnyStore } from '@super-ts/core';
-import { ERROR_REPORT, type ErrorDetail, type ErrorPhase } from './component';
-import { ROUTER_NAME, type RouterHandle } from './router-contract';
-import { routerAttachments } from './router-link';
+import { ERROR_REPORT, type ErrorDetail, type ErrorPhase } from './component.ts';
+import { ROUTER_NAME, type RouterHandle } from './router-contract.ts';
+import { routerAttachments } from './router-link.ts';
 
 /** Événement du context protocol : il remonte du composant jusqu'au fournisseur le plus proche. */
 export const CONTEXT_REQUEST = 'super:context-request';

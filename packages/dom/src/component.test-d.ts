@@ -1,6 +1,6 @@
 import { html, SuperElement } from '@super-ts/dom';
 import { expectTypeOf, test } from 'vitest';
-import './__fixtures__/cmp-contracts';
+import './__fixtures__/cmp-contracts.ts';
 
 class Switcher extends SuperElement<{ props: { label: string }; emits: { previous: void; picked: { id: string } } }> {
   static tag = 'cmp-switcher';

@@ -1,6 +1,6 @@
-import type { BoundSelectors, CommandMap, Contract, Events, FailureOf, InputOf, PendingReader, ResultOf, Selectors } from './contract';
-import type { PayloadArgs, StatePatch, StoreHandle, StoreTools } from './store';
-import { bindDependencies, buildStore, CommandFailure } from './store';
+import type { BoundSelectors, CommandMap, Contract, Events, FailureOf, InputOf, PendingReader, ResultOf, Selectors } from './contract.ts';
+import type { PayloadArgs, StatePatch, StoreHandle, StoreTools } from './store.ts';
+import { bindDependencies, buildStore, CommandFailure } from './store.ts';
 
 /* ------------------------------------------------------------------------------------------ */
 /* Registre des contrats                                                                       */

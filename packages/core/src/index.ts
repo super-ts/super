@@ -12,8 +12,8 @@ export type {
   ContractTypes,
   StoreOfContract,
   StoreOptions,
-} from './classes';
-export { SuperContract, SuperStore } from './classes';
+} from './classes.ts';
+export { SuperContract, SuperStore } from './classes.ts';
 export type {
   AllEvents,
   BoundSelectors,
@@ -26,7 +26,7 @@ export type {
   PendingReader,
   ResultOf,
   UnexpectedFailure,
-} from './contract';
+} from './contract.ts';
 export type {
   AnyStore,
   CommandTools,
@@ -36,5 +36,5 @@ export type {
   StatePatch,
   StoreHandle,
   Unsubscribe,
-} from './store';
-export { CommandFailure } from './store';
+} from './store.ts';
+export { CommandFailure } from './store.ts';

@@ -9,9 +9,9 @@ import type {
   PendingReader,
   ResultOf,
   Selectors,
-} from './contract';
-import { bindSelectors } from './contract';
-import { deepFreeze, SelectorCache } from './memo';
+} from './contract.ts';
+import { bindSelectors } from './contract.ts';
+import { deepFreeze, SelectorCache } from './memo.ts';
 
 export type Unsubscribe = () => void;
 export type ListenOptions = { signal?: AbortSignal };

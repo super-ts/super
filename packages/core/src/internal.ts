@@ -3,9 +3,9 @@
  * une application : rien ici ne fait partie de l'API publique.
  */
 
-export { compileContract, contractByName, contractClass, registerContract } from './classes';
-export type { Contract, Selectors } from './contract';
-export { bindSelectors } from './contract';
-export { shallowEqual, share } from './memo';
-export type { StorePreparation, StoreTools } from './store';
-export { buildStore, NO_OUTCOME, readStore, topics } from './store';
+export { compileContract, contractByName, contractClass, registerContract } from './classes.ts';
+export type { Contract, Selectors } from './contract.ts';
+export { bindSelectors } from './contract.ts';
+export { shallowEqual, share } from './memo.ts';
+export type { StorePreparation, StoreTools } from './store.ts';
+export { buildStore, NO_OUTCOME, readStore, topics } from './store.ts';

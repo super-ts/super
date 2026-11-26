@@ -1,5 +1,5 @@
 import { type Children, html, nothing, SuperElement } from '@super-ts/dom';
-import { classes } from './shared';
+import { classes } from './shared.ts';
 
 /* ------------------------------------------------------------------------------------------ */
 /* Button                                                                                      */

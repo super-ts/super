@@ -2,8 +2,8 @@ import { type Children, createRouter, html, SuperElement } from '@super-ts/dom';
 import { fakeStore, flush, mount } from '@super-ts/testing';
 import { CommandButton, commandOf, createToasts, ErrorPanel, RouteLink, Toasts } from '@super-ts/ui';
 import { describe, expect, test, vi } from 'vitest';
-import { AppRouter } from '../../dom/src/__fixtures__/app-router';
-import './__fixtures__/ui-contracts';
+import { AppRouter } from '../../dom/src/__fixtures__/app-router.ts';
+import './__fixtures__/ui-contracts.ts';
 
 const text = (strings: TemplateStringsArray, ...values: unknown[]) => html(strings, ...values) as unknown as Children;
 const library = (commands = {}) => fakeStore('ui-library', { state: { books: [], total: 0, suggestions: [] }, commands });

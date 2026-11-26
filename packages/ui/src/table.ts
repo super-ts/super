@@ -1,5 +1,5 @@
 import { html, nothing, SuperElement } from '@super-ts/dom';
-import { classes, uniqueId } from './shared';
+import { classes, uniqueId } from './shared.ts';
 
 /** Une colonne : sa clé, son titre, et comment lire sa valeur dans une ligne. */
 export type Column<Row> = {

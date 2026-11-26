@@ -1,8 +1,8 @@
 import { type Commands, type ContractStore, type StoreOfContract, SuperStore } from '@super-ts/core';
 import { topics } from '@super-ts/core/internal';
 import { describe, expect, test } from 'vitest';
-import type { StatsContract, TodosContract, WatcherContract } from './__fixtures__/todos';
-import './__fixtures__/todos';
+import type { StatsContract, TodosContract, WatcherContract } from './__fixtures__/todos.ts';
+import './__fixtures__/todos.ts';
 
 class TodosStore extends SuperStore<TodosContract> implements Commands<TodosStore> {
   #prefix: string;

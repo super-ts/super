@@ -1,6 +1,6 @@
 import { type StoreHandle, SuperContract } from '@super-ts/core';
 import { registerContract } from '@super-ts/core/internal';
-import type { Screen, Selected } from './element';
+import type { Screen, Selected } from './element.ts';
 
 type Simplify<T> = { [K in keyof T]: T[K] } & {};
 

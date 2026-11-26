@@ -2,7 +2,7 @@ import { html, SuperElement } from '@super-ts/dom';
 import { fakeStore, flush, mount } from '@super-ts/testing';
 import { Checkbox, Field, fieldOf, RadioGroup, Select } from '@super-ts/ui';
 import { describe, expect, test } from 'vitest';
-import './__fixtures__/ui-contracts';
+import './__fixtures__/ui-contracts.ts';
 
 class Profile extends SuperElement {
   static tag = 'ui-t-profile';

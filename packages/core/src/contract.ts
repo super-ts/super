@@ -1,4 +1,4 @@
-import { SelectorCache } from './memo';
+import { SelectorCache } from './memo.ts';
 
 declare const OUTCOME: unique symbol;
 

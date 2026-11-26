@@ -1,7 +1,7 @@
 import { nothing } from 'lit-html';
 import { type ChildPart, Directive, directive, type PartInfo, PartType } from 'lit-html/directive.js';
-import type { ChildOptions } from './component';
-import { eventName } from './component';
+import type { ChildOptions } from './component.ts';
+import { eventName } from './component.ts';
 
 /** Ce que la directive sait créer : un composant (voir `SuperElement.create`). */
 export type ChildDef = { readonly tag: string; create(props: object): HTMLElement & { props: object } };

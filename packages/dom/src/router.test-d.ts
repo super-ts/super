@@ -14,7 +14,7 @@ import {
   SuperElement,
 } from '@super-ts/dom';
 import { expectTypeOf, test } from 'vitest';
-import './__fixtures__/rt-session';
+import './__fixtures__/rt-session.ts';
 
 class Screen extends SuperElement {
   static tag = 'td-screen';

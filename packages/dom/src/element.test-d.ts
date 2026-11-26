@@ -3,7 +3,7 @@
  */
 import { html, SuperElement } from '@super-ts/dom';
 import { expectTypeOf, test } from 'vitest';
-import '../../core/src/__fixtures__/basket';
+import '../../core/src/__fixtures__/basket.ts';
 
 class Dialog extends SuperElement<{ props: { question: string }; emits: { answered: { confirmed: boolean }; closed: void } }> {
   static tag = 't-dialog';

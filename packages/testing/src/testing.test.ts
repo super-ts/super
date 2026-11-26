@@ -2,9 +2,9 @@ import { type Commands, SuperStore } from '@super-ts/core';
 import { html, SuperElement } from '@super-ts/dom';
 import { fakeStore, flush, mount, record } from '@super-ts/testing';
 import { describe, expect, test } from 'vitest';
-import '../../core/src/__fixtures__/basket';
-import './__fixtures__/tst-inbox';
-import type { TstInboxContract } from './__fixtures__/tst-inbox';
+import '../../core/src/__fixtures__/basket.ts';
+import './__fixtures__/tst-inbox.ts';
+import type { TstInboxContract } from './__fixtures__/tst-inbox.ts';
 
 class InboxStore extends SuperStore<TstInboxContract> implements Commands<InboxStore> {
   constructor() {

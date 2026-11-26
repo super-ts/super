@@ -2,8 +2,8 @@ import { type Commands, SuperStore } from '@super-ts/core';
 import { createApp, html, repeat, SuperElement } from '@super-ts/dom';
 import { fakeStore, flush, mount } from '@super-ts/testing';
 import { describe, expect, test, vi } from 'vitest';
-import './__fixtures__/cmp-contracts';
-import type { CmpBoardContract, CmpClockContract, CmpListedContract, CmpSaverContract } from './__fixtures__/cmp-contracts';
+import './__fixtures__/cmp-contracts.ts';
+import type { CmpBoardContract, CmpClockContract, CmpListedContract, CmpSaverContract } from './__fixtures__/cmp-contracts.ts';
 
 class ClockStore extends SuperStore<CmpClockContract> implements Commands<ClockStore> {
   constructor() {

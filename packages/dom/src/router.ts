@@ -2,9 +2,9 @@ import type { BoundContractSelectors, ContractName, Contracts } from '@super-ts/
 import { buildStore, compileContract, readStore, type StoreTools } from '@super-ts/core/internal';
 import { html } from 'lit-html';
 import { keyed } from 'lit-html/directives/keyed.js';
-import { ERROR_EVENT, type ErrorDetail } from './component';
-import { renderScreen, type Screen, type Selected, SuperElement } from './element';
-import { configureTitle, type TitleOptions } from './page';
+import { ERROR_EVENT, type ErrorDetail } from './component.ts';
+import { renderScreen, type Screen, type Selected, SuperElement } from './element.ts';
+import { configureTitle, type TitleOptions } from './page.ts';
 import {
   type CheckedRoutes,
   type ErrorScreen,
@@ -21,8 +21,8 @@ import {
   type RouteTable,
   routeValues,
   type ScreensFor,
-} from './router-contract';
-import { routerAttachments, routerHrefs, type StoreLookup } from './router-link';
+} from './router-contract.ts';
+import { routerAttachments, routerHrefs, type StoreLookup } from './router-link.ts';
 
 export type {
   CurrentRoute,
@@ -49,8 +49,8 @@ export type {
   RouteValue,
   ScreenRoutes,
   ScreensFor,
-} from './router-contract';
-export { params, query } from './router-contract';
+} from './router-contract.ts';
+export { params, query } from './router-contract.ts';
 
 /* ------------------------------------------------------------------------------------------ */
 /* Déclaration du router                                                                       */

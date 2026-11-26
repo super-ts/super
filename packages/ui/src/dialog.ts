@@ -1,5 +1,5 @@
 import { type Children, html, nothing, SuperElement } from '@super-ts/dom';
-import { classes, uniqueId } from './shared';
+import { classes, uniqueId } from './shared.ts';
 
 /** Ce qui ferme la fenêtre : Échap, un clic sur le fond, la croix. */
 export type CloseReason = 'escape' | 'backdrop' | 'button';

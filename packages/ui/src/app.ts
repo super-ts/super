@@ -9,7 +9,7 @@ import {
   type StoreContractName,
   SuperElement,
 } from '@super-ts/dom';
-import { classes } from './shared';
+import { classes } from './shared.ts';
 
 /* ------------------------------------------------------------------------------------------ */
 /* CommandButton                                                                               */
