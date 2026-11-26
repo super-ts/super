@@ -97,9 +97,9 @@ But : versionner et sauvegarder, sans rien publier. Le câblage local reste tel 
   - `ui/src/styles.d.css.ts` type `import './styles.css'` (`allowArbitraryExtensions` dans le tsconfig.build de ui). Livré dans dist : sans lui, un projet sans `vite/client` et sans `skipLibCheck` casse sur `dist/index.d.ts`.
   - `**/dist` exclu du tsconfig racine.
 - Vérifié : `npm run check` vert (457 tests), build de la démo, chargement de `dist` dans Node sans la condition source, binaires via lien symbolique, typecheck d'un projet utilisateur contre les `.d.ts` avec `skipLibCheck: false` (bundler et nodenext), `npm pack --dry-run`.
-- Trouvé en vérifiant chaque commit dans un clone neuf (2026-11-26), défauts antérieurs à la phase 3, non corrigés :
+- Trouvé en vérifiant chaque commit dans un clone neuf (2026-11-26), défauts antérieurs à la phase 3 :
   - `npm ci` à la racine ne suffit pas : `packages/lang-server` (hors workspaces) a son propre `node_modules`, sans lequel le typecheck casse. Réglé de fait par la phase 5 (lang-server dans les workspaces) ; d'ici là, `npm ci` aussi dans `packages/lang-server`.
-  - `super-tsc` ne ramène pas les erreurs sur les `.super` si le chemin du projet passe par un lien symbolique (ex. `/tmp` → `/private/tmp` sur macOS) : tsc rapporte le chemin réel, la correspondance avec `.super/virtual` échoue et les erreurs sortent sur le TS virtuel. À corriger avec `realpathSync` dans `cli.ts`.
+  - CORRIGÉ le 2026-11-26 : `super-tsc` ne ramenait pas les erreurs sur les `.super` si le chemin du projet passait par un lien symbolique (ex. `/tmp` → `/private/tmp` sur macOS). `cli.ts` part maintenant du chemin réel du tsconfig et ramène les fichiers cités par tsc à leur chemin réel ; test dans `check.test.ts`.
 - Pas de source maps ni de declaration maps : `src` n'est pas publié, elles pointeraient dans le vide. À rouvrir si on publie `src`.
 
 ## Phase 4 : test d'installation comme un vrai utilisateur (moi)
