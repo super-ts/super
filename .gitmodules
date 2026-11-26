@@ -2,3 +2,7 @@
 	path = editors/tree-sitter-super
 	url = https://github.com/super-ts/tree-sitter-super.git
 	branch = main
+[submodule "editors/zed"]
+	path = editors/zed
+	url = https://github.com/super-ts/super-extension-zed.git
+	branch = main
