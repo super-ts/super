@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="../../assets/logo-dark.svg" />
+    <img src="../../assets/logo-light.svg" alt="Super." width="140" />
+  </picture>
+</p>
+
 # Extension Zed des fichiers `.super`
 
 Déclare le langage « Super » (fichiers `.super`) et lance son serveur de langage

@@ -1,4 +1,9 @@
-# Super
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.svg" />
+    <img src="assets/logo-light.svg" alt="Super." width="260" />
+  </picture>
+</p>
 
 Un framework front minimaliste, typé de bout en bout. Il encadre trois choses, les **stores**, les **composants** et le **routing**, et laisse tout le reste à ton projet.
 
