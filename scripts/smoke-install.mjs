@@ -7,6 +7,8 @@
 // 5. the language server tests, on the installed server.
 //
 // `--keep` keeps the temporary folder (it is also kept on failure).
+// `--registry <url>` installs the @super-ts packages from that registry instead of the tarballs, at the
+// repository's version (a rehearsal before publishing, with a local registry such as Verdaccio).
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -14,6 +16,11 @@ import { dirname, join } from 'node:path';
 
 const root = join(import.meta.dirname, '..');
 const keep = process.argv.includes('--keep');
+const registry = process.argv.includes('--registry') ? process.argv[process.argv.indexOf('--registry') + 1] : null;
+if (process.argv.includes('--registry') && !registry) {
+  console.error('smoke: --registry needs a URL');
+  process.exit(2);
+}
 // Folders in packages/; the npm name is read from their package.json.
 const PACKAGES = ['core', 'dom', 'ui', 'testing', 'lang', 'vite', 'lint', 'lang-server'];
 const manifest = (dir) => JSON.parse(readFileSync(join(root, 'packages', dir, 'package.json'), 'utf8'));
@@ -46,13 +53,15 @@ function write(path, content) {
   writeFileSync(file, `${content.replace(/^\n/, '')}`);
 }
 
-// 1. build and tarballs
+// 1. build and tarballs (or, with --registry, the version published on that registry)
 run('build', 'npm', ['run', 'build'], root);
 mkdirSync(tarballs);
-for (const dir of PACKAGES) run(`pack ${manifest(dir).name}`, 'npm', ['pack', '--pack-destination', tarballs, '--silent'], join(root, 'packages', dir));
+if (!registry) {
+  for (const dir of PACKAGES) run(`pack ${manifest(dir).name}`, 'npm', ['pack', '--pack-destination', tarballs, '--silent'], join(root, 'packages', dir));
+}
 const tarball = (dir) => {
   const { name, version } = manifest(dir);
-  return `file:${join(tarballs, `${name.replace('@', '').replace('/', '-')}-${version}.tgz`)}`;
+  return registry ? version : `file:${join(tarballs, `${name.replace('@', '').replace('/', '-')}-${version}.tgz`)}`;
 };
 
 // 2. the app: the tools at the repository's versions, Super through its tarballs
@@ -151,6 +160,9 @@ write(
 </html>
 `,
 );
+
+// The @super-ts scope comes from the registry under test; everything else from the usual one.
+if (registry) write('.npmrc', `@super-ts:registry=${registry}\n`);
 
 // 3. the example from docs/getting-started.html
 write(
@@ -291,7 +303,7 @@ test('the button toggles the theme', async () => {
 );
 
 // 4. what a user does
-run('npm install (tarballs)', 'npm', ['install', '--no-audit', '--no-fund', '--prefer-offline'], app);
+run(registry ? `npm install (@super-ts from ${registry})` : 'npm install (tarballs)', 'npm', ['install', '--no-audit', '--no-fund', '--prefer-offline'], app);
 for (const dir of PACKAGES) {
   if (existsSync(join(app, 'node_modules', manifest(dir).name, 'src'))) {
     fail(`${manifest(dir).name} ships its src/ folder`);
