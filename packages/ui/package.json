@@ -32,7 +32,9 @@
     "dist"
   ],
   "sideEffects": [
-    "**/*.css"
+    "**/*.css",
+    "./dist/index.js",
+    "./src/index.ts"
   ],
   "dependencies": {
     "@super-ts/core": "0.1.0",
