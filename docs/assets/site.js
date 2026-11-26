@@ -77,6 +77,18 @@ const KEYWORDS = new Set(
   ).split(' '),
 );
 
+// Repository files (examples/…): served next to the docs by `npm run docs`, on GitHub otherwise
+// (GitHub Pages only publishes docs/).
+const REPOSITORY_FILES = 'https://github.com/super-ts/super/blob/main/';
+const servesRepository = location.protocol === 'file:' || ['localhost', '127.0.0.1'].includes(location.hostname);
+const repositoryFile = (path) => (servesRepository ? `../${path}` : `${REPOSITORY_FILES}${path}`);
+
+/** Links written `../examples/…` in the pages lead to GitHub when the repository is not served. */
+function linkRepositoryFiles(root) {
+  if (servesRepository) return;
+  for (const link of root.querySelectorAll('a[href^="../"]')) link.href = repositoryFile(link.getAttribute('href').slice(3));
+}
+
 const escapeHtml = (text) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 /** Same rule as docs/tools/build-docs-index.mjs: the anchors must match. */
@@ -138,7 +150,7 @@ function renderCodeBlocks(root) {
       // Excerpt taken from the examples app: link to the full file.
       if (block.dataset.source) {
         const link = document.createElement('a');
-        link.href = `../${block.dataset.source}`;
+        link.href = repositoryFile(block.dataset.source);
         link.textContent = 'View file';
         link.title = block.dataset.source;
         caption.append(link);
@@ -364,6 +376,7 @@ function setupSearch(header) {
   const page = currentPage();
   const article = document.querySelector('article');
   renderCodeBlocks(article);
+  linkRepositoryFiles(article);
 
   const header = buildHeader();
   const layout = document.createElement('div');
