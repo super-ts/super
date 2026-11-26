@@ -1,0 +1,40 @@
+# On main: Changesets keeps a "Version packages" pull request open while changesets are pending.
+# Merging it bumps every @super-ts package to the same version (npm run version-packages); the next
+# run then builds and publishes them to npm with provenance, through npm trusted publishing (OIDC,
+# no token). Publishing only happens once the repository variable RELEASE_ENABLED is 'true': the
+# very first publication is done by hand, since trusted publishing needs the packages to exist.
+name: release
+
+on:
+  push:
+    branches: [main]
+
+concurrency: release
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          registry-url: https://registry.npmjs.org
+      # Trusted publishing needs npm 11.5.1 or later.
+      - run: npm install -g npm@^11.5.1
+      - run: npm ci
+      - uses: changesets/action@v1
+        with:
+          version: npm run version-packages
+          publish: ${{ vars.RELEASE_ENABLED == 'true' && 'npm run release' || '' }}
+          title: 'chore: version packages'
+          commit: 'chore: version packages'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_PROVENANCE: 'true'

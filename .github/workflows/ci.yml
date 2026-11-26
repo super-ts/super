@@ -1,0 +1,31 @@
+# On every pull request and push to main: lint, types, tests, docs index and versions (npm run check),
+# the package build, and the install smoke test from packed tarballs. On pull requests, a changeset
+# is required (an empty one, `npx changeset --empty`, for changes that release nothing).
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build
+      - run: npm run smoke
+      - name: A changeset describes the change
+        if: github.event_name == 'pull_request'
+        run: npx changeset status --since=origin/${{ github.base_ref }}
