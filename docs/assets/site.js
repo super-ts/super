@@ -1,6 +1,9 @@
 // Shared page chrome: header, navigation, table of contents, code and search.
 // Each page only contains its <article>; this script builds the rest.
 
+// The version of the @super-ts packages, written by scripts/sync-version.mjs.
+const VERSION = '0.1.0';
+
 const NAV = [
   {
     title: 'Start here',
@@ -169,6 +172,7 @@ function buildHeader() {
   header.innerHTML = `
     <button class="icon-button menu-button" type="button" aria-label="Menu">Menu</button>
     <a class="brand" href="index.html">Super<span>.</span></a>
+    <span class="version" title="Version of the @super-ts packages">v${VERSION}</span>
     <div class="search" role="search">
       <input type="search" placeholder="Search the docs (press /)" aria-label="Search" autocomplete="off" />
       <ul class="search-results" hidden></ul>

@@ -142,7 +142,7 @@
         vtsls, Zed's usual TypeScript server, does not see them.
       </p>
       <ul>
-        <li><strong>Installing</strong>: Rust via rustup, then <code>zed: install dev extension</code> on the <code>editors/zed</code> folder (see its README). You can follow the build in <code>zed: open log</code>.</li>
+        <li><strong>Installing</strong>: from Zed's extension registry (Extensions panel, search "Super") once the extension is listed there. Until then, or to work on the extension: Rust via rustup, then <code>zed: install dev extension</code> on the <code>editors/zed</code> folder (see its README). You can follow the build in <code>zed: open log</code>.</li>
         <li><strong>Highlighting</strong>: the Tree-sitter grammar for <code>.super</code> files (<code>editors/tree-sitter-super</code>), the TSX one extended to statements written between tags: <code>if</code>, <code>for … ; key</code>, <code>switch</code> and declarations are highlighted as code, not as text. It also knows <code>@tag = …;</code> and <code>@title = …;</code> in a class body (rule <code>super_declaration</code>), which TSX would reject.</li>
         <li><strong>Comments</strong>: between tags, <code>cmd+/</code> writes <code>{/* … */}</code>.</li>
         <li><strong>Formatting</strong>: by the server, on save; never by Prettier.</li>

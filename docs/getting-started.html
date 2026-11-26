@@ -14,7 +14,71 @@
       <p class="lead">Install the repository, run the example, then write a complete feature end to end.</p>
 
       <h2 id="install">Install</h2>
-      <p>Super is not published on npm yet. You work in the repository, which contains the packages and an example app.</p>
+      <p>
+        The <code>@super-ts/*</code> packages are published on npm and share one version. In 0.x, a minor version can
+        break the API.
+      </p>
+
+      <h3 id="in-your-project">In your project</h3>
+      <script type="text/x-code" data-lang="bash">
+        npm i @super-ts/core @super-ts/dom @super-ts/ui
+        npm i -D @super-ts/vite @super-ts/lang @super-ts/testing vite vitest happy-dom typescript
+      </script>
+      <p>
+        The Vite plugin compiles <code>.super</code> files, applies the architecture rules and declares the
+        <code>@core/</code> and <code>@components/</code> aliases, resolved from <code>src</code>. Vitest goes through the
+        same plugin.
+      </p>
+      <script type="text/x-code" data-title="vite.config.ts">
+        import { superPlugin } from '@super-ts/vite';
+        import { defineConfig } from 'vitest/config';
+
+        export default defineConfig({
+          plugins: [superPlugin({ src: 'src' })],
+          test: { environment: 'happy-dom', setupFiles: ['./src/test-setup.ts'] },
+        });
+      </script>
+      <p>
+        The types of <code>.super</code> files are written under <code>.super/</code> by <code>super-tsc</code>, the
+        Vite plugin and the language server: the tsconfig merges that folder with the project (<code>rootDirs</code>) and
+        doubles the two aliases (see <a href="tooling.html#virtual-ts">Tooling</a>).
+      </p>
+      <script type="text/x-code" data-lang="json" data-title="tsconfig.json">
+        {
+          "compilerOptions": {
+            "target": "ES2022",
+            "module": "ESNext",
+            "moduleResolution": "bundler",
+            "lib": ["ES2022", "DOM", "DOM.Iterable"],
+            "strict": true,
+            "noEmit": true,
+            "skipLibCheck": true,
+            "types": ["vite/client"],
+            "rootDirs": [".", "./.super/types", "./.super/virtual"],
+            "paths": {
+              "@core/*": ["./src/@core/*", "./.super/types/src/@core/*"],
+              "@components/*": ["./src/@components/*", "./.super/types/src/@components/*"]
+            }
+          },
+          "include": ["src", "vite.config.ts"]
+        }
+      </script>
+      <script type="text/x-code" data-title="src/test-setup.ts">
+        import { cleanup } from '@super-ts/testing';
+        import { afterEach } from 'vitest';
+
+        // Unmounts what mount() mounted during the test.
+        afterEach(() => cleanup());
+      </script>
+      <p>
+        <code>npx super-tsc tsconfig.json</code> checks the types of <code>.ts</code> and <code>.super</code> files, and
+        <code>npx super-fmt --write src</code> formats <code>.super</code> files. For errors and completion in your editor,
+        plug in the <code>.super</code> language server (see <a href="tooling.html#editor">Tooling</a>); the import order
+        of Super is a shared Biome configuration, <code>@super-ts/lint</code>.
+      </p>
+
+      <h3 id="working-on-super">Working on Super itself</h3>
+      <p>The repository contains the packages and an example app.</p>
       <script type="text/x-code" data-lang="bash">
         npm install
         npm run dev          # the example app on http://localhost:5173
@@ -22,19 +86,16 @@
         npm run typecheck    # super-tsc: types of .ts and .super files, including *.test-d.ts type tests
         npm run lint         # Biome (import order, formatting) and formatting of .super files
         npm run format       # formats everything: Biome for .ts files, the .super formatter for .super files
-        npm run check        # lint, typecheck, tests, then the docs index
+        npm run check        # lint, typecheck, tests, the docs index and the version shown in the README and docs
+        npm run build        # builds the packages into dist/
+        npm run smoke        # installs the packed packages in a blank app and checks it end to end
       </script>
       <p>
-        The packages <code>@super-ts/core</code>, <code>@super-ts/dom</code>, <code>@super-ts/testing</code>,
-        <code>@super-ts/ui</code> and <code>@super-ts/vite</code> are resolved through aliases declared in the <code>tsconfig.json</code> files and
-        <code>vite.config.ts</code>. In the app, the Super folders are imported through aliases too, from any
-        file: <code>'@core/counter/contract'</code>, <code>'@components/app-shell'</code> (see
+        In the repository, <code>@super-ts/…</code> resolves to the sources (<code>packages/*/src</code>), without a build,
+        through the aliases declared in the <code>tsconfig.json</code> files and <code>vite.config.ts</code>. In the app,
+        the Super folders are imported through aliases too, from any file: <code>'@core/counter/contract'</code>,
+        <code>'@components/app-shell'</code> (see
         <a href="architecture.html#importing-from-core-and-components">Architecture</a>).
-      </p>
-      <p>
-        Components are written in <code>.super</code> files: the Vite plugin compiles them, and
-        <code>npm run typecheck</code> checks them. To get errors and completion in your editor, plug in the
-        <code>.super</code> language server (see <a href="tooling.html#editor">Tooling</a>).
       </p>
 
       <h2 id="the-example-app" data-llm="skip">The example app</h2>

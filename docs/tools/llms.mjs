@@ -173,6 +173,8 @@ const kilobytes = (text) => `${Math.round(Buffer.byteLength(text) / 1024)} KB`;
 
 /** Returns the content of the three files, keyed by file name relative to docs/. */
 export function buildLlmsFiles(docs) {
+  // The @super-ts packages share one version: the one of @super-ts/core.
+  const { version } = JSON.parse(readFileSync(join(docs, '..', 'packages', 'core', 'package.json'), 'utf8'));
   const nav = readNav(docs);
   const pages = readPages(docs, nav);
 
@@ -211,7 +213,7 @@ export function buildLlmsFiles(docs) {
   const index = [
     '# Super',
     `> ${summary}`,
-    "Status: exploratory draft. The API may still change and the packages (`@super-ts/core`, `@super-ts/dom`, `@super-ts/testing`, `@super-ts/vite`) are not published on npm: they live in the repository, under `packages/`. Links are relative to the `docs/` folder of the repository.",
+    `Version ${version} of the \`@super-ts/*\` packages, published on npm. Status: exploratory draft, the API may still change (0.x: a minor version can break). Install: \`npm i @super-ts/core @super-ts/dom\` and \`npm i -D @super-ts/vite @super-ts/lang @super-ts/testing\`, see [Getting started](getting-started.html#install). Links are relative to the \`docs/\` folder of the repository.`,
     '## Documentation in one file',
     [
       `- [Full documentation](llms-full.txt): all the pages in markdown, code included (${kilobytes(full)}).`,

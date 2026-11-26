@@ -2,12 +2,12 @@
 
 > A minimalist front-end framework, typed end to end, that governs three things: stores, components and routing. Everything else belongs to your project.
 
-Status: exploratory draft. The API may still change and the packages (`@super-ts/core`, `@super-ts/dom`, `@super-ts/testing`, `@super-ts/vite`) are not published on npm: they live in the repository, under `packages/`. Links are relative to the `docs/` folder of the repository.
+Version 0.1.0 of the `@super-ts/*` packages, published on npm. Status: exploratory draft, the API may still change (0.x: a minor version can break). Install: `npm i @super-ts/core @super-ts/dom` and `npm i -D @super-ts/vite @super-ts/lang @super-ts/testing`, see [Getting started](getting-started.html#install). Links are relative to the `docs/` folder of the repository.
 
 ## Documentation in one file
 
-- [Full documentation](llms-full.txt): all the pages in markdown, code included (418 KB).
-- [Short documentation](llms-small.txt): the same, without the references to the examples app or the secondary passages, for small context windows (356 KB).
+- [Full documentation](llms-full.txt): all the pages in markdown, code included (420 KB).
+- [Short documentation](llms-small.txt): the same, without the references to the examples app or the secondary passages, for small context windows (358 KB).
 
 ## Start here
 

@@ -9,7 +9,9 @@ A minimalist front-end framework, typed end to end. It frames three things, **st
 
 With Super, the IDE knows the body of every command, the payload of every event and the parameters of every route. A link without its parameter, a screen with the wrong props, an unknown command or a typo in a template do not compile.
 
-> Status: exploratory draft. The API may still change, and the packages are not published on npm.
+<!-- version -->**Version 0.1.0**<!-- /version --> of the `@super-ts/*` packages, published on npm.
+
+> Status: exploratory draft. The API may still change: in 0.x, a minor version can break.
 
 ## At a glance
 
@@ -76,7 +78,58 @@ export class CounterButton extends SuperElement {
 - **The page title follows the data.** ``@title = () => `Counter ${this.label.value}`;`` is recomputed on every render; the last mounted component that sets a title wins, and the previous one comes back when it unmounts.
 - **The web standard first.** A store is an `EventTarget`, a component is a custom element. `.super` files are compiled to lit-html, without you ever importing it. The whole demo app weighs 37.4 KB of gzipped JavaScript, lit-html included.
 
-## Getting started
+## Installation
+
+```bash
+npm i @super-ts/core @super-ts/dom @super-ts/ui
+npm i -D @super-ts/vite @super-ts/lang @super-ts/testing vite vitest happy-dom typescript
+```
+
+```ts
+// vite.config.ts: the plugin compiles .super files and declares the @core/ and @components/ aliases
+import { superPlugin } from '@super-ts/vite';
+import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  plugins: [superPlugin({ src: 'src' })],
+  test: { environment: 'happy-dom', setupFiles: ['./src/test-setup.ts'] },
+});
+```
+
+```jsonc
+// tsconfig.json: the types of .super files, written by super-tsc and the Vite plugin under .super/
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": ["vite/client"],
+    "rootDirs": [".", "./.super/types", "./.super/virtual"],
+    "paths": {
+      "@core/*": ["./src/@core/*", "./.super/types/src/@core/*"],
+      "@components/*": ["./src/@components/*", "./.super/types/src/@components/*"]
+    }
+  },
+  "include": ["src", "vite.config.ts"]
+}
+```
+
+```ts
+// src/test-setup.ts: unmounts what mount() mounted after each test
+import { cleanup } from '@super-ts/testing';
+import { afterEach } from 'vitest';
+
+afterEach(() => cleanup());
+```
+
+`npx super-tsc tsconfig.json` checks the types of `.ts` and `.super` files, `npx super-fmt --write src`
+formats `.super` files. The full setup, editor included, is in [Getting started](docs/getting-started.html#install).
+
+## Working on Super
 
 ```bash
 npm install

@@ -8,7 +8,7 @@ A minimalist front-end framework, typed end to end, that governs three things: s
 
 > **Status: exploratory draft**
 >
-> The API may still change. The packages are not published on npm: they live in the repository, under `packages/`.
+> The API may still change: in 0.x, a minor version can break. The `@super-ts/*` packages are published on npm and share one version (see [Install](getting-started.html#install)).
 
 ## At a glance
 
@@ -127,7 +127,63 @@ Install the repository, run the example, then write a complete feature end to en
 
 ## Install
 
-Super is not published on npm yet. You work in the repository, which contains the packages and an example app.
+The `@super-ts/*` packages are published on npm and share one version. In 0.x, a minor version can break the API.
+
+### In your project
+
+```bash
+npm i @super-ts/core @super-ts/dom @super-ts/ui
+npm i -D @super-ts/vite @super-ts/lang @super-ts/testing vite vitest happy-dom typescript
+```
+
+The Vite plugin compiles `.super` files, applies the architecture rules and declares the `@core/` and `@components/` aliases, resolved from `src`. Vitest goes through the same plugin.
+
+```ts title="vite.config.ts"
+import { superPlugin } from '@super-ts/vite';
+import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  plugins: [superPlugin({ src: 'src' })],
+  test: { environment: 'happy-dom', setupFiles: ['./src/test-setup.ts'] },
+});
+```
+
+The types of `.super` files are written under `.super/` by `super-tsc`, the Vite plugin and the language server: the tsconfig merges that folder with the project (`rootDirs`) and doubles the two aliases (see [Tooling](tooling.html#virtual-ts)).
+
+```json title="tsconfig.json"
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": ["vite/client"],
+    "rootDirs": [".", "./.super/types", "./.super/virtual"],
+    "paths": {
+      "@core/*": ["./src/@core/*", "./.super/types/src/@core/*"],
+      "@components/*": ["./src/@components/*", "./.super/types/src/@components/*"]
+    }
+  },
+  "include": ["src", "vite.config.ts"]
+}
+```
+
+```ts title="src/test-setup.ts"
+import { cleanup } from '@super-ts/testing';
+import { afterEach } from 'vitest';
+
+// Unmounts what mount() mounted during the test.
+afterEach(() => cleanup());
+```
+
+`npx super-tsc tsconfig.json` checks the types of `.ts` and `.super` files, and `npx super-fmt --write src` formats `.super` files. For errors and completion in your editor, plug in the `.super` language server (see [Tooling](tooling.html#editor)); the import order of Super is a shared Biome configuration, `@super-ts/lint`.
+
+### Working on Super itself
+
+The repository contains the packages and an example app.
 
 ```bash
 npm install
@@ -136,12 +192,12 @@ npm test             # the tests (Vitest, happy-dom)
 npm run typecheck    # super-tsc: types of .ts and .super files, including *.test-d.ts type tests
 npm run lint         # Biome (import order, formatting) and formatting of .super files
 npm run format       # formats everything: Biome for .ts files, the .super formatter for .super files
-npm run check        # lint, typecheck, tests, then the docs index
+npm run check        # lint, typecheck, tests, the docs index and the version shown in the README and docs
+npm run build        # builds the packages into dist/
+npm run smoke        # installs the packed packages in a blank app and checks it end to end
 ```
 
-The packages `@super-ts/core`, `@super-ts/dom`, `@super-ts/testing`, `@super-ts/ui` and `@super-ts/vite` are resolved through aliases declared in the `tsconfig.json` files and `vite.config.ts`. In the app, the Super folders are imported through aliases too, from any file: `'@core/counter/contract'`, `'@components/app-shell'` (see [Architecture](architecture.html#importing-from-core-and-components)).
-
-Components are written in `.super` files: the Vite plugin compiles them, and `npm run typecheck` checks them. To get errors and completion in your editor, plug in the `.super` language server (see [Tooling](tooling.html#editor)).
+In the repository, `@super-ts/…` resolves to the sources (`packages/*/src`), without a build, through the aliases declared in the `tsconfig.json` files and `vite.config.ts`. In the app, the Super folders are imported through aliases too, from any file: `'@core/counter/contract'`, `'@components/app-shell'` (see [Architecture](architecture.html#importing-from-core-and-components)).
 
 ## Your first feature: a theme button
 
@@ -5593,7 +5649,7 @@ In the editor, the language server formats the file (format on save in Zed, see 
 
 The extension in `editors/zed` (id `super-lang`) declares the "Super" language for `.super` files and starts the server. It installs `@super-ts/language-server` from npm at the version of `@super-ts/lang` in the project, so the editor and the compiler agree, or the latest version in a project without Super, and runs it with Zed's Node. A binary set in the settings (`lsp.super-language-server.binary`) takes precedence: the Super repository uses it to run the server from its sources (`.zed/settings.json`). Since `.super` files have their own language, vtsls, Zed's usual TypeScript server, does not see them.
 
-- **Installing**: Rust via rustup, then `zed: install dev extension` on the `editors/zed` folder (see its README). You can follow the build in `zed: open log`.
+- **Installing**: from Zed's extension registry (Extensions panel, search "Super") once the extension is listed there. Until then, or to work on the extension: Rust via rustup, then `zed: install dev extension` on the `editors/zed` folder (see its README). You can follow the build in `zed: open log`.
 - **Highlighting**: the Tree-sitter grammar for `.super` files (`editors/tree-sitter-super`), the TSX one extended to statements written between tags: `if`, `for … ; key`, `switch` and declarations are highlighted as code, not as text. It also knows `@tag = …;` and `@title = …;` in a class body (rule `super_declaration`), which TSX would reject.
 - **Comments**: between tags, `cmd+/` writes `{/* … */}`.
 - **Formatting**: by the server, on save; never by Prettier.
@@ -6510,7 +6566,7 @@ And on the tooling side (see [Tooling](tooling.html)):
 
 ### Distribution
 
-- The packages are not published: they are resolved by alias from `packages/*/src`.
+- The packages are in 0.x: a minor version can break the API. They all share one version, so install them at the same version.
 
 What is still missing, the follow-ups set aside and the questions under discussion are in [Roadmap and open questions](roadmap.html).
 
@@ -6567,8 +6623,8 @@ Each command already goes through an `EventTarget`, with its outcome. A developm
 
 ### Publication
 
-- Publish the `@super-ts/*` packages on npm, once the API is stable: today, they are resolved by alias from `packages/*/src`.
-- Publish the Tree-sitter grammar and the Zed extension. This needs a public repository for each, a licence, English texts, a language server published on npm (as a single file) that the extension installs, and a request to add it to Zed's extension registry.
+- Reach a stable API and a 1.0 of the `@super-ts/*` packages, which are published on npm in 0.x.
+- Add the Zed extension to Zed's extension registry. The grammar is public, the language server is published on npm and the extension installs it.
 
 ## Open questions
 
