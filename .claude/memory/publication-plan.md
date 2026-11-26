@@ -150,22 +150,16 @@ Préparé le 2026-11-26 dans `editors/tree-sitter-super` (commits locaux, à pou
 - L'utilisateur doit désinstaller l'ancienne extension dev d'id `super`, puis `zed: install dev extension` sur `editors/zed`.
 - `repository` pointe vers le dépôt privé : à changer pour le futur dépôt public avant la PR Zed (phase 10).
 
-## Phase 8 : Changesets, version et CI (moi)
+## Phase 8 : Changesets, version et CI (faite le 2026-11-26)
 
-- [ ] `@changesets/cli`, avec `.changeset/config.json` :
-  - groupe `fixed` sur `@super-ts/*` ;
-  - `access: public`, `baseBranch: main` ;
-  - `ignore` pour la démo.
-- [ ] `scripts/sync-version.mjs` lit la version de `packages/core/package.json` et la reporte :
-  - dans le README, entre `<!-- version -->` et `<!-- /version -->` (badge, ligne d'installation) ;
-  - dans la doc HTML (en-tête ou pied) et dans `llms*.txt` (par `docs/tools/build-docs-index.mjs`).
-- [ ] Script racine `"version": "changeset version && node scripts/sync-version.mjs"`, et un test qui vérifie que le README et la doc annoncent la version des paquets.
-- [ ] La doc :
-  - une section d'installation (`npm i @super-ts/core @super-ts/dom`, `npm i -D @super-ts/vite @super-ts/lang @super-ts/testing`) ;
-  - retirer « non publiés » de `llms.txt`, de `roadmap.html` et des passages sur les alias ;
-  - mettre à jour `tooling.html#zed` (installation depuis le registre Zed).
-- [ ] `.github/workflows/ci.yml`, sur chaque PR : `npm run check`, `npm run build`, le test d'installation, `changeset status --since=origin/main`, la compilation de l'extension.
-- [ ] `.github/workflows/release.yml`, sur `main` : `changesets/action`. Il ouvre la PR « Version packages » ; son merge lance le build et `changeset publish` avec provenance (`permissions: id-token: write`).
+- [x] `@changesets/cli` à la racine, `.changeset/config.json` : `fixed: [["@super-ts/*"]]` (les 8 paquets, serveur de langage et lint compris), `access: public`, `baseBranch: main`. La démo n'est pas un workspace : rien à ignorer.
+  - Piège trouvé par un essai de `changeset version` dans un worktree jetable : un `minor` sur core passait **tout en 1.0.0**, parce que `@super-ts/lang` avait `@super-ts/dom` en peer dependency exacte (Changesets force un major sur les dépendants d'une peer dependency, et le groupe fixe le propage). Corrigé : peer `"@super-ts/dom": ">=0.1.0"` + option `___experimentalUnsafeOptions_WILL_CHANGE_IN_PATCH.onlyUpdatePeerDependentsWhenOutOfRange: true`. Revérifié : minor → 0.2.0 partout, patch → 0.1.1, dépendances internes exactes mises à jour.
+- [x] `scripts/sync-version.mjs [--check]` : vérifie que les 8 paquets et leurs dépendances internes ont la version de core, l'écrit dans le README (`<!-- version -->**Version x**<!-- /version -->`) et dans `docs/assets/site.js` (`const VERSION`, affiché à côté du logo, classe `.version`). `llms.mjs` lit la version lui-même. `--check` est au bout de `npm run check` (vérifié : échoue sur une version périmée).
+- [x] Scripts racine : `changeset`, `version-packages` (`changeset version && sync-version && npm install --package-lock-only && docs:index`, nom choisi pour ne pas détourner le hook npm `version`), `release` (`build && changeset publish`).
+- [x] Doc : section Installation du README et `getting-started.html#install` (sous-sections `in-your-project` et `working-on-super`), avec la config exacte de l'app du smoke test (vite.config, tsconfig, test-setup). « Non publiés » retiré de l'accueil, des limites, de la roadmap, des llms ; `tooling.html#zed` : registre Zed « once listed », sinon extension dev. Ces textes disent les paquets publiés alors qu'ils ne le seront qu'en phase 9 (dépôt privé d'ici là).
+- [x] `.github/workflows/ci.yml` (PR et push sur main, Node 24) : `npm ci`, `check`, `build`, `smoke`, et sur PR `changeset status --since=origin/<base>` (une PR sans release met un changeset vide). La compilation de l'extension reste dans `zed-extension.yml`.
+- [x] `.github/workflows/release.yml` (push sur main) : `changesets/action@v1`, `version: npm run version-packages`, titre et commit `chore: version packages`, `NPM_CONFIG_PROVENANCE`, `id-token: write`, npm mis à jour en ^11.5.1 (trusted publishing), `registry-url`, pas de `NODE_AUTH_TOKEN`. La publication ne part que si la variable de dépôt `RELEASE_ENABLED` vaut `'true'` (sinon `publish` est vide) : **l'utilisateur la met à `true` après la phase 9**.
+- À savoir : la PR « Version packages » ouverte avec `GITHUB_TOKEN` ne déclenche pas les workflows (limite GitHub) : pas de CI sur cette PR.
 
 ## Phase 9 : première publication npm (l'utilisateur)
 
