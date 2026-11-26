@@ -2,7 +2,8 @@
 //
 // The packages share one version (Changesets `fixed` group). This script checks that they agree,
 // internal dependencies included, then writes the version of @super-ts/core into:
-//   README.md             between <!-- version --> and <!-- /version -->
+//   README.md             between <!-- version --> and <!-- /version --> (inside a sentence: a line
+//                         that starts with an HTML comment is raw HTML on GitHub)
 //   docs/assets/site.js   const VERSION = '…'; (shown next to the brand in the docs header)
 // The llms*.txt files read it themselves (docs/tools/llms.mjs).
 // `--check` writes nothing and fails if something is out of date (run by `npm run check`);
@@ -40,7 +41,7 @@ function sync(path, pattern, render) {
   else writeFileSync(join(root, path), next);
 }
 
-sync('README.md', /<!-- version -->[\s\S]*?<!-- \/version -->/, (v) => `<!-- version -->**Version ${v}**<!-- /version -->`);
+sync('README.md', /<!-- version -->[^<]*<!-- \/version -->/, (v) => `<!-- version -->${v}<!-- /version -->`);
 sync('docs/assets/site.js', /const VERSION = '[^']*';/, (v) => `const VERSION = '${v}';`);
 
 if (problems.length > 0) {

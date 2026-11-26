@@ -9,7 +9,7 @@ A minimalist front-end framework, typed end to end. It frames three things, **st
 
 With Super, the IDE knows the body of every command, the payload of every event and the parameters of every route. A link without its parameter, a screen with the wrong props, an unknown command or a typo in a template do not compile.
 
-<!-- version -->**Version 0.1.0**<!-- /version --> of the `@super-ts/*` packages, published on npm. Documentation: **[super-ts.github.io/super](https://super-ts.github.io/super/)**.
+**Version <!-- version -->0.1.0<!-- /version -->** of the `@super-ts/*` packages, published on npm. Documentation: [super-ts.github.io/super](https://super-ts.github.io/super/).
 
 > Status: exploratory draft. The API may still change: in 0.x, a minor version can break.
 
@@ -127,7 +127,7 @@ afterEach(() => cleanup());
 ```
 
 `npx super-tsc tsconfig.json` checks the types of `.ts` and `.super` files, `npx super-fmt --write src`
-formats `.super` files. The full setup, editor included, is in [Getting started](docs/getting-started.html#install).
+formats `.super` files. The full setup, editor included, is in [Getting started](https://super-ts.github.io/super/getting-started.html#install).
 
 ## Working on Super
 
@@ -144,33 +144,33 @@ npm run docs       # the documentation on http://localhost:5174
 
 The packages are npm workspaces (`packages/*`). In this repository, `@super-ts/…` resolves to the sources (`packages/*/src`), without a build: through the aliases in `tsconfig.json` and `vite.config.ts` in the app and the tests, and through the `@super-ts/source` export condition for Node (`.npmrc` passes it to every npm script, and Vite loads its config with `--configLoader native` to benefit from it). So run Vite and Vitest through `npm run …`.
 
-For errors and completion in `.super` files, connect your editor to the language server in `packages/lang-server`. In Zed, install the extension in `editors/zed` as a dev extension (`zed: install dev extension`). See [Tooling](docs/tooling.html).
+For errors and completion in `.super` files, connect your editor to the language server in `packages/lang-server`. In Zed, install the extension in `editors/zed` as a dev extension (`zed: install dev extension`). See [Tooling](https://super-ts.github.io/super/tooling.html).
 
 The Zed extension and the Tree-sitter grammar for `.super` files live in their own public repositories, [super-ts/super-extension-zed](https://github.com/super-ts/super-extension-zed) and [super-ts/tree-sitter-super](https://github.com/super-ts/tree-sitter-super). They are plugged in here as submodules, in `editors/zed` and `editors/tree-sitter-super`: clone with `git clone --recurse-submodules`, or run `git submodule update --init` afterwards.
 
 ## Documentation
 
-The documentation is online at **[super-ts.github.io/super](https://super-ts.github.io/super/)**, published from [`docs/`](docs/index.html) by GitHub Pages on every change. Locally, run `npm run docs`. It has built-in search (`/` key).
+The documentation is online at **[super-ts.github.io/super](https://super-ts.github.io/super/)**, published from [`docs/`](https://super-ts.github.io/super/) by GitHub Pages on every change. Locally, run `npm run docs`. It has built-in search (`/` key).
 
-- [Getting started](docs/getting-started.html): your first feature, from contract to test.
-- [Examples](docs/examples.html): what each file of the demo app shows.
-- [Architecture](docs/architecture.html): what Super enforces, what is left to you.
-- [Commands and events](docs/commands-and-events.html): the path of an action, from click to screen.
-- [Components](docs/components.html): preparation and `render`, and where to put what.
-- [Templates](docs/templates.html): the syntax of `.super` files; and [Tooling](docs/tooling.html): `super-tsc`, language server, editor, Vite.
-- [Router](docs/router.html): typed paths, redirects, guards; and [Handling errors](docs/errors.html).
-- [Forms](docs/forms.html): every field type, rules, asynchronous checks, lists, server errors.
-- [Frequently asked questions](docs/faq.html) and [API](docs/api.html).
-- [Limitations](docs/limitations.html).
-- [Roadmap and open questions](docs/roadmap.html).
+- [Getting started](https://super-ts.github.io/super/getting-started.html): your first feature, from contract to test.
+- [Examples](https://super-ts.github.io/super/examples.html): what each file of the demo app shows.
+- [Architecture](https://super-ts.github.io/super/architecture.html): what Super enforces, what is left to you.
+- [Commands and events](https://super-ts.github.io/super/commands-and-events.html): the path of an action, from click to screen.
+- [Components](https://super-ts.github.io/super/components.html): preparation and `render`, and where to put what.
+- [Templates](https://super-ts.github.io/super/templates.html): the syntax of `.super` files; and [Tooling](https://super-ts.github.io/super/tooling.html): `super-tsc`, language server, editor, Vite.
+- [Router](https://super-ts.github.io/super/router.html): typed paths, redirects, guards; and [Handling errors](https://super-ts.github.io/super/errors.html).
+- [Forms](https://super-ts.github.io/super/forms.html): every field type, rules, asynchronous checks, lists, server errors.
+- [Frequently asked questions](https://super-ts.github.io/super/faq.html) and [API](https://super-ts.github.io/super/api.html).
+- [Limitations](https://super-ts.github.io/super/limitations.html).
+- [Roadmap and open questions](https://super-ts.github.io/super/roadmap.html).
 
 ### For an LLM or a coding agent
 
 The docs also exist in markdown, in the [llms.txt](https://llmstxt.org) format:
 
-- [`docs/llms.txt`](docs/llms.txt): the index, one line per page.
-- [`docs/llms-full.txt`](docs/llms-full.txt): all the docs in one file, code included.
-- [`docs/llms-small.txt`](docs/llms-small.txt): the same, without the FAQ, the examples catalogue or the references to the demo app, for small context windows.
+- [`docs/llms.txt`](https://super-ts.github.io/super/llms.txt): the index, one line per page.
+- [`docs/llms-full.txt`](https://super-ts.github.io/super/llms-full.txt): all the docs in one file, code included.
+- [`docs/llms-small.txt`](https://super-ts.github.io/super/llms-small.txt): the same, without the FAQ, the examples catalogue or the references to the demo app, for small context windows.
 
 These files are generated from the HTML pages, like the search index. To remove a passage from the short version, mark it `data-llm="skip"` in the HTML (see `docs/tools/llms.mjs`).
 
