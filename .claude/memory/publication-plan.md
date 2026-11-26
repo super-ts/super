@@ -114,11 +114,14 @@ But : versionner et sauvegarder, sans rien publier. Le câblage local reste tel 
   - `super-fmt` exige `biome.json` et `node_modules/.bin/biome` dans le même dossier (`biome.ts`) : à revoir pour les monorepos où Biome est hissé plus haut.
   - `super-tsc` sur un projet neuf échoue tant que `src/@core/contracts.d.ts` n'existe pas : il est écrit par le plugin Vite (`vite build` ou `vite`). La doc dit de le committer ; le smoke lance `vite build` d'abord.
 
-## Phase 5 : serveur de langage publiable (moi)
+## Phase 5 : serveur de langage publiable (faite le 2026-11-26, sauf le groupe `fixed`)
 
-- [ ] Renommer le paquet `@super-ts/language-server`, le rendre public et le mettre dans le groupe `fixed`.
-- [ ] L'assembler en un seul `dist/server.js` avec Rolldown (déjà présent par Vite 8). Le code de `lang` est inclus ; `typescript@6`, Volar et `vscode-uri` restent des dépendances. `bin` pointe vers `dist/server.js`.
-- [ ] Le tester une fois assemblé : tests de `server.test.ts` lancés sur le `dist`.
+- [x] `packages/lang-server` s'appelle `@super-ts/language-server` (0.1.0, public, `files: ["dist"]`, `bin.super-language-server` → `dist/server.js`). Il est dans les workspaces : son `package-lock.json` et son `node_modules` à part sont supprimés, un `npm ci` racine suffit dans un clone neuf. TypeScript 6 reste imbriqué dans `packages/lang-server/node_modules` (TS 7 à la racine) ; `declarations.test.ts` lit `../node_modules/typescript/lib/tsserver.js`, toujours valable.
+- [x] Assemblé par Rolldown (devDependency explicite, même version que celle de Vite 8) dans `scripts/build.mjs` : un `dist/server.js` (≈ 107 Ko, shebang) qui embarque le code de lang (importé par `../../lang/src/…`). Externes : les `dependencies` du paquet (TypeScript 6, Volar, volar-service-typescript, vscode-uri) et les modules Node. `check.ts` de lang est copié dans `dist` (lu à l'exécution par le code de `virtual.ts` embarqué).
+- [x] Testé assemblé : `server.test.ts` pilote `SUPER_LS_SERVER` s'il est défini. `npm run smoke` installe le tarball du serveur dans l'app (TS 6 et Volar venus de npm) et lance les 25 tests sur ce serveur installé.
+- [ ] Groupe `fixed` de Changesets : avec la phase 8.
+- Doc : tableau des paquets de `docs/index.html` mis à jour.
+- Pour la phase 7 : `editors/zed/src/lib.rs` cherche encore `node_modules/super-language-server/src/server.ts`, chemin mort depuis le renommage (repli sur `packages/lang-server/src/server.ts` dans le dépôt) ; `docs/outillage.html` décrit ce comportement. Le nom du serveur LSP côté Zed (`super-language-server`, réglage `lsp.super-language-server.binary`) ne change pas.
 
 ## Phase 6 : grammaire publique (l'utilisateur, puis moi)
 
