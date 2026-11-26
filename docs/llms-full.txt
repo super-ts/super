@@ -6086,7 +6086,7 @@ In the editor, the language server formats the file (format on save in Zed, see 
 
 ## Zed
 
-The extension in `editors/zed` declares the "Super" language for `.super` files and starts the server: the one from the `super-language-server` package if it is installed in the project, otherwise `packages/lang-server`, with the Node on the PATH. Since `.super` files have their own language, vtsls, Zed's usual TypeScript server, does not see them.
+The extension in `editors/zed` (id `super-lang`) declares the "Super" language for `.super` files and starts the server. It installs `@super-ts/language-server` from npm at the version of `@super-ts/lang` in the project, so the editor and the compiler agree, or the latest version in a project without Super, and runs it with Zed's Node. A binary set in the settings (`lsp.super-language-server.binary`) takes precedence: the Super repository uses it to run the server from its sources (`.zed/settings.json`). Since `.super` files have their own language, vtsls, Zed's usual TypeScript server, does not see them.
 
 - **Installing**: Rust via rustup, then `zed: install dev extension` on the `editors/zed` folder (see its README). You can follow the build in `zed: open log`.
 - **Highlighting**: the Tree-sitter grammar for `.super` files (`editors/tree-sitter-super`), the TSX one extended to statements written between tags: `if`, `for … ; key`, `switch` and declarations are highlighted as code, not as text. It also knows `@tag = …;` and `@title = …;` in a class body (rule `super_declaration`), which TSX would reject.

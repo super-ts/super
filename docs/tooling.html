@@ -133,9 +133,12 @@
 
       <h2 id="zed">Zed</h2>
       <p>
-        The extension in <code>editors/zed</code> declares the "Super" language for <code>.super</code> files and starts
-        the server: the one from the <code>super-language-server</code> package if it is installed in the project, otherwise
-        <code>packages/lang-server</code>, with the Node on the PATH. Since <code>.super</code> files have their own language,
+        The extension in <code>editors/zed</code> (id <code>super-lang</code>) declares the "Super" language for
+        <code>.super</code> files and starts the server. It installs <code>@super-ts/language-server</code> from npm at the
+        version of <code>@super-ts/lang</code> in the project, so the editor and the compiler agree, or the latest version
+        in a project without Super, and runs it with Zed's Node. A binary set in the settings
+        (<code>lsp.super-language-server.binary</code>) takes precedence: the Super repository uses it to run the server
+        from its sources (<code>.zed/settings.json</code>). Since <code>.super</code> files have their own language,
         vtsls, Zed's usual TypeScript server, does not see them.
       </p>
       <ul>
