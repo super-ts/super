@@ -1,0 +1,43 @@
+{
+  "name": "@super-ts/core",
+  "version": "0.1.0",
+  "description": "Typed contracts, selectors and stores for Super. No DOM dependency.",
+  "keywords": [
+    "super",
+    "super-ts",
+    "store",
+    "state",
+    "contract"
+  ],
+  "license": "MIT",
+  "author": "Dimitri Lahaye",
+  "homepage": "https://github.com/super-ts/super#readme",
+  "bugs": {
+    "url": "https://github.com/super-ts/super/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/super-ts/super.git",
+    "directory": "packages/core"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "@super-ts/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./internal": {
+      "@super-ts/source": "./src/internal.ts",
+      "types": "./dist/internal.d.ts",
+      "default": "./dist/internal.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "name": "@super-ts/lint",
+  "version": "0.1.0",
+  "description": "Shared Biome configuration for Super apps (import order).",
+  "keywords": [
+    "super",
+    "super-ts",
+    "biome",
+    "lint"
+  ],
+  "license": "MIT",
+  "author": "Dimitri Lahaye",
+  "homepage": "https://github.com/super-ts/super#readme",
+  "bugs": {
+    "url": "https://github.com/super-ts/super/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/super-ts/super.git",
+    "directory": "packages/lint"
+  },
+  "type": "module",
+  "exports": {
+    "./config.json": "./config.json"
+  },
+  "files": [
+    "config.json"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "name": "@super-ts/vite",
+  "version": "0.1.0",
+  "description": "Vite plugin for Super: compiles .super files, enforces the architecture rules, generates the contracts registry.",
+  "keywords": [
+    "super",
+    "super-ts",
+    "vite",
+    "vite-plugin"
+  ],
+  "license": "MIT",
+  "author": "Dimitri Lahaye",
+  "homepage": "https://github.com/super-ts/super#readme",
+  "bugs": {
+    "url": "https://github.com/super-ts/super/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/super-ts/super.git",
+    "directory": "packages/vite"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "@super-ts/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@super-ts/lang": "0.1.0"
+  },
+  "peerDependencies": {
+    "vite": "^8.0.0"
+  },
+  "engines": {
+    "node": ">=20.19"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

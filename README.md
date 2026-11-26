@@ -89,6 +89,8 @@ npm run check      # lint, typecheck, tests, puis index de la doc
 npm run docs       # la documentation sur http://localhost:5174
 ```
 
+Les paquets sont des workspaces npm (`packages/*`). Dans ce dépôt, `@super-ts/…` se résout vers les sources (`packages/*/src`), sans build : par les alias de `tsconfig.json` et `vite.config.ts` dans l'app et les tests, et par la condition d'export `@super-ts/source` pour Node (le `.npmrc` la passe à tous les scripts npm, et Vite charge sa config avec `--configLoader native` pour en profiter). Lance donc Vite et Vitest par `npm run …`.
+
 Pour les erreurs et la complétion dans les `.super`, branche ton éditeur sur le serveur de langage de `packages/lang-server`. Sous Zed, installe l'extension de `editors/zed` comme extension de développement (`zed: install dev extension`). Voir [Outillage](docs/outillage.html).
 
 La grammaire Tree-sitter des `.super`, utilisée par l'extension Zed, vit dans son propre dépôt : [super-ts/tree-sitter-super](https://github.com/super-ts/tree-sitter-super). Elle est branchée ici en sous-module, dans `editors/tree-sitter-super` : clone avec `git clone --recurse-submodules`, ou lance `git submodule update --init` après coup.

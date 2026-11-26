@@ -25,11 +25,14 @@ Ordre retenu : dépôts privés d'abord (phase 1), puis les phases 2 à 8, puis 
 - **Release par PR :** une PR « Version packages » est tenue par `changesets/action`, et son merge publie sur npm (provenance, trusted publishing OIDC, sans token).
 - **L'extension Zed a sa propre version**, hors groupe `fixed` : elle ne sort que si l'extension ou la grammaire changent. Elle installe depuis npm le serveur de la même version que `@super-ts/lang` du projet, ou la dernière à défaut.
 
-## Décisions ouvertes (à demander à l'utilisateur)
+## Décisions tranchées le 2026-11-26
 
-- **Version de départ :** `0.1.0` (conseillé, l'API bouge encore) ou `1.0.0`.
-- **Nom du dépôt GitHub** de Super, et celui de la grammaire (par exemple `tree-sitter-super`).
-- **Licence** (MIT ?), pour les paquets, l'extension et la grammaire.
+- **Version de départ :** `0.1.0`.
+- **Dépôts :** organisation GitHub `super-ts`, dépôts `super-ts/super` et `super-ts/tree-sitter-super`.
+- **Licence :** MIT, `Copyright (c) 2026 Dimitri Lahaye`, pour tout (paquets, extension, grammaire). Raisons données : norme des frameworks front, compatible avec lit-html (BSD-3), Volar et tree-sitter-typescript (MIT), acceptée par Zed. Le LICENSE de la grammaire reprend aussi la mention de tree-sitter-typescript (Max Brunsfeld).
+
+## Décision encore ouverte
+
 - **Id de l'extension Zed :** `super` est sûrement pris, `super-lang` est proposé. Pas de « zed » ni « extension » dans l'id.
 
 ## État constaté le 2026-11-26
@@ -72,20 +75,16 @@ But : versionner et sauvegarder, sans rien publier. Le câblage local reste tel 
 - **GitHub Pages pour la doc** : un workflow lance `npm run docs:index` puis publie `docs/`. Pages sur un dépôt privé demande un compte payant, d'où son arrivée au passage en public.
 - La grammaire passe en public elle aussi, puis `extension.toml` pointe vers son URL HTTPS (phase 6).
 
-## Phase 2 : des paquets npm réels (moi)
+## Phase 2 : des paquets npm réels (faite le 2026-11-26)
 
-- [ ] Un `package.json` par paquet : `name`, `version`, `type: module`, `exports` (avec `types`), `files: ["dist"]`, `license`, `repository` (avec `directory`, nécessaire à la provenance), `publishConfig.access: public`.
-  - `core` : exports `.` et `./internal`.
-  - `dom` : dépend de `lit-html` et de `@super-ts/core` (version exacte) ; exports `.` et `./internal`.
-  - `ui` : dépend de `dom` et `core` ; `sideEffects: ["*.css"]` ; CSS copié dans `dist`.
-  - `testing` : dépend de `core` et `dom` ; `vitest` en peer.
-  - `vite` : dépend de `@super-ts/lang` ; `vite` en peer.
-  - `lang` : `bin.super-tsc` ; `typescript` (7) en peer ; il lance Biome pour le formatage, donc décider si `@biomejs/biome` est en peer ou en dépendance optionnelle.
-  - `lint` : `files: ["config.json"]`.
-  - `language-server` : voir la phase 5.
-- [ ] Remplacer les imports `../../lang/src/…` de `vite` par `@super-ts/lang` (exporter ce qu'il faut depuis `lang`).
-- [ ] Ajouter `"workspaces"` à la racine, en listant les paquets un par un. Tester si `lang-server` peut y entrer (TS 6 imbriqué). Sinon, il reste hors workspaces et un script aligne sa version.
-- [ ] Garder les alias vers `src/` pour le développement : la démo et les tests ne dépendent pas du build.
+- [x] `LICENSE` MIT à la racine, dans chaque paquet (npm publie chaque dossier séparément), dans `editors/zed` (+ `license` dans Cargo.toml) et dans la grammaire (non commitée là-bas au moment de la phase 2).
+- [x] Un `package.json` par paquet (`@super-ts/core|dom|ui|testing|vite|lang|lint`), version `0.1.0`, descriptions en anglais, `author: Dimitri Lahaye` (sans e-mail, il serait public sur npm), `repository.directory`, `publishConfig.access: public`, `files: ["dist"]`.
+  - Dépendances internes en version exacte. `dom` : `lit-html` (retiré de la racine). `vite` : `@super-ts/lang`, peer `vite ^8`. `lang` : peers `@super-ts/dom` (le code compilé l'importe), `typescript ^7` (`super-tsc` lance `npx tsc`), `@biomejs/biome` optionnel (le formateur lance le Biome du projet). `testing` n'importe pas vitest : pas de peer. `ui` : `sideEffects: ["**/*.css"]`. `lint` : exports `./config.json`.
+  - `bin.super-tsc` reporté en phase 3 (il doit pointer vers `dist`).
+- [x] **Résolution vers les sources sans build** : chaque export a la forme `{ "@super-ts/source": "./src/x.ts", "types": "./dist/x.d.ts", "default": "./dist/x.js" }`. Le `.npmrc` du dépôt fait `node-options=--conditions=@super-ts/source` pour tous les scripts npm. Piège trouvé : le chargeur de config par défaut de Vite (`bundle`) résout les imports nus avec des conditions fixes (`node`, `module-sync`) et ignore celles de Node, donc `dev`, `build:example`, `test` et `test:watch` passent `--configLoader native` (Node charge la config). Conséquence : lancer Vite et Vitest par `npm run`, pas par `npx` nu. Les alias tsconfig/vite restent pour l'app et les tests (alias `@super-ts/lang` ajouté à vite.config).
+- [x] `packages/vite/src/index.ts` importe `compile`, `composeMap`, `SourceMap`, `writeVirtualFile` depuis `@super-ts/lang` (exportés par `packages/lang/src/index.ts`).
+- [x] `"workspaces"` à la racine (les 7 paquets listés un par un) ; `lang-server` reste hors workspaces pour l'instant (phase 5). `npm run check` vert (457 tests), build de la démo et serveur de dev vérifiés.
+- À savoir pour la phase 3 : `virtual.ts` lit `check.ts` à l'exécution (`readFileSync(import.meta.dirname, 'check.ts')`), il faudra donc livrer ce fichier dans `dist`. Le README annonce 24,6 Ko gzip pour la démo, alors que le build fait 38,3 Ko gzip, déjà avant la phase 2 : chiffre périmé à corriger.
 
 ## Phase 3 : build (moi)
 

@@ -1,9 +1,7 @@
+import { compile, composeMap, type SourceMap, writeVirtualFile } from '@super-ts/lang';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
 import { type Plugin, transformWithOxc } from 'vite';
-import { compile } from '../../lang/src/compile.ts';
-import { composeMap, type SourceMap } from '../../lang/src/source-map.ts';
-import { writeVirtualFile } from '../../lang/src/virtual-files.ts';
 import { ALIASES, checkComponentImports, checkCoreImports, checkModule, isChecked } from './architecture.ts';
 import {
   CONTRACTS_DECLARATION,

@@ -4,11 +4,21 @@
   "private": true,
   "type": "module",
   "description": "Framework front minimaliste : stores typés sur EventTarget et composants HTMLElement typés.",
+  "license": "MIT",
+  "workspaces": [
+    "packages/core",
+    "packages/dom",
+    "packages/ui",
+    "packages/testing",
+    "packages/vite",
+    "packages/lang",
+    "packages/lint"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build:example": "vite build",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "dev": "vite --configLoader native",
+    "build:example": "vite build --configLoader native",
+    "test": "vitest run --configLoader native",
+    "test:watch": "vitest --configLoader native",
     "typecheck": "node packages/lang/src/cli.ts tsconfig.json && node packages/lang/src/cli.ts examples/demo/tsconfig.json",
     "check": "npm run lint && npm run typecheck && npm run test && npm run docs:index",
     "docs:index": "node docs/tools/build-docs-index.mjs",
@@ -17,9 +27,6 @@
     "lint": "biome check && node packages/lang/src/format-cli.ts --check",
     "lint:fix": "biome check --write && node packages/lang/src/format-cli.ts --write",
     "format": "biome format --write && node packages/lang/src/format-cli.ts --write"
-  },
-  "dependencies": {
-    "lit-html": "^3.3.3"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.6.9",

@@ -1,0 +1,41 @@
+{
+  "name": "@super-ts/testing",
+  "version": "0.1.0",
+  "description": "Test helpers for Super apps: mount, fakeStore, record, flush, cleanup.",
+  "keywords": [
+    "super",
+    "super-ts",
+    "testing",
+    "vitest"
+  ],
+  "license": "MIT",
+  "author": "Dimitri Lahaye",
+  "homepage": "https://github.com/super-ts/super#readme",
+  "bugs": {
+    "url": "https://github.com/super-ts/super/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/super-ts/super.git",
+    "directory": "packages/testing"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "@super-ts/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "dependencies": {
+    "@super-ts/core": "0.1.0",
+    "@super-ts/dom": "0.1.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "name": "@super-ts/dom",
+  "version": "0.1.0",
+  "description": "Super components (SuperElement), rendering, createApp and the typed router.",
+  "keywords": [
+    "super",
+    "super-ts",
+    "web-components",
+    "router",
+    "lit-html"
+  ],
+  "license": "MIT",
+  "author": "Dimitri Lahaye",
+  "homepage": "https://github.com/super-ts/super#readme",
+  "bugs": {
+    "url": "https://github.com/super-ts/super/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/super-ts/super.git",
+    "directory": "packages/dom"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "@super-ts/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./internal": {
+      "@super-ts/source": "./src/internal.ts",
+      "types": "./dist/internal.d.ts",
+      "default": "./dist/internal.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "dependencies": {
+    "@super-ts/core": "0.1.0",
+    "lit-html": "^3.3.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

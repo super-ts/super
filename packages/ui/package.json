@@ -1,0 +1,44 @@
+{
+  "name": "@super-ts/ui",
+  "version": "0.1.0",
+  "description": "The Super UI kit: form-bound fields, CommandButton, RouteLink, dialogs, menus, toasts, table.",
+  "keywords": [
+    "super",
+    "super-ts",
+    "ui",
+    "components",
+    "accessibility"
+  ],
+  "license": "MIT",
+  "author": "Dimitri Lahaye",
+  "homepage": "https://github.com/super-ts/super#readme",
+  "bugs": {
+    "url": "https://github.com/super-ts/super/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/super-ts/super.git",
+    "directory": "packages/ui"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "@super-ts/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "dependencies": {
+    "@super-ts/core": "0.1.0",
+    "@super-ts/dom": "0.1.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

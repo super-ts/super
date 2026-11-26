@@ -13,6 +13,7 @@ export const alias = {
   '@super-ts/testing': fromRoot('./packages/testing/src/index.ts'),
   '@super-ts/ui': fromRoot('./packages/ui/src/index.ts'),
   '@super-ts/vite': fromRoot('./packages/vite/src/index.ts'),
+  '@super-ts/lang': fromRoot('./packages/lang/src/index.ts'),
 };
 
 /** Impose @core/ et @components/ dans le src de l'app d'exemples. */

@@ -1,0 +1,50 @@
+{
+  "name": "@super-ts/lang",
+  "version": "0.1.0",
+  "description": "The .super template language: parser, compiler to lit-html, virtual TypeScript and the super-tsc type checker.",
+  "keywords": [
+    "super",
+    "super-ts",
+    "compiler",
+    "typescript",
+    "templates"
+  ],
+  "license": "MIT",
+  "author": "Dimitri Lahaye",
+  "homepage": "https://github.com/super-ts/super#readme",
+  "bugs": {
+    "url": "https://github.com/super-ts/super/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/super-ts/super.git",
+    "directory": "packages/lang"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "@super-ts/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "peerDependencies": {
+    "@super-ts/dom": "0.1.0",
+    "typescript": "^7.0.0",
+    "@biomejs/biome": "^2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@biomejs/biome": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=20.19"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
