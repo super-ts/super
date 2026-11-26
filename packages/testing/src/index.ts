@@ -30,9 +30,9 @@ import {
 /* ------------------------------------------------------------------------------------------ */
 
 export interface Mounted<T extends SuperElement<any>> {
-  /** Conteneur attaché à `document.body` ; à passer à `within()` de testing-library. */
+  /** Container attached to `document.body`; pass it to testing-library's `within()`. */
   readonly container: HTMLElement;
-  /** L'instance montée, typée par sa classe. */
+  /** The mounted instance, typed by its class. */
   readonly element: T;
   setProps(props: PropsOf<T>): Promise<void>;
   unmount(): void;
@@ -41,14 +41,14 @@ export interface Mounted<T extends SuperElement<any>> {
 type MountOptions<P, E> = {
   props?: P;
   stores?: AnyStore[];
-  /** Router à fournir, en général `createRouter(Router, { mode: 'memory', initialPath })`. */
+  /** Router to provide, usually `createRouter(Router, { mode: 'memory', initialPath })`. */
   router?: RouterHandle<any>;
   on?: ChildOptions<E>['on'];
-  /** Reçoit les erreurs des composants montés, comme `createApp({ onError })`. */
+  /** Receives the errors of mounted components, like `createApp({ onError })`. */
   onError?: AppOptions['onError'];
 };
 
-/** Une classe de composant montable : ce que `SuperElement.create` accepte. */
+/** A mountable component class: what `SuperElement.create` accepts. */
 type Mountable<T extends SuperElement<any>> = (new () => T) & {
   readonly tag: string;
   create(props?: object): T;
@@ -57,7 +57,7 @@ type Mountable<T extends SuperElement<any>> = (new () => T) & {
 
 const mounted = new Set<() => void>();
 
-/** Monte un composant dans le document, avec les stores et le router fournis, puis attend le premier rendu. */
+/** Mounts a component in the document, with the provided stores and router, then waits for the first render. */
 export async function mount<T extends SuperElement<any>>(
   Class: Mountable<T>,
   options: MountOptions<PropsOf<T>, EventsOf<T>> = {},
@@ -91,12 +91,12 @@ export async function mount<T extends SuperElement<any>>(
   };
 }
 
-/** Démonte tout ce qui a été monté par `mount` (à appeler dans un `afterEach`). */
+/** Unmounts everything mounted by `mount` (call it in an `afterEach`). */
 export function cleanup() {
   for (const unmount of [...mounted]) unmount();
 }
 
-/** Laisse passer les microtasks (notifications de store, rendus) et les promesses en attente. */
+/** Lets the microtasks (store notifications, renders) and pending promises run. */
 export function flush(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 0));
 }
@@ -111,7 +111,7 @@ export interface Recorder<P> {
   stop(): void;
 }
 
-/** Enregistre les payloads d'un événement de store, sans dépendre d'un framework de test. */
+/** Records the payloads of a store event, without depending on a test framework. */
 export function record<C extends CommandMap, E extends Events, K extends keyof AllEvents<C, E> & string>(
   store: StoreHandle<any, C, E>,
   name: K,
@@ -136,20 +136,20 @@ export type SentCommand<C extends CommandMap> = {
 }[keyof C & string];
 
 export interface FakeStore<S extends object, C extends CommandMap, E extends Events, Q = {}> extends StoreHandle<S, C, E, Q> {
-  /** Commandes reçues, dans l'ordre. */
+  /** Commands received, in order. */
   readonly sent: SentCommand<C>[];
   setState(patch: StatePatch<S>): void;
-  /** Émet un événement du contrat, ou le cycle de vie d'une commande (`increment:failed`), comme le ferait le store. */
+  /** Emits a contract event, or the lifecycle of a command (`increment:failed`), as the store would. */
   emit<K extends keyof AllEvents<C, E> & string>(name: K, ...args: PayloadArgs<AllEvents<C, E>[K]>): void;
 }
 
-/** Les commandes qu'on peut fournir à un faux store, par le nom du contrat : `FakeCommands<'counter'>`. */
+/** The commands you can provide to a fake store, by contract name: `FakeCommands<'counter'>`. */
 export type FakeCommands<N extends ContractName> = Partial<Handlers<ContractCommands<Contracts[N]>>>;
 
 /**
- * Faux store qui respecte un contrat, désigné par son nom. Les commandes non fournies sont
- * enregistrées et se terminent sans publier d'issue : le test émet lui-même `nom:done` ou
- * `nom:failed`.
+ * Fake store that honours a contract, referred to by its name. Commands not provided are
+ * recorded and finish without publishing an outcome: the test emits `name:done` or
+ * `name:failed` itself.
  */
 export function fakeStore<N extends ContractName>(
   name: N,
@@ -167,9 +167,9 @@ export function fakeStore<N extends ContractName>(
       return new Proxy({} as Handlers<any>, {
         has: () => true,
         get: (_target, command: string) => (input: unknown, commandTools: unknown) => {
-          // Le handler reçoit (body, { fail }) : seul le body est enregistré, comme il a été envoyé.
+          // The handler receives (body, { fail }): only the body is recorded, as it was sent.
           sent.push({ name: command, args: input === undefined ? [] : [input] } as unknown as SentCommand<any>);
-          // Une commande non fournie se termine sans publier d'issue : c'est au test de l'émettre.
+          // A command not provided finishes without publishing an outcome: it is up to the test to emit it.
           const handler = provided[command];
           return handler ? handler(input, commandTools) : NO_OUTCOME;
         },

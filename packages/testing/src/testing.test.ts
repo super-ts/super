@@ -18,7 +18,7 @@ class InboxStore extends SuperStore<TstInboxContract> implements Commands<InboxS
   async archive(_input: { id: string }) {}
 }
 
-test('record capture les payloads d’un événement', async () => {
+test('record captures the payloads of an event', async () => {
   const store = InboxStore.create();
   const cleared = record(store, 'cleared');
 
@@ -28,7 +28,7 @@ test('record capture les payloads d’un événement', async () => {
   expect(cleared.last).toEqual({ marked: 3 });
 });
 
-test('fakeStore enregistre les commandes, exécute les handlers fournis et pilote l’état', async () => {
+test('fakeStore records commands, runs the supplied handlers and drives the state', async () => {
   const inbox = fakeStore('tst-inbox', { state: { unread: 2 }, commands: { markAllRead: async () => {} } });
   class Badge extends SuperElement {
     static tag = 't-badge';
@@ -53,7 +53,7 @@ test('fakeStore enregistre les commandes, exécute les handlers fournis et pilot
   expect(container.textContent).toBe('0');
 });
 
-test('fakeStore.emit diffuse un événement du contrat', () => {
+test('fakeStore.emit broadcasts an event of the contract', () => {
   const inbox = fakeStore('tst-inbox', { state: { unread: 0 } });
   const cleared = record(inbox, 'cleared');
 
@@ -62,7 +62,7 @@ test('fakeStore.emit diffuse un événement du contrat', () => {
   expect(cleared.calls).toEqual([{ marked: 1 }]);
 });
 
-test('fakeStore : une commande non fournie ne publie aucune issue, le test l’émet lui-même', async () => {
+test('fakeStore: a command not supplied publishes no outcome, the test emits it itself', async () => {
   const inbox = fakeStore('tst-inbox', { state: { unread: 2 } });
   const done = record(inbox, 'archive:done');
 
@@ -73,8 +73,8 @@ test('fakeStore : une commande non fournie ne publie aucune issue, le test l’�
   expect(done.calls).toEqual([{ input: { id: 'x' }, result: undefined }]);
 });
 
-describe('fakeStore pour un contrat-classe', () => {
-  test('se désigne par le nom du contrat, lit ses sélecteurs, enregistre les commandes', async () => {
+describe('fakeStore for a class contract', () => {
+  test('is referred to by the contract name, reads its selectors, records commands', async () => {
     class Count extends SuperElement {
       static tag = 'tt-count';
       basket = this.contract('basket');

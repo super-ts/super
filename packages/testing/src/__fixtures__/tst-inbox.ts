@@ -1,4 +1,4 @@
-/** Contrat d'essai des tests du paquet testing, inscrit à la main comme le ferait le plugin Vite. */
+/** Test contract for the testing package's tests, registered by hand as the Vite plugin would do. */
 import { SuperContract } from '@super-ts/core';
 import { registerContract } from '@super-ts/core/internal';
 
