@@ -1,4 +1,4 @@
-// Le moteur de template (lit-html) est un détail d'implémentation : seuls ces symboles sont publics.
+// The template engine (lit-html) is an implementation detail: only these symbols are public.
 export { nothing } from 'lit-html';
 export { repeat } from 'lit-html/directives/repeat.js';
 export type { ChildOptions, ErrorDetail, ErrorPhase, LocalState } from './component.ts';

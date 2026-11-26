@@ -4,8 +4,8 @@ import { describe, expect, test, vi } from 'vitest';
 import './__fixtures__/rt-session.ts';
 
 /**
- * Les routers de ces tests ne sont pas celui de l'app (typé par le fixture `app-router`) : leurs
- * écrans lisent la route active par une vue non typée.
+ * The routers of these tests are not the app's (typed by the `app-router` fixture): their
+ * screens read the active route through an untyped view.
  */
 type LooseValue = (() => any) & { isValid(): boolean };
 type LooseRouter = {
@@ -22,12 +22,12 @@ class Home extends SuperElement {
 }
 class Item extends SuperElement {
   static tag = 'r-item';
-  // On retient le paramètre du premier rendu : il change si l'écran est remonté.
+  // Remember the parameter of the first render: it changes if the screen is remounted.
   #mountedFor: string | null = null;
   render() {
     const id = loose(this.router).current.params.id!();
     this.#mountedFor ??= id;
-    return html`<h1>item ${id} (monté pour ${this.#mountedFor})</h1>`;
+    return html`<h1>item ${id} (mounted for ${this.#mountedFor})</h1>`;
   }
 }
 class Pair extends SuperElement {
@@ -40,7 +40,7 @@ class Pair extends SuperElement {
 class Missing extends SuperElement {
   static tag = 'r-missing';
   render() {
-    return html`<h1>introuvable</h1>`;
+    return html`<h1>not found</h1>`;
   }
 }
 
@@ -52,8 +52,8 @@ const Router = defineRouter({ home: '/', item: '/items/:id', pair: '/pairs/:a/:b
 }));
 const memory = (initialPath = '/') => createRouter(Router, { mode: 'memory', initialPath });
 
-describe('déclaration', () => {
-  test("les écrans ne sont lus qu'à la création du router (imports circulaires écrans <-> router)", () => {
+describe('declaration', () => {
+  test('the screens are only read when the router is created (circular imports screens <-> router)', () => {
     const screens = vi.fn(() => ({ home: Home, item: Item, pair: Pair }));
     const lazy = defineRouter({ home: '/', item: '/items/:id', pair: '/pairs/:a/:b' }).screens(screens);
     expect(screens).not.toHaveBeenCalled();
@@ -62,7 +62,7 @@ describe('déclaration', () => {
     expect(screens).toHaveBeenCalledOnce();
   });
 
-  test('this.router retrouve le router fourni à l’application', async () => {
+  test('this.router finds the router provided to the application', async () => {
     class Probe extends SuperElement {
       static tag = 'r-probe';
       route = this.selector(this.router.current.name);
@@ -74,7 +74,7 @@ describe('déclaration', () => {
     expect(container.textContent).toBe('item');
   });
 
-  test('this.router se lit aussi pour la première fois dans render, et suit la route', async () => {
+  test('this.router can also be read for the first time in render, and follows the route', async () => {
     class LateProbe extends SuperElement {
       static tag = 'r-late-probe';
       render() {
@@ -90,7 +90,7 @@ describe('déclaration', () => {
     expect(container.textContent).toBe('item');
   });
 
-  test('un composant qui ne lit pas this.router se monte sans router', async () => {
+  test('a component that does not read this.router mounts without a router', async () => {
     class NoRouter extends SuperElement {
       static tag = 'r-no-router';
       render() {
@@ -101,7 +101,7 @@ describe('déclaration', () => {
     expect(container.textContent).toBe('ok');
   });
 
-  test("this.contract('router') est refusé : le router se lit par this.router", async () => {
+  test("this.contract('router') is refused: the router is read through this.router", async () => {
     class Legacy extends SuperElement {
       static tag = 'r-legacy';
       nav = (this.contract as unknown as (name: string) => unknown)('router');
@@ -112,30 +112,30 @@ describe('déclaration', () => {
     expect(() => Legacy.create()).toThrow(/this\.router/);
   });
 
-  test('erreurs explicites à la déclaration et à la création', () => {
-    expect(() => defineRouter({ bad: 'relative' })).toThrow(/doit commencer par "\/"/);
+  test('explicit errors at declaration and creation', () => {
+    expect(() => defineRouter({ bad: 'relative' })).toThrow(/must start with "\/"/);
     const loose = defineRouter as (paths: Record<string, string>) => unknown;
-    expect(() => loose({ '*': '/x' })).toThrow(/"\*" est réservé/);
+    expect(() => loose({ '*': '/x' })).toThrow(/"\*" is reserved/);
     const withoutScreens = defineRouter({ home: '/' }) as unknown as Parameters<typeof createRouter>[0];
-    expect(() => createRouter(withoutScreens)).toThrow(/déclare-les avec \.screens/);
+    expect(() => createRouter(withoutScreens)).toThrow(/declare them with \.screens/);
     expect(() => createRouter({} as Parameters<typeof createRouter>[0])).toThrow(/defineRouter/);
   });
 });
 
-describe('résolution des chemins', () => {
-  test('route statique, paramètres, paramètres multiples et décodage', () => {
+describe('path resolution', () => {
+  test('static route, parameters, multiple parameters and decoding', () => {
     expect(memory('/').state()).toMatchObject({ name: 'home', params: {} });
     expect(memory('/items/42').state()).toMatchObject({ name: 'item', params: { id: '42' }, screen: Item });
     expect(memory('/pairs/x/y').state().params).toEqual({ a: 'x', b: 'y' });
     expect(memory('/items/caf%C3%A9').state().params).toEqual({ id: 'café' });
   });
 
-  test('ignore le slash final, la query et le hash', () => {
+  test('ignores the trailing slash, the query and the hash', () => {
     expect(memory('/items/42/').state().name).toBe('item');
     expect(memory('/items/42?tab=1#top').state()).toMatchObject({ name: 'item', path: '/items/42?tab=1#top' });
   });
 
-  test("aucune correspondance : name null et écran '*'", () => {
+  test("no match: name null and '*' screen", () => {
     expect(memory('/items').state()).toMatchObject({ name: null, screen: Missing });
     const withoutFallback = defineRouter({ home: '/' }).screens(() => ({ home: Home }));
     expect(createRouter(withoutFallback, { mode: 'memory', initialPath: '/x' }).state().screen).toBeNull();
@@ -143,20 +143,20 @@ describe('résolution des chemins', () => {
 });
 
 describe('href', () => {
-  test('construit les chemins et encode les paramètres', () => {
+  test('builds the paths and encodes the parameters', () => {
     expect(Router.href('home')).toBe('/');
     expect(Router.href('item', { params: { id: 'a b' } })).toBe('/items/a%20b');
   });
 
-  test('erreurs explicites', () => {
+  test('explicit errors', () => {
     const untyped = Router.href as (name: string, input?: object) => string;
-    expect(() => untyped('nope')).toThrow(/route inconnue "nope"/);
-    expect(() => untyped('item', {})).toThrow(/paramètre "id" manquant/);
+    expect(() => untyped('nope')).toThrow(/unknown route "nope"/);
+    expect(() => untyped('item', {})).toThrow(/parameter "id" missing/);
   });
 });
 
 describe('navigation', () => {
-  test('navigate par nom, visit par chemin, événement navigated', async () => {
+  test('navigate by name, visit by path, navigated event', async () => {
     const router = memory();
     const navigated = record(router, 'navigated');
 
@@ -170,7 +170,7 @@ describe('navigation', () => {
     ]);
   });
 
-  test('back en mode mémoire', async () => {
+  test('back in memory mode', async () => {
     const router = memory();
     await router.send('visit', '/items/1');
     await router.send('visit', '/items/2');
@@ -180,7 +180,7 @@ describe('navigation', () => {
     expect(router.state().params).toEqual({ id: '1' });
   });
 
-  test('mode browser : pushState et popstate', async () => {
+  test('browser mode: pushState and popstate', async () => {
     history.replaceState(null, '', '/items/9');
     const router = createRouter(Router);
     expect(router.state().params).toEqual({ id: '9' });
@@ -195,17 +195,17 @@ describe('navigation', () => {
   });
 });
 
-describe('RouterOutlet et liens', () => {
+describe('RouterOutlet and links', () => {
   class Shell extends SuperElement {
     static tag = 'r-shell';
     render() {
       return html`
         <nav>
-          <a href="/items/1">un</a>
-          <a href="/items/2">deux</a>
-          <a href="/items/3" target="_blank">nouvel onglet</a>
-          <a href="https://example.com/items/4">externe</a>
-          <a href="/items/5" data-native>natif</a>
+          <a href="/items/1">one</a>
+          <a href="/items/2">two</a>
+          <a href="/items/3" target="_blank">new tab</a>
+          <a href="https://example.com/items/4">external</a>
+          <a href="/items/5" data-native>native</a>
         </nav>
         ${RouterOutlet.create()}`;
     }
@@ -218,16 +218,16 @@ describe('RouterOutlet et liens', () => {
     return { router, container, link };
   }
 
-  test('rend l’écran de la route active, qui lit ses paramètres par this.router.current', async () => {
+  test("renders the active route's screen, which reads its parameters through this.router.current", async () => {
     const { container } = await start('/items/1');
-    expect(container.querySelector('h1')!.textContent).toBe('item 1 (monté pour 1)');
+    expect(container.querySelector('h1')!.textContent).toBe('item 1 (mounted for 1)');
   });
 
-  test('un clic sur un lien interne navigue sans recharger', async () => {
+  test('a click on an internal link navigates without reloading', async () => {
     const { router, container, link } = await start();
     const click = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
 
-    link('un').dispatchEvent(click);
+    link('one').dispatchEvent(click);
     await flush();
 
     expect(click.defaultPrevented).toBe(true);
@@ -235,26 +235,26 @@ describe('RouterOutlet et liens', () => {
     expect(container.querySelector('h1')!.textContent).toContain('item 1');
   });
 
-  test('chaque changement de chemin remonte un nouvel écran', async () => {
+  test('each path change remounts a new screen', async () => {
     const { container, link } = await start('/items/1');
 
-    link('deux').click();
+    link('two').click();
     await flush();
 
-    expect(container.querySelector('h1')!.textContent).toBe('item 2 (monté pour 2)');
+    expect(container.querySelector('h1')!.textContent).toBe('item 2 (mounted for 2)');
   });
 
-  test('laisse le navigateur gérer target, externe, data-native et les modificateurs', async () => {
+  test('lets the browser handle target, external, data-native and modifiers', async () => {
     const { router, link } = await start();
     const clicks = [
-      [link('nouvel onglet'), {}],
-      [link('externe'), {}],
-      [link('natif'), {}],
-      [link('un'), { metaKey: true }],
-      [link('un'), { ctrlKey: true }],
+      [link('new tab'), {}],
+      [link('external'), {}],
+      [link('native'), {}],
+      [link('one'), { metaKey: true }],
+      [link('one'), { ctrlKey: true }],
     ] as const;
 
-    // Après le router, on note la décision puis on empêche happy-dom de suivre réellement le lien.
+    // After the router, record the decision then stop happy-dom from actually following the link.
     const prevented: boolean[] = [];
     const stopNavigation = (event: Event) => (prevented.push(event.defaultPrevented), event.preventDefault());
     window.addEventListener('click', stopNavigation);
@@ -268,9 +268,9 @@ describe('RouterOutlet et liens', () => {
     expect(router.state().path).toBe('/');
   });
 
-  test('createApp sans router ne touche pas aux liens', () => {
+  test('createApp without a router leaves links alone', () => {
     const root = document.createElement('div');
-    root.innerHTML = '<a href="/items/1">un</a>';
+    root.innerHTML = '<a href="/items/1">one</a>';
     document.body.append(root);
     const app = createApp({ root });
     let prevented: boolean | null = null;
@@ -285,7 +285,7 @@ describe('RouterOutlet et liens', () => {
   });
 });
 
-describe('redirections déclarées', () => {
+describe('declared redirects', () => {
   const Redirecting = defineRouter({ home: '/', stats: '/stats', item: '/items/:id', old: '/old/:id' }).screens(() => ({
     home: Home,
     stats: redirect({ to: 'home' }),
@@ -293,15 +293,15 @@ describe('redirections déclarées', () => {
     old: redirect({ to: 'item', params: { id: 'legacy' } }),
   }));
 
-  test('le chemin initial redirigé remplace l’entrée d’historique', async () => {
+  test('the redirected initial path replaces the history entry', async () => {
     const router = createRouter(Redirecting, { mode: 'memory', initialPath: '/stats' });
     expect(router.state()).toMatchObject({ path: '/', name: 'home', screen: Home });
 
-    await router.send('back'); // rien avant : l'entrée /stats a été remplacée
+    await router.send('back'); // nothing before: the /stats entry was replaced
     expect(router.state().path).toBe('/');
   });
 
-  test('une navigation vers une route redirigée aboutit à la cible, avec ses paramètres', async () => {
+  test('a navigation to a redirected route ends at the target, with its parameters', async () => {
     const router = createRouter(Redirecting, { mode: 'memory' });
     const navigated = record(router, 'navigated');
 
@@ -311,9 +311,9 @@ describe('redirections déclarées', () => {
     expect(navigated.calls).toEqual([{ from: '/', to: '/items/legacy' }]);
   });
 
-  test('une boucle de redirections lève une erreur explicite', () => {
+  test('a redirect loop throws an explicit error', () => {
     const Loop = defineRouter({ a: '/a', b: '/b' }).screens(() => ({ a: redirect({ to: 'b' }), b: redirect({ to: 'a' }) }));
-    expect(() => createRouter(Loop, { mode: 'memory', initialPath: '/a' })).toThrow(/trop de redirections à partir de "\/a"/);
+    expect(() => createRouter(Loop, { mode: 'memory', initialPath: '/a' })).toThrow(/too many redirects starting from "\/a"/);
   });
 });
 
@@ -323,13 +323,13 @@ describe('guards', () => {
   class Account extends SuperElement {
     static tag = 'r-account';
     render() {
-      return html`<h1>compte</h1>`;
+      return html`<h1>account</h1>`;
     }
   }
   class Login extends SuperElement {
     static tag = 'r-login';
     render() {
-      return html`<h1>connexion</h1>`;
+      return html`<h1>login</h1>`;
     }
   }
   const Guarded = defineRouter({ home: '/', account: '/account', login: '/login', item: '/items/:id' })
@@ -339,7 +339,7 @@ describe('guards', () => {
     }))
     .screens(() => ({ home: Home, account: Account, login: Login, item: Item }));
 
-  test('une route refusée redirige, et la redirection est poussée à la place du chemin demandé', async () => {
+  test('a refused route redirects, and the redirect is pushed instead of the requested path', async () => {
     const router = createRouter(Guarded, { mode: 'memory' });
     await mount(RouterOutlet, { stores: [session(null)], router });
 
@@ -347,10 +347,10 @@ describe('guards', () => {
     expect(router.state()).toMatchObject({ path: '/login', name: 'login' });
 
     await router.send('back');
-    expect(router.state().path).toBe('/'); // /account n'est jamais entré dans l'historique
+    expect(router.state().path).toBe('/'); // /account never entered the history
   });
 
-  test('le guard lit l’état courant du store à chaque navigation', async () => {
+  test("the guard reads the store's current state at each navigation", async () => {
     const store = session(null);
     const router = createRouter(Guarded, { mode: 'memory' });
     await mount(RouterOutlet, { stores: [store], router });
@@ -361,7 +361,7 @@ describe('guards', () => {
     expect(router.state().name).toBe('account');
   });
 
-  test('le guard reçoit les paramètres de sa route', async () => {
+  test("the guard receives its route's parameters", async () => {
     const router = createRouter(Guarded, { mode: 'memory' });
     await mount(RouterOutlet, { stores: [session('ada')], router });
 
@@ -371,30 +371,30 @@ describe('guards', () => {
     expect(router.state().name).toBe('item');
   });
 
-  test('le chemin courant passe par les guards quand le router rejoint l’application', async () => {
+  test('the current path goes through the guards when the router joins the application', async () => {
     const router = createRouter(Guarded, { mode: 'memory', initialPath: '/account' });
-    expect(router.state().name).toBe('account'); // pas encore d'application : pas de stores à lire
+    expect(router.state().name).toBe('account'); // no application yet: no stores to read
 
     const { container } = await mount(RouterOutlet, { stores: [session(null)], router });
 
     expect(router.state().name).toBe('login');
-    expect(container.textContent).toBe('connexion');
+    expect(container.textContent).toBe('login');
   });
 
-  test('un store absent de l’application lève une erreur explicite', () => {
+  test('a store missing from the application throws an explicit error', () => {
     const router = createRouter(Guarded, { mode: 'memory', initialPath: '/account' });
     expect(() => createApp({ root: document.createElement('div'), router })).toThrow(
-      /guard du router : aucun store fourni pour le contrat "rt-session"/,
+      /router guard: no store provided for the contract "rt-session"/,
     );
   });
 });
 
-describe("écran '!'", () => {
+describe("'!' screen", () => {
   class Broken extends SuperElement {
     static tag = 'r-broken';
     constructor() {
       super();
-      throw new Error('écran cassé');
+      throw new Error('broken screen');
     }
     render() {
       return null;
@@ -403,26 +403,26 @@ describe("écran '!'", () => {
   class Oops extends SuperElement<{ props: { error: Error; path: string } }> {
     static tag = 'r-oops';
     render() {
-      return html`<p>${this.props.error.message} sur ${this.props.path}</p>`;
+      return html`<p>${this.props.error.message} on ${this.props.path}</p>`;
     }
   }
   const WithErrorScreen = defineRouter({ home: '/', broken: '/broken' }).screens(() => ({ home: Home, broken: Broken, '!': Oops }));
 
-  test("un écran qui plante sans être rattrapé est remplacé par l’écran '!', qui reçoit l’erreur", async () => {
+  test("a screen that crashes without being caught is replaced by the '!' screen, which receives the error", async () => {
     const onError = vi.fn();
     const router = createRouter(WithErrorScreen, { mode: 'memory', initialPath: '/broken' });
     const { container } = await mount(RouterOutlet, { router, onError });
     await flush();
 
-    expect(container.textContent).toBe('écran cassé sur /broken');
-    expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: 'écran cassé' }), {
+    expect(container.textContent).toBe('broken screen on /broken');
+    expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: 'broken screen' }), {
       tag: 'r-broken',
       phase: 'setup',
       caughtBy: 'super-router-outlet',
     });
   });
 
-  test('naviguer ailleurs affiche de nouveau l’écran de la route', async () => {
+  test("navigating elsewhere displays the route's screen again", async () => {
     const router = createRouter(WithErrorScreen, { mode: 'memory', initialPath: '/broken' });
     const { container } = await mount(RouterOutlet, { router, onError: () => {} });
     await flush();
@@ -434,69 +434,69 @@ describe("écran '!'", () => {
   });
 });
 
-test('guards : déclarés après les écrans, une erreur explicite (le typage l’interdit déjà)', () => {
+test('guards: declared after the screens, an explicit error (typing already forbids it)', () => {
   const declared = defineRouter({ home: '/' }).screens(() => ({ home: Home }));
   expect(() => (declared as unknown as { guards(define: unknown): unknown }).guards(() => ({}))).toThrow(
-    /déclare les guards avec \.guards\(\.\.\.\) avant \.screens\(\.\.\.\)/,
+    /declare the guards with \.guards\(\.\.\.\) before \.screens\(\.\.\.\)/,
   );
 });
 
-describe("écran '!' : en sortir", () => {
+describe("'!' screen: leaving it", () => {
   let broken = true;
   class Flaky extends SuperElement {
     static tag = 'r-flaky';
     constructor() {
       super();
-      if (broken) throw new Error('écran cassé');
+      if (broken) throw new Error('broken screen');
     }
     render() {
-      return html`<h1>réparé</h1>`;
+      return html`<h1>fixed</h1>`;
     }
   }
   class Oops extends SuperElement<{ props: { error: Error; path: string } }> {
     static tag = 'r-oops-exit';
     render() {
-      return html`<p>oups ${this.props.path}</p>`;
+      return html`<p>oops ${this.props.path}</p>`;
     }
   }
   const Recovering = defineRouter({ home: '/', flaky: '/flaky' }).screens(() => ({ home: Home, flaky: Flaky, '!': Oops }));
 
-  test('revenir sur le chemin en erreur après être allé ailleurs remonte l’écran, au lieu de réafficher l’erreur', async () => {
+  test('coming back to the path in error after going elsewhere remounts the screen, instead of showing the error again', async () => {
     broken = true;
     const router = createRouter(Recovering, { mode: 'memory', initialPath: '/flaky' });
     const { container } = await mount(RouterOutlet, { router, onError: () => {} });
     await flush();
-    expect(container.textContent).toBe('oups /flaky');
+    expect(container.textContent).toBe('oops /flaky');
 
     broken = false;
     await router.send('navigate', { to: 'home' });
     await router.send('navigate', { to: 'flaky' });
     await flush();
 
-    expect(container.textContent).toBe('réparé');
+    expect(container.textContent).toBe('fixed');
   });
 
-  test('naviguer vers le chemin courant remonte l’écran (recliquer sur le lien de la page en erreur)', async () => {
+  test('navigating to the current path remounts the screen (clicking again on the link of the page in error)', async () => {
     broken = true;
     const router = createRouter(Recovering, { mode: 'memory', initialPath: '/flaky' });
     const navigated = record(router, 'navigated');
     const { container } = await mount(RouterOutlet, { router, onError: () => {} });
     await flush();
-    expect(container.textContent).toBe('oups /flaky');
+    expect(container.textContent).toBe('oops /flaky');
 
     broken = false;
     await router.send('visit', '/flaky');
     await flush();
 
-    expect(container.textContent).toBe('réparé');
-    expect(navigated.last).toEqual({ from: '/flaky', to: '/flaky' }); // rien dans l'historique, mais l'événement part
+    expect(container.textContent).toBe('fixed');
+    expect(navigated.last).toEqual({ from: '/flaky', to: '/flaky' }); // nothing in the history, but the event is emitted
   });
 });
 
-describe('query déclarée dans la chaîne', () => {
+describe('query declared in the string', () => {
   class List extends SuperElement {
     static tag = 'r-q-list';
-    // Propre à l'instance : change si l'écran est remonté.
+    // Specific to the instance: changes if the screen is remounted.
     #mount = Math.random();
     render() {
       const { sort, tag } = loose(this.router).current.query;
@@ -517,7 +517,7 @@ describe('query déclarée dans la chaîne', () => {
   }));
   const start = (initialPath = '/') => createRouter(WithQuery, { mode: 'memory', initialPath });
 
-  test('lit les clés déclarées : plusieurs clés, listes, absentes, non déclarées ignorées', () => {
+  test('reads the declared keys: several keys, lists, absent, undeclared ignored', () => {
     expect(start('/list?sort=asc&tag=a&tag=b&other=1').state()).toMatchObject({
       name: 'list',
       params: {},
@@ -529,7 +529,7 @@ describe('query déclarée dans la chaîne', () => {
     expect(start('/list?tag=caf%C3%A9&tag=a+b').state().query).toMatchObject({ tag: ['café', 'a b'] });
   });
 
-  test('href et navigate : paramètres et query séparés', async () => {
+  test('href and navigate: parameters and query separate', async () => {
     expect(WithQuery.href('list')).toBe('/list');
     expect(WithQuery.href('list', { query: { sort: 'asc', tag: ['a', 'b'] } })).toBe('/list?sort=asc&tag=a&tag=b');
     expect(WithQuery.href('list', { query: { tag: [] } })).toBe('/list');
@@ -540,7 +540,7 @@ describe('query déclarée dans la chaîne', () => {
     expect(router.state()).toMatchObject({ path: '/items/1?tab=hist', params: { id: '1' }, query: { tab: 'hist' } });
   });
 
-  test('changer la query seule ne remonte pas l’écran, qui se re-rend', async () => {
+  test('changing the query alone does not remount the screen, which re-renders', async () => {
     const router = start('/list?sort=asc');
     const { container } = await mount(RouterOutlet, { router });
     const h1 = () => container.querySelector('h1')!;
@@ -557,7 +557,7 @@ describe('query déclarée dans la chaîne', () => {
     expect(h1().textContent).toBe('3 hist');
   });
 
-  test('les guards reçoivent paramètres et query de leur route', async () => {
+  test("guards receive their route's parameters and query", async () => {
     const Guarded = defineRouter({ home: '/', detail: '/items/:id?tab' })
       .guards(() => ({ detail: ({ params, query }) => !(params.id() === '1' && query.tab() === 'admin') || { to: 'home' } }))
       .screens(() => ({ home: Home, detail: Detail }));
@@ -570,16 +570,16 @@ describe('query déclarée dans la chaîne', () => {
     expect(router.state().name).toBe('detail');
   });
 
-  test('déclarations invalides : clé vide, clé en double', () => {
+  test('invalid declarations: empty key, duplicate key', () => {
     const untyped = defineRouter as (paths: Record<string, string>) => unknown;
-    expect(() => untyped({ a: '/a?' })).toThrow(/clé de query vide/);
-    expect(() => untyped({ a: '/a?x&x[]' })).toThrow(/"x" apparaît deux fois/);
-    // Paramètres et query sont lus séparément : un même nom ne les confond plus.
+    expect(() => untyped({ a: '/a?' })).toThrow(/empty query key/);
+    expect(() => untyped({ a: '/a?x&x[]' })).toThrow(/"x" appears twice/);
+    // Parameters and query are read separately: the same name no longer confuses them.
     expect(() => untyped({ a: '/a/:id?id' })).not.toThrow();
   });
 });
 
-describe('routes décrites : valeurs typées', () => {
+describe('described routes: typed values', () => {
   type ListQuery = { sort: 'label' | 'value'; page: number; tag: number[]; search?: string; archived?: boolean };
   const Typed = defineRouter({
     home: '/',
@@ -603,7 +603,7 @@ describe('routes décrites : valeurs typées', () => {
     renders = 0;
     render() {
       this.renders++;
-      if (!this.itemId.isValid()) return html`<p>introuvable</p>`;
+      if (!this.itemId.isValid()) return html`<p>not found</p>`;
       return html`<p>item ${this.itemId.value! + 1}</p>`;
     }
   }
@@ -613,19 +613,19 @@ describe('routes décrites : valeurs typées', () => {
     renders = 0;
     render() {
       this.renders++;
-      return html`<p>page ${this.pageNumber.value} ${this.pageNumber.isValid() ? 'ok' : 'corrigée'}</p>`;
+      return html`<p>page ${this.pageNumber.value} ${this.pageNumber.isValid() ? 'ok' : 'corrected'}</p>`;
     }
   }
   const Router = Typed.screens(() => ({ home: Home, item: ItemScreen, list: ListScreen }));
   const start = (initialPath = '/') => createRouter(Router, { mode: 'memory', initialPath });
 
-  test('paramètres convertis ; un paramètre invalide vaut undefined et reste sur l’écran de la route', () => {
+  test("converted parameters; an invalid parameter is undefined and stays on the route's screen", () => {
     expect(start('/items/42').state()).toMatchObject({ name: 'item', params: { id: 42 }, invalid: { params: [], query: [] } });
     expect(start('/items/abc').state()).toMatchObject({ name: 'item', params: { id: undefined }, invalid: { params: ['id'] } });
     expect(start('/items/1.5').state().params).toEqual({ id: 1.5 });
   });
 
-  test('query convertie : défaut si absente, défaut et invalide si non conforme, listes filtrées', () => {
+  test('converted query: default if absent, default and invalid if non-conforming, lists filtered', () => {
     expect(start('/list').state().query).toEqual({ sort: 'label', page: 1, tag: [], search: undefined, archived: undefined });
     expect(start('/list?sort=value&page=3&tag=1&tag=2&search=x&archived=true').state().query).toEqual({
       sort: 'value',
@@ -634,35 +634,35 @@ describe('routes décrites : valeurs typées', () => {
       search: 'x',
       archived: true,
     });
-    const invalid = start('/list?sort=nope&page=abc&tag=1&tag=x&archived=oui').state();
+    const invalid = start('/list?sort=nope&page=abc&tag=1&tag=x&archived=yes').state();
     expect(invalid.query).toEqual({ sort: 'label', page: 1, tag: [1], search: undefined, archived: undefined });
     expect(invalid.invalid.query).toEqual(['sort', 'page', 'tag', 'archived']);
   });
 
-  test('href : valeurs typées écrites dans l’URL', () => {
+  test('href: typed values written into the URL', () => {
     expect(Router.href('item', { params: { id: 7 } })).toBe('/items/7');
     expect(Router.href('list', { query: { sort: 'value', page: 2, tag: [1, 2], archived: false } })).toBe(
       '/list?sort=value&page=2&tag=1&tag=2&archived=false',
     );
   });
 
-  test('l’écran gère lui-même un paramètre invalide', async () => {
+  test('the screen handles an invalid parameter itself', async () => {
     const router = start('/items/abc');
     const { container } = await mount(RouterOutlet, { router });
-    expect(container.textContent).toBe('introuvable');
+    expect(container.textContent).toBe('not found');
 
     await router.send('navigate', { to: 'item', params: { id: 41 } });
     await flush();
     expect(container.textContent).toBe('item 42');
   });
 
-  test('selector : re-rend quand la valeur change, ou quand seule sa validité change', async () => {
+  test('selector: re-renders when the value changes, or when only its validity changes', async () => {
     const router = start('/list?page=2');
     const { container } = await mount(RouterOutlet, { router });
     const screen = container.querySelector('r-t-list') as ListScreen;
     expect(container.textContent).toBe('page 2 ok');
 
-    await router.send('visit', '/list?page=2&search=x'); // autre clé : pas de nouveau rendu
+    await router.send('visit', '/list?page=2&search=x'); // another key: no new render
     await flush();
     expect(screen.renders).toBe(1);
 
@@ -670,12 +670,12 @@ describe('routes décrites : valeurs typées', () => {
     await flush();
     expect(container.textContent).toBe('page 1 ok');
 
-    await router.send('visit', '/list?page=abc'); // même valeur (le défaut), mais invalide
+    await router.send('visit', '/list?page=abc'); // same value (the default), but invalid
     await flush();
-    expect(container.textContent).toBe('page 1 corrigée');
+    expect(container.textContent).toBe('page 1 corrected');
   });
 
-  test('isValid : faux pour une clé que la route active ne déclare pas', async () => {
+  test('isValid: false for a key the active route does not declare', async () => {
     let seen: unknown[] = [];
     class Probe extends SuperElement {
       static tag = 'r-t-probe';
@@ -689,7 +689,7 @@ describe('routes décrites : valeurs typées', () => {
     expect(seen).toEqual([undefined, false, 1, true]);
   });
 
-  test('at : lit une route précise, et lève une erreur si la route active est une autre', async () => {
+  test('at: reads a specific route, and throws an error if the active route is another one', async () => {
     let read: () => unknown = () => null;
     class Breadcrumb extends SuperElement {
       static tag = 'r-t-breadcrumb';
@@ -704,10 +704,10 @@ describe('routes décrites : valeurs typées', () => {
     expect(container.textContent).toBe('5');
 
     await router.send('visit', '/list');
-    expect(read).toThrow(/this\.router\.at\('item'\) lu alors que la route active est 'list'/);
+    expect(read).toThrow(/this\.router\.at\('item'\) read while the active route is 'list'/);
   });
 
-  test('at dans un selector : quitter la route passe par le rendu (et son erreur), pas par le router', async () => {
+  test('at in a selector: leaving the route goes through the render (and its error), not through the router', async () => {
     const onError = vi.fn();
     class Crumb extends SuperElement {
       static tag = 'r-t-crumb';
@@ -720,13 +720,13 @@ describe('routes décrites : valeurs typées', () => {
     const { container } = await mount(Crumb, { router, onError });
     expect(container.textContent).toBe('5');
 
-    await router.send('visit', '/list'); // ne lève pas dans le router
+    await router.send('visit', '/list'); // does not throw in the router
     await flush();
     expect(router.state().name).toBe('list');
     expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringMatching(/at\('item'\)/) }), expect.anything());
   });
 
-  test('guards : valeurs typées et validité', async () => {
+  test('guards: typed values and validity', async () => {
     const Guarded = Typed.guards(() => ({ item: ({ params }) => params.id.isValid() || { to: 'list' } })).screens(() => ({
       home: Home,
       item: ItemScreen,
@@ -739,14 +739,14 @@ describe('routes décrites : valeurs typées', () => {
     expect(router.state().name).toBe('list');
   });
 
-  test('descriptions invalides : erreurs explicites', () => {
+  test('invalid descriptions: explicit errors', () => {
     const untyped = defineRouter as (paths: Record<string, unknown>) => unknown;
     expect(() => untyped({ a: { path: '/a/:id', params: params<{ slug: string }>({ slug: String }) } })).toThrow(
-      /params doit décrire exactement les paramètres du chemin \(id\)/,
+      /params must describe exactly the path parameters \(id\)/,
     );
-    expect(() => untyped({ a: { path: '/a?x' } })).toThrow(/la query se décrit par query<T>/);
+    expect(() => untyped({ a: { path: '/a?x' } })).toThrow(/the query is described with query<T>/);
     expect(() => untyped({ a: { path: '/a', query: query<{ x?: string }>({ x: Date as never }) } })).toThrow(
-      /clé "x" de la route "a" : attendu String, Number, Boolean ou \{ oneOf/,
+      /key "x" of the route "a": expected String, Number, Boolean or \{ oneOf/,
     );
   });
 });

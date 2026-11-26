@@ -3,14 +3,14 @@ import { type ChildPart, Directive, directive, type PartInfo, PartType } from 'l
 import type { ChildOptions } from './component.ts';
 import { eventName } from './component.ts';
 
-/** Ce que la directive sait créer : un composant (voir `SuperElement.create`). */
+/** What the directive knows how to create: a component (see `SuperElement.create`). */
 export type ChildDef = { readonly tag: string; create(props: object): HTMLElement & { props: object } };
 
 type Handler = (payload: unknown) => void;
 
 /**
- * Rend un composant enfant dans un template parent. L'élément est créé une fois par
- * emplacement, puis ses props et écouteurs sont mis à jour à chaque rendu du parent.
+ * Renders a child component in a parent template. The element is created once per
+ * position, then its props and listeners are updated on each render of the parent.
  */
 class MountChildDirective extends Directive {
   #def: ChildDef | null = null;
@@ -21,7 +21,7 @@ class MountChildDirective extends Directive {
   constructor(partInfo: PartInfo) {
     super(partInfo);
     if (partInfo.type !== PartType.CHILD) {
-      throw new Error('[super] un composant enfant doit être placé en position de contenu dans le template');
+      throw new Error('[super] a child component must be placed in a content position in the template');
     }
   }
 
@@ -32,7 +32,7 @@ class MountChildDirective extends Directive {
   override update(_part: ChildPart, [def, props, options]: Parameters<this['render']>) {
     if (this.#def !== def || !this.#el) {
       this.#def = def;
-      this.#el = def.create(props); // les props sont lisibles dès le constructeur de l'enfant
+      this.#el = def.create(props); // props are readable from the child's constructor onwards
       this.#listening.clear();
     }
     const el = this.#el;
@@ -42,7 +42,7 @@ class MountChildDirective extends Directive {
       if (this.#listening.has(name)) continue;
       this.#listening.add(name);
       el.addEventListener(eventName(def.tag, name), (event) => {
-        // Ignore les événements homonymes remontant d'un descendant du même type.
+        // Ignore same-named events bubbling up from a descendant of the same type.
         if (event.target === el) this.#handlers[name]?.((event as CustomEvent).detail);
       });
     }

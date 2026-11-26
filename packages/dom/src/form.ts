@@ -3,48 +3,48 @@ import { nothing } from 'lit-html';
 import { Directive, directive, type ElementPart, type PartInfo, PartType } from 'lit-html/directive.js';
 
 /* ------------------------------------------------------------------------------------------ */
-/* Types publics                                                                               */
+/* Public types                                                                                */
 /* ------------------------------------------------------------------------------------------ */
 
-/** Une règle : `true` si la valeur est valide, le message d'erreur sinon. */
+/** A rule: `true` if the value is valid, the error message otherwise. */
 export type FieldRule<T, V> = (value: T, values: Readonly<V>) => true | string;
 
-/** Les champs qui sont des listes de lignes (tableaux d'objets) : `phones: [{ label, number }]`. */
+/** The fields that are lists of rows (arrays of objects): `phones: [{ label, number }]`. */
 export type ListName<V> = {
   [K in keyof V]: V[K] extends readonly (infer Item)[] ? (Item extends object ? (Item extends File ? never : K) : never) : never;
 }[keyof V] &
   string;
 
-/** Les champs simples : tout sauf les listes. */
+/** The simple fields: everything except lists. */
 export type FieldName<V> = Exclude<keyof V & string, ListName<V>>;
 
 type ItemOf<T> = T extends readonly (infer Item)[] ? Item : never;
 
-/** Valeur attendue en second argument de `field` : celle d'un radio, ou d'une case d'un groupe. */
+/** Value expected as the second argument of `field`: that of a radio, or of a checkbox in a group. */
 export type FieldOption<T> = T extends readonly (infer E)[] ? E : T;
 
-/** Une règle par champ ; pour une liste, une règle par champ de ligne. */
+/** One rule per field; for a list, one rule per row field. */
 export type FormRules<V> = {
   [K in keyof V]?: K extends ListName<V> ? { [F in keyof ItemOf<V[K]>]?: FieldRule<ItemOf<V[K]>[F], V> } : FieldRule<V[K], V>;
 };
 
-/** Vérification asynchrone d'un champ, par une commande du store de soumission. */
+/** Asynchronous check of a field, through a command of the submission store. */
 export type FieldCheck<T, C> = {
   [K in keyof C & string]: {
     command: K;
-    /** Convertit la valeur du champ en `input` de la commande. */
+    /** Converts the field's value into the command's `input`. */
     toInput: (value: T) => InputOf<C[K]>;
-    /** `true` si le résultat valide le champ, le message d'erreur sinon. */
+    /** `true` if the result validates the field, the error message otherwise. */
     accept: (result: ResultOf<C[K]>) => true | string;
-    /** Pause dans la saisie avant de vérifier, en millisecondes (300 par défaut). */
+    /** Typing pause before checking, in milliseconds (300 by default). */
     delay?: number;
   };
 }[keyof C & string];
 
 /**
- * Où afficher chaque raison d'échec de la commande de soumission : sur des champs (`fields`), ou
- * sur le formulaire (`form`). Chaque raison déclarée apparaît une seule fois. `form.error`,
- * facultatif, remplace le message par défaut d'une exception inattendue.
+ * Where to display each failure reason of the submit command: on fields (`fields`), or
+ * on the form (`form`). Each declared reason appears only once. `form.error`,
+ * optional, replaces the default message of an unexpected exception.
  */
 export type FormFailures<R extends string, RF extends R, V> = {
   fields: { [Reason in RF]: { [K in keyof V & string]?: string } };
@@ -56,31 +56,31 @@ type FailuresOption<R extends string, RF extends R, V> = [R] extends [never]
   : { failures: FormFailures<R, RF, V> };
 
 export type FormOptions<V, C extends CommandMap, K extends keyof C & string, RF extends FailureOf<C[K]>> = {
-  /** Les valeurs de départ : leur type donne celui de chaque champ. */
+  /** The starting values: their type gives that of each field. */
   initial: V;
   rules?: FormRules<V>;
   /**
-   * Quand une soumission est bloquée par une erreur, ou qu'une erreur du serveur vise un champ :
-   * centre le premier champ en erreur (dans l'ordre de la page) et lui donne le focus. `true` par défaut.
+   * When a submission is blocked by an error, or a server error targets a field:
+   * centres the first field in error (in page order) and focuses it. `true` by default.
    */
   scrollToError?: boolean;
-  /** Règles qui croisent plusieurs champs : les erreurs par champ. */
+  /** Rules that cross several fields: the errors per field. */
   validate?: (values: Readonly<V>) => { [F in keyof V & string]?: string };
-  /** Vérifications asynchrones, par champ, avec des commandes du store de soumission. */
+  /** Asynchronous checks, per field, with commands of the submission store. */
   checks?: { [F in FieldName<V>]?: FieldCheck<V[F], C> };
-  /** La soumission est une commande : son cycle de vie donne « en cours » et les erreurs du serveur. */
+  /** The submission is a command: its life cycle gives "pending" and the server errors. */
   submit: {
-    /** Le store de soumission, par son contrat : `this.contract('checkout')`. */
+    /** The submission store, by its contract: `this.contract('checkout')`. */
     to: { readonly __commands?: C };
     command: K;
-    /** Convertit les valeurs du formulaire en `input` de la commande (celui qu'on retrouve dans `nom:done`). */
+    /** Converts the form's values into the command's `input` (the one found in `name:done`). */
     toInput: (values: Readonly<V>) => InputOf<C[K]>;
   };
 } & FailuresOption<FailureOf<C[K]>, RF, V>;
 
-/** Une ligne d'une liste dynamique. */
+/** A row of a dynamic list. */
 export interface FormListItem<Item> {
-  /** Clé stable, pour `repeat` : elle ne change pas quand on retire une autre ligne. */
+  /** Stable key, for `repeat`: it does not change when another row is removed. */
   readonly key: string;
   readonly index: number;
   readonly value: Readonly<Item>;
@@ -88,7 +88,7 @@ export interface FormListItem<Item> {
   error(name: keyof Item & string): string | null;
 }
 
-/** Une liste dynamique : on ajoute et retire des lignes. */
+/** A dynamic list: rows are added and removed. */
 export interface FormList<Item> {
   items(): FormListItem<Item>[];
   add(item: Item): void;
@@ -96,32 +96,32 @@ export interface FormList<Item> {
 }
 
 export interface FormHandle<V> {
-  /** À placer sur la balise `<form>` : soumission au clavier et au bouton, sans rechargement. */
+  /** To place on the `<form>` tag: submission by keyboard and button, without reloading. */
   bind(): unknown;
-  /** À placer sur un champ : `<input ${form.field('name')} />`. Valeur d'un radio ou d'une case d'un groupe en second argument. */
+  /** To place on a field: `<input ${form.field('name')} />`. Value of a radio or of a checkbox in a group as second argument. */
   field<F extends FieldName<V>>(name: F, option?: FieldOption<V[F]>): unknown;
-  /** Le message à afficher sous un champ, ou `null`. */
+  /** The message to display under a field, or `null`. */
   error(name: keyof V & string): string | null;
-  /** Le message à afficher pour tout le formulaire (erreur serveur sans champ), ou `null`. */
+  /** The message to display for the whole form (server error without a field), or `null`. */
   formError(): string | null;
-  /** La soumission est-elle en cours (ou en attente de vérifications) ? */
+  /** Is the submission pending (or waiting for checks)? */
   submitting(): boolean;
-  /** Une vérification asynchrone de ce champ est-elle en cours ? */
+  /** Is an asynchronous check of this field pending? */
   checking(name: FieldName<V>): boolean;
   values(): Readonly<V>;
   set<F extends keyof V & string>(name: F, value: V[F]): void;
   list<L extends ListName<V>>(name: L): FormList<ItemOf<V[L]>>;
   submit(): void;
-  /** Revient aux valeurs initiales et efface erreurs et champs touchés. */
+  /** Goes back to the initial values and clears errors and touched fields. */
   reset(): void;
 }
 
 /* ------------------------------------------------------------------------------------------ */
-/* Sous le capot                                                                               */
+/* Under the hood                                                                              */
 /* ------------------------------------------------------------------------------------------ */
 
-/** Message affiché pour une exception inattendue, si `failures.form.error` ne le remplace pas. */
-export const UNEXPECTED_FAILURE_MESSAGE = 'Une erreur inattendue est survenue.';
+/** Message displayed for an unexpected exception, if `failures.form.error` does not replace it. */
+export const UNEXPECTED_FAILURE_MESSAGE = 'An unexpected error occurred.';
 
 type Path = { field: string; key?: string; sub?: string };
 type AnyRecord = Record<string, any>;
@@ -130,14 +130,14 @@ type Controller = {
   write(path: Path, value: unknown): void;
   touch(path: Path): void;
   submit(): void;
-  /** Un élément lié par `field(…)` se fait connaître, pour qu'on puisse le retrouver en erreur. */
+  /** An element bound by `field(…)` makes itself known, so that it can be found when in error. */
   register(path: Path, element: Element): void;
 };
 
 /**
- * Ce que le composant fournit au formulaire. `connect` reçoit la fonction qui branche le formulaire
- * sur le store de soumission, appelée à chaque montage : le store n'est connu qu'une fois le
- * composant dans le DOM.
+ * What the component provides to the form. `connect` receives the function that wires the form
+ * to the submission store, called at each mount: the store is only known once the
+ * component is in the DOM.
  */
 type Environment = {
   requestRender(): void;
@@ -147,10 +147,10 @@ type Environment = {
 const pathId = ({ field, key, sub }: Path) => (key === undefined ? field : `${field}.${key}.${sub}`);
 
 export function createForm(options: FormOptions<any, CommandMap, string, never>, env: Environment): FormHandle<any> {
-  /** Le store de soumission, une fois le formulaire branché. */
+  /** The submission store, once the form is wired. */
   let store: AnyStore | null = null;
   const connected = (): AnyStore => {
-    if (!store) throw new Error('[super] form : le formulaire ne parle au store qu’une fois le composant monté');
+    if (!store) throw new Error('[super] form: the form only talks to the store once the component is mounted');
     return store;
   };
 
@@ -243,7 +243,7 @@ export function createForm(options: FormOptions<any, CommandMap, string, never>,
     clearTimeout(checking.get(field)?.timer);
     delete checkErrors[field];
     if (ruleError({ field })) {
-      checking.delete(field); // inutile d'interroger le serveur pour une valeur déjà invalide
+      checking.delete(field); // no point querying the server for a value that is already invalid
       return;
     }
     const entry: { timer?: ReturnType<typeof setTimeout>; input?: unknown } = {};
@@ -251,8 +251,8 @@ export function createForm(options: FormOptions<any, CommandMap, string, never>,
       entry.timer = undefined;
       const input = check.toInput(values[field]);
       entry.input = input;
-      // Le verdict arrive par `:done`. Si la commande se termine sans issue publiée (faux store), ou
-      // échoue, la vérification se termine quand même, sans verdict : elle ne bloque plus rien.
+      // The verdict arrives through `:done`. If the command ends without a published outcome (fake store), or
+      // fails, the check ends anyway, without a verdict: it no longer blocks anything.
       connected()
         .send(check.command, input)
         .catch(() => {})
@@ -263,7 +263,7 @@ export function createForm(options: FormOptions<any, CommandMap, string, never>,
 
   function settleCheck(input: unknown, outcome: { result: unknown } | null) {
     for (const [field, entry] of checking) {
-      if (entry.input !== input) continue; // réponse périmée : la valeur a changé depuis
+      if (entry.input !== input) continue; // stale response: the value has changed since
       checking.delete(field);
       if (outcome) {
         const verdict = checks[field]!.accept(outcome.result);
@@ -309,7 +309,7 @@ export function createForm(options: FormOptions<any, CommandMap, string, never>,
       { signal },
     );
 
-    // « En cours » vient du store : on re-rend quand il change.
+    // "Pending" comes from the store: re-render when it changes.
     let wasSubmitting = false;
     attached.subscribe(
       () => {
@@ -353,7 +353,7 @@ export function createForm(options: FormOptions<any, CommandMap, string, never>,
       return;
     }
     if (checking.size > 0) {
-      waitingSubmit = true; // la soumission repart quand les vérifications ont répondu
+      waitingSubmit = true; // the submission restarts when the checks have answered
       env.requestRender();
       return;
     }
@@ -368,7 +368,7 @@ export function createForm(options: FormOptions<any, CommandMap, string, never>,
     env.requestRender();
   }
 
-  /** Éléments liés par `field(…)`, par champ (plusieurs pour un groupe de radios ou de cases). */
+  /** Elements bound by `field(…)`, per field (several for a group of radios or checkboxes). */
   const elements = new Map<string, Set<Element>>();
   function register(path: Path, element: Element) {
     const id = pathId(path);
@@ -376,10 +376,10 @@ export function createForm(options: FormOptions<any, CommandMap, string, never>,
     elements.get(id)!.add(element);
   }
 
-  /** Centre le premier champ en erreur, dans l'ordre de la page, et lui donne le focus. */
+  /** Centres the first field in error, in page order, and focuses it. */
   function revealFirstError() {
     if (options.scrollToError === false) return;
-    // Après le rendu : les messages d'erreur insérés ont pu décaler les champs.
+    // After the render: the inserted error messages may have shifted the fields.
     queueMicrotask(() => {
       let first: HTMLElement | null = null;
       for (const [id, set] of elements) {
@@ -444,7 +444,7 @@ export function createForm(options: FormOptions<any, CommandMap, string, never>,
 }
 
 /* ------------------------------------------------------------------------------------------ */
-/* Directives : relier les éléments du DOM au formulaire                                       */
+/* Directives: binding DOM elements to the form                                                */
 /* ------------------------------------------------------------------------------------------ */
 
 type FieldElement = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
@@ -497,7 +497,7 @@ function writeElement(el: FieldElement, value: unknown, option: unknown) {
     return;
   }
   const text = value === null || value === undefined ? '' : String(value);
-  if (el.value !== text) el.value = text; // ne touche pas un champ déjà à jour : le curseur ne saute pas
+  if (el.value !== text) el.value = text; // leave an up-to-date field alone: the cursor does not jump
 }
 
 class FieldDirective extends Directive {
@@ -508,7 +508,7 @@ class FieldDirective extends Directive {
 
   constructor(part: PartInfo) {
     super(part);
-    if (part.type !== PartType.ELEMENT) throw new Error('[super] form.field(...) se place sur un champ : <input ${form.field("nom")} />');
+    if (part.type !== PartType.ELEMENT) throw new Error('[super] form.field(...) goes on a field: <input ${form.field("name")} />');
   }
 
   render(_controller: Controller, _path: Path, _option: unknown) {
@@ -535,7 +535,7 @@ class FieldDirective extends Directive {
     }
     const value = controller.read(path);
     writeElement(el, value, option);
-    // Les options d'un <select> rendues après lui (repeat) : on resynchronise une fois tout en place.
+    // The options of a <select> rendered after it (repeat): resynchronise once everything is in place.
     if (el instanceof HTMLSelectElement) queueMicrotask(() => writeElement(el, controller.read(path), option));
     return nothing;
   }
@@ -547,7 +547,7 @@ class FormDirective extends Directive {
 
   constructor(part: PartInfo) {
     super(part);
-    if (part.type !== PartType.ELEMENT) throw new Error('[super] form.bind() se place sur la balise <form>');
+    if (part.type !== PartType.ELEMENT) throw new Error('[super] form.bind() goes on the <form> tag');
   }
 
   render(_controller: Controller) {
@@ -559,7 +559,7 @@ class FormDirective extends Directive {
     const el = part.element as HTMLFormElement;
     if (this.#element !== el) {
       this.#element = el;
-      el.noValidate = true; // les règles du formulaire remplacent la validation native du navigateur
+      el.noValidate = true; // the form's rules replace the browser's native validation
       el.addEventListener('submit', (event) => {
         event.preventDefault();
         this.#controller!.submit();

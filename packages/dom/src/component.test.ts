@@ -39,24 +39,24 @@ class ListedStore extends SuperStore<CmpListedContract> implements Commands<List
   }
 }
 
-describe('composant', () => {
-  test('rend le template, échappe les interpolations et re-rend quand les props changent', async () => {
+describe('component', () => {
+  test('renders the template, escapes interpolations and re-renders when the props change', async () => {
     class Hello extends SuperElement<{ props: { name: string } }> {
       static tag = 'cmp-hello';
       render() {
-        return html`<p>Bonjour ${this.props.name}</p>`;
+        return html`<p>Hello ${this.props.name}</p>`;
       }
     }
 
     const mounted = await mount(Hello, { props: { name: '<b>Ada</b>' } });
-    expect(mounted.container.querySelector('p')!.textContent).toBe('Bonjour <b>Ada</b>');
+    expect(mounted.container.querySelector('p')!.textContent).toBe('Hello <b>Ada</b>');
     expect(mounted.container.querySelector('b')).toBeNull();
 
     await mounted.setProps({ name: 'Grace' });
     expect(mounted.container.textContent).toContain('Grace');
   });
 
-  test('état local : set merge et re-rend', async () => {
+  test('local state: set merges and re-renders', async () => {
     class Toggle extends SuperElement {
       static tag = 'cmp-toggle';
       local = this.state({ on: false, clicks: 0, label: 'x' });
@@ -75,7 +75,7 @@ describe('composant', () => {
     expect(container.textContent).toContain('ON 1 x');
   });
 
-  test('un enfant ne se re-rend pas quand le parent repasse les mêmes props', async () => {
+  test('a child does not re-render when the parent passes the same props again', async () => {
     const childRender = vi.fn();
     class Child extends SuperElement<{ props: { label: string } }> {
       static tag = 'cmp-same-props-child';
@@ -102,7 +102,7 @@ describe('composant', () => {
     expect(childRender).toHaveBeenCalledTimes(before);
   });
 
-  test('le parent garde la même instance enfant et met à jour ses props', async () => {
+  test('the parent keeps the same child instance and updates its props', async () => {
     class Child extends SuperElement<{ props: { n: number } }> {
       static tag = 'cmp-child-props';
       render() {
@@ -126,15 +126,15 @@ describe('composant', () => {
     expect(container.querySelector('i')!.textContent).toBe('2');
   });
 
-  test('un dialogue s’ouvre par une prop et répond par un événement, sans await dans le parent', async () => {
+  test('a dialog opens through a prop and answers through an event, without await in the parent', async () => {
     class Confirm extends SuperElement<{ props: { question: string | null }; emits: { answered: { confirmed: boolean } } }> {
       static tag = 'cmp-confirm';
       render() {
         const { question } = this.props;
         return question
           ? html`<p>${question}</p>
-              <button class="no" @click=${() => this.emit('answered', { confirmed: false })}>Non</button>
-              <button class="yes" @click=${() => this.emit('answered', { confirmed: true })}>Oui</button>`
+              <button class="no" @click=${() => this.emit('answered', { confirmed: false })}>No</button>
+              <button class="yes" @click=${() => this.emit('answered', { confirmed: true })}>Yes</button>`
           : null;
       }
     }
@@ -148,7 +148,7 @@ describe('composant', () => {
       };
       render() {
         return html`
-          <button class="go" @click=${() => this.local.set({ question: 'Continuer ?' })}>Go</button>
+          <button class="go" @click=${() => this.local.set({ question: 'Continue?' })}>Go</button>
           ${Confirm.create({ question: this.local.get().question }, { on: { answered: this.onAnswered } })}
         `;
       }
@@ -157,15 +157,15 @@ describe('composant', () => {
     const { container } = await mount(Screen);
     container.querySelector<HTMLButtonElement>('.go')!.click();
     await flush();
-    expect(container.textContent).toContain('Continuer ?');
+    expect(container.textContent).toContain('Continue?');
 
     container.querySelector<HTMLButtonElement>('cmp-confirm .yes')!.click();
     await flush();
     expect(answers).toEqual([true]);
-    expect(container.textContent).not.toContain('Continuer ?');
+    expect(container.textContent).not.toContain('Continue?');
   });
 
-  test('mounted s’exécute après le premier rendu ; unmounted et le signal au démontage', async () => {
+  test('mounted runs after the first render; unmounted and the signal at unmount', async () => {
     const calls: string[] = [];
     let signal!: AbortSignal;
     class Widget extends SuperElement {
@@ -178,7 +178,7 @@ describe('composant', () => {
         calls.push('cleanup');
       }
       render() {
-        return html`<span>prêt</span>`;
+        return html`<span>ready</span>`;
       }
     }
 
@@ -187,11 +187,11 @@ describe('composant', () => {
     mounted.unmount();
     await flush();
 
-    expect(calls).toEqual(['mount:prêt', 'cleanup']);
+    expect(calls).toEqual(['mount:ready', 'cleanup']);
     expect(signal.aborted).toBe(true);
   });
 
-  test('un enfant déplacé par repeat garde son état local', async () => {
+  test('a child moved by repeat keeps its local state', async () => {
     class Item extends SuperElement<{ props: { label: string } }> {
       static tag = 'cmp-item';
       local = this.state({ ticks: 0 });
@@ -224,7 +224,7 @@ describe('composant', () => {
   });
 });
 
-describe('contrats et createApp', () => {
+describe('contracts and createApp', () => {
   class ClockView extends SuperElement {
     static tag = 'cmp-clock-view';
     clock = this.contract('cmp-clock');
@@ -234,7 +234,7 @@ describe('contrats et createApp', () => {
     }
   }
 
-  test('createApp fournit les stores à tout ce qui est rendu sous la racine', async () => {
+  test('createApp provides the stores to everything rendered under the root', async () => {
     const root = document.createElement('div');
     document.body.append(root);
     const clock = ClockStore.create();
@@ -249,7 +249,7 @@ describe('contrats et createApp', () => {
     root.remove();
   });
 
-  test('un store manquant produit une erreur explicite', () => {
+  test('a missing store produces an explicit error', () => {
     const root = document.createElement('div');
     document.body.append(root);
     const errors: unknown[] = [];
@@ -266,16 +266,16 @@ describe('contrats et createApp', () => {
       window.removeEventListener('error', onError);
       root.remove();
     }
-    expect(String(errors[0])).toMatch(/aucun store fourni pour le contrat "cmp-clock"/);
+    expect(String(errors[0])).toMatch(/no store provided for the contract "cmp-clock"/);
   });
 
-  test('deux stores pour le même contrat sont refusés', () => {
+  test('two stores for the same contract are refused', () => {
     expect(() => createApp({ root: document.createElement('div'), stores: [ClockStore.create(), ClockStore.create()] })).toThrow(
-      /deux stores/,
+      /two stores/,
     );
   });
 
-  test('le composant se désabonne du store au démontage', async () => {
+  test('the component unsubscribes from the store at unmount', async () => {
     const clock = ClockStore.create();
     const renders = vi.fn();
     class Spy extends SuperElement {
@@ -297,7 +297,7 @@ describe('contrats et createApp', () => {
   });
 
   describe('selector', () => {
-    test('ne re-rend que si la valeur sélectionnée change', async () => {
+    test('only re-renders if the selected value changes', async () => {
       const board = BoardStore.create();
       const renders = vi.fn();
       class Score extends SuperElement {
@@ -321,13 +321,13 @@ describe('contrats et createApp', () => {
       expect(container.textContent).toBe('2');
     });
 
-    test('un objet recréé à l’identique ne re-rend pas', async () => {
+    test('an identically recreated object does not re-render', async () => {
       const board = BoardStore.create();
       const renders = vi.fn();
       class Pair extends SuperElement {
         static tag = 'cmp-score-pair';
         board = this.contract('cmp-board');
-        pair = this.selector(this.board.selectors.pair); // un objet neuf à chaque lecture
+        pair = this.selector(this.board.selectors.pair); // a new object on every read
         render() {
           renders(this.pair.value);
           return null;
@@ -335,13 +335,13 @@ describe('contrats et createApp', () => {
       }
       await mount(Pair, { stores: [board] });
 
-      await board.send('score', { id: 'a', value: 1 }); // même valeur, nouvel objet scores
+      await board.send('score', { id: 'a', value: 1 }); // same value, new scores object
       await board.send('setStatus', 'busy');
       await flush();
       expect(renders).toHaveBeenCalledTimes(1);
     });
 
-    test('un selector qui lit les props compare avec ce qui a été rendu', async () => {
+    test('a selector that reads the props compares with what was rendered', async () => {
       const board = BoardStore.create();
       class Single extends SuperElement<{ props: { id: string } }> {
         static tag = 'cmp-score-single';
@@ -357,19 +357,19 @@ describe('contrats et createApp', () => {
       await mounted.setProps({ id: 'b' });
       expect(mounted.container.textContent).toBe('5');
 
-      // b passe à 1, la valeur de a au premier rendu : il faut quand même re-rendre.
+      // b goes to 1, the value of a at the first render: it still has to re-render.
       await board.send('score', { id: 'b', value: 1 });
       await flush();
       expect(mounted.container.textContent).toBe('1');
     });
 
-    test('une liste construite par le sélecteur ne re-rend que si son contenu change', async () => {
+    test('a list built by the selector only re-renders if its content changes', async () => {
       const store = ListedStore.create();
       const renders = vi.fn();
       class List extends SuperElement {
         static tag = 'cmp-listed-view';
         listed = this.contract('cmp-listed');
-        // Tableau recréé à chaque lecture : stabilisé par Super.
+        // Array recreated on every read: stabilised by Super.
         labels = this.selector(this.listed.selectors.labels);
         render() {
           renders();
@@ -378,7 +378,7 @@ describe('contrats et createApp', () => {
       }
       const { container } = await mount(List, { stores: [store] });
 
-      await store.send('note', 'hors liste');
+      await store.send('note', 'outside the list');
       await flush();
       expect(renders).toHaveBeenCalledTimes(1);
 
@@ -390,39 +390,39 @@ describe('contrats et createApp', () => {
   });
 });
 
-describe('frontière d’erreur : renderError et onError', () => {
+describe('error boundary: renderError and onError', () => {
   const fail = (message: string): never => {
     throw new Error(message);
   };
 
-  test('une erreur au premier rendu affiche le renderError du composant, avec ses props', async () => {
+  test('an error at the first render displays the component renderError, with its props', async () => {
     class Broken extends SuperElement<{ props: { id: string } }> {
       static tag = 'cmp-err-first';
       render(): unknown {
-        return fail('rendu cassé');
+        return fail('broken render');
       }
       override renderError(error: Error) {
-        return html`<p>${this.props.id} : ${error.message}</p>`;
+        return html`<p>${this.props.id}: ${error.message}</p>`;
       }
     }
     const onError = vi.fn();
-    const { container } = await mount(Broken, { props: { id: 'cafes' }, onError });
+    const { container } = await mount(Broken, { props: { id: 'coffees' }, onError });
 
-    expect(container.textContent).toBe('cafes : rendu cassé');
+    expect(container.textContent).toBe('coffees: broken render');
     expect(onError).toHaveBeenCalledWith(expect.any(Error), { tag: 'cmp-err-first', phase: 'render', caughtBy: 'cmp-err-first' });
   });
 
-  test('une erreur dans un rendu suivant bascule sur renderError', async () => {
+  test('an error in a later render switches to renderError', async () => {
     class Flaky extends SuperElement {
       static tag = 'cmp-err-render';
       local = this.state({ broken: false });
       render(): unknown {
         return this.local.get().broken
-          ? fail('rendu cassé')
-          : html`<button @click=${() => this.local.set({ broken: true })}>casser</button>`;
+          ? fail('broken render')
+          : html`<button @click=${() => this.local.set({ broken: true })}>break</button>`;
       }
       override renderError(error: Error) {
-        return html`<p>repli : ${error.message}</p>`;
+        return html`<p>fallback: ${error.message}</p>`;
       }
     }
     const { container } = await mount(Flaky, { onError: () => {} });
@@ -430,15 +430,15 @@ describe('frontière d’erreur : renderError et onError', () => {
     container.querySelector('button')!.click();
     await flush();
 
-    expect(container.textContent).toBe('repli : rendu cassé');
+    expect(container.textContent).toBe('fallback: broken render');
   });
 
-  test('le renderError d’un ancêtre rattrape l’erreur d’un descendant, à travers un intermédiaire', async () => {
+  test("an ancestor's renderError catches a descendant's error, through an intermediate", async () => {
     class Child extends SuperElement {
       static tag = 'cmp-err-child';
       constructor() {
         super();
-        fail('enfant cassé');
+        fail('broken child');
       }
       render() {
         return null;
@@ -453,28 +453,28 @@ describe('frontière d’erreur : renderError et onError', () => {
     class Screen extends SuperElement {
       static tag = 'cmp-err-screen';
       render() {
-        return html`<h1>écran</h1>${Middle.create()}`;
+        return html`<h1>screen</h1>${Middle.create()}`;
       }
       override renderError(error: Error) {
-        return html`<p>écran en repli : ${error.message}</p>`;
+        return html`<p>screen in fallback: ${error.message}</p>`;
       }
     }
     const onError = vi.fn();
     const { container } = await mount(Screen, { onError });
     await flush();
 
-    expect(container.textContent).toBe('écran en repli : enfant cassé');
+    expect(container.textContent).toBe('screen in fallback: broken child');
     expect(onError).toHaveBeenCalledWith(expect.any(Error), { tag: 'cmp-err-child', phase: 'setup', caughtBy: 'cmp-err-screen' });
   });
 
-  test('un renderError qui plante laisse l’erreur remonter au parent suivant', async () => {
+  test('a renderError that crashes lets the error bubble up to the next parent', async () => {
     class Inner extends SuperElement {
       static tag = 'cmp-err-inner';
       render(): unknown {
-        return fail('intérieur cassé');
+        return fail('broken inner');
       }
       override renderError(): unknown {
-        return fail('repli cassé');
+        return fail('broken fallback');
       }
     }
     class Outer extends SuperElement {
@@ -483,22 +483,22 @@ describe('frontière d’erreur : renderError et onError', () => {
         return html`${Inner.create()}`;
       }
       override renderError(error: Error) {
-        return html`<p>extérieur : ${error.message}</p>`;
+        return html`<p>outer: ${error.message}</p>`;
       }
     }
     const onError = vi.fn();
     const { container } = await mount(Outer, { onError });
     await flush();
 
-    expect(container.textContent).toBe('extérieur : repli cassé');
-    expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: 'repli cassé' }), {
+    expect(container.textContent).toBe('outer: broken fallback');
+    expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: 'broken fallback' }), {
       tag: 'cmp-err-inner',
       phase: 'renderError',
       caughtBy: 'cmp-err-outer',
     });
   });
 
-  test('sans onError, une erreur rattrapée part dans la console', async () => {
+  test('without onError, a caught error goes to the console', async () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
     class Broken extends SuperElement {
       static tag = 'cmp-err-console';
@@ -506,7 +506,7 @@ describe('frontière d’erreur : renderError et onError', () => {
         return fail('visible');
       }
       override renderError() {
-        return html`<p>repli</p>`;
+        return html`<p>fallback</p>`;
       }
     }
     await mount(Broken);
@@ -516,7 +516,7 @@ describe('frontière d’erreur : renderError et onError', () => {
   });
 });
 
-describe('commandes en cours et issues, côté composant', () => {
+describe('pending commands and outcomes, on the component side', () => {
   function createSaver() {
     let release: () => void = () => {};
     class SaverStore extends SuperStore<CmpSaverContract> implements Commands<SaverStore> {
@@ -524,7 +524,7 @@ describe('commandes en cours et issues, côté composant', () => {
         super({ contract: 'cmp-saver', initialState: { saved: 0 } });
       }
       async save({ id }: { id: string }) {
-        if (id === 'non') this.fail('refused');
+        if (id === 'no') this.fail('refused');
         await new Promise<void>((resolve) => (release = resolve));
         this.set({ saved: this.get().saved + 1 });
       }
@@ -535,14 +535,14 @@ describe('commandes en cours et issues, côté composant', () => {
     return { store: SaverStore.create(), release: () => release() };
   }
 
-  test('pending re-rend le composant au début et à la fin de la commande', async () => {
+  test('pending re-renders the component at the start and at the end of the command', async () => {
     const { store, release } = createSaver();
     class Button extends SuperElement {
       static tag = 'cmp-saver-button';
       saver = this.contract('cmp-saver');
       saving = this.selector(() => this.saver.selectors.pending('save', { id: 'a' }));
       render() {
-        return html`<button ?disabled=${this.saving.value} @click=${() => this.saver.send('save', { id: 'a' })}>enregistrer</button>`;
+        return html`<button ?disabled=${this.saving.value} @click=${() => this.saver.send('save', { id: 'a' })}>save</button>`;
       }
     }
     const { container } = await mount(Button, { stores: [store] });
@@ -557,7 +557,7 @@ describe('commandes en cours et issues, côté composant', () => {
     expect(button.disabled).toBe(false);
   });
 
-  test('un échec déclaré ne remonte rien dans la console ; une exception inattendue, si', async () => {
+  test('a declared failure sends nothing to the console; an unexpected exception does', async () => {
     const { store } = createSaver();
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
     class Actions extends SuperElement {
@@ -565,8 +565,8 @@ describe('commandes en cours et issues, côté composant', () => {
       saver = this.contract('cmp-saver');
       render() {
         return html`
-          <button class="refuse" @click=${() => this.saver.send('save', { id: 'non' })}>refuser</button>
-          <button class="crash" @click=${() => this.saver.send('crash')}>planter</button>
+          <button class="refuse" @click=${() => this.saver.send('save', { id: 'no' })}>refuse</button>
+          <button class="crash" @click=${() => this.saver.send('crash')}>crash</button>
         `;
       }
     }
@@ -583,8 +583,8 @@ describe('commandes en cours et issues, côté composant', () => {
   });
 });
 
-describe('erreurs d’action : @événement, on, mounted', () => {
-  test('un @click qui plante est signalé (phase event) et l’affichage reste en place', async () => {
+describe('action errors: @event, on, mounted', () => {
+  test('a crashing @click is reported (event phase) and the display stays in place', async () => {
     const onError = vi.fn();
     class Buttons extends SuperElement {
       static tag = 'cmp-act-click';
@@ -593,10 +593,10 @@ describe('erreurs d’action : @événement, on, mounted', () => {
         return html`
           <button class="ok" @click=${() => this.local.set({ clicks: this.local.get().clicks + 1 })}>ok ${this.local.get().clicks}</button>
           <button class="sync" @click=${() => {
-            throw new Error('clic cassé');
+            throw new Error('broken click');
           }}>sync</button>
           <button class="async" @click=${async () => {
-            throw new Error('clic asynchrone cassé');
+            throw new Error('broken async click');
           }}>async</button>
         `;
       }
@@ -609,20 +609,20 @@ describe('erreurs d’action : @événement, on, mounted', () => {
     container.querySelector<HTMLButtonElement>('.ok')!.click();
     await flush();
 
-    expect(onError).toHaveBeenNthCalledWith(1, expect.objectContaining({ message: 'clic cassé' }), {
+    expect(onError).toHaveBeenNthCalledWith(1, expect.objectContaining({ message: 'broken click' }), {
       tag: 'cmp-act-click',
       phase: 'event',
       caughtBy: null,
     });
-    expect(onError).toHaveBeenNthCalledWith(2, expect.objectContaining({ message: 'clic asynchrone cassé' }), {
+    expect(onError).toHaveBeenNthCalledWith(2, expect.objectContaining({ message: 'broken async click' }), {
       tag: 'cmp-act-click',
       phase: 'event',
       caughtBy: null,
     });
-    expect(container.querySelector('.ok')!.textContent).toBe('ok 1'); // les autres gestionnaires marchent toujours
+    expect(container.querySelector('.ok')!.textContent).toBe('ok 1'); // the other handlers still work
   });
 
-  test('un écouteur on qui plante est signalé (phase listener)', async () => {
+  test('a crashing on listener is reported (listener phase)', async () => {
     const ping = fakeStore('cmp-ping', { state: {} });
     const onError = vi.fn();
     class Listener extends SuperElement {
@@ -631,56 +631,56 @@ describe('erreurs d’action : @événement, on, mounted', () => {
       constructor() {
         super();
         this.ping.on('pinged', () => {
-          throw new Error('écouteur cassé');
+          throw new Error('broken listener');
         });
       }
       render() {
-        return html`<p>toujours là</p>`;
+        return html`<p>still there</p>`;
       }
     }
     const { container } = await mount(Listener, { stores: [ping], onError });
 
     ping.emit('pinged');
 
-    expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: 'écouteur cassé' }), {
+    expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: 'broken listener' }), {
       tag: 'cmp-act-listener',
       phase: 'listener',
       caughtBy: null,
     });
-    expect(container.textContent).toBe('toujours là');
+    expect(container.textContent).toBe('still there');
   });
 
-  test('un mounted qui plante est signalé (phase mount) ; un unmounted qui plante part dans la console', async () => {
+  test('a crashing mounted is reported (mount phase); a crashing unmounted goes to the console', async () => {
     const onError = vi.fn();
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
     class Mounted extends SuperElement {
       static tag = 'cmp-act-mount';
       protected override mounted() {
-        throw new Error('montage cassé');
+        throw new Error('broken mount');
       }
       protected override unmounted() {
-        throw new Error('nettoyage cassé');
+        throw new Error('broken cleanup');
       }
       render() {
-        return html`<p>rendu</p>`;
+        return html`<p>rendered</p>`;
       }
     }
     const mounted = await mount(Mounted, { onError });
-    expect(mounted.container.textContent).toBe('rendu');
-    expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: 'montage cassé' }), {
+    expect(mounted.container.textContent).toBe('rendered');
+    expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: 'broken mount' }), {
       tag: 'cmp-act-mount',
       phase: 'mount',
       caughtBy: null,
     });
 
-    // unmounted s'exécute une fois l'élément retiré du DOM : il ne peut plus remonter à l'application.
+    // unmounted runs once the element is removed from the DOM: it can no longer bubble up to the application.
     mounted.element.remove();
     await flush();
-    expect(consoleError).toHaveBeenCalledWith(expect.objectContaining({ message: 'nettoyage cassé' }));
+    expect(consoleError).toHaveBeenCalledWith(expect.objectContaining({ message: 'broken cleanup' }));
     consoleError.mockRestore();
   });
 
-  test('sans onError, l’erreur d’un gestionnaire part dans la console', async () => {
+  test("without onError, a handler's error goes to the console", async () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
     class Broken extends SuperElement {
       static tag = 'cmp-act-console';
@@ -699,8 +699,8 @@ describe('erreurs d’action : @événement, on, mounted', () => {
   });
 });
 
-describe('outils réservés à la préparation', () => {
-  test.each(['contract', 'state', 'selector', 'form', 'ref'] as const)('%s appelé dans render lève une erreur', async (name) => {
+describe('tools reserved for preparation', () => {
+  test.each(['contract', 'state', 'selector', 'form', 'ref'] as const)('%s called in render throws an error', async (name) => {
     const onError = vi.fn();
     const counter = fakeStore('cmp-counter', { state: { n: 0 } });
     class Leaky extends SuperElement {
@@ -712,7 +712,7 @@ describe('outils réservés à la préparation', () => {
         if (name === 'selector') this.selector(this.counter.selectors.n);
         if (name === 'form') this.form({} as never);
         if (name === 'ref') this.ref();
-        return html`<p>jamais</p>`;
+        return html`<p>never</p>`;
       }
       override renderError(error: Error) {
         return html`<p>${error.message}</p>`;
@@ -721,12 +721,12 @@ describe('outils réservés à la préparation', () => {
     const { container } = await mount(Leaky, { stores: [counter], onError });
 
     expect(container.textContent).toBe(
-      `[super] <cmp-guard-${name}> : \`${name}\` se déclare dans un champ ou le constructeur, pas pendant render`,
+      `[super] <cmp-guard-${name}>: \`${name}\` is declared in a field or the constructor, not during render`,
     );
     expect(onError).toHaveBeenCalledWith(expect.any(Error), expect.objectContaining({ phase: 'render' }));
   });
 
-  test('on est interdit pendant render, permis dans un gestionnaire', async () => {
+  test('on is forbidden during render, allowed in a handler', async () => {
     const counter = fakeStore('cmp-counter', { state: { n: 0 } });
     const heard = vi.fn();
     class Listener extends SuperElement {
@@ -736,8 +736,8 @@ describe('outils réservés à la préparation', () => {
       render() {
         if (this.local.get().inRender) this.counter.on('ticked', heard);
         return html`
-          <button class="handler" @click=${() => this.counter.on('ticked', heard)}>écouter</button>
-          <button class="render" @click=${() => this.local.set({ inRender: true })}>casser</button>`;
+          <button class="handler" @click=${() => this.counter.on('ticked', heard)}>listen</button>
+          <button class="render" @click=${() => this.local.set({ inRender: true })}>break</button>`;
       }
       override renderError(error: Error) {
         return html`<p>${error.message}</p>`;
@@ -751,6 +751,6 @@ describe('outils réservés à la préparation', () => {
 
     container.querySelector<HTMLButtonElement>('.render')!.click();
     await flush();
-    expect(container.textContent).toBe("[super] <cmp-guard-on> : `on` ne s'appelle pas pendant render");
+    expect(container.textContent).toBe('[super] <cmp-guard-on>: `on` cannot be called during render');
   });
 });

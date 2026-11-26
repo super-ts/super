@@ -44,7 +44,7 @@ const COUNTERS = {
 } as const;
 const COUNTER = { path: '/counters/:id', params: params<CounterParams>({ id: Number }) } as const;
 
-test('chaînes : paramètres et query extraits du chemin', () => {
+test('strings: parameters and query extracted from the path', () => {
   expectTypeOf<PathParams<'/'>>().toEqualTypeOf<{}>();
   expectTypeOf<PathParams<'/items/:id'>>().toEqualTypeOf<{ id: string }>();
   expectTypeOf<PathParams<'/a/:x/b/:y'>>().toEqualTypeOf<{ x: string; y: string }>();
@@ -53,48 +53,48 @@ test('chaînes : paramètres et query extraits du chemin', () => {
   expectTypeOf<QueryParams<'/list'>>().toEqualTypeOf<{}>();
 });
 
-test('routes décrites : les types écrits par l’app', () => {
+test('described routes: the types written by the app', () => {
   expectTypeOf<ParamsOf<typeof COUNTER>>().toEqualTypeOf<CounterParams>();
   expectTypeOf<QueryOf<typeof COUNTERS>>().toEqualTypeOf<CountersQuery>();
   expectTypeOf<ParamsOf<{ path: '/x/:slug' }>>().toEqualTypeOf<{ slug: string }>();
 });
 
-test('descriptions vérifiées contre le type', () => {
+test('descriptions checked against the type', () => {
   query<{ page: number }>({ page: { type: Number, default: 1 } });
-  // @ts-expect-error une clé obligatoire exige sa valeur par défaut
+  // @ts-expect-error a required key demands its default value
   query<{ page: number }>({ page: Number });
-  // @ts-expect-error une clé facultative n'a pas de défaut
+  // @ts-expect-error an optional key has no default
   query<{ page?: number }>({ page: { type: Number, default: 1 } });
-  // @ts-expect-error mauvais type
+  // @ts-expect-error wrong type
   query<{ page?: number }>({ page: String });
-  // @ts-expect-error valeur hors de l'union
+  // @ts-expect-error value outside the union
   query<{ sort?: 'a' | 'b' }>({ sort: { oneOf: ['a', 'c'] } });
-  // @ts-expect-error défaut hors de l'union
+  // @ts-expect-error default outside the union
   query<{ sort: 'a' | 'b' }>({ sort: { oneOf: ['a', 'b'], default: 'c' } });
-  // @ts-expect-error une liste se décrit entre crochets
+  // @ts-expect-error a list is described between square brackets
   query<{ tag: string[] }>({ tag: String });
-  // @ts-expect-error clé manquante
+  // @ts-expect-error missing key
   query<{ a?: string; b?: string }>({ a: String });
-  // @ts-expect-error clé en trop
+  // @ts-expect-error extra key
   query<{ a?: string }>({ a: String, b: String });
   params<{ id: number; slug: string; kind: 'a' | 'b' }>({ id: Number, slug: String, kind: { oneOf: ['a', 'b'] } });
-  // @ts-expect-error un paramètre de chemin est toujours présent : pas de défaut
+  // @ts-expect-error a path parameter is always present: no default
   params<{ id: number }>({ id: { type: Number, default: 1 } });
 });
 
-test('defineRouter : params décrits = paramètres du chemin, query hors du chemin', () => {
+test('defineRouter: described params = path parameters, query outside the path', () => {
   defineRouter({ counter: COUNTER });
-  // @ts-expect-error `slug` n'est pas un paramètre du chemin
+  // @ts-expect-error `slug` is not a path parameter
   void (() => defineRouter({ counter: { path: '/counters/:id', params: params<{ slug: string }>({ slug: String }) } }));
-  // @ts-expect-error la query se décrit par query<T>
+  // @ts-expect-error the query is described with query<T>
   void (() => defineRouter({ counters: { path: '/counters?sort' } }));
-  // @ts-expect-error '*' est réservé, ce n'est pas un nom de route
+  // @ts-expect-error '*' is reserved, it is not a route name
   defineRouter({ '*': '/x' });
-  // @ts-expect-error '!' n'est pas un nom de route
+  // @ts-expect-error '!' is not a route name
   defineRouter({ '!': '/oops' });
 });
 
-test('NavigateTargetOf : params requis seulement si la route en a, query à part', () => {
+test('NavigateTargetOf: params required only if the route has some, query separate', () => {
   type Target = NavigateTargetOf<{ home: '/'; item: typeof COUNTER; list: typeof COUNTERS }>;
   expectTypeOf<{ to: 'home' }>().toExtend<Target>();
   expectTypeOf<{ to: 'item'; params: { id: number } }>().toExtend<Target>();
@@ -105,19 +105,19 @@ test('NavigateTargetOf : params requis seulement si la route en a, query à part
   expectTypeOf<{ to: 'nope' }>().not.toExtend<Target>();
 });
 
-test('screens : un écran par route, sans props obligatoire', () => {
+test('screens: one screen per route, without required props', () => {
   const declared = defineRouter({ home: '/', item: '/items/:id' });
   declared.screens(() => ({ home: Screen, item: Screen }));
   declared.screens(() => ({ home: Screen, item: Screen, '*': Screen }));
-  // @ts-expect-error écran manquant
+  // @ts-expect-error missing screen
   declared.screens(() => ({ home: Screen }));
-  // @ts-expect-error un écran ne reçoit plus de props de route
+  // @ts-expect-error a screen no longer receives route props
   declared.screens(() => ({ home: Screen, item: IdScreen }));
 });
 
-test('createRouter exige un router dont les écrans sont déclarés', () => {
+test('createRouter requires a router whose screens are declared', () => {
   const declared = defineRouter({ home: '/' });
-  // @ts-expect-error .screens() pas encore appelé
+  // @ts-expect-error .screens() not called yet
   createRouter(declared, { mode: 'memory' });
   createRouter(
     declared.screens(() => ({ home: Screen })),
@@ -125,7 +125,7 @@ test('createRouter exige un router dont les écrans sont déclarés', () => {
   );
 });
 
-test('href et navigate : params et query séparés, typés', () => {
+test('href and navigate: params and query separate, typed', () => {
   const Router = defineRouter({ home: '/', item: COUNTER, list: COUNTERS, legacy: '/legacy/:id?tab&tag[]' }).screens(() => ({
     home: Screen,
     item: Screen,
@@ -138,34 +138,34 @@ test('href et navigate : params et query séparés, typés', () => {
   Router.href('list');
   Router.href('list', { query: { sort: 'value', page: 2, tag: ['a', 'b'], archived: true } });
   Router.href('legacy', { params: { id: 'x' }, query: { tab: 'y', tag: ['z'] } });
-  // @ts-expect-error paramètre `id` requis
+  // @ts-expect-error parameter `id` required
   Router.href('item');
-  // @ts-expect-error `id` est un nombre
+  // @ts-expect-error `id` is a number
   Router.href('item', { params: { id: '1' } });
-  // @ts-expect-error valeur hors de l'union
+  // @ts-expect-error value outside the union
   Router.href('list', { query: { sort: 'nope' } });
-  // @ts-expect-error `nope` n'est pas déclaré
+  // @ts-expect-error `nope` is not declared
   Router.href('list', { query: { nope: 'x' } });
-  // @ts-expect-error `/` n'a pas de query
+  // @ts-expect-error `/` has no query
   Router.href('home', { query: { sort: 'value' } });
-  // @ts-expect-error route inconnue
+  // @ts-expect-error unknown route
   Router.href('nope');
 
   const router = createRouter(Router, { mode: 'memory' });
   void router.send('navigate', { to: 'item', params: { id: 1 } });
   void router.send('navigate', { to: 'list', query: { page: 3 } });
-  // @ts-expect-error params requis
+  // @ts-expect-error params required
   void router.send('navigate', { to: 'item' });
-  // @ts-expect-error route inconnue
+  // @ts-expect-error unknown route
   void router.send('navigate', { to: 'nope' });
   expectTypeOf(router.state().name).toEqualTypeOf<'home' | 'item' | 'list' | 'legacy' | null>();
   expectTypeOf(router).toEqualTypeOf<RouterHandle<(typeof Router)['paths']>>();
   createApp({ root: document.body, router });
 });
 
-// Le cas réel : des écrans qui utilisent le router dont la déclaration les contient. Si le
-// compilateur ne parvenait plus à typer `Cyclic` sans lire ses écrans, tout ceci tomberait en `any`
-// et les `@ts-expect-error` ci-dessous échoueraient.
+// The real case: screens that use the router whose declaration contains them. If the
+// compiler could no longer type `Cyclic` without reading its screens, all of this would fall back to `any`
+// and the `@ts-expect-error` below would fail.
 const Cyclic = defineRouter({ home: '/', item: COUNTER }).screens(() => ({
   home: CyclicHome,
   item: CyclicItem,
@@ -190,28 +190,28 @@ class CyclicMissing extends SuperElement {
   }
 }
 
-test('les écrans peuvent utiliser le router qui les déclare, sans perdre le typage', () => {
-  // @ts-expect-error paramètre `id` requis
+test('screens can use the router that declares them, without losing typing', () => {
+  // @ts-expect-error parameter `id` required
   Cyclic.href('item');
   expectTypeOf(Cyclic.href).returns.toEqualTypeOf<string>();
   const router = createRouter(Cyclic, { mode: 'memory' });
   expectTypeOf(router.state().name).toEqualTypeOf<'home' | 'item' | null>();
-  // @ts-expect-error params requis
+  // @ts-expect-error params required
   void router.send('navigate', { to: 'item' });
 });
 
-test('redirect : la cible est une route existante, avec ses paramètres', () => {
+test('redirect: the target is an existing route, with its parameters', () => {
   const declared = defineRouter({ home: '/', item: COUNTER, stats: '/stats' });
 
   declared.screens(() => ({ home: Screen, item: Screen, stats: redirect({ to: 'home' }) }));
   declared.screens(() => ({ home: Screen, item: Screen, stats: redirect({ to: 'item', params: { id: 1 } }) }));
-  // @ts-expect-error route inconnue
+  // @ts-expect-error unknown route
   declared.screens(() => ({ home: Screen, item: Screen, stats: redirect({ to: 'nope' }) }));
-  // @ts-expect-error paramètre `id` manquant
+  // @ts-expect-error parameter `id` missing
   declared.screens(() => ({ home: Screen, item: Screen, stats: redirect({ to: 'item' }) }));
 });
 
-test('guards : la route typée, cibles typées, lecture des stores par nom de contrat', () => {
+test('guards: the typed route, typed targets, reading stores by contract name', () => {
   const declared = defineRouter({ home: '/', item: COUNTER, list: COUNTERS });
 
   declared
@@ -233,17 +233,17 @@ test('guards : la route typée, cibles typées, lecture des stores par nom de co
       },
     }))
     .screens(() => ({ home: Screen, item: Screen, list: Screen }));
-  // @ts-expect-error contrat inconnu
+  // @ts-expect-error unknown contract
   declared.guards(({ read }) => ({ home: () => read('rt-nope') && true }));
-  // @ts-expect-error cible de redirection inconnue
+  // @ts-expect-error unknown redirect target
   declared.guards(() => ({ home: () => ({ to: 'nope' }) }));
-  // @ts-expect-error guard pour une route inconnue
+  // @ts-expect-error guard for an unknown route
   declared.guards(() => ({ nope: () => true }));
-  // @ts-expect-error les guards se déclarent avant les écrans : .screens() reste le dernier appel
+  // @ts-expect-error guards are declared before the screens: .screens() stays the last call
   declared.screens(() => ({ home: Screen, item: Screen, list: Screen })).guards(() => ({}));
 });
 
-test("écran '!' : reçoit { error, path }", () => {
+test("'!' screen: receives { error, path }", () => {
   class Oops extends SuperElement<{ props: { error: Error; path: string } }> {
     static tag = 'td-e-oops';
     render() {
@@ -253,11 +253,11 @@ test("écran '!' : reçoit { error, path }", () => {
   const declared = defineRouter({ home: '/' });
 
   declared.screens(() => ({ home: Screen, '!': Oops }));
-  // @ts-expect-error l'écran '!' doit accepter { error, path }
+  // @ts-expect-error the '!' screen must accept { error, path }
   declared.screens(() => ({ home: Screen, '!': IdScreen }));
 });
 
-test('renderError reçoit l’erreur, et lit les props typées', () => {
+test('renderError receives the error, and reads the typed props', () => {
   class WithFallback extends SuperElement<{ props: { id: string } }> {
     static tag = 'td-fallback';
     render() {

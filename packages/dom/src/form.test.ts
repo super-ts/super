@@ -5,14 +5,14 @@ import { describe, expect, test, vi } from 'vitest';
 import type { FormAccountContract, FormCrashyContract } from './__fixtures__/form-contracts.ts';
 import './__fixtures__/form-contracts.ts';
 
-/** Ce que le test pilote : commandes reçues, réponse à la soumission en cours, réponses aux vérifications. */
+/** What the test drives: commands received, response to the pending submission, responses to the checks. */
 type Probe = {
   sent: Array<{ command: string; input: unknown }>;
   next: { resolve: (r: { id: string }) => void; reject: (reason: 'email-taken' | 'network') => void } | null;
   replies: Map<string, { available: boolean }>;
 };
 
-/** Store dont on pilote les réponses à la main. */
+/** Store whose responses are driven by hand. */
 class AccountStore extends SuperStore<FormAccountContract> implements Commands<AccountStore> {
   #probe: Probe;
   constructor(probe: Probe) {
@@ -55,8 +55,8 @@ const blur = (el: Element) => el.dispatchEvent(new Event('blur'));
 const change = (el: Element) => el.dispatchEvent(new Event('change'));
 const q = <T extends Element>(root: ParentNode, selector: string) => root.querySelector<T>(selector)!;
 
-describe('form : champs', () => {
-  test('chaque type de champ lit et écrit sa valeur', async () => {
+describe('form: fields', () => {
+  test('each field type reads and writes its value', async () => {
     const { store } = createAccount();
     let values: Record<string, unknown> = {};
     class AllFields extends SuperElement {
@@ -77,7 +77,7 @@ describe('form : champs', () => {
           avatar: null as File | null,
         },
         submit: { to: this.account, command: 'register', toInput: (v) => v },
-        failures: { fields: {}, form: { 'email-taken': 'pris', network: 'réseau' } },
+        failures: { fields: {}, form: { 'email-taken': 'taken', network: 'network' } },
       });
       render() {
         const edit = this.edit;
@@ -92,7 +92,7 @@ describe('form : champs', () => {
           <input class="pro" type="radio" ${edit.field('plan', 'pro')} />
           <input class="newsletter" type="checkbox" ${edit.field('newsletter')} />
           <input class="sport" type="checkbox" ${edit.field('interests', 'sport')} />
-          <input class="lecture" type="checkbox" ${edit.field('interests', 'lecture')} />
+          <input class="reading" type="checkbox" ${edit.field('interests', 'reading')} />
           <input class="birthdate" type="date" ${edit.field('birthdate')} />
           <input class="volume" type="range" min="0" max="100" ${edit.field('volume')} />
           <input class="avatar" type="file" ${edit.field('avatar')} />
@@ -101,12 +101,12 @@ describe('form : champs', () => {
     }
     const { container: c } = await mount(AllFields, { stores: [store] });
 
-    expect(q<HTMLInputElement>(c, '.name').value).toBe('Ada'); // valeur initiale écrite dans le champ
+    expect(q<HTMLInputElement>(c, '.name').value).toBe('Ada'); // initial value written into the field
     expect(q<HTMLInputElement>(c, '.free').checked).toBe(true);
 
     type(q(c, '.name'), 'Grace');
     type(q(c, '.age'), '36');
-    type(q(c, '.bio'), 'Pionnière');
+    type(q(c, '.bio'), 'Pioneer');
     const country = q<HTMLSelectElement>(c, '.country');
     country.value = 'BE';
     change(country);
@@ -119,7 +119,7 @@ describe('form : champs', () => {
     const newsletter = q<HTMLInputElement>(c, '.newsletter');
     newsletter.checked = true;
     change(newsletter);
-    for (const box of ['.sport', '.lecture']) {
+    for (const box of ['.sport', '.reading']) {
       const el = q<HTMLInputElement>(c, box);
       el.checked = true;
       change(el);
@@ -135,12 +135,12 @@ describe('form : champs', () => {
     expect(values).toEqual({
       name: 'Grace',
       age: 36,
-      bio: 'Pionnière',
+      bio: 'Pioneer',
       country: 'BE',
       languages: ['en'],
       plan: 'pro',
       newsletter: true,
-      interests: ['sport', 'lecture'],
+      interests: ['sport', 'reading'],
       birthdate: '1906-12-09',
       volume: 80,
       avatar: file,
@@ -148,11 +148,11 @@ describe('form : champs', () => {
 
     type(q(c, '.age'), '');
     await flush();
-    expect(values.age).toBeNull(); // un nombre vidé vaut null
+    expect(values.age).toBeNull(); // an emptied number is null
   });
 });
 
-/** Un formulaire d'inscription complet, réutilisé par les tests suivants. */
+/** A complete sign-up form, reused by the following tests. */
 function signup(options: { delay?: number } = {}) {
   return class Signup extends SuperElement {
     static tag = `t-form-signup-${Math.random().toString(36).slice(2)}`;
@@ -160,27 +160,27 @@ function signup(options: { delay?: number } = {}) {
     edit = this.form({
       initial: { email: '', password: '', confirm: '' },
       rules: {
-        email: (v) => /.+@.+\..+/.test(v) || 'Adresse invalide',
-        password: (v) => v.length >= 8 || '8 caractères minimum',
+        email: (v) => /.+@.+\..+/.test(v) || 'Invalid address',
+        password: (v) => v.length >= 8 || '8 characters minimum',
       },
-      validate: (v) => (v.password === v.confirm ? {} : { confirm: 'Les mots de passe diffèrent' }),
+      validate: (v) => (v.password === v.confirm ? {} : { confirm: 'The passwords differ' }),
       checks: {
         email: {
           command: 'checkEmail',
           toInput: (email) => ({ email }),
-          accept: ({ available }) => available || 'Adresse déjà utilisée',
+          accept: ({ available }) => available || 'Address already in use',
           delay: options.delay ?? 0,
         },
       },
       submit: { to: this.account, command: 'register', toInput: ({ email, password }) => ({ email, password }) },
-      failures: { fields: { 'email-taken': { email: 'Déjà inscrit' } }, form: { network: 'Connexion impossible' } },
+      failures: { fields: { 'email-taken': { email: 'Already registered' } }, form: { network: 'Cannot connect' } },
     });
     render() {
       const edit = this.edit;
       return html`
         <form ${edit.bind()}>
           <input class="email" ${edit.field('email')} /><p class="email-error">${edit.error('email')}</p>
-          <span class="checking">${edit.checking('email') ? 'vérification' : ''}</span>
+          <span class="checking">${edit.checking('email') ? 'checking' : ''}</span>
           <input class="password" ${edit.field('password')} /><p class="password-error">${edit.error('password')}</p>
           <input class="confirm" ${edit.field('confirm')} /><p class="confirm-error">${edit.error('confirm')}</p>
           <p class="form-error">${edit.formError()}</p>
@@ -200,8 +200,8 @@ async function fillValid(c: ParentNode) {
   await flush();
 }
 
-describe('form : validation', () => {
-  test('une erreur s’affiche après le premier passage dans le champ, pas avant', async () => {
+describe('form: validation', () => {
+  test('an error is displayed after the first visit to the field, not before', async () => {
     const { store } = createAccount();
     const { container: c } = await mount(signup(), { stores: [store] });
 
@@ -211,27 +211,27 @@ describe('form : validation', () => {
 
     blur(q(c, '.email'));
     await flush();
-    expect(q(c, '.email-error').textContent).toBe('Adresse invalide');
+    expect(q(c, '.email-error').textContent).toBe('Invalid address');
   });
 
-  test('soumettre un formulaire invalide affiche toutes les erreurs et n’envoie rien', async () => {
+  test('submitting an invalid form displays all the errors and sends nothing', async () => {
     const { store, sent } = createAccount();
     const { container: c } = await mount(signup(), { stores: [store] });
 
-    type(q(c, '.password'), 'court');
-    type(q(c, '.confirm'), 'autre');
+    type(q(c, '.password'), 'short');
+    type(q(c, '.confirm'), 'other');
     submitForm(c);
     await flush();
 
-    expect(q(c, '.email-error').textContent).toBe('Adresse invalide');
-    expect(q(c, '.password-error').textContent).toBe('8 caractères minimum');
-    expect(q(c, '.confirm-error').textContent).toBe('Les mots de passe diffèrent');
+    expect(q(c, '.email-error').textContent).toBe('Invalid address');
+    expect(q(c, '.password-error').textContent).toBe('8 characters minimum');
+    expect(q(c, '.confirm-error').textContent).toBe('The passwords differ');
     expect(sent.filter((s) => s.command === 'register')).toEqual([]);
   });
 });
 
-describe('form : soumission', () => {
-  test('envoie la commande avec le body construit, et suit « en cours »', async () => {
+describe('form: submission', () => {
+  test('sends the command with the built body, and tracks "pending"', async () => {
     const { store, sent, answer } = createAccount();
     const { container: c } = await mount(signup(), { stores: [store] });
     await fillValid(c);
@@ -246,7 +246,7 @@ describe('form : soumission', () => {
     expect(q<HTMLButtonElement>(c, 'button').disabled).toBe(false);
   });
 
-  test('une raison rattachée à un champ s’affiche sur ce champ, et disparaît quand on le corrige', async () => {
+  test('a reason attached to a field is displayed on that field, and disappears when it is corrected', async () => {
     const { store, answer } = createAccount();
     const { container: c } = await mount(signup(), { stores: [store] });
     await fillValid(c);
@@ -255,7 +255,7 @@ describe('form : soumission', () => {
     await flush();
     answer().reject('email-taken');
     await flush();
-    expect(q(c, '.email-error').textContent).toBe('Déjà inscrit');
+    expect(q(c, '.email-error').textContent).toBe('Already registered');
 
     type(q(c, '.email'), 'grace@example.com');
     await flush();
@@ -263,7 +263,7 @@ describe('form : soumission', () => {
     expect(q(c, '.email-error').textContent).toBe('');
   });
 
-  test('une raison rattachée au formulaire s’affiche dans formError', async () => {
+  test('a reason attached to the form is displayed in formError', async () => {
     const { store, answer } = createAccount();
     const { container: c } = await mount(signup(), { stores: [store] });
     await fillValid(c);
@@ -273,27 +273,27 @@ describe('form : soumission', () => {
     answer().reject('network');
     await flush();
 
-    expect(q(c, '.form-error').textContent).toBe('Connexion impossible');
+    expect(q(c, '.form-error').textContent).toBe('Cannot connect');
   });
 });
 
-describe('form : vérifications asynchrones', () => {
-  test('la vérification valide ou refuse le champ', async () => {
+describe('form: asynchronous checks', () => {
+  test('the check validates or rejects the field', async () => {
     const { store, replies } = createAccount();
-    replies.set('pris@example.com', { available: false });
+    replies.set('taken@example.com', { available: false });
     const { container: c } = await mount(signup(), { stores: [store] });
 
-    type(q(c, '.email'), 'pris@example.com');
+    type(q(c, '.email'), 'taken@example.com');
     await flush();
     await flush();
 
-    expect(q(c, '.email-error').textContent).toBe('Adresse déjà utilisée');
+    expect(q(c, '.email-error').textContent).toBe('Address already in use');
   });
 
-  test('pas de vérification pour une valeur déjà invalide, et une pause dans la frappe avant de vérifier', async () => {
+  test('no check for a value that is already invalid, and a typing pause before checking', async () => {
     const { store, sent } = createAccount();
     const { container: c } = await mount(signup({ delay: 400 }), { stores: [store] });
-    vi.useFakeTimers(); // après le montage : mount attend lui-même un setTimeout
+    vi.useFakeTimers(); // after mounting: mount itself waits for a setTimeout
     try {
       type(q(c, '.email'), 'abc');
       await vi.advanceTimersByTimeAsync(500);
@@ -303,19 +303,19 @@ describe('form : vérifications asynchrones', () => {
       await vi.advanceTimersByTimeAsync(100);
       type(q(c, '.email'), 'ab@b.fr');
       await vi.advanceTimersByTimeAsync(100);
-      expect(q(c, '.checking').textContent).toBe('vérification');
+      expect(q(c, '.checking').textContent).toBe('checking');
       await vi.advanceTimersByTimeAsync(500);
 
-      expect(sent).toEqual([{ command: 'checkEmail', input: { email: 'ab@b.fr' } }]); // une seule, la dernière valeur
+      expect(sent).toEqual([{ command: 'checkEmail', input: { email: 'ab@b.fr' } }]); // only one, the last value
     } finally {
       vi.useRealTimers();
     }
   });
 
-  test('la soumission attend la fin des vérifications', async () => {
+  test('the submission waits for the checks to finish', async () => {
     const { store, sent } = createAccount();
     const { container: c } = await mount(signup({ delay: 400 }), { stores: [store] });
-    vi.useFakeTimers(); // après le montage : mount attend lui-même un setTimeout
+    vi.useFakeTimers(); // after mounting: mount itself waits for a setTimeout
     try {
       type(q(c, '.email'), 'ada@example.com');
       type(q(c, '.password'), 'longpassword');
@@ -333,17 +333,17 @@ describe('form : vérifications asynchrones', () => {
   });
 });
 
-describe('form : listes et remise à zéro', () => {
-  test('ajouter, retirer, et des erreurs qui restent attachées à leur ligne', async () => {
+describe('form: lists and reset', () => {
+  test('add, remove, and errors that stay attached to their row', async () => {
     const { store } = createAccount();
     class Phones extends SuperElement {
       static tag = 't-form-phones';
       account = this.contract('form-account');
       edit = this.form({
         initial: { phones: [{ number: '06 00 00 00 01' }, { number: 'x' }] },
-        rules: { phones: { number: (v) => v.length >= 6 || 'Numéro invalide' } },
+        rules: { phones: { number: (v) => v.length >= 6 || 'Invalid number' } },
         submit: { to: this.account, command: 'register', toInput: (v) => v },
-        failures: { fields: {}, form: { 'email-taken': 'pris', network: 'réseau' } },
+        failures: { fields: {}, form: { 'email-taken': 'taken', network: 'network' } },
       });
       phones = this.edit.list('phones');
       render() {
@@ -369,11 +369,11 @@ describe('form : listes et remise à zéro', () => {
     submitForm(c);
     await flush();
     const errors = () => [...c.querySelectorAll('.err')].map((e) => e.textContent);
-    expect(errors()).toEqual(['', 'Numéro invalide']);
+    expect(errors()).toEqual(['', 'Invalid number']);
 
-    c.querySelectorAll<HTMLButtonElement>('.remove')[0]!.click(); // on retire la première ligne
+    c.querySelectorAll<HTMLButtonElement>('.remove')[0]!.click(); // remove the first row
     await flush();
-    expect(errors()).toEqual(['Numéro invalide']); // l'erreur reste sur sa ligne, qui est maintenant la première
+    expect(errors()).toEqual(['Invalid number']); // the error stays on its row, which is now the first
 
     q<HTMLButtonElement>(c, '.add').click();
     await flush();
@@ -383,17 +383,17 @@ describe('form : listes et remise à zéro', () => {
     api.reset();
     await flush();
     expect(api.values()).toEqual({ phones: [{ number: '06 00 00 00 01' }, { number: 'x' }] });
-    expect(errors()).toEqual(['', '']); // erreurs effacées
+    expect(errors()).toEqual(['', '']); // errors cleared
   });
 });
 
-describe('form : exception inattendue', () => {
+describe('form: unexpected exception', () => {
   class CrashyStore extends SuperStore<FormCrashyContract> implements Commands<CrashyStore> {
     constructor() {
       super({ contract: 'form-crashy', initialState: {} });
     }
     async save(_: { name: string }) {
-      throw new SyntaxError('réponse illisible');
+      throw new SyntaxError('unreadable response');
     }
   }
   const crashy = () => CrashyStore.create();
@@ -404,35 +404,35 @@ describe('form : exception inattendue', () => {
       edit = this.form({
         initial: { name: 'Ada' },
         submit: { to: this.crashy, command: 'save', toInput: (v) => v },
-        failures: { fields: {}, form: custom ? { network: 'réseau', error: custom } : { network: 'réseau' } },
+        failures: { fields: {}, form: custom ? { network: 'network', error: custom } : { network: 'network' } },
       });
       render() {
         return html`<form ${this.edit.bind()}><p class="form-error">${this.edit.formError()}</p></form>`;
       }
     };
 
-  test('sans message prévu, formError affiche le message par défaut', async () => {
+  test('without a provided message, formError displays the default message', async () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
     const { container: c } = await mount(Screen(), { stores: [crashy()] });
     submitForm(c);
     await flush();
-    expect(q(c, '.form-error').textContent).toBe('Une erreur inattendue est survenue.');
-    expect(consoleError).toHaveBeenCalledWith(expect.objectContaining({ message: 'réponse illisible' }));
+    expect(q(c, '.form-error').textContent).toBe('An unexpected error occurred.');
+    expect(consoleError).toHaveBeenCalledWith(expect.objectContaining({ message: 'unreadable response' }));
     consoleError.mockRestore();
   });
 
-  test('form.error remplace le message par défaut', async () => {
+  test('form.error replaces the default message', async () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const { container: c } = await mount(Screen('Problème de notre côté'), { stores: [crashy()] });
+    const { container: c } = await mount(Screen('Problem on our side'), { stores: [crashy()] });
     submitForm(c);
     await flush();
-    expect(q(c, '.form-error').textContent).toBe('Problème de notre côté');
+    expect(q(c, '.form-error').textContent).toBe('Problem on our side');
     consoleError.mockRestore();
   });
 });
 
-test('form : une vérification qui se termine sans issue (faux store) ne bloque pas la soumission', async () => {
-  const account = fakeStore('form-account', { state: {} }); // checkEmail et register non implémentés : aucune issue publiée
+test('form: a check that ends without an outcome (fake store) does not block the submission', async () => {
+  const account = fakeStore('form-account', { state: {} }); // checkEmail and register not implemented: no outcome published
   const { container: c } = await mount(signup(), { stores: [account] });
   await fillValid(c);
 
@@ -443,7 +443,7 @@ test('form : une vérification qui se termine sans issue (faux store) ne bloque 
   expect(account.sent.map((s) => s.name)).toEqual(['checkEmail', 'register']);
 });
 
-describe('form : aller à la première erreur', () => {
+describe('form: go to the first error', () => {
   const scrolled: Element[] = [];
   const original = HTMLElement.prototype.scrollIntoView;
   const spyScroll = () => {
@@ -456,12 +456,12 @@ describe('form : aller à la première erreur', () => {
     HTMLElement.prototype.scrollIntoView = original;
   };
 
-  test('une soumission bloquée centre le premier champ en erreur, dans l’ordre de la page, et lui donne le focus', async () => {
+  test('a blocked submission centres the first field in error, in page order, and focuses it', async () => {
     spyScroll();
     try {
       const { store } = createAccount();
       const { container: c } = await mount(signup(), { stores: [store] });
-      type(q(c, '.email'), 'ada@example.com'); // valide : le premier en erreur sera le mot de passe
+      type(q(c, '.email'), 'ada@example.com'); // valid: the first in error will be the password
       await flush();
 
       submitForm(c);
@@ -474,7 +474,7 @@ describe('form : aller à la première erreur', () => {
     }
   });
 
-  test('une erreur du serveur rattachée à un champ y amène aussi', async () => {
+  test('a server error attached to a field also leads there', async () => {
     spyScroll();
     try {
       const { store, answer } = createAccount();
@@ -494,7 +494,7 @@ describe('form : aller à la première erreur', () => {
     }
   });
 
-  test('scrollToError: false ne déplace rien', async () => {
+  test('scrollToError: false moves nothing', async () => {
     spyScroll();
     try {
       const { store } = createAccount();
@@ -503,10 +503,10 @@ describe('form : aller à la première erreur', () => {
         account = this.contract('form-account');
         edit = this.form({
           initial: { email: '' },
-          rules: { email: (v) => v !== '' || 'Obligatoire' },
+          rules: { email: (v) => v !== '' || 'Required' },
           scrollToError: false,
           submit: { to: this.account, command: 'register', toInput: (v) => v },
-          failures: { fields: {}, form: { 'email-taken': 'pris', network: 'réseau' } },
+          failures: { fields: {}, form: { 'email-taken': 'taken', network: 'network' } },
         });
         render() {
           return html`<form ${this.edit.bind()}><input class="email" ${this.edit.field('email')} /><button class="go">OK</button></form>`;

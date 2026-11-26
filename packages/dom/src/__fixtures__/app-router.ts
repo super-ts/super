@@ -1,6 +1,6 @@
 /**
- * Router d'essai pour les tests de types : dans une app, le plugin Vite l'inscrit lui-même dans
- * le dictionnaire des contrats, et relie chaque écran à sa route.
+ * Test router for the type tests: in an app, the Vite plugin registers it itself in
+ * the contract dictionary, and links each screen to its route.
  */
 import { type AppRouterContractOf, defineRouter, params, query } from '@super-ts/dom';
 

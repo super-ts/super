@@ -1,6 +1,6 @@
 /**
- * Contrat d'essai pour les guards du router. Le registre est rempli à la main : dans une app,
- * c'est le plugin Vite qui s'en charge.
+ * Test contract for the router guards. The registry is filled by hand: in an app,
+ * the Vite plugin takes care of it.
  */
 import { SuperContract } from '@super-ts/core';
 import { registerContract } from '@super-ts/core/internal';

@@ -53,36 +53,36 @@ export type {
 export { params, query } from './router-contract.ts';
 
 /* ------------------------------------------------------------------------------------------ */
-/* Déclaration du router                                                                       */
+/* Router declaration                                                                          */
 /* ------------------------------------------------------------------------------------------ */
 
 /**
- * Les écrans de l'app : un par chemin (ou une redirection), plus deux écrans facultatifs :
- * `'*'` quand aucun chemin ne correspond, `'!'` quand un écran plante sans être rattrapé.
+ * The app's screens: one per path (or a redirect), plus two optional screens:
+ * `'*'` when no path matches, `'!'` when a screen crashes without being caught.
  */
 export type ScreensDeclaration<T extends RouteTable> = ScreensFor<T> & {
   '*'?: Screen<{}>;
   '!'?: ErrorScreen;
 };
 
-/** Résultat d'un guard : `true` pour laisser passer, une cible pour rediriger. */
+/** Result of a guard: `true` to let through, a target to redirect. */
 export type GuardResult<T extends RouteTable> = true | NavigateTargetOf<T>;
 
 /**
- * Un guard par route, facultatif, qui reçoit sa route comme `this.router.at(…)` la donne :
+ * One guard per route, optional, which receives its route as `this.router.at(…)` gives it:
  * `({ params }) => params.id.isValid() || { to: 'counters' }`.
  */
 export type GuardsFor<T extends RouteTable> = {
   [N in keyof T & string]?: (route: RouteAt<T, N>) => GuardResult<T>;
 };
 
-/** Ce que reçoivent les guards : `read('cart')` lit un store fourni par l'application. */
+/** What guards receive: `read('cart')` reads a store provided by the application. */
 export interface GuardTools {
-  /** Les sélecteurs du store fourni pour ce contrat, lus à l'appel : `read('cart').isEmpty()`. */
+  /** The selectors of the store provided for this contract, read on call: `read('cart').isEmpty()`. */
   read<N extends ContractName>(name: N): BoundContractSelectors<Contracts[N]>;
 }
 
-/** Redirection à déclarer à la place d'un écran : `stats: redirect({ to: 'home' })`. */
+/** Redirect to declare in place of a screen: `stats: redirect({ to: 'home' })`. */
 export function redirect<const Target extends { to: string; params?: object; query?: object }>(target: Target): Redirect<Target> {
   return Object.freeze({ [REDIRECT_KEY]: true, target }) as unknown as Redirect<Target>;
 }
@@ -91,39 +91,39 @@ const REDIRECT_KEY = Symbol('super.redirect');
 const isRedirect = (value: unknown): value is Redirect => typeof value === 'object' && value !== null && REDIRECT_KEY in value;
 
 /**
- * Le router de l'app, déclaré par `defineRouter` : ses chemins, ses guards, ses écrans, et
- * `Router.href(…)` pour construire un lien hors composant. Dans un composant, le router se lit par
- * `this.router` (route active, navigation, `href`).
+ * The app's router, declared by `defineRouter`: its paths, its guards, its screens, and
+ * `Router.href(…)` to build a link outside a component. In a component, the router is read through
+ * `this.router` (active route, navigation, `href`).
  *
- * `Ready` passe à `true` une fois `.screens()` appelé : `createRouter` n'accepte que ce cas.
+ * `Ready` becomes `true` once `.screens()` is called: `createRouter` only accepts that case.
  */
 export interface RouterDefinition<T extends RouteTable = RouteTable, Ready extends boolean = boolean> {
-  /** Les routes déclarées, par nom. */
+  /** The declared routes, by name. */
   readonly paths: T;
   /**
-   * Chemin d'une route nommée : `href('counter', { params: { id: 42 } })` donne `'/counters/42'`,
-   * et `href('counters', { query: { tag: ['a', 'b'] } })` donne `'/counters?tag=a&tag=b'`.
+   * Path of a named route: `href('counter', { params: { id: 42 } })` gives `'/counters/42'`,
+   * and `href('counters', { query: { tag: ['a', 'b'] } })` gives `'/counters?tag=a&tag=b'`.
    */
   href<N extends keyof T & string>(name: N, ...input: HrefArgs<T, N>): string;
   /**
-   * Un écran par route, sans props obligatoire : il lit sa route par `this.router.current`. Et
-   * `'*'`, facultatif, pour l'écran affiché quand aucun chemin ne correspond.
-   * Donnés par une fonction, lue par `createRouter` : les écrans importent le router, qui les importe.
+   * One screen per route, without required props: it reads its route through `this.router.current`. And
+   * `'*'`, optional, for the screen displayed when no path matches.
+   * Given by a function, read by `createRouter`: the screens import the router, which imports them.
    *
-   * Cet appel doit rester le dernier de la déclaration : le type du router ne dépend alors que des
-   * chemins, et le compilateur le type sans lire les écrans, donc sans dépendance circulaire.
+   * This call must stay the last one of the declaration: the router's type then depends only on the
+   * paths, and the compiler types it without reading the screens, so without a circular dependency.
    */
   screens(define: () => ScreensDeclaration<T>): RouterDefinition<T, true>;
   /**
-   * Un guard par route, facultatif, appelé avant chaque navigation vers elle : `true` pour laisser
-   * passer, une cible pour rediriger. Les guards lisent les stores par leur contrat (`read`),
-   * fournis par l'application qui reçoit le router.
+   * One guard per route, optional, called before each navigation to it: `true` to let
+   * through, a target to redirect. Guards read stores by their contract (`read`),
+   * provided by the application that receives the router.
    *
-   * À appeler avant `.screens()` : les guards ne dépendent que des chemins, et `.screens()` doit
-   * rester le dernier appel. Après `.screens()`, `guards` n'existe pas (ne compile pas).
+   * Call it before `.screens()`: guards depend only on the paths, and `.screens()` must
+   * stay the last call. After `.screens()`, `guards` does not exist (does not compile).
    */
   readonly guards: Ready extends true ? never : (define: (tools: GuardTools) => GuardsFor<T>) => RouterDefinition<T, false>;
-  /** Marqueur de type seulement. */
+  /** Type marker only. */
   readonly __ready?: Ready;
 }
 
@@ -134,7 +134,7 @@ type Declaration = {
   guards: ((tools: GuardTools) => GuardsFor<RouteTable>) | null;
 };
 
-/** Accès interne à la déclaration, sans l'exposer sur l'objet public. */
+/** Internal access to the declaration, without exposing it on the public object. */
 const declarations = new WeakMap<object, Declaration>();
 
 function declare(declaration: Declaration): RouterDefinition {
@@ -143,7 +143,7 @@ function declare(declaration: Declaration): RouterDefinition {
     href: ((name: string, input?: RouteValues) => buildPath(declaration.described, name, input)) as RouterDefinition['href'],
     screens: (screens: () => ScreensDeclaration<RouteTable>) => declare({ ...declaration, screens }) as RouterDefinition<RouteTable, true>,
     guards: ((guards: (tools: GuardTools) => GuardsFor<RouteTable>) => {
-      if (declaration.screens) throw new Error('[super] déclare les guards avec .guards(...) avant .screens(...)');
+      if (declaration.screens) throw new Error('[super] declare the guards with .guards(...) before .screens(...)');
       return declare({ ...declaration, guards });
     }) as RouterDefinition['guards'],
   });
@@ -152,10 +152,10 @@ function declare(declaration: Declaration): RouterDefinition {
 }
 
 /**
- * Déclare le router de l'app à partir de ses routes nommées, puis ses écrans. Une route est un
- * chemin (`'/counters/:id'`, un segment `:nom` étant un paramètre ; après `?`, les clés de query,
- * `[]` marquant une liste : `'/counters?sort&tag[]'`), ou un chemin avec la description typée de
- * ses paramètres et de sa query :
+ * Declares the app's router from its named routes, then its screens. A route is a
+ * path (`'/counters/:id'`, a `:name` segment being a parameter; after `?`, the query keys,
+ * `[]` marking a list: `'/counters?sort&tag[]'`), or a path with the typed description of
+ * its parameters and its query:
  *
  * ```ts
  * export const Router = defineRouter({
@@ -164,30 +164,30 @@ function declare(declaration: Declaration): RouterDefinition {
  * }).screens(() => ({ home: HomeScreen, counter: CounterScreen, '*': NotFoundScreen }));
  * ```
  *
- * Les routes sont posées dans `defineRouter`, à part des écrans : le type du router ne dépend
- * alors que d'elles, et les écrans peuvent l'utiliser sans dépendance circulaire.
+ * The routes are set in `defineRouter`, apart from the screens: the router's type then depends
+ * only on them, and the screens can use it without a circular dependency.
  */
 export function defineRouter<const T extends RouteTable & { '*'?: never; '!'?: never }>(
   paths: T & CheckedRoutes<T>,
 ): RouterDefinition<T, false> {
   const described = new Map<string, Described>();
   for (const [name, declaration] of Object.entries(paths as RouteTable)) {
-    if (name === '*') throw new Error('[super] "*" est réservé à l\'écran affiché quand aucun chemin ne correspond');
-    if (name === '!') throw new Error('[super] "!" est réservé à l\'écran affiché quand un écran plante');
+    if (name === '*') throw new Error('[super] "*" is reserved for the screen displayed when no path matches');
+    if (name === '!') throw new Error('[super] "!" is reserved for the screen displayed when a screen crashes');
     described.set(name, describe(name, declaration));
   }
   return declare({ paths: Object.freeze({ ...paths }), described, screens: null, guards: null }) as unknown as RouterDefinition<T, false>;
 }
 
 /* ------------------------------------------------------------------------------------------ */
-/* Lire et écrire les valeurs d'une route                                                       */
+/* Reading and writing a route's values                                                        */
 /* ------------------------------------------------------------------------------------------ */
 
-/** Le type d'une valeur dans l'URL. */
+/** The type of a value in the URL. */
 type Scalar = { kind: 'string' } | { kind: 'number' } | { kind: 'boolean' } | { kind: 'oneOf'; values: readonly unknown[] };
 type QueryField = { key: string; scalar: Scalar; list: boolean; fallback: unknown };
 
-/** Une route, prête à lire et à écrire ses URL. */
+/** A route, ready to read and write its URLs. */
 type Described = { pathname: string; keys: string[]; params: Map<string, Scalar>; query: QueryField[] };
 
 const STRING: Scalar = { kind: 'string' };
@@ -200,23 +200,23 @@ function scalarOf(spec: unknown, where: string): Scalar {
     if ('oneOf' in spec && Array.isArray(spec.oneOf)) return { kind: 'oneOf', values: spec.oneOf };
     if ('type' in spec) return scalarOf(spec.type, where);
   }
-  throw new Error(`[super] ${where} : attendu String, Number, Boolean ou { oneOf: [...] }`);
+  throw new Error(`[super] ${where}: expected String, Number, Boolean or { oneOf: [...] }`);
 }
 
 function queryFieldOf(key: string, spec: unknown, where: string): QueryField {
   if (Array.isArray(spec)) {
-    if (spec.length !== 1) throw new Error(`[super] ${where} : une liste se décrit par un seul type, comme [String]`);
+    if (spec.length !== 1) throw new Error(`[super] ${where}: a list is described by a single type, like [String]`);
     return { key, scalar: scalarOf(spec[0], where), list: true, fallback: [] };
   }
   const fallback = typeof spec === 'object' && spec !== null && 'default' in spec ? spec.default : undefined;
   return { key, scalar: scalarOf(spec, where), list: false, fallback };
 }
 
-/** Sépare et vérifie une déclaration de route. */
+/** Splits and checks a route declaration. */
 function describe(name: string, declaration: RouteDeclarationValue): Described {
   const path = typeof declaration === 'string' ? declaration : declaration.path;
   if (typeof path !== 'string' || !path.startsWith('/')) {
-    throw new Error(`[super] le chemin "${path}" de la route "${name}" doit commencer par "/"`);
+    throw new Error(`[super] the path "${path}" of the route "${name}" must start with "/"`);
   }
   const [pathname = '', search] = path.split('?', 2) as [string, string | undefined];
   const keys = [...pathname.matchAll(/:([^/]+)/g)].map((found) => found[1]!);
@@ -231,23 +231,22 @@ function describe(name: string, declaration: RouteDeclarationValue): Described {
       });
     }
   } else {
-    if (search !== undefined) throw new Error(`[super] route "${name}" : la query se décrit par query<T>({…}), pas dans le chemin`);
+    if (search !== undefined) throw new Error(`[super] route "${name}": the query is described with query<T>({…}), not in the path`);
     if (declaration.params) {
       const described = Object.keys(declaration.params.spec);
       const mismatch = described.length !== keys.length || described.some((key) => !keys.includes(key));
-      if (mismatch)
-        throw new Error(`[super] route "${name}" : params doit décrire exactement les paramètres du chemin (${keys.join(', ')})`);
+      if (mismatch) throw new Error(`[super] route "${name}": params must describe exactly the path parameters (${keys.join(', ')})`);
       for (const [key, spec] of Object.entries(declaration.params.spec))
-        params.set(key, scalarOf(spec, `paramètre "${key}" de la route "${name}"`));
+        params.set(key, scalarOf(spec, `parameter "${key}" of the route "${name}"`));
     }
     if (declaration.query) {
-      query = Object.entries(declaration.query.spec).map(([key, spec]) => queryFieldOf(key, spec, `clé "${key}" de la route "${name}"`));
+      query = Object.entries(declaration.query.spec).map(([key, spec]) => queryFieldOf(key, spec, `key "${key}" of the route "${name}"`));
     }
   }
   const seen = new Set<string>();
   for (const { key } of query) {
-    if (!key) throw new Error(`[super] clé de query vide dans le chemin "${path}" de la route "${name}"`);
-    if (seen.has(key)) throw new Error(`[super] "${key}" apparaît deux fois dans la query de la route "${name}"`);
+    if (!key) throw new Error(`[super] empty query key in the path "${path}" of the route "${name}"`);
+    if (seen.has(key)) throw new Error(`[super] "${key}" appears twice in the query of the route "${name}"`);
     seen.add(key);
   }
   return { pathname, keys, params, query };
@@ -257,7 +256,7 @@ type RouteDeclarationValue = string | { path: string; params?: { spec: object };
 
 const NUMBER = /^[+-]?(\d+(\.\d*)?|\.\d+)(e[+-]?\d+)?$/i;
 
-/** Lit une valeur de l'URL : `{ ok: false }` si elle n'est pas conforme. */
+/** Reads a value from the URL: `{ ok: false }` if it does not conform. */
 function parse(scalar: Scalar, raw: string): { ok: true; value: unknown } | { ok: false } {
   switch (scalar.kind) {
     case 'string':
@@ -273,15 +272,15 @@ function parse(scalar: Scalar, raw: string): { ok: true; value: unknown } | { ok
   }
 }
 
-/** Ce qu'on donne pour construire un chemin : paramètres et query, séparés. */
+/** What you give to build a path: parameters and query, separate. */
 type RouteValues = { params?: Record<string, unknown>; query?: Record<string, unknown> };
 
 function buildPath(described: Map<string, Described>, name: string, input: RouteValues = {}): string {
   const route = described.get(name);
-  if (!route) throw new Error(`[super] route inconnue "${name}"`);
+  if (!route) throw new Error(`[super] unknown route "${name}"`);
   const built = route.pathname.replace(/:([^/]+)/g, (_, key: string) => {
     const value = input.params?.[key];
-    if (value === undefined) throw new Error(`[super] paramètre "${key}" manquant pour la route "${name}"`);
+    if (value === undefined) throw new Error(`[super] parameter "${key}" missing for the route "${name}"`);
     return encodeURIComponent(String(value));
   });
   const search = new URLSearchParams();
@@ -294,17 +293,17 @@ function buildPath(described: Map<string, Described>, name: string, input: Route
   return encoded ? `${built}?${encoded}` : built;
 }
 
-/** Le chemin sans query ni hash : ce qui identifie l'écran monté. */
+/** The path without query or hash: what identifies the mounted screen. */
 const pathnameOf = (path: string) => normalize(path.split(/[?#]/)[0] || '/');
 
 /* ------------------------------------------------------------------------------------------ */
-/* Le router est un store                                                                      */
+/* The router is a store                                                                       */
 /* ------------------------------------------------------------------------------------------ */
 
 interface HistoryDriver {
   current(): string;
   push(path: string): void;
-  /** Remplace l'entrée courante (redirection) : le bouton retour ne revient pas sur le chemin refusé. */
+  /** Replaces the current entry (redirect): the back button does not return to the refused path. */
   replace(path: string): void;
   back(): void;
   listen(onChange: (path: string) => void, signal: AbortSignal): void;
@@ -352,7 +351,7 @@ function compile(described: Map<string, Described>, table: ScreensFor<RouteTable
 
 type Values = { values: Record<string, unknown>; invalid: string[] };
 
-/** Les paramètres du chemin, convertis : un paramètre invalide vaut `undefined`. */
+/** The path parameters, converted: an invalid parameter is `undefined`. */
 function readParams(route: Described, found: RegExpExecArray): Values {
   const values: Record<string, unknown> = {};
   const invalid: string[] = [];
@@ -365,8 +364,8 @@ function readParams(route: Described, found: RegExpExecArray): Values {
 }
 
 /**
- * La query déclarée, convertie : une clé absente ou invalide prend sa valeur par défaut (ou
- * `undefined`) ; une liste vaut `[]` si absente, et perd ses éléments invalides.
+ * The declared query, converted: an absent or invalid key takes its default value (or
+ * `undefined`); a list is `[]` if absent, and loses its invalid items.
  */
 function readQuery(path: string, fields: QueryField[]): Values {
   const values: Record<string, unknown> = {};
@@ -390,7 +389,7 @@ function readQuery(path: string, fields: QueryField[]): Values {
   return { values, invalid };
 }
 
-/** La route telle que la reçoit son guard : les mêmes valeurs que `this.router.at(…)`. */
+/** The route as its guard receives it: the same values as `this.router.at(…)`. */
 function routeAt({ params, query, invalid }: Pick<RouteState, 'params' | 'query' | 'invalid'>) {
   return {
     params: routeValues(
@@ -411,14 +410,14 @@ type RouterDeps = {
   errorScreen: ErrorScreen | null;
   guards: ((tools: GuardTools) => GuardsFor<RouteTable>) | null;
   driver: HistoryDriver;
-  /** Reçoit la fonction qui branche le router sur une application (voir `createApp`). */
+  /** Receives the function that wires the router to an application (see `createApp`). */
   onAttachable: (attach: (lookup: StoreLookup) => void) => void;
 };
 
 const MAX_REDIRECTS = 10;
 const NONE_INVALID: RouteState['invalid'] = Object.freeze({ params: [], query: [] });
 
-/** Le store du router : son contrat est `RouterSelectors`, fourni aux composants sous le nom 'router'. */
+/** The router's store: its contract is `RouterSelectors`, provided to components under the name 'router'. */
 const routerStore = (deps: RouterDeps) =>
   buildStore<RouteState, RouterCommands, RouterEvents>(() => ({
     contract: compileContract(RouterSelectors),
@@ -431,7 +430,7 @@ function routerSetup(
   { get, set, emit, signal }: StoreTools<RouteState, RouterEvents>,
 ) {
   const compiled = compile(described, screens);
-  // Les guards ne s'appliquent qu'une fois le router branché sur une application : c'est elle qui fournit les stores.
+  // Guards only apply once the router is wired to an application: it is the one that provides the stores.
   let guardTable: GuardsFor<RouteTable> | null = null;
 
   function match(path: string) {
@@ -450,7 +449,7 @@ function routerSetup(
   const invalidOf = (params: string[], query: string[]): RouteState['invalid'] =>
     params.length === 0 && query.length === 0 ? NONE_INVALID : { params, query };
 
-  /** Suit les redirections (déclarées ou décidées par un guard) jusqu'à un écran à afficher. */
+  /** Follows redirects (declared or decided by a guard) until a screen to display. */
   function resolve(requested: string): RouteState {
     let path = requested;
     for (let hops = 0; hops <= MAX_REDIRECTS; hops++) {
@@ -468,7 +467,7 @@ function routerSetup(
       }
       path = buildPath(described, target.to, target as RouteValues);
     }
-    throw new Error(`[super] trop de redirections à partir de "${requested}"`);
+    throw new Error(`[super] too many redirects starting from "${requested}"`);
   }
 
   function apply(next: RouteState) {
@@ -477,21 +476,21 @@ function routerSetup(
     if (from !== next.path) emit('navigated', { from, to: next.path });
   }
 
-  /** Navigation demandée par l'app : une nouvelle entrée d'historique, au chemin final. */
+  /** Navigation requested by the app: a new history entry, at the final path. */
   function go(path: string) {
-    // Même chemin : rien n'entre dans l'historique, mais `navigated` part quand même. C'est ce qui
-    // permet de quitter l'écran '!' en recliquant sur le lien de la page en erreur.
+    // Same path: nothing enters the history, but `navigated` is emitted anyway. That is what
+    // lets you leave the '!' screen by clicking again on the link of the page in error.
     if (path === get().path) {
       emit('navigated', { from: path, to: path });
       return;
     }
     const next = resolve(path);
-    if (next.path === get().path) return; // redirigé vers la page courante : rien ne change
+    if (next.path === get().path) return; // redirected to the current page: nothing changes
     driver.push(next.path);
     apply(next);
   }
 
-  /** Chemin imposé par l'historique (retour, chemin initial) : une redirection remplace l'entrée. */
+  /** Path imposed by the history (back, initial path): a redirect replaces the entry. */
   function arrive(path: string) {
     const next = resolve(path);
     if (next.path !== path) driver.replace(next.path);
@@ -503,11 +502,11 @@ function routerSetup(
     guardTable = guards({
       read: (name: string) => {
         const store = lookup(name);
-        if (!store) throw new Error(`[super] guard du router : aucun store fourni pour le contrat "${name}"`);
+        if (!store) throw new Error(`[super] router guard: no store provided for the contract "${name}"`);
         return readStore(store) as never;
       },
     });
-    arrive(get().path); // le chemin courant passe à son tour par les guards
+    arrive(get().path); // the current path goes through the guards in turn
   });
 
   driver.listen(arrive, signal);
@@ -523,25 +522,25 @@ function routerSetup(
 type Handlers = { navigate(target: NavigateTargetOf<RouteTable>): void; visit(path: string): void; back(): void };
 
 export type RouterOptions = {
-  /** `browser` (défaut) synchronise l'URL ; `memory` garde l'historique en mémoire (tests). */
+  /** `browser` (default) syncs the URL; `memory` keeps the history in memory (tests). */
   mode?: 'browser' | 'memory';
-  /** Chemin de départ en mode `memory` (défaut `/`). */
+  /** Starting path in `memory` mode (default `/`). */
   initialPath?: string;
   /**
-   * Le titre de la page : `default` quand aucun composant n'en pose (`@title`, `this.page.title`),
-   * `suffix` ajouté au titre posé (`{ default: 'Ma démo', suffix: ' · Ma démo' }`).
+   * The page title: `default` when no component sets one (`@title`, `this.page.title`),
+   * `suffix` appended to the title set (`{ default: 'My demo', suffix: ' · My demo' }`).
    */
   title?: TitleOptions;
 };
 
 /**
- * Crée le router de l'app à partir de sa déclaration (écrans compris). À passer à
- * `createApp({ router })` ou `mount(..., { router })`.
+ * Creates the app's router from its declaration (screens included). Pass it to
+ * `createApp({ router })` or `mount(..., { router })`.
  */
 export function createRouter<T extends RouteTable>(router: RouterDefinition<T, true>, options: RouterOptions = {}): RouterHandle<T> {
   const declaration = declarations.get(router);
-  if (!declaration) throw new Error('[super] createRouter attend un router déclaré avec defineRouter');
-  if (!declaration.screens) throw new Error("[super] le router n'a pas d'écrans : déclare-les avec .screens(...)");
+  if (!declaration) throw new Error('[super] createRouter expects a router declared with defineRouter');
+  if (!declaration.screens) throw new Error('[super] the router has no screens: declare them with .screens(...)');
   configureTitle(options.title);
   const driver = options.mode === 'memory' ? memoryHistory(options.initialPath ?? '/') : browserHistory();
   const { '*': notFound = null, '!': errorScreen = null, ...screens } = declaration.screens();
@@ -565,33 +564,33 @@ export function createRouter<T extends RouteTable>(router: RouterDefinition<T, t
 /* ------------------------------------------------------------------------------------------ */
 
 /**
- * Affiche l'écran de la route active, qui lit ses paramètres et sa query par `this.router.current`.
- * Chaque changement de chemin monte une nouvelle instance de l'écran ; un changement de query ou de
- * hash seul la garde (l'écran se re-rend s'il lit une valeur qui change).
+ * Displays the active route's screen, which reads its parameters and its query through `this.router.current`.
+ * Each path change mounts a new instance of the screen; a query or hash change
+ * alone keeps it (the screen re-renders if it reads a value that changes).
  */
 export class RouterOutlet extends SuperElement {
   static tag = 'super-router-outlet';
 
-  // L'outlet ne connaît pas les chemins de l'app : il lit le router par une vue non typée.
+  // The outlet does not know the app's paths: it reads the router through an untyped view.
   #router = this.router as unknown as OutletView;
   #path = this.selector(this.#router.selectors.path);
   #screen = this.selector(this.#router.selectors.screen);
   #errorScreen = this.selector(this.#router.selectors.errorScreen);
-  // Erreur d'un écran que rien n'a rattrapée : affichée par l'écran '!' tant qu'on reste sur ce chemin.
+  // Error of a screen that nothing caught: displayed by the '!' screen as long as we stay on this path.
   #failure = this.state({ error: null as Error | null, path: null as string | null });
 
   constructor() {
     super();
-    // Toute navigation (y compris vers le chemin courant) oublie l'erreur : l'écran de la route est remonté à neuf.
+    // Any navigation (including to the current path) forgets the error: the route's screen is remounted afresh.
     this.#router.on('navigated', () => {
       if (this.#failure.get().error) this.#failure.set({ error: null, path: null });
     });
-    // Posé ici, pas dans mounted() : un écran peut planter dès le premier rendu de l'outlet. L'écouteur
-    // est sur l'outlet lui-même, il vit et meurt avec lui.
+    // Set here, not in mounted(): a screen can crash from the outlet's first render. The listener
+    // is on the outlet itself, it lives and dies with it.
     this.addEventListener(ERROR_EVENT, (event) => {
       const errorScreen = this.#router.selectors.errorScreen();
       const detail = (event as CustomEvent<ErrorDetail>).detail;
-      if (!errorScreen || detail.tag === errorScreen.tag) return; // l'écran '!' a lui-même planté : on laisse remonter
+      if (!errorScreen || detail.tag === errorScreen.tag) return; // the '!' screen itself crashed: let it bubble up
       event.stopPropagation();
       detail.caughtBy = RouterOutlet.tag;
       this.#failure.set({ error: detail.error, path: this.#router.selectors.path() });
@@ -604,13 +603,13 @@ export class RouterOutlet extends SuperElement {
     const errorScreen = this.#errorScreen.value;
     const { error, path: failedPath } = this.#failure.get();
     if (error && errorScreen && failedPath === path) return keyed(`!${path}`, html`${renderScreen(errorScreen, { error, path })}`);
-    // Le template intermédiaire garantit une nouvelle instance de l'écran à chaque clé. La clé est le
-    // chemin sans query : changer de filtre ou de page garde l'écran et son état.
+    // The intermediate template guarantees a new instance of the screen for each key. The key is the
+    // path without query: changing filter or page keeps the screen and its state.
     return screen ? keyed(pathnameOf(path), html`${renderScreen(screen, {})}`) : null;
   }
 }
 
-/** Ce que l'outlet lit du router. */
+/** What the outlet reads from the router. */
 type OutletView = {
   selectors: {
     path(): Selected<string>;

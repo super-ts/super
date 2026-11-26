@@ -2,49 +2,49 @@ import type { StatePatch } from '@super-ts/core';
 import { html as litHtml } from 'lit-html';
 
 /*
- * Plomberie partagée par les composants : le `html` de Super, les erreurs, l'état local. Le
- * composant lui-même est `SuperElement` (element.ts).
+ * Plumbing shared by components: Super's `html`, errors, local state. The
+ * component itself is `SuperElement` (element.ts).
  */
 
 /**
- * Phase où une erreur de composant s'est produite :
- * - `setup` (le constructeur, ou un store introuvable au montage), `render`, `renderError` :
- *   l'affichage est cassé, le `renderError` d'un ancêtre ou l'écran `'!'` peut le remplacer ;
- * - `event` (un `@click`…), `listener` (un `on`), `mount` (`mounted` ou `unmounted`) : une action a
- *   échoué, l'affichage reste tel quel. L'erreur est seulement signalée.
+ * Phase in which a component error occurred:
+ * - `setup` (the constructor, or a store not found at mount), `render`, `renderError`:
+ *   the display is broken, an ancestor's `renderError` or the `'!'` screen can replace it;
+ * - `event` (an `@click`…), `listener` (an `on`), `mount` (`mounted` or `unmounted`): an action
+ *   failed, the display stays as it is. The error is only reported.
  */
 export type ErrorPhase = 'setup' | 'render' | 'renderError' | 'event' | 'listener' | 'mount';
 
-/** Ce que transportent les événements d'erreur, et ce que reçoit `onError`. */
+/** What error events carry, and what `onError` receives. */
 export interface ErrorDetail {
   readonly error: Error;
-  /** Tag du composant qui a planté. */
+  /** Tag of the component that crashed. */
   readonly tag: string;
   readonly phase: ErrorPhase;
-  /** Tag de ce qui a rattrapé l'erreur (un composant avec `renderError`, ou le `RouterOutlet`), `null` sinon. */
+  /** Tag of what caught the error (a component with `renderError`, or the `RouterOutlet`), `null` otherwise. */
   caughtBy: string | null;
-  /** Vrai si une application l'a transmise à son `onError`. */
+  /** True if an application passed it to its `onError`. */
   reported: boolean;
 }
 
-/** Remonte du composant qui a planté jusqu'au premier qui sait la rattraper. */
+/** Bubbles up from the component that crashed to the first one able to catch it. */
 export const ERROR_EVENT = 'super:error';
-/** Remonte jusqu'à l'application, pour `onError`, que l'erreur ait été rattrapée ou non. */
+/** Bubbles up to the application, for `onError`, whether the error was caught or not. */
 export const ERROR_REPORT = 'super:error-report';
 
 export const toError = (value: unknown) => (value instanceof Error ? value : new Error(String(value)));
 
-/** Signale une erreur d'action à l'application, sans toucher à l'affichage. */
+/** Reports an action error to the application, without touching the display. */
 export const REPORT = Symbol('super.report');
 export type Reporter = { [REPORT](error: unknown, phase: ErrorPhase): void };
 
-/** Composant en train de préparer ou de rendre son template : ses gestionnaires `@événement` lui sont rattachés. */
+/** Component currently preparing or rendering its template: its `@event` handlers are attached to it. */
 let rendering: Reporter | null = null;
 
-/** Interne : le composant en train de rendre (ou de préparer) son template, `null` sinon. */
+/** Internal: the component currently rendering (or preparing) its template, `null` otherwise. */
 export const currentRendering = (): Reporter | null => rendering;
 
-/** Interne : exécute `run` comme rendu de `owner` (ses gestionnaires `@événement` lui sont rattachés). */
+/** Internal: runs `run` as a render of `owner` (its `@event` handlers are attached to it). */
 export function renderingAs<T>(owner: Reporter, run: () => T): T {
   const previous = rendering;
   rendering = owner;
@@ -55,7 +55,7 @@ export function renderingAs<T>(owner: Reporter, run: () => T): T {
   }
 }
 
-/** Lance `run` et signale son erreur, synchrone ou asynchrone (promesse rejetée). */
+/** Runs `run` and reports its error, synchronous or asynchronous (rejected promise). */
 export function guarded<T>(owner: Reporter, phase: ErrorPhase, run: () => T): T | undefined {
   try {
     const result = run();
@@ -71,8 +71,8 @@ const EVENT_BINDING = /@[^\s=]+=["']?$/;
 const LISTENER_OPTIONS = ['capture', 'once', 'passive'] as const;
 
 /**
- * Le `html` de Super : celui de lit-html, dont les gestionnaires `@événement` sont enveloppés pour
- * que leurs erreurs (synchrones ou asynchrones) soient signalées à `onError`, avec le composant.
+ * Super's `html`: lit-html's, with its `@event` handlers wrapped so that
+ * their errors (synchronous or asynchronous) are reported to `onError`, with the component.
  */
 export function html(strings: TemplateStringsArray, ...values: unknown[]) {
   const owner = rendering;
@@ -83,7 +83,7 @@ export function html(strings: TemplateStringsArray, ...values: unknown[]) {
       const wrapped = function (this: unknown, ...args: unknown[]) {
         return guarded(owner, 'event', () => handler.apply(this, args));
       };
-      // Les options d'écoute lues par lit-html sur la fonction (`capture`, `once`, `passive`) sont conservées.
+      // Listener options read by lit-html on the function (`capture`, `once`, `passive`) are kept.
       for (const option of LISTENER_OPTIONS) if (option in handler) (wrapped as any)[option] = (handler as any)[option];
       return wrapped;
     });
@@ -92,32 +92,32 @@ export function html(strings: TemplateStringsArray, ...values: unknown[]) {
 }
 
 /**
- * État local d'un composant, créé par `state(initial)` : privé à l'instance, il naît au montage
- * et disparaît au démontage. Pour les données d'interface (message, panneau ouvert, saisie en
- * cours) ; les données de l'app vivent dans un store.
+ * Local state of a component, created by `state(initial)`: private to the instance, it is born at mount
+ * and disappears at unmount. For UI data (message, open panel, input in
+ * progress); the app's data lives in a store.
  */
 export interface LocalState<T extends object> {
   /**
-   * Valeur courante, figée. À lire dans la fonction de rendu pour qu'elle reflète toujours le
-   * dernier `set`.
+   * Current value, frozen. Read it in the render function so that it always reflects the
+   * latest `set`.
    *
    * @example
    * <p role="status">{this.local.get().message}</p>
    */
   get(): Readonly<T>;
   /**
-   * Fusionne le patch dans l'état (merge superficiel), puis re-rend le composant. Accepte un
-   * objet partiel, ou une fonction qui reçoit l'état courant et retourne le patch. Plusieurs
-   * `set` d'affilée ne donnent qu'un seul rendu (regroupé par microtask).
+   * Merges the patch into the state (shallow merge), then re-renders the component. Accepts a
+   * partial object, or a function that receives the current state and returns the patch. Several
+   * `set` calls in a row give a single render (batched per microtask).
    *
    * @example
-   * local.set({ message: 'Incrémenté : 3' });
+   * local.set({ message: 'Incremented: 3' });
    * local.set((current) => ({ count: current.count + 1 }));
    */
   set(patch: StatePatch<T>): void;
 }
 
-/** Interne : crée l'état local d'un composant ; `onChange` re-rend le composant. */
+/** Internal: creates a component's local state; `onChange` re-renders the component. */
 export function createLocalState<T extends object>(initial: T, onChange: () => void): LocalState<T> {
   let value: Readonly<T> = Object.freeze({ ...initial });
   return {
@@ -129,10 +129,10 @@ export function createLocalState<T extends object>(initial: T, onChange: () => v
   };
 }
 
-/** Le parent communique avec l'enfant par ses props, et l'écoute par ses événements. */
+/** The parent talks to the child through its props, and listens to it through its events. */
 export type ChildOptions<E> = {
   on?: { [K in keyof E]?: (payload: E[K]) => void };
 };
 
-/** Nom DOM d'un événement émis par un composant : `tag:nom`. */
+/** DOM name of an event emitted by a component: `tag:name`. */
 export const eventName = (tag: string, name: string) => `${tag}:${name}`;

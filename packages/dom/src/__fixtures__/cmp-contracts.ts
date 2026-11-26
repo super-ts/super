@@ -1,13 +1,13 @@
 /**
- * Contrats d'essai pour les tests de composants (component.test.ts, component.test-d.ts). Le
- * registre est rempli à la main : dans une app, c'est le plugin Vite qui s'en charge.
+ * Test contracts for the component tests (component.test.ts, component.test-d.ts). The
+ * registry is filled by hand: in an app, the Vite plugin takes care of it.
  */
 import { type Outcome, SuperContract } from '@super-ts/core';
 import { registerContract } from '@super-ts/core/internal';
 
 export type ClockState = { now: number };
 
-/** Une horloge : un compteur qu'on fait avancer. */
+/** A clock: a counter you move forward. */
 export class CmpClockContract extends SuperContract<{ state: ClockState; commands: { tick(): void } }> {
   constructor() {
     super({ name: 'cmp-clock' });
@@ -19,7 +19,7 @@ export class CmpClockContract extends SuperContract<{ state: ClockState; command
 
 export type BoardState = { scores: Readonly<Record<string, number>>; status: string };
 
-/** Un tableau de scores, et un statut qui n'a rien à voir avec eux. */
+/** A score board, and a status unrelated to the scores. */
 export class CmpBoardContract extends SuperContract<{
   state: BoardState;
   commands: { score(input: { id: string; value: number }): void; setStatus(status: string): void };
@@ -33,7 +33,7 @@ export class CmpBoardContract extends SuperContract<{
   score(s: BoardState, id: string) {
     return s.scores[id];
   }
-  /** Un objet neuf à chaque lecture. */
+  /** A new object on every read. */
   pair(s: BoardState) {
     return { a: s.scores.a, b: s.scores.b };
   }
@@ -41,7 +41,7 @@ export class CmpBoardContract extends SuperContract<{
 
 export type ListedState = { items: Readonly<Record<string, number>>; note: string };
 
-/** Une liste construite à chaque lecture, et une note hors liste. */
+/** A list built on every read, and a note outside the list. */
 export class CmpListedContract extends SuperContract<{
   state: ListedState;
   commands: { add(sku: string): void; note(text: string): void };
@@ -49,7 +49,7 @@ export class CmpListedContract extends SuperContract<{
   constructor() {
     super({ name: 'cmp-listed' });
   }
-  /** Un tableau neuf à chaque lecture. */
+  /** A new array on every read. */
   labels(s: ListedState) {
     return Object.entries(s.items).map(([sku, qty]) => `${sku}${qty}`);
   }
@@ -57,7 +57,7 @@ export class CmpListedContract extends SuperContract<{
 
 export type SaverState = { saved: number };
 
-/** Une sauvegarde qui peut être refusée (échec déclaré) ou planter (exception inattendue). */
+/** A save that can be refused (declared failure) or crash (unexpected exception). */
 export class CmpSaverContract extends SuperContract<{
   state: SaverState;
   commands: { save(input: { id: string }): Outcome<void, 'refused'>; crash(): void };
@@ -70,7 +70,7 @@ export class CmpSaverContract extends SuperContract<{
   }
 }
 
-/** Un store qui ne fait qu'émettre un événement. */
+/** A store that only emits an event. */
 export class CmpPingContract extends SuperContract<{ state: {}; events: { pinged: void } }> {
   constructor() {
     super({ name: 'cmp-ping' });
@@ -79,7 +79,7 @@ export class CmpPingContract extends SuperContract<{ state: {}; events: { pinged
 
 export type CounterState = { n: number };
 
-/** Un compteur qui émet `ticked`. */
+/** A counter that emits `ticked`. */
 export class CmpCounterContract extends SuperContract<{
   state: CounterState;
   commands: { inc(by: number): void };
@@ -95,7 +95,7 @@ export class CmpCounterContract extends SuperContract<{
 
 export type ShelfState = { items: Readonly<Record<string, number>>; note: string };
 
-/** Pour les tests de types : un état dont seule une partie est exposée par sélecteur. */
+/** For the type tests: a state of which only part is exposed by selector. */
 export class CmpShelfContract extends SuperContract<{ state: ShelfState; commands: { add(sku: string): void } }> {
   constructor() {
     super({ name: 'cmp-shelf' });

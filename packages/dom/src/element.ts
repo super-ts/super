@@ -52,7 +52,7 @@ import {
 import { routerHrefs } from './router-link.ts';
 
 /* ------------------------------------------------------------------------------------------ */
-/* Types publics                                                                               */
+/* Public types                                                                                */
 /* ------------------------------------------------------------------------------------------ */
 
 declare const EVENTS: unique symbol;
@@ -61,26 +61,26 @@ declare const ACCEPTS: unique symbol;
 declare const SELECTED: unique symbol;
 
 /**
- * Une valeur telle que renvoyée par un sélecteur, marquée pour le compilateur (la marque n'existe
- * pas à l'exécution). Elle s'utilise comme la valeur elle-même ; `selector` n'accepte qu'elle.
- * `null` et `undefined` ne peuvent pas porter de marque : Super les vérifie à l'exécution.
+ * A value as returned by a selector, branded for the compiler (the brand does not exist
+ * at runtime). It is used like the value itself; `selector` only accepts it.
+ * `null` and `undefined` cannot carry a brand: Super checks them at runtime.
  */
 export type Selected<T> = T extends null | undefined ? T : T & { readonly [SELECTED]: T };
 
-/** Ce que peut renvoyer la fonction d'un `selector` : la valeur d'un sélecteur, telle quelle. */
+/** What a `selector` function can return: a selector's value, as is. */
 export type SelectorValue = { readonly [SELECTED]: unknown } | null | undefined;
 
-/** La valeur sans sa marque de sélecteur. */
+/** The value without its selector brand. */
 export type Unselected<R> = R extends { readonly [SELECTED]: infer X } ? X : R;
 
-/** Les sélecteurs vus d'un composant : leurs valeurs sont marquées, pour `selector`. */
+/** Selectors as seen from a component: their values are branded, for `selector`. */
 export type ElementSelectors<N extends ContractName> = {
   [M in keyof BoundContractSelectors<Contracts[N]>]: BoundContractSelectors<Contracts[N]>[M] extends (...args: infer A) => infer R
     ? (...args: A) => Selected<R>
     : never;
 };
 
-/** Une valeur lue d'un store, recalculée à chaque lecture de `.value`. */
+/** A value read from a store, recomputed on every read of `.value`. */
 export interface Selection<T> {
   readonly value: T;
 }
@@ -88,43 +88,43 @@ export interface Selection<T> {
 declare const CHILDREN: unique symbol;
 
 /**
- * Des éléments passés à un composant, à placer dans son template par `{this.content}`. Un
- * composant qui en accepte le déclare dans ses props (`@prop content: Children;`, ou un emplacement nommé
- * `footer?: Children`). Ils sont remplis par les enfants écrits entre ses balises, par un
- * emplacement `<:footer>…</:footer>`, ou par l'appel d'une méthode qui émet des éléments.
+ * Elements passed to a component, to place in its template with `{this.content}`. A
+ * component that accepts them declares it in its props (`@prop content: Children;`, or a named slot
+ * `footer?: Children`). They are filled by the children written between its tags, by a
+ * `<:footer>…</:footer>` slot, or by calling a method that emits elements.
  */
 export interface Children {
-  /** Fantôme : n'existe que pour le compilateur. */
+  /** Phantom: exists only for the compiler. */
   readonly [CHILDREN]: true;
 }
 
-/** Une référence vers un élément du template : `<input ref={this.input} />`, puis `this.input.value`. */
+/** A reference to a template element: `<input ref={this.input} />`, then `this.input.value`. */
 export interface ElementRef<T extends Element> {
-  /** L'élément, une fois monté ; `undefined` avant. */
+  /** The element, once mounted; `undefined` before. */
   readonly value: T | undefined;
 }
 
 /**
- * Ce qu'un composant voit d'un store, par le nom de son contrat : ses sélecteurs, ses commandes,
- * ses événements. Jamais l'état brut, jamais l'instance.
+ * What a component sees of a store, by its contract's name: its selectors, its commands,
+ * its events. Never the raw state, never the instance.
  */
 export interface ContractView<N extends ContractName> {
-  /** Fantôme : les commandes du contrat, pour le compilateur (`this.form({ submit: { to } })`). */
+  /** Phantom: the contract's commands, for the compiler (`this.form({ submit: { to } })`). */
   readonly __commands?: ContractCommands<Contracts[N]>;
   /**
-   * Les sélecteurs du contrat, lus sur l'état courant à chaque appel. Lus pendant `render`, ils
-   * abonnent le composant au store, directement comme dans `this.selector(…)` : il ne se re-rend que si
-   * une valeur lue change.
+   * The contract's selectors, read on the current state at each call. Read during `render`, they
+   * subscribe the component to the store, directly as in `this.selector(…)`: it only re-renders if
+   * a value read changes.
    */
   readonly selectors: ElementSelectors<N>;
   /**
-   * Envoie une commande et laisse filer : rien à attendre. L'issue revient par les sélecteurs, ou
-   * par `nom:done` / `nom:failed`.
+   * Sends a command and lets it go: nothing to await. The outcome comes back through the selectors, or
+   * through `name:done` / `name:failed`.
    */
   send<K extends keyof ContractCommands<Contracts[N]> & string>(name: K, ...args: CommandArgs<ContractCommands<Contracts[N]>[K]>): void;
   /**
-   * Écoute un événement du store, ou le cycle de vie d'une commande. Actif tant que le composant
-   * est monté. Interdit pendant `render`.
+   * Listens to a store event, or to a command's life cycle. Active as long as the component
+   * is mounted. Forbidden during `render`.
    */
   on<K extends keyof AllEvents<ContractCommands<Contracts[N]>, ContractEvents<Contracts[N]>> & string>(
     name: K,
@@ -134,49 +134,49 @@ export interface ContractView<N extends ContractName> {
 
 type CommandArgs<F> = F extends (...args: infer A) => any ? A : never;
 
-/** Les routes de l'app, telles que les déclare son router (`never` sans router). */
+/** The app's routes, as its router declares them (`never` without a router). */
 export type AppRoutes = Contracts extends { router: infer K } ? PathsOfRouter<K> : never;
 
 /**
- * Le router vu d'un composant (`this.router`) : la route active (`current`), une route précise
- * (`at`), la navigation (`send`), ses événements (`on`) et les URL des routes (`href`). `R` est la
- * route de l'écran, ou toutes les routes pour un composant qui n'est pas un écran.
+ * The router as seen from a component (`this.router`): the active route (`current`), a specific route
+ * (`at`), navigation (`send`), its events (`on`) and route URLs (`href`). `R` is the
+ * screen's route, or all routes for a component that is not a screen.
  */
 export interface RouterView<R extends keyof AppRoutes = keyof AppRoutes> {
   /**
-   * La route active. Chaque valeur s'appelle pour être lue (`current.params.id()`), ou se passe
-   * telle quelle à `this.selector(…)` : `id = this.selector(this.router.current.params.id)`.
-   * Lue pendant `render`, elle abonne le composant au router.
+   * The active route. Each value is called to be read (`current.params.id()`), or is passed
+   * as is to `this.selector(…)`: `id = this.selector(this.router.current.params.id)`.
+   * Read during `render`, it subscribes the component to the router.
    */
   readonly current: CurrentRoute<AppRoutes, R>;
   /**
-   * Une route précise, pour un composant qui n'est pas son écran : ses valeurs sont typées par
-   * elle, et leur lecture lève une erreur si la route active est une autre.
+   * A specific route, for a component that is not its screen: its values are typed by
+   * it, and reading them throws an error if the active route is another one.
    */
   at<N extends keyof AppRoutes & string>(name: N): RouteAt<AppRoutes, N>;
-  /** Navigation : `send('navigate', { to: 'counter', params: { id: 42 } })`, `send('back')`. */
+  /** Navigation: `send('navigate', { to: 'counter', params: { id: 42 } })`, `send('back')`. */
   send<K extends keyof RouterCommands<AppRoutes> & string>(name: K, ...args: CommandArgs<RouterCommands<AppRoutes>[K]>): void;
-  /** Écoute un événement du router (`navigated`). Interdit pendant `render`. */
+  /** Listens to a router event (`navigated`). Forbidden during `render`. */
   on<K extends keyof AllEvents<RouterCommands<AppRoutes>, RouterEvents> & string>(
     name: K,
     listener: (payload: AllEvents<RouterCommands<AppRoutes>, RouterEvents>[K]) => void,
   ): void;
   /**
-   * `this.router.href('counter', { params: { id: 42 } })` donne `'/counters/42'`. Route et valeurs
-   * vérifiées. `href` ne lit pas la route active : il n'abonne pas le composant au router.
+   * `this.router.href('counter', { params: { id: 42 } })` gives `'/counters/42'`. Route and values
+   * checked. `href` does not read the active route: it does not subscribe the component to the router.
    */
   href<N extends keyof AppRoutes & string>(name: N, ...input: HrefArgs<AppRoutes, N>): string;
 }
 
-/** Les contrats qu'un composant lit par `this.contract(nom)` : tous sauf le router (`this.router`). */
+/** The contracts a component reads with `this.contract(name)`: all except the router (`this.router`). */
 export type StoreContractName = Exclude<ContractName, typeof ROUTER_NAME>;
 
-/** La vue d'un contrat par son nom. */
+/** The view of a contract by its name. */
 export type ViewOf<N extends ContractName> = N extends 'router' ? RouterView : ContractView<N>;
 
 /**
- * Le router de l'app vu d'un composant (`this.router`), pour les routes `R` ; `never` si l'app
- * n'en déclare pas.
+ * The app's router as seen from a component (`this.router`), for the routes `R`; `never` if the app
+ * does not declare one.
  */
 export type AppRouterView<R = AppRouteNames> = 0 extends 1 & R
   ? any
@@ -185,41 +185,41 @@ export type AppRouterView<R = AppRouteNames> = 0 extends 1 & R
     : RouterView<R & keyof AppRoutes>;
 
 /**
- * Une valeur de la route active lue par `this.selector(this.router.current.params.id)` :
- * `.value` la lit, `isValid()` dit si l'URL en portait une valeur conforme. Après ce test,
- * `.value` est du type décrit.
+ * A value of the active route read by `this.selector(this.router.current.params.id)`:
+ * `.value` reads it, `isValid()` tells whether the URL carried a conforming value. After this test,
+ * `.value` has the described type.
  */
 export interface RouteSelection<V, Valid = V> extends Selection<V> {
   isValid(): this is RouteSelection<Valid, Valid>;
 }
 
 /**
- * Ce que déclare un composant : ses props, ses événements, et pour un écran sa route, tous
- * facultatifs. Dans un `.super`, la route d'un écran est posée par le compilateur, d'après le lien
- * écran → route généré par le plugin Vite.
+ * What a component declares: its props, its events, and for a screen its route, all
+ * optional. In a `.super` file, a screen's route is set by the compiler, from the
+ * screen → route link generated by the Vite plugin.
  */
 export type ElementTypes = { props?: object; emits?: Record<string, unknown>; route?: string };
-/** La route déclarée (toutes les routes de l'app sans route). */
-// `SuperElement<any>` (un composant quelconque) : son router est `any`, pour accepter tous les écrans.
+/** The declared route (all the app's routes without a route). */
+// `SuperElement<any>` (any component): its router is `any`, to accept all screens.
 export type RouteIn<T> = 0 extends 1 & T ? any : T extends { route: infer R extends string } ? R : AppRouteNames;
-/** Les props déclarées (`{}` sans props). */
+/** The declared props (`{}` without props). */
 export type PropsIn<T> = 0 extends 1 & T ? any : T extends { props: infer P extends object } ? P : {};
-/** Les événements déclarés (`{}` sans événements). */
+/** The declared events (`{}` without events). */
 export type EmitsIn<T> = 0 extends 1 & T ? any : T extends { emits: infer E } ? E : {};
 
-/** Les props d'une instance de composant : `PropsOf<CounterScreen>`. */
+/** The props of a component instance: `PropsOf<CounterScreen>`. */
 export type PropsOf<T> = T extends { readonly [PROPS]?: infer P } ? P : never;
-/** Les événements d'une instance de composant. */
+/** The events of a component instance. */
 export type EventsOf<T> = T extends { readonly [EVENTS]?: infer E } ? E : never;
 
 type CreateArgs<P, E> = {} extends P ? [props?: P, options?: ChildOptions<E>] : [props: P, options?: ChildOptions<E>];
 
-/** Une classe de composant : ce qu'acceptent le router, `mount` et les templates. */
+/** A component class: what the router, `mount` and templates accept. */
 export interface ElementClass<P extends object = any, E = any> {
   new (): HTMLElement;
   /**
-   * Les props du composant, comparées dans les deux sens (fantômes) : il reçoit au moins `P`
-   * (`[ACCEPTS]`, contravariant) et n'attend rien de plus (`[PROPS]`, covariant).
+   * The component's props, compared both ways (phantoms): it receives at least `P`
+   * (`[ACCEPTS]`, contravariant) and expects nothing more (`[PROPS]`, covariant).
    */
   readonly prototype: { readonly [PROPS]?: P; readonly [ACCEPTS]?: (props: P) => void };
   readonly tag: string;
@@ -228,25 +228,25 @@ export interface ElementClass<P extends object = any, E = any> {
 }
 
 /* ------------------------------------------------------------------------------------------ */
-/* Sous le capot : suivi des lectures                                                          */
+/* Under the hood: read tracking                                                              */
 /* ------------------------------------------------------------------------------------------ */
 
-/** Stores lus pendant le calcul en cours (rendu, ou `selector`). */
+/** Stores read during the current computation (render, or `selector`). */
 let tracking: Set<AnyStore> | null = null;
 
 /**
- * Props du composant en cours de construction : déposées par Super juste avant `new`, et posées
- * par le constructeur de base. Les champs et le constructeur de la sous-classe les lisent donc déjà.
+ * Props of the component being constructed: dropped off by Super just before `new`, and set
+ * by the base constructor. The subclass's fields and constructor therefore already read them.
  */
 let constructing: object | null = null;
 
-/** Rendus demandés, faits ensemble à la prochaine microtâche. */
+/** Requested renders, done together at the next microtask. */
 const pendingRenders = new Map<Element, () => void>();
 
 /**
- * Demande un rendu. Les rendus en attente passent dans l'ordre du document, parents d'abord : un
- * enfant que le rendu de son parent retire (l'écran que l'outlet remplace) ne se re-rend pas avec
- * un état qui n'est plus le sien.
+ * Requests a render. Pending renders run in document order, parents first: a
+ * child that its parent's render removes (the screen the outlet replaces) does not re-render with
+ * a state that is no longer its own.
  */
 function scheduleRender(element: Element, run: () => void) {
   if (pendingRenders.size === 0) queueMicrotask(flushRenders);
@@ -259,23 +259,23 @@ function flushRenders() {
   for (const [, run] of batch) run();
 }
 
-/** Interne : re-rend un composant après un remplacement à chaud. */
+/** Internal: re-renders a component after a hot replacement. */
 const HOT_RENDER = Symbol('super.hot-render');
 
-/** Construit un composant avec ses props, lisibles dès ses champs et son constructeur. */
+/** Constructs a component with its props, readable from its fields and its constructor. */
 function construct<T>(Class: new () => T, props: object, exact = false): T {
   const previous = constructing;
   constructing = props;
   try {
-    // Construit avec le code de `Class` (ses champs, son constructeur), pour le tag défini par son relais.
+    // Constructs with the code of `Class` (its fields, its constructor), for the tag defined by its relay.
     const relay = relayOf(Class as unknown as ElementClass);
-    // Toujours la version courante : un parent non rechargé peut encore tenir l'ancienne classe.
+    // Always the current version: a parent that was not reloaded may still hold the old class.
     return Reflect.construct(exact ? Class : relay.current, [], relay.Relay) as T;
   } finally {
     constructing = previous;
   }
 }
-/** Valeurs renvoyées par les sélecteurs pendant le calcul d'un `selector`. */
+/** Values returned by selectors during the computation of a `selector`. */
 let selected: Set<unknown> | null = null;
 
 function tracked<T>(into: Set<AnyStore>, run: () => T, returns: Set<unknown> | null = null): T {
@@ -292,7 +292,7 @@ function tracked<T>(into: Set<AnyStore>, run: () => T, returns: Set<unknown> | n
 }
 
 type ViewEntry = { name: string; store: AnyStore | null };
-/** Un sélecteur appelé directement dans `render`, et la valeur qu'il a donnée. */
+/** A selector called directly in `render`, and the value it gave. */
 type DirectRead = { store: AnyStore; read: () => unknown; value: unknown };
 type ListenerEntry = { view: ViewEntry; name: string; listener: (payload: unknown) => void };
 
@@ -300,9 +300,9 @@ class SelectionValue<T> implements Selection<T> {
   #read: () => T;
   #valid: (() => boolean) | null;
   #owner: SuperElement<any>;
-  /** Valeur au dernier rendu, et les stores dont elle dépend. */
+  /** Value at the last render, and the stores it depends on. */
   rendered: { value: T } | null = null;
-  /** Validité lue au dernier rendu (valeur de route seulement). */
+  /** Validity read at the last render (route value only). */
   renderedValid: boolean | null = null;
   readonly stores = new Set<AnyStore>();
 
@@ -312,9 +312,9 @@ class SelectionValue<T> implements Selection<T> {
     this.#valid = valid;
   }
 
-  /** Valeur de route : l'URL en portait-elle une valeur conforme ? */
+  /** Route value: did the URL carry a conforming value? */
   isValid(): boolean {
-    if (!this.#valid) throw new Error(`[super] <${this.#owner.localName}> : isValid() n'existe que sur une valeur de route`);
+    if (!this.#valid) throw new Error(`[super] <${this.#owner.localName}>: isValid() only exists on a route value`);
     const valid = tracked(this.stores, this.#valid);
     if (currentRendering() === (this.#owner as unknown)) {
       this.renderedValid = valid;
@@ -323,27 +323,27 @@ class SelectionValue<T> implements Selection<T> {
     return valid;
   }
 
-  /** Ce qui a été rendu a-t-il changé ? */
+  /** Has what was rendered changed? */
   changed(): boolean {
     if (this.rendered && !Object.is(this.compute(), this.rendered.value)) return true;
     return this.renderedValid !== null && tracked(this.stores, this.#valid!) !== this.renderedValid;
   }
 
-  /** Recalcule, en stabilisant la référence tant que la valeur est égale en profondeur. */
+  /** Recomputes, keeping the reference stable as long as the value is deeply equal. */
   compute(): T {
     this.stores.clear();
-    if (this.#valid) tracked(this.stores, this.#valid); // la validité dépend des mêmes stores
+    if (this.#valid) tracked(this.stores, this.#valid); // validity depends on the same stores
     const returns = new Set<unknown>();
     const next = tracked(this.stores, this.#read, returns);
-    // La valeur d'un selector est celle d'un sélecteur, telle quelle : sinon elle pourrait ne dépendre
-    // d'aucun store (et rester figée), ou mélanger le store avec autre chose. Le compilateur le vérifie
-    // déjà, sauf pour `null` et `undefined`, qui ne portent pas de marque.
+    // A selector's value is that of a selector, as is: otherwise it could depend on
+    // no store (and stay frozen), or mix the store with something else. The compiler already
+    // checks it, except for `null` and `undefined`, which carry no brand.
     if (!returns.has(next)) {
       throw new Error(
-        `[super] <${this.#owner.localName}> : selector() doit renvoyer la valeur d’un sélecteur, telle quelle. ` +
-          'Passe un sélecteur (`this.selector(this.cart.selectors.lines)`) ou une fonction qui en appelle un ' +
-          '(`this.selector(() => this.cart.selectors.quantity(this.props.sku))`). Si l’affichage dépend d’une ' +
-          'condition ou d’un calcul, fais-le dans render : `${this.props.show ? this.count.value : 0}`.',
+        `[super] <${this.#owner.localName}>: selector() must return a selector's value, as is. ` +
+          'Pass a selector (`this.selector(this.cart.selectors.lines)`) or a function that calls one ' +
+          '(`this.selector(() => this.cart.selectors.quantity(this.props.sku))`). If the display depends on a ' +
+          'condition or a computation, do it in render: `${this.props.show ? this.count.value : 0}`.',
       );
     }
     return this.rendered ? (share(this.rendered.value, next) as T) : next;
@@ -351,7 +351,7 @@ class SelectionValue<T> implements Selection<T> {
 
   get value(): T {
     const value = this.compute();
-    // Lu pendant le rendu de son composant : c'est la valeur affichée, à comparer au prochain changement.
+    // Read during its component's render: it is the displayed value, to compare at the next change.
     if (currentRendering() === (this.#owner as unknown)) {
       this.rendered = { value };
       internalsOf(this.#owner).reads.add(this as SelectionValue<unknown>);
@@ -363,23 +363,23 @@ class SelectionValue<T> implements Selection<T> {
 type Internals = {
   props: object;
   views: ViewEntry[];
-  /** Branchements à rejouer à chaque montage (formulaires). */
+  /** Bindings to replay at each mount (forms). */
   connectors: Array<(signal: AbortSignal) => void>;
   listeners: ListenerEntry[];
-  /** `selector` lus pendant le dernier rendu. */
+  /** `selector` values read during the last render. */
   reads: Set<SelectionValue<unknown>>;
-  /** Stores lus directement (sans `selector`) pendant le dernier rendu. */
+  /** Stores read directly (without `selector`) during the last render. */
   rawReads: Set<AnyStore>;
-  /** Les lectures directes du dernier rendu : un changement de store ne re-rend que si l'une d'elles change. */
+  /** The direct reads of the last render: a store change only re-renders if one of them changes. */
   directReads: DirectRead[];
   subscriptions: Map<AnyStore, Unsubscribe>;
-  /** La vue du router, créée au premier accès à `this.router`. */
+  /** The router view, created on first access to `this.router`. */
   router: object | null;
-  /** `this.page`, créé au premier accès. */
+  /** `this.page`, created on first access. */
   page: Page | null;
   /**
-   * Le titre posé à la préparation (`@title`, repris à chaque montage), celui posé une fois monté
-   * (jusqu'au démontage), et l'entrée du composant dans la pile des titres (tant qu'il est monté).
+   * The title set during preparation (`@title`, reapplied at each mount), the one set once mounted
+   * (until unmount), and the component's entry in the title stack (as long as it is mounted).
    */
   title: { declared: TitleValue | null; live: TitleValue | null; entry: TitleEntry | null };
   controller: AbortController | null;
@@ -389,11 +389,11 @@ type Internals = {
 };
 
 const internals = new WeakMap<SuperElement<any>, Internals>();
-/** La vue d'un contrat → son entrée (et son store, une fois monté). */
+/** The view of a contract → its entry (and its store, once mounted). */
 const viewEntries = new WeakMap<object, ViewEntry>();
 const internalsOf = (element: SuperElement<any>) => internals.get(element)!;
 
-/** Adaptateurs pour la directive d'enfant : un par classe, pour qu'elle reconnaisse le même composant. */
+/** Adapters for the child directive: one per class, so that it recognises the same component. */
 const childDefs = new WeakMap<ElementClass, { tag: string; create(props: object): SuperElement<any> }>();
 
 /* ------------------------------------------------------------------------------------------ */
@@ -401,13 +401,13 @@ const childDefs = new WeakMap<ElementClass, { tag: string; create(props: object)
 /* ------------------------------------------------------------------------------------------ */
 
 /**
- * Un composant : un custom element dont la classe déclare ses props et ses événements. Il s'écrit
- * dans un fichier `.super` (voir packages/lang/SPEC.md) :
+ * A component: a custom element whose class declares its props and its events. It is written
+ * in a `.super` file (see packages/lang/SPEC.md):
  *
  * ```tsx
  * export class ShopScreen extends SuperElement {
  *   @tag = 'shop-screen';
- *   @title = 'Boutique';
+ *   @title = 'Shop';
  *   @prop category: string = 'all';
  *   @emit picked: { sku: string };
  *
@@ -424,11 +424,11 @@ const childDefs = new WeakMap<ElementClass, { tag: string; create(props: object)
  * }
  * ```
  *
- * Les champs et le constructeur préparent le composant (une fois) ; `render` décrit le HTML à
- * chaque rendu, et ne peut ni lire un nouveau contrat ni créer d'état.
+ * The fields and the constructor prepare the component (once); `render` describes the HTML at
+ * each render, and can neither read a new contract nor create state.
  */
 export abstract class SuperElement<T extends ElementTypes = {}> extends HTMLElement {
-  /** Fantômes : n'existent que pour le compilateur. */
+  /** Phantoms: exist only for the compiler. */
   declare readonly [PROPS]?: PropsIn<T>;
   declare readonly [ACCEPTS]?: (props: PropsIn<T>) => void;
   declare readonly [EVENTS]?: EmitsIn<T>;
@@ -436,7 +436,7 @@ export abstract class SuperElement<T extends ElementTypes = {}> extends HTMLElem
   constructor() {
     super();
     const props = constructing ?? {};
-    constructing = null; // consommées : un élément construit ensuite par ce constructeur ne les reprend pas
+    constructing = null; // consumed: an element constructed afterwards by this constructor does not reuse them
     internals.set(this, {
       props,
       views: [],
@@ -456,25 +456,25 @@ export abstract class SuperElement<T extends ElementTypes = {}> extends HTMLElem
     });
   }
 
-  /** Décrit le HTML du composant. Appelé à chaque rendu. */
+  /** Describes the component's HTML. Called at each render. */
   abstract render(): unknown;
 
   /**
-   * Facultatif : affiché à la place de `render` si `render` ou un composant descendant plante.
-   * S'il plante lui-même, l'erreur remonte au parent suivant.
+   * Optional: displayed instead of `render` if `render` or a descendant component crashes.
+   * If it crashes itself, the error bubbles up to the next parent.
    */
   renderError?(error: Error): unknown;
 
-  /** Appelé après le premier rendu, à chaque montage. */
+  /** Called after the first render, at each mount. */
   protected mounted(): void {}
 
-  /** Appelé au démontage. */
+  /** Called at unmount. */
   protected unmounted(): void {}
 
   /**
-   * Les props reçues du parent, lisibles dès les champs et le constructeur. Un changement de prop
-   * re-rend le composant ; une valeur copiée à la construction (`this.state({ draft: this.props.text })`)
-   * ne suit pas les changements suivants.
+   * The props received from the parent, readable from the fields and the constructor. A prop change
+   * re-renders the component; a value copied at construction (`this.state({ draft: this.props.text })`)
+   * does not follow later changes.
    */
   get props(): Readonly<PropsIn<T>> {
     return internalsOf(this).props as PropsIn<T>;
@@ -487,31 +487,31 @@ export abstract class SuperElement<T extends ElementTypes = {}> extends HTMLElem
   }
 
   /* ---------------------------------------------------------------------------------------- */
-  /* Préparation : champs et constructeur                                                      */
+  /* Preparation: fields and constructor                                                       */
   /* ---------------------------------------------------------------------------------------- */
 
-  /** Le store fourni par l'app pour ce contrat, vu à travers son contrat. Le router : `this.router`. */
+  /** The store the app provides for this contract, seen through its contract. The router: `this.router`. */
   protected contract<N extends StoreContractName>(name: N): ContractView<N> {
     this.#preparing('contract');
     if ((name as string) === ROUTER_NAME) {
-      throw new Error(`[super] <${this.localName}> : le router se lit par \`this.router\`, pas par \`this.contract('router')\``);
+      throw new Error(`[super] <${this.localName}>: the router is read with \`this.router\`, not with \`this.contract('router')\``);
     }
     return this.#view(name) as ContractView<N>;
   }
 
   /**
-   * Le router de l'app : la route active (`this.router.current.params.id`), une route précise
-   * (`this.router.at('counter')`), la navigation (`this.router.send('navigate', { to: 'shop' })`), et
-   * les URL des routes (`this.router.href('counter', { params: { id } })`). Dans un écran, `current`
-   * est typé par sa route. Lisible partout, `render` compris : la vue est créée au premier accès, et
-   * cherche le router au montage (tout de suite si le composant est monté).
+   * The app's router: the active route (`this.router.current.params.id`), a specific route
+   * (`this.router.at('counter')`), navigation (`this.router.send('navigate', { to: 'shop' })`), and
+   * route URLs (`this.router.href('counter', { params: { id } })`). In a screen, `current`
+   * is typed by its route. Readable everywhere, `render` included: the view is created on first access, and
+   * looks up the router at mount (right away if the component is mounted).
    */
   protected get router(): AppRouterView<RouteIn<T>> {
     const state = internalsOf(this);
     if (!state.router) {
       const view = this.#view(ROUTER_NAME);
       state.router = view;
-      // Premier accès une fois monté (render, mounted, gestionnaire) : le montage est déjà passé.
+      // First access once mounted (render, mounted, handler): the mount has already happened.
       if (state.mounted) {
         const entry = viewEntries.get(view)!;
         entry.store = requestStore(this, ROUTER_NAME);
@@ -521,10 +521,10 @@ export abstract class SuperElement<T extends ElementTypes = {}> extends HTMLElem
   }
 
   /**
-   * La page : son titre (`this.page.title = 'Boutique'`), tant que le composant est monté. Le titre
-   * du dernier composant monté qui en pose un l'emporte ; à son démontage, le précédent revient. Une
-   * fonction est suivie, recalculée après chaque rendu (`() => \`Compteur ${this.label.value}\``).
-   * `@title = …` dans un `.super` est un raccourci pour le poser dans un champ.
+   * The page: its title (`this.page.title = 'Shop'`), as long as the component is mounted. The title
+   * of the last mounted component that sets one wins; at its unmount, the previous one comes back. A
+   * function is tracked, recomputed after each render (`() => \`Counter ${this.label.value}\``).
+   * `@title = …` in a `.super` file is a shorthand for setting it in a field.
    */
   protected get page(): Page {
     const state = internalsOf(this);
@@ -532,7 +532,7 @@ export abstract class SuperElement<T extends ElementTypes = {}> extends HTMLElem
       const element = this;
       state.page = {
         get title(): never {
-          throw new Error(`[super] <${element.localName}> : \`this.page.title\` se pose, il ne se lit pas`);
+          throw new Error(`[super] <${element.localName}>: \`this.page.title\` is set, it cannot be read`);
         },
         set title(value: TitleValue) {
           element.#setTitle(value);
@@ -544,7 +544,7 @@ export abstract class SuperElement<T extends ElementTypes = {}> extends HTMLElem
 
   #setTitle(value: TitleValue) {
     if (currentRendering() === (this as unknown)) {
-      throw new Error(`[super] <${this.localName}> : \`this.page.title\` ne se pose pas pendant render`);
+      throw new Error(`[super] <${this.localName}>: \`this.page.title\` cannot be set during render`);
     }
     const state = internalsOf(this);
     if (!state.mounted) {
@@ -554,16 +554,16 @@ export abstract class SuperElement<T extends ElementTypes = {}> extends HTMLElem
     state.title.live = value;
     state.title.entry ??= pushTitle();
     if (typeof value === 'string') return updateTitle(state.title.entry, value);
-    // Une fonction : calculée tout de suite, puis suivie par le prochain rendu (qui retient ses lectures).
+    // A function: computed right away, then tracked by the next render (which records its reads).
     try {
       updateTitle(state.title.entry, value());
     } catch {
-      // Le rendu la recalcule, et son erreur suivra le chemin des erreurs de rendu.
+      // The render recomputes it, and its error will follow the render error path.
     }
     this.#requestRender();
   }
 
-  /** Recalcule le titre du composant (pendant le rendu, pour que ses lectures soient suivies). */
+  /** Recomputes the component's title (during render, so that its reads are tracked). */
   #refreshTitle() {
     const { title } = internalsOf(this);
     const value = title.live ?? title.declared;
@@ -571,12 +571,12 @@ export abstract class SuperElement<T extends ElementTypes = {}> extends HTMLElem
     updateTitle(title.entry, typeof value === 'string' ? value : value());
   }
 
-  /** Crée la vue d'un contrat, branchée sur son store à chaque montage. */
+  /** Creates a contract's view, wired to its store at each mount. */
   #view(name: string): object {
     const view: ViewEntry = { name, store: null };
     internalsOf(this).views.push(view);
     const resolved = () => {
-      if (!view.store) throw new Error(`[super] <${this.localName}> : le contrat "${name}" ne se lit qu'une fois le composant monté`);
+      if (!view.store) throw new Error(`[super] <${this.localName}>: contract "${name}" is only readable once the component is mounted`);
       return view.store;
     };
     const selectors = new Proxy({} as Record<string, (...args: unknown[]) => unknown>, {
@@ -585,12 +585,12 @@ export abstract class SuperElement<T extends ElementTypes = {}> extends HTMLElem
         (...args: unknown[]) => {
           const store = resolved();
           tracking?.add(store);
-          // Lu à travers le contrat-classe inscrit sous ce nom (pour le router, ses sélecteurs).
+          // Read through the class contract registered under this name (for the router, its selectors).
           const read = () => readStore(store, store.state(), contractByName(name))[key]!(...args);
           const value = read();
           selected?.add(value);
-          // Lu directement pendant un rendu (pas dans un `selector`) : retenu chez le composant qui rend,
-          // qui peut être un autre que celui de la vue (un bouton qui lit le contrat de son parent).
+          // Read directly during a render (not in a `selector`): recorded on the rendering component,
+          // which may be another one than the view's (a button that reads its parent's contract).
           const reader = internals.get(currentRendering() as SuperElement<any>);
           if (reader && tracking === reader.rawReads) reader.directReads.push({ store, read, value });
           return value;
@@ -602,17 +602,17 @@ export abstract class SuperElement<T extends ElementTypes = {}> extends HTMLElem
         resolved()
           .send(command, ...args)
           .catch((error: unknown) => {
-            // L'issue est publiée par `nom:failed` : seule une exception inattendue mérite la console.
+            // The outcome is published by `name:failed`: only an unexpected exception deserves the console.
             if (!(error instanceof CommandFailure)) console.error(error);
           });
       },
       on: (event: string, listener: (payload: never) => void) => {
         if (currentRendering() === (this as unknown)) {
-          throw new Error(`[super] <${this.localName}> : \`on\` ne s'appelle pas pendant render`);
+          throw new Error(`[super] <${this.localName}>: \`on\` cannot be called during render`);
         }
         const entry: ListenerEntry = { view, name: event, listener: listener as (payload: unknown) => void };
-        // Déclaré à la préparation : rejoué à chaque montage. Posé une fois monté (gestionnaire,
-        // mounted) : vit jusqu'au démontage, et c'est au code qui l'a posé de le reposer.
+        // Declared during preparation: replayed at each mount. Set once mounted (handler,
+        // mounted): lives until unmount, and it is up to the code that set it to set it again.
         if (view.store) this.#listen(entry);
         else internalsOf(this).listeners.push(entry);
       },
@@ -636,13 +636,13 @@ export abstract class SuperElement<T extends ElementTypes = {}> extends HTMLElem
             const active = read.route!();
             if (active !== route) {
               throw new Error(
-                `[super] <${this.localName}> : this.router.at('${route}') lu alors que la route active est ${active === null ? 'aucune' : `'${active}'`}`,
+                `[super] <${this.localName}>: this.router.at('${route}') read while the active route is ${active === null ? 'none' : `'${active}'`}`,
               );
             }
           }),
         href: (route: string, input?: object) => {
           const build = routerHrefs.get(resolved());
-          if (!build) throw new Error(`[super] <${this.localName}> : ce router n'a pas été créé par createRouter`);
+          if (!build) throw new Error(`[super] <${this.localName}>: this router was not created by createRouter`);
           return build(route, input);
         },
       });
@@ -652,16 +652,16 @@ export abstract class SuperElement<T extends ElementTypes = {}> extends HTMLElem
   }
 
   /**
-   * Un formulaire : valeurs, règles, vérifications asynchrones, et une soumission qui est une
-   * commande d'un store (`submit.to: this.checkout`). Prêt dès la construction pour le rendu ; il
-   * se branche sur le store au montage.
+   * A form: values, rules, asynchronous checks, and a submission that is a
+   * store command (`submit.to: this.checkout`). Ready from construction for the render; it
+   * wires itself to the store at mount.
    */
   protected form<V, C extends CommandMap, K extends keyof C & string, RF extends FailureOf<C[K]> = never>(
     options: FormOptions<V, C, K, RF>,
   ): FormHandle<V> {
     this.#preparing('form');
     const entry = viewEntries.get(options.submit.to as object);
-    if (!entry) throw new Error('[super] form : submit.to doit être un contrat obtenu avec this.contract(...)');
+    if (!entry) throw new Error('[super] form: submit.to must be a contract obtained with this.contract(...)');
     const state = internalsOf(this);
     return createForm(options as never, {
       requestRender: () => this.#requestRender(),
@@ -672,12 +672,12 @@ export abstract class SuperElement<T extends ElementTypes = {}> extends HTMLElem
   }
 
   /**
-   * Une valeur lue d'un ou plusieurs stores : un sélecteur sans paramètre
-   * (`this.selector(this.cart.selectors.lines)`), ou une fonction qui lit des sélecteurs
-   * (`this.selector(() => this.cart.selectors.quantity(this.props.sku))`). Lue par `.value` dans
-   * `render`, elle est recalculée à chaque rendu (donc à chaque changement de props), et le
-   * composant se re-rend quand elle change. La fonction renvoie la valeur d'un sélecteur telle
-   * quelle : une condition ou un calcul se font dans `render` (le compilateur le vérifie).
+   * A value read from one or more stores: a selector without parameters
+   * (`this.selector(this.cart.selectors.lines)`), or a function that reads selectors
+   * (`this.selector(() => this.cart.selectors.quantity(this.props.sku))`). Read with `.value` in
+   * `render`, it is recomputed at each render (so at each props change), and the
+   * component re-renders when it changes. The function returns a selector's value as
+   * is: a condition or a computation goes in `render` (the compiler checks it).
    */
   protected selector<V, Valid>(read: RouteValue<V, Valid>): RouteSelection<V, Valid>;
   protected selector<R extends SelectorValue>(read: () => R): Selection<Unselected<R>>;
@@ -687,15 +687,15 @@ export abstract class SuperElement<T extends ElementTypes = {}> extends HTMLElem
   }
 
   /**
-   * État local du composant : privé à l'instance, pour les données d'interface. Le type est déduit
-   * de `initial` : élargir les champs qui changeront de type (`null as string | null`).
+   * Local state of the component: private to the instance, for UI data. The type is inferred
+   * from `initial`: widen the fields that will change type (`null as string | null`).
    */
   protected state<T extends object>(initial: T): LocalState<T> {
     this.#preparing('state');
     return createLocalState(initial, () => this.#requestRender());
   }
 
-  /** Une référence vers un élément du template : `<input ref={this.input} />`. */
+  /** A reference to a template element: `<input ref={this.input} />`. */
   protected ref<T extends Element>(): ElementRef<T> {
     this.#preparing('ref');
     const target = createRef<T>();
@@ -704,32 +704,32 @@ export abstract class SuperElement<T extends ElementTypes = {}> extends HTMLElem
     return result as unknown as ElementRef<T>;
   }
 
-  /** Émet un événement vers le parent. */
+  /** Emits an event to the parent. */
   protected emit<K extends keyof EmitsIn<T> & string>(name: K, ...args: PayloadArgs<EmitsIn<T>[K]>): void {
     this.dispatchEvent(new CustomEvent(eventName(this.localName, name), { detail: (args as unknown[])[0], bubbles: true, composed: true }));
   }
 
-  /** Avorté au démontage. À passer aux écouteurs posés hors de Super (`addEventListener` sur `window`…). */
+  /** Aborted at unmount. Pass it to listeners set outside Super (`addEventListener` on `window`…). */
   protected get signal(): AbortSignal {
     const { controller } = internalsOf(this);
-    if (!controller) throw new Error(`[super] <${this.localName}> : \`signal\` n'existe qu'une fois le composant monté`);
+    if (!controller) throw new Error(`[super] <${this.localName}>: \`signal\` only exists once the component is mounted`);
     return controller.signal;
   }
 
   #preparing(name: string) {
     if (currentRendering() === (this as unknown)) {
-      throw new Error(`[super] <${this.localName}> : \`${name}\` se déclare dans un champ ou le constructeur, pas pendant render`);
+      throw new Error(`[super] <${this.localName}>: \`${name}\` is declared in a field or the constructor, not during render`);
     }
   }
 
   /* ---------------------------------------------------------------------------------------- */
-  /* Création                                                                                  */
+  /* Creation                                                                                  */
   /* ---------------------------------------------------------------------------------------- */
 
   /**
-   * Crée le composant. Dans un template, c'est ce qu'appelle la balise
-   * `<ConfirmDialog question={question} on:answered={this.onAnswered} />` : il est monté à cet
-   * emplacement et mis à jour à chaque rendu du parent. Hors template (router, tests), renvoie l'élément.
+   * Creates the component. In a template, this is what the tag
+   * `<ConfirmDialog question={question} on:answered={this.onAnswered} />` calls: it is mounted at that
+   * position and updated at each render of the parent. Outside a template (router, tests), returns the element.
    */
   static create<T extends SuperElement<any>>(
     this: (new () => T) & { readonly tag: string },
@@ -748,28 +748,28 @@ export abstract class SuperElement<T extends ElementTypes = {}> extends HTMLElem
     return element;
   }
 
-  /** Nom DOM d'un événement émis, pour les écouteurs posés à la main. */
+  /** DOM name of an emitted event, for listeners set by hand. */
   static eventName<T extends SuperElement<any>>(this: (new () => T) & { readonly tag: string }, name: keyof EventsOf<T> & string): string {
     return eventName(this.tag, name);
   }
 
   /* ---------------------------------------------------------------------------------------- */
-  /* Cycle de vie                                                                              */
+  /* Life cycle                                                                                */
   /* ---------------------------------------------------------------------------------------- */
 
   connectedCallback() {
-    if (internalsOf(this).mounted) return; // simple déplacement dans le DOM : on garde l'état
+    if (internalsOf(this).mounted) return; // just a move in the DOM: keep the state
     this.#mount();
   }
 
   disconnectedCallback() {
-    // Un déplacement déconnecte puis reconnecte dans la même tâche : on attend avant de démonter.
+    // A move disconnects then reconnects in the same task: wait before unmounting.
     queueMicrotask(() => {
       if (!this.isConnected && internalsOf(this).mounted) this.#unmount();
     });
   }
 
-  /** Interne : re-rend après un remplacement à chaud. */
+  /** Internal: re-renders after a hot replacement. */
   [HOT_RENDER]() {
     this.#requestRender();
   }
@@ -787,7 +787,7 @@ export abstract class SuperElement<T extends ElementTypes = {}> extends HTMLElem
     const controller = new AbortController();
     state.controller = controller;
     const { signal } = controller;
-    // Entrée prise avant le rendu : les enfants montés par ce rendu passent au-dessus.
+    // Entry taken before the render: the children mounted by this render go above it.
     if (state.title.declared !== null) state.title.entry = pushTitle();
 
     try {
@@ -803,7 +803,7 @@ export abstract class SuperElement<T extends ElementTypes = {}> extends HTMLElem
       this.addEventListener(
         ERROR_EVENT,
         (event) => {
-          if (state.failed) return; // déjà en renderError : l'erreur continue de remonter
+          if (state.failed) return; // already in renderError: the error keeps bubbling up
           const detail = (event as CustomEvent<ErrorDetail>).detail;
           event.stopPropagation();
           detail.caughtBy = this.localName;
@@ -849,7 +849,7 @@ export abstract class SuperElement<T extends ElementTypes = {}> extends HTMLElem
     state.renderScheduled = true;
     scheduleRender(this, () => {
       state.renderScheduled = false;
-      // Retiré du DOM par le rendu d'un parent (l'outlet qui change d'écran) : il va être démonté.
+      // Removed from the DOM by a parent's render (the outlet changing screen): it is about to be unmounted.
       if (state.mounted && this.isConnected) this.#renderNow();
     });
   }
@@ -884,7 +884,7 @@ export abstract class SuperElement<T extends ElementTypes = {}> extends HTMLElem
     this.#subscribe();
   }
 
-  /** S'abonne à chaque store lu pendant le rendu (directement, ou par un `selector`). */
+  /** Subscribes to each store read during the render (directly, or through a `selector`). */
   #subscribe() {
     const state = internalsOf(this);
     const { controller } = state;
@@ -908,21 +908,21 @@ export abstract class SuperElement<T extends ElementTypes = {}> extends HTMLElem
       try {
         if (read.changed()) return this.#requestRender();
       } catch {
-        // Une lecture qui échoue (`this.router.at(…)` sur une autre route) : le rendu la refera,
-        // et son erreur suivra le chemin des erreurs de rendu, pas celui du store qui notifie.
+        // A read that fails (`this.router.at(…)` on another route): the render will redo it,
+        // and its error will follow the render error path, not that of the notifying store.
         return this.#requestRender();
       }
     }
   }
 
   /**
-   * Une lecture directe du dernier rendu, sur ce store, donne-t-elle une autre valeur ? Égale en
-   * profondeur, elle n'a pas changé (comme pour `selector`). Une lecture qui échoue re-rend : le
-   * rendu la refera, et son erreur suivra le chemin des erreurs de rendu.
+   * Does a direct read of the last render, on this store, give another value? Deeply
+   * equal, it has not changed (as for `selector`). A read that fails re-renders: the
+   * render will redo it, and its error will follow the render error path.
    */
   #directReadChanged(store: AnyStore): boolean {
     const reads = internalsOf(this).directReads.filter((direct) => direct.store === store);
-    if (reads.length === 0) return true; // store lu sans lecture retenue : on ne sait pas ce qui a changé
+    if (reads.length === 0) return true; // store read without a recorded read: we cannot tell what changed
     try {
       return reads.some((direct) => share(direct.value, direct.read()) !== direct.value);
     } catch {
@@ -930,7 +930,7 @@ export abstract class SuperElement<T extends ElementTypes = {}> extends HTMLElem
     }
   }
 
-  /** Passe à `renderError` (le sien, ou celui d'un ancêtre) et signale l'erreur à l'application. */
+  /** Switches to `renderError` (its own, or an ancestor's) and reports the error to the application. */
   #fail(raw: unknown, phase: ErrorPhase) {
     const state = internalsOf(this);
     const detail: ErrorDetail = { error: toError(raw), tag: this.localName, phase, caughtBy: null, reported: false };
@@ -949,43 +949,43 @@ export abstract class SuperElement<T extends ElementTypes = {}> extends HTMLElem
 }
 
 /* ------------------------------------------------------------------------------------------ */
-/* Définition                                                                                  */
+/* Definition                                                                                  */
 /* ------------------------------------------------------------------------------------------ */
 
 const LIFECYCLE = ['connectedCallback', 'disconnectedCallback'] as const;
 
 /**
- * Un tag n'est défini qu'une fois auprès du navigateur, avec une classe relais : elle hérite de la
- * version courante du composant. Le remplacement à chaud (`hotReplace`) change cette version sans
- * redéfinir le tag, ce que `customElements.define` refuserait.
+ * A tag is defined only once with the browser, with a relay class: it inherits from the
+ * current version of the component. Hot replacement (`hotReplace`) changes this version without
+ * redefining the tag, which `customElements.define` would refuse.
  */
 type Relay = { Relay: CustomElementConstructor; current: ElementClass; versions: Set<ElementClass> };
 const relays = new Map<string, Relay>();
 
 function relayOf(Class: ElementClass): Relay {
   const relay = relays.get(Class.tag);
-  if (!relay) throw new Error(`[super] ${Class.name} : composant construit avant d'être défini`);
+  if (!relay) throw new Error(`[super] ${Class.name}: component constructed before being defined`);
   return relay;
 }
 
-/** Enregistre le custom element au premier `create`, après avoir vérifié la classe. */
+/** Registers the custom element at the first `create`, after checking the class. */
 function define(Class: ElementClass) {
   const { tag } = Class;
   const existing = relays.get(tag);
-  if (existing?.versions.has(Class)) return; // la version courante, ou une version remplacée à chaud
+  if (existing?.versions.has(Class)) return; // the current version, or a hot-replaced version
   if (typeof tag !== 'string' || !tag.includes('-')) {
     throw new Error(
-      `[super] ${Class.name} : le tag (\`@tag = '…'\` dans un .super, \`static tag\` dans un .ts) est obligatoire et doit contenir un tiret (reçu ${String(tag)})`,
+      `[super] ${Class.name}: the tag (\`@tag = '…'\` in a .super file, \`static tag\` in a .ts file) is required and must contain a hyphen (received ${String(tag)})`,
     );
   }
   for (let proto = Class.prototype; proto && proto !== SuperElement.prototype; proto = Object.getPrototypeOf(proto)) {
     for (const hook of LIFECYCLE) {
       if (Object.hasOwn(proto, hook)) {
-        throw new Error(`[super] ${Class.name} : ne surcharge pas ${hook}, utilise mounted() / unmounted()`);
+        throw new Error(`[super] ${Class.name}: do not override ${hook}, use mounted() / unmounted()`);
       }
     }
   }
-  if (existing || customElements.get(tag)) throw new Error(`[super] le tag "${tag}" est déjà utilisé par un autre composant`);
+  if (existing || customElements.get(tag)) throw new Error(`[super] the tag "${tag}" is already used by another component`);
   const Relay = class extends HTMLElement {};
   Object.setPrototypeOf(Relay.prototype, Class.prototype);
   relays.set(tag, { Relay, current: Class, versions: new Set([Class]) });
@@ -993,30 +993,30 @@ function define(Class: ElementClass) {
 }
 
 /* ------------------------------------------------------------------------------------------ */
-/* Remplacement à chaud (HMR)                                                                  */
+/* Hot replacement (HMR)                                                                       */
 /* ------------------------------------------------------------------------------------------ */
 
-/** Les champs d'une instance : leurs noms, et le code des fonctions (handlers en champ fléché). */
+/** The fields of an instance: their names, and the code of functions (handlers as arrow fields). */
 const fieldsOf = (element: object) =>
   Object.entries(element)
-    .filter(([key]) => !key.startsWith('_$')) // posés par lit-html sur l'élément rendu, pas des champs de la classe
+    .filter(([key]) => !key.startsWith('_$')) // set by lit-html on the rendered element, not class fields
     .map(([key, value]) => (typeof value === 'function' ? `${key}=${String(value)}` : key))
     .sort()
     .join('\n');
 
 /**
- * Interne, appelé par le code que le plugin Vite ajoute aux modules de composants en dev : remplace
- * la version des composants déjà définis par celle du module rechargé. Les éléments affichés gardent
- * leur état et se re-rendent avec les nouvelles méthodes. Si ce n'est pas sûr (champs ajoutés,
- * retirés ou modifiés, champs `#privés`), recharge la page.
+ * Internal, called by the code the Vite plugin adds to component modules in dev: replaces
+ * the version of already defined components with that of the reloaded module. Displayed elements keep
+ * their state and re-render with the new methods. If that is not safe (fields added,
+ * removed or modified, `#private` fields), reloads the page.
  */
 export function hotReplace(classes: ElementClass[], options: { privateFields?: boolean; reload?: () => void } = {}): void {
   const reload = options.reload ?? (() => location.reload());
   const replaced: Array<[Relay, ElementClass]> = [];
   for (const Class of classes) {
     const relay = relays.get(Class.tag);
-    if (!relay || relay.current === Class) continue; // jamais affiché : la nouvelle version servira au premier create
-    if (options.privateFields) return reload(); // les #champs de l'ancienne classe ne sont pas ceux de la nouvelle
+    if (!relay || relay.current === Class) continue; // never displayed: the new version will be used at the first create
+    if (options.privateFields) return reload(); // the old class's #fields are not those of the new one
     const live = document.querySelector(Class.tag);
     if (live) {
       let probe: object;
@@ -1046,8 +1046,8 @@ function childDef(Class: ElementClass) {
         try {
           return construct(Class, props) as SuperElement<any>;
         } catch (error) {
-          // Le constructeur de l'enfant a planté : à sa place, un élément qui signale l'erreur au nom
-          // de l'enfant (phase `setup`) dès qu'il est inséré, pour qu'un ancêtre puisse la rattraper.
+          // The child's constructor crashed: in its place, an element that reports the error on behalf
+          // of the child (phase `setup`) as soon as it is inserted, so that an ancestor can catch it.
           return failedChild(Class.tag, error) as unknown as SuperElement<any>;
         }
       },
@@ -1082,8 +1082,8 @@ function failedChild(tag: string, error: unknown): FailedChild {
   return element;
 }
 
-/** Un écran du router : une classe de composant aux props `P` (aucune pour un écran de route, `{ error, path }` pour l'écran '!'). */
+/** A router screen: a component class with props `P` (none for a route screen, `{ error, path }` for the '!' screen). */
 export type Screen<P extends object> = ElementClass<P, any>;
 
-/** Interne : rend un écran dans un template. */
+/** Internal: renders a screen in a template. */
 export const renderScreen = (screen: Screen<any>, props: object): unknown => screen.create(props);

@@ -2,7 +2,7 @@ import { SuperElement } from '@super-ts/dom';
 import { expectTypeOf, test } from 'vitest';
 import './__fixtures__/form-contracts.ts';
 
-test('form : types inférés des valeurs initiales et de la commande', () => {
+test('form: types inferred from the initial values and the command', () => {
   class ProfileForm extends SuperElement {
     static tag = 'td-form';
     profile = this.contract('form-profile');
@@ -16,14 +16,14 @@ test('form : types inférés des valeurs initiales et de la commande', () => {
         phones: [{ label: 'mobile', number: '' }],
       },
       rules: {
-        name: (v) => v.length > 0 || 'Obligatoire',
-        age: (v) => v === null || v > 12 || 'Trop jeune',
-        phones: { number: (v) => v.length > 5 || 'Numéro invalide' },
+        name: (v) => v.length > 0 || 'Required',
+        age: (v) => v === null || v > 12 || 'Too young',
+        phones: { number: (v) => v.length > 5 || 'Invalid number' },
       },
-      validate: (v) => (v.name ? {} : { name: 'Obligatoire' }),
-      checks: { email: { command: 'checkEmail', toInput: (email) => ({ email }), accept: ({ available }) => available || 'Pris' } },
+      validate: (v) => (v.name ? {} : { name: 'Required' }),
+      checks: { email: { command: 'checkEmail', toInput: (email) => ({ email }), accept: ({ available }) => available || 'Taken' } },
       submit: { to: this.profile, command: 'save', toInput: ({ name, plan }) => ({ name, plan }) },
-      failures: { fields: { 'email-taken': { email: 'Pris' } }, form: { network: 'Réseau', rate: 'Trop de tentatives', error: 'Oups' } },
+      failures: { fields: { 'email-taken': { email: 'Taken' } }, form: { network: 'Network', rate: 'Too many attempts', error: 'Oops' } },
     });
 
     render() {
@@ -31,17 +31,17 @@ test('form : types inférés des valeurs initiales et de la commande', () => {
       edit.field('plan', 'pro');
       edit.field('tags', 'sport');
       edit.field('age');
-      // @ts-expect-error champ inconnu
+      // @ts-expect-error unknown field
       edit.field('nope');
-      // @ts-expect-error une liste ne se lie pas comme un champ simple
+      // @ts-expect-error a list is not bound like a simple field
       edit.field('phones');
-      // @ts-expect-error valeur de radio hors de l'union
+      // @ts-expect-error radio value outside the union
       edit.field('plan', 'gold');
       expectTypeOf(edit.values().age).toEqualTypeOf<number | null>();
       const phones = edit.list('phones');
-      phones.add({ label: 'travail', number: '' });
-      // @ts-expect-error ligne incomplète
-      phones.add({ label: 'travail' });
+      phones.add({ label: 'work', number: '' });
+      // @ts-expect-error incomplete row
+      phones.add({ label: 'work' });
       phones.items().map((item) => item.field('number'));
       return null;
     }
@@ -49,7 +49,7 @@ test('form : types inférés des valeurs initiales et de la commande', () => {
   expectTypeOf<ProfileForm>().toHaveProperty('edit');
 });
 
-test('form : failures répartit exactement les raisons de la commande', () => {
+test('form: failures distributes exactly the command reasons', () => {
   class FailuresForm extends SuperElement {
     static tag = 'td-form-failures';
     profile = this.contract('form-profile');
@@ -59,28 +59,28 @@ test('form : failures répartit exactement les raisons de la commande', () => {
       const submit = { to: this.profile, command: 'save' as const, toInput: (v: { name: string; plan: string }) => v };
       const initial = { name: '', plan: 'free' };
 
-      // @ts-expect-error raison oubliée (rate)
+      // @ts-expect-error forgotten reason (rate)
       this.form({ initial, submit, failures: { fields: { 'email-taken': { name: 'x' } }, form: { network: 'n' } } });
       this.form({
         initial,
         submit,
-        // @ts-expect-error raison présente deux fois
+        // @ts-expect-error reason present twice
         failures: { fields: { network: { name: 'x' } }, form: { network: 'n', rate: 'r', 'email-taken': 'x' } },
       });
-      // @ts-expect-error raison inconnue du contrat
+      // @ts-expect-error reason unknown to the contract
       this.form({ initial, submit, failures: { fields: { nope: { name: 'x' } }, form: { network: 'n', rate: 'r', 'email-taken': 'x' } } });
-      // @ts-expect-error champ inconnu dans fields
+      // @ts-expect-error unknown field in fields
       this.form({ initial, submit, failures: { fields: { 'email-taken': { mail: 'x' } }, form: { network: 'n', rate: 'r' } } });
       this.form({
         initial: { name: '' },
-        // @ts-expect-error input de submit qui ne produit pas le body de la commande
-        submit: { to: this.profile, command: 'save', toInput: (v) => ({ nom: v.name }) },
+        // @ts-expect-error submit input that does not produce the command body
+        submit: { to: this.profile, command: 'save', toInput: (v) => ({ title: v.name }) },
         failures: { fields: {}, form: { network: 'n', rate: 'r', 'email-taken': 'x' } },
       });
       this.form({
         initial,
         submit,
-        // @ts-expect-error check : body faux
+        // @ts-expect-error check: wrong body
         checks: { name: { command: 'checkEmail', toInput: (n) => ({ mail: n }), accept: () => true } },
         failures: { fields: {}, form: { network: 'n', rate: 'r', 'email-taken': 'x' } },
       });

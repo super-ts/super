@@ -5,12 +5,12 @@ import type { Screen, Selected } from './element.ts';
 type Simplify<T> = { [K in keyof T]: T[K] } & {};
 
 /* ------------------------------------------------------------------------------------------ */
-/* Routes déclarées par une chaîne : '/counters/:id?sort&tag[]'                                */
+/* Routes declared by a string: '/counters/:id?sort&tag[]'                                    */
 /* ------------------------------------------------------------------------------------------ */
 
-/** Partie chemin d'une déclaration : `'/counters/:id?tab'` donne `'/counters/:id'`. */
+/** Path part of a declaration: `'/counters/:id?tab'` gives `'/counters/:id'`. */
 type PathPart<P extends string> = P extends `${infer Path}?${string}` ? Path : P;
-/** Partie query d'une déclaration : `'/counters?sort&tag[]'` donne `'sort&tag[]'`. */
+/** Query part of a declaration: `'/counters?sort&tag[]'` gives `'sort&tag[]'`. */
 type QueryPart<P extends string> = P extends `${string}?${infer Query}` ? Query : '';
 
 type SegmentNames<P extends string> = P extends `${string}:${infer Name}/${infer Rest}`
@@ -18,38 +18,38 @@ type SegmentNames<P extends string> = P extends `${string}:${infer Name}/${infer
   : P extends `${string}:${infer Name}`
     ? Name
     : never;
-/** Les noms des paramètres d'un chemin : `'/a/:x/b/:y'` donne `'x' | 'y'`. */
+/** The parameter names of a path: `'/a/:x/b/:y'` gives `'x' | 'y'`. */
 export type ParamNames<P extends string> = SegmentNames<PathPart<P>>;
 
 type QueryEntries<Q extends string> = Q extends `${infer Key}&${infer Rest}` ? Key | QueryEntries<Rest> : Q extends '' ? never : Q;
-/** Clés de query à une valeur : `sort` dans `?sort&tag[]`. */
+/** Single-valued query keys: `sort` in `?sort&tag[]`. */
 type SingleKeys<P extends string> = Exclude<QueryEntries<QueryPart<P>>, `${string}[]`>;
-/** Clés de query qui sont des listes : `tag` dans `?sort&tag[]`. */
+/** Query keys that are lists: `tag` in `?sort&tag[]`. */
 type ListKeys<P extends string> = QueryEntries<QueryPart<P>> extends infer K ? (K extends `${infer Name}[]` ? Name : never) : never;
 
-/** `'/counters/:id'` donne `{ id: string }`, `'/'` donne `{}`. La query déclarée n'en fait pas partie. */
+/** `'/counters/:id'` gives `{ id: string }`, `'/'` gives `{}`. The declared query is not part of it. */
 export type PathParams<P extends string> = string extends P ? Record<string, string> : { [K in ParamNames<P>]: string };
 
 /**
- * Query d'une chaîne : `'/counters?sort&tag[]'` donne `{ sort?: string; tag: string[] }`. Une clé
- * simple peut manquer ; une liste vaut `[]` si absente.
+ * Query of a string: `'/counters?sort&tag[]'` gives `{ sort?: string; tag: string[] }`. A single
+ * key may be missing; a list is `[]` if absent.
  */
 export type QueryParams<P extends string> = string extends P
   ? Record<string, string | string[]>
   : Simplify<{ [K in SingleKeys<P>]?: string } & { [K in ListKeys<P>]: string[] }>;
 
 /* ------------------------------------------------------------------------------------------ */
-/* Routes décrites : { path, params: params<T>({…}), query: query<T>({…}) }                     */
+/* Described routes: { path, params: params<T>({…}), query: query<T>({…}) }                     */
 /* ------------------------------------------------------------------------------------------ */
 
 declare const DESCRIBED: unique symbol;
 
-/** Une liste de valeurs permises : `{ oneOf: ['label', 'value'] }`. */
+/** A list of allowed values: `{ oneOf: ['label', 'value'] }`. */
 type OneOf<V> = { readonly oneOf: readonly V[] };
 
 /**
- * Comment se lit une valeur de type `V` dans l'URL : `String`, `Number`, `Boolean`, ou la liste
- * des valeurs permises (`{ oneOf: [...] }`) pour une union de littéraux.
+ * How a value of type `V` is read from the URL: `String`, `Number`, `Boolean`, or the list
+ * of allowed values (`{ oneOf: [...] }`) for a union of literals.
  */
 export type ValueSpec<V> = [V] extends [string]
   ? string extends V
@@ -63,21 +63,21 @@ export type ValueSpec<V> = [V] extends [string]
       ? BooleanConstructor
       : never;
 
-/** La même, avec une valeur par défaut : `{ type: Number, default: 1 }`, `{ oneOf: [...], default: 'label' }`. */
+/** The same, with a default value: `{ type: Number, default: 1 }`, `{ oneOf: [...], default: 'label' }`. */
 type WithDefault<V> = (ValueSpec<V> extends infer S ? (S extends OneOf<unknown> ? S : { readonly type: S }) : never) & {
   readonly default: V;
 };
 
 type IsOptional<T, K extends keyof T> = {} extends Pick<T, K> ? true : false;
 
-/** Description des paramètres d'un chemin : une valeur par paramètre, toujours présente. */
+/** Description of a path's parameters: one value per parameter, always present. */
 export type ParamsSpec<T> = { readonly [K in keyof T]-?: IsOptional<T, K> extends true ? never : ValueSpec<T[K]> };
 
 /**
- * Description d'une clé de query, selon son type :
- * - une liste (`string[]`) : `[String]`, `[Number]`, `[{ oneOf: [...] }]` ; vaut `[]` si absente ;
- * - une clé facultative (`search?: string`) : `String`, `Number`, `Boolean` ou `{ oneOf }` ;
- * - une clé obligatoire (`page: number`) : avec sa valeur par défaut, prise si elle est absente.
+ * Description of a query key, according to its type:
+ * - a list (`string[]`): `[String]`, `[Number]`, `[{ oneOf: [...] }]`; is `[]` if absent;
+ * - an optional key (`search?: string`): `String`, `Number`, `Boolean` or `{ oneOf }`;
+ * - a required key (`page: number`): with its default value, used if it is absent.
  */
 export type QueryFieldSpec<T, K extends keyof T> =
   NonNullable<T[K]> extends readonly (infer E)[]
@@ -88,14 +88,14 @@ export type QueryFieldSpec<T, K extends keyof T> =
 
 export type QuerySpec<T> = { readonly [K in keyof T]-?: QueryFieldSpec<T, K> };
 
-/** Les paramètres décrits d'une route, typés par `T`. */
+/** The described parameters of a route, typed by `T`. */
 export interface ParamsDescription<T> {
   readonly [DESCRIBED]?: T;
   readonly kind: 'params';
   readonly spec: object;
 }
 
-/** La query décrite d'une route, typée par `T`. */
+/** The described query of a route, typed by `T`. */
 export interface QueryDescription<T> {
   readonly [DESCRIBED]?: T;
   readonly kind: 'query';
@@ -103,7 +103,7 @@ export interface QueryDescription<T> {
 }
 
 /**
- * Les paramètres du chemin d'une route, typés par `T` et décrits pour la lecture de l'URL :
+ * The path parameters of a route, typed by `T` and described for reading the URL:
  *
  * ```ts
  * type CounterParams = { id: number };
@@ -115,7 +115,7 @@ export function params<T>(spec: ParamsSpec<T>): ParamsDescription<T> {
 }
 
 /**
- * La query d'une route, typée par `T` et décrite pour la lecture de l'URL :
+ * The query of a route, typed by `T` and described for reading the URL:
  *
  * ```ts
  * type CountersQuery = { sort: 'label' | 'value'; page: number; tag: string[]; search?: string };
@@ -134,45 +134,45 @@ export function query<T>(spec: QuerySpec<T>): QueryDescription<T> {
   return Object.freeze({ kind: 'query', spec: Object.freeze({ ...spec }) });
 }
 
-/** Une route : son chemin seul (`'/counters/:id?sort'`), ou son chemin et ses descriptions. */
+/** A route: its path alone (`'/counters/:id?sort'`), or its path and its descriptions. */
 export type RouteDeclaration =
   | string
   | { readonly path: string; readonly params?: ParamsDescription<any>; readonly query?: QueryDescription<any> };
 
-/** Les routes de l'app, par nom. */
+/** The app's routes, by name. */
 export type RouteTable = Record<string, RouteDeclaration>;
 
-/** Le chemin d'une route, sans query : `'/counters/:id'`. */
+/** The path of a route, without query: `'/counters/:id'`. */
 export type PathOf<D> = D extends string ? PathPart<D> : D extends { readonly path: infer P extends string } ? P : never;
 
-/** Les paramètres d'une route, typés : `{ id: number }`. */
+/** The parameters of a route, typed: `{ id: number }`. */
 export type ParamsOf<D> = D extends string
   ? PathParams<D>
   : D extends { readonly params: ParamsDescription<infer T> }
     ? T
     : PathParams<PathOf<D>>;
 
-/** La query d'une route, typée : `{ sort: 'label' | 'value'; tag: string[] }`. */
+/** The query of a route, typed: `{ sort: 'label' | 'value'; tag: string[] }`. */
 export type QueryOf<D> = D extends string ? QueryParams<D> : D extends { readonly query: QueryDescription<infer T> } ? T : {};
 
 /**
- * Refuse à la compilation une route décrite dont les paramètres ne sont pas ceux du chemin, ou
- * dont le chemin porte une query (elle se décrit par `query`).
+ * Rejects at compile time a described route whose parameters are not those of the path, or
+ * whose path carries a query (it is described with `query`).
  */
 export type CheckedRoutes<T extends RouteTable> = {
   [N in keyof T]: T[N] extends { readonly path: infer P extends string }
     ? P extends `${string}?${string}`
-      ? `[super] route "${N & string}" : la query se décrit par query<T>({…}), pas dans le chemin`
+      ? `[super] route "${N & string}": the query is described with query<T>({…}), not in the path`
       : T[N] extends { readonly params: ParamsDescription<infer X> }
         ? [Exclude<keyof X, ParamNames<P>> | Exclude<ParamNames<P>, keyof X>] extends [never]
           ? T[N]
-          : `[super] route "${N & string}" : params doit décrire exactement les paramètres du chemin (${ParamNames<P> & string})`
+          : `[super] route "${N & string}": params must describe exactly the path parameters (${ParamNames<P> & string})`
         : T[N]
     : T[N];
 };
 
 /* ------------------------------------------------------------------------------------------ */
-/* Construire une URL : href, navigate, redirect                                                */
+/* Building a URL: href, navigate, redirect                                                    */
 /* ------------------------------------------------------------------------------------------ */
 
 type QueryInputOf<D> = {
@@ -183,8 +183,8 @@ type ParamsPart<D> = [keyof ParamsOf<D>] extends [never] ? { params?: Record<str
 type QueryPartOf<D> = [keyof QueryOf<D>] extends [never] ? { query?: Record<string, never> } : { query?: QueryInputOf<D> };
 
 /**
- * Ce qu'on donne pour construire l'URL d'une route : ses paramètres (requis s'il y en a), et sa
- * query (facultative). Une route sans paramètre ni query refuse toute clé.
+ * What you give to build a route's URL: its parameters (required if there are any), and its
+ * query (optional). A route without parameters or query rejects any key.
  */
 export type RouteInput<D> = Simplify<ParamsPart<D> & QueryPartOf<D>>;
 
@@ -197,43 +197,43 @@ export type HrefArgs<T extends RouteTable, N extends keyof T> =
 
 declare const REDIRECT: unique symbol;
 
-/** Redirection déclarée à la place d'un écran : `redirect({ to: 'home' })`. */
+/** Redirect declared in place of a screen: `redirect({ to: 'home' })`. */
 export interface Redirect<Target extends { to: string } = { to: string; params?: object; query?: object }> {
   readonly [REDIRECT]: true;
   readonly target: Target;
 }
 
 /**
- * Pour chaque route, un écran sans props obligatoire (il lit la route par `this.router.current`),
- * ou une redirection vers une autre route.
+ * For each route, a screen without required props (it reads the route through `this.router.current`),
+ * or a redirect to another route.
  */
 export type ScreensFor<T extends RouteTable> = {
   [N in keyof T]: Screen<{}> | Redirect<NavigateTargetOf<T>>;
 };
 
-/** Écran affiché quand un écran plante sans être rattrapé : il reçoit l'erreur et le chemin. */
+/** Screen displayed when a screen crashes without being caught: it receives the error and the path. */
 export type ErrorScreen = Screen<{ error: Error; path: string }>;
 
 /* ------------------------------------------------------------------------------------------ */
-/* Lire la route active : this.router.current                                                   */
+/* Reading the active route: this.router.current                                               */
 /* ------------------------------------------------------------------------------------------ */
 
 /**
- * Une valeur de la route active, à appeler pour la lire : `current.params.id()`. Elle se passe
- * telle quelle à `this.selector(…)`. `isValid()` dit si l'URL contenait une valeur conforme à la
- * description ; après ce test, la valeur est du type décrit (`number` et non `number | undefined`).
+ * A value of the active route, to call to read it: `current.params.id()`. It is passed
+ * as is to `this.selector(…)`. `isValid()` tells whether the URL contained a value conforming to the
+ * description; after this test, the value has the described type (`number` and not `number | undefined`).
  */
 export interface RouteValue<V, Valid = V> {
   (): V;
   isValid(): this is RouteValue<Valid, Valid>;
 }
 
-/** Un paramètre de chemin `string` est toujours valide ; un autre type peut manquer (`/counters/abc`). */
+/** A `string` path parameter is always valid; another type may be missing (`/counters/abc`). */
 type ParamValue<V> = string extends V ? V : V | undefined;
 
 type KeysOver<U> = U extends unknown ? keyof U & string : never;
 
-/** Les paramètres de chemin des routes `R`, réunis : une clé absente d'une route y vaut `undefined`. */
+/** The path parameters of the routes `R`, merged: a key absent from a route is `undefined` there. */
 export type ParamValues<T extends RouteTable, R extends keyof T> = {
   readonly [K in KeysOver<{ [N in R]: ParamsOf<T[N]> }[R]>]: RouteValue<
     { [N in R]: K extends keyof ParamsOf<T[N]> ? ParamValue<ParamsOf<T[N]>[K]> : undefined }[R],
@@ -241,7 +241,7 @@ export type ParamValues<T extends RouteTable, R extends keyof T> = {
   >;
 };
 
-/** La query des routes `R`, réunie : une clé absente d'une route y vaut `undefined`. */
+/** The query of the routes `R`, merged: a key absent from a route is `undefined` there. */
 export type QueryValues<T extends RouteTable, R extends keyof T> = {
   readonly [K in KeysOver<{ [N in R]: QueryOf<T[N]> }[R]>]: RouteValue<
     { [N in R]: K extends keyof QueryOf<T[N]> ? QueryOf<T[N]>[K] : undefined }[R],
@@ -249,77 +249,77 @@ export type QueryValues<T extends RouteTable, R extends keyof T> = {
   >;
 };
 
-/** Une route précise, vue par `this.router.at('counter')` ou par son guard. */
+/** A specific route, seen through `this.router.at('counter')` or by its guard. */
 export interface RouteAt<T extends RouteTable, N extends keyof T> {
   readonly params: ParamValues<T, N>;
   readonly query: QueryValues<T, N>;
 }
 
 /**
- * La route active, lue par `this.router.current`. Dans un écran, `R` est sa route (lien généré
- * par le plugin Vite) ; ailleurs, toutes les routes de l'app.
+ * The active route, read through `this.router.current`. In a screen, `R` is its route (link generated
+ * by the Vite plugin); elsewhere, all the app's routes.
  */
 export interface CurrentRoute<T extends RouteTable, R extends keyof T> extends RouteAt<T, R> {
-  /** Nom de la route active, `null` si aucune ne correspond. */
+  /** Name of the active route, `null` if none matches. */
   name(): Selected<(R & string) | null>;
-  /** Chemin courant, tel que navigué (query et hash compris). */
+  /** Current path, as navigated (query and hash included). */
   path(): Selected<string>;
 }
 
 /* ------------------------------------------------------------------------------------------ */
-/* Contrat du router                                                                           */
+/* Router contract                                                                             */
 /* ------------------------------------------------------------------------------------------ */
 
 export type RouteState<T extends RouteTable = RouteTable> = {
-  /** Chemin courant, tel que navigué (query et hash compris). */
+  /** Current path, as navigated (query and hash included). */
   path: string;
-  /** Nom de la route active, `null` si aucune ne correspond. */
+  /** Name of the active route, `null` if none matches. */
   name: (keyof T & string) | null;
-  /** Paramètres du chemin, convertis ; `undefined` pour un paramètre invalide. */
+  /** Path parameters, converted; `undefined` for an invalid parameter. */
   params: Readonly<Record<string, unknown>>;
-  /** Query déclarée par la route active, convertie : défaut ou `undefined` si absente ou invalide, `[]` pour une liste. */
+  /** Query declared by the active route, converted: default or `undefined` if absent or invalid, `[]` for a list. */
   query: Readonly<Record<string, unknown>>;
-  /** Les clés dont l'URL portait une valeur invalide. */
+  /** The keys for which the URL carried an invalid value. */
   invalid: { readonly params: readonly string[]; readonly query: readonly string[] };
-  /** Écran à afficher par `RouterOutlet` (l'écran `'*'` si aucune route ne correspond). */
+  /** Screen to display by `RouterOutlet` (the `'*'` screen if no route matches). */
   screen: Screen<any> | null;
-  /** Écran `'!'`, affiché par `RouterOutlet` si l'écran plante sans être rattrapé. */
+  /** `'!'` screen, displayed by `RouterOutlet` if the screen crashes without being caught. */
   errorScreen: ErrorScreen | null;
 };
 
 export type RouterCommands<T extends RouteTable = RouteTable> = {
-  /** Navigation typée par nom de route : `{ to: 'counter', params: { id: 42 }, query: { tab: 'x' } }`. */
+  /** Navigation typed by route name: `{ to: 'counter', params: { id: 42 }, query: { tab: 'x' } }`. */
   navigate(target: NavigateTargetOf<T>): void;
-  /** Navigation par chemin brut (utilisée pour les liens `<a href>`). */
+  /** Navigation by raw path (used for `<a href>` links). */
   visit(path: string): void;
   back(): void;
 };
 
 export type RouterEvents = { navigated: { from: string; to: string } };
 
-/** Le handle du router créé par `createRouter` : à passer à `createApp({ router })` ou `mount(…, { router })`. */
+/** The router handle created by `createRouter`: pass it to `createApp({ router })` or `mount(…, { router })`. */
 export type RouterHandle<T extends RouteTable = RouteTable> = StoreHandle<RouteState<T>, RouterCommands<T>, RouterEvents>;
 
 type RouterTypes<T extends RouteTable> = { state: RouteState<T>; commands: RouterCommands<T>; events: RouterEvents };
 
 /**
- * Le contrat du router d'une app, typé par ses routes. Inscrit sous le nom `'router'` dans le
- * dictionnaire des contrats généré par le plugin Vite ; un composant le lit par `this.router`.
+ * The contract of an app's router, typed by its routes. Registered under the name `'router'` in the
+ * contract dictionary generated by the Vite plugin; a component reads it through `this.router`.
  */
 export interface AppRouterContract<T extends RouteTable = RouteTable> extends SuperContract<RouterTypes<T>> {
-  /** Fantôme : les routes de l'app. */
+  /** Phantom: the app's routes. */
   readonly __routes?: T;
 }
 
-/** Les routes d'un contrat de router. */
+/** The routes of a router contract. */
 export type PathsOfRouter<K> = K extends AppRouterContract<infer T> ? T : never;
 
-/** Le contrat du router d'une app, à partir de sa déclaration : `AppRouterContractOf<typeof Router>`. */
+/** The contract of an app's router, from its declaration: `AppRouterContractOf<typeof Router>`. */
 export type AppRouterContractOf<R> = R extends { readonly paths: infer T extends RouteTable } ? AppRouterContract<T> : never;
 
 const has = (record: Readonly<Record<string, unknown>>, key: string) => Object.hasOwn(record, key);
 
-/** Sous le capot : les sélecteurs du router, lus par `this.router.current` et par `RouterOutlet`. */
+/** Under the hood: the router's selectors, read by `this.router.current` and by `RouterOutlet`. */
 export class RouterSelectors extends SuperContract<RouterTypes<RouteTable>> {
   constructor() {
     super({ name: ROUTER_NAME });
@@ -350,41 +350,41 @@ export class RouterSelectors extends SuperContract<RouterTypes<RouteTable>> {
   }
 }
 
-/** Le nom sous lequel le router est fourni aux composants (`this.router`) et à l'outlet. */
+/** The name under which the router is provided to components (`this.router`) and to the outlet. */
 export const ROUTER_NAME = 'router';
 
 registerContract(ROUTER_NAME, () => RouterSelectors);
 
 /* ------------------------------------------------------------------------------------------ */
-/* Le lien écran → route, généré par le plugin Vite                                             */
+/* The screen → route link, generated by the Vite plugin                                       */
 /* ------------------------------------------------------------------------------------------ */
 
 /**
- * Le lien entre le tag d'un écran et sa route, rempli par le plugin Vite à partir de
- * `.screens(…)` : `'counter-screen': 'counter'`. Un écran y trouve le type de sa route.
+ * The link between a screen's tag and its route, filled by the Vite plugin from
+ * `.screens(…)`: `'counter-screen': 'counter'`. A screen finds its route's type there.
  */
-// biome-ignore lint/suspicious/noEmptyInterface: complétée par le fichier de types généré
+// biome-ignore lint/suspicious/noEmptyInterface: augmented by the generated types file
 export interface ScreenRoutes {}
 
-/** Les routes de l'app (`never` si elle n'a pas de router). */
+/** The app's routes (`never` if it has no router). */
 export type AppRouteNames = import('@super-ts/core').Contracts extends { router: infer K } ? keyof PathsOfRouter<K> & string : never;
 
-/** La route d'un écran par son tag ; toutes les routes pour un composant qui n'est pas un écran. */
+/** A screen's route by its tag; all routes for a component that is not a screen. */
 export type RouteOfTag<Tag extends string> = Tag extends keyof ScreenRoutes ? ScreenRoutes[Tag] & AppRouteNames : AppRouteNames;
 
 /* ------------------------------------------------------------------------------------------ */
-/* Sous le capot : les valeurs de route, à l'exécution                                          */
+/* Under the hood: route values, at runtime                                                    */
 /* ------------------------------------------------------------------------------------------ */
 
-/** Marque d'une valeur de route : `this.selector(…)` lui ajoute `isValid()`. */
+/** Brand of a route value: `this.selector(…)` adds `isValid()` to it. */
 export const ROUTE_VALUE = Symbol('super.route-value');
 
-/** Une valeur de route à l'exécution : une fonction qui lit, et `isValid`. */
+/** A route value at runtime: a function that reads, and `isValid`. */
 export type RuntimeRouteValue = (() => unknown) & { isValid(): boolean; readonly [ROUTE_VALUE]: true };
 
 /**
- * Les valeurs d'une route, par clé (`params.id`, `query.sort`), lues à l'appel. Une clé donne
- * toujours la même fonction : la déstructuration (`const { id } = current.params`) la garde.
+ * The values of a route, by key (`params.id`, `query.sort`), read on call. A key always gives
+ * the same function: destructuring (`const { id } = current.params`) keeps it.
  */
 export function routeValues(read: (key: string) => unknown, valid: (key: string) => boolean): Record<string, RuntimeRouteValue> {
   const values = new Map<string, RuntimeRouteValue>();

@@ -1,25 +1,25 @@
 /*
- * Le titre de la page (`document.title`), posé par les composants (`@title`, `this.page.title`).
+ * The page title (`document.title`), set by components (`@title`, `this.page.title`).
  *
- * Chaque composant monté qui pose un titre a une entrée dans une pile, dans l'ordre où ils ont été
- * montés : la dernière entrée qui a un texte l'emporte. Au démontage, l'entrée disparaît et le titre
- * précédent revient. Le router fixe le titre par défaut et le suffixe commun (`createRouter`).
+ * Each mounted component that sets a title has an entry in a stack, in the order they were
+ * mounted: the last entry that has a text wins. On unmount, the entry disappears and the previous
+ * title comes back. The router sets the default title and the common suffix (`createRouter`).
  */
 
-/** Ce qu'un composant pose sur la page. */
+/** What a component sets on the page. */
 export interface Page {
   /**
-   * Le titre de la page, tant que le composant est monté. Une chaîne est posée telle quelle ; une
-   * fonction est suivie : recalculée après chaque rendu du composant, elle lit les mêmes valeurs
-   * que `render` (`() => \`Compteur ${this.label.value}\``). En écriture seulement.
+   * The page title, as long as the component is mounted. A string is set as is; a
+   * function is tracked: recomputed after each render of the component, it reads the same values
+   * as `render` (`() => \`Counter ${this.label.value}\``). Write-only.
    *
-   * Posé dans un champ ou le constructeur (ce que fait `@title`), il est repris à chaque montage.
-   * Posé une fois monté (`mounted`, gestionnaire), il remplace le titre du composant jusqu'au
-   * démontage. Interdit pendant `render`.
+   * Set in a field or the constructor (what `@title` does), it is reapplied at each mount.
+   * Set once mounted (`mounted`, handler), it replaces the component's title until
+   * unmount. Forbidden during `render`.
    *
    * @example
-   * this.page.title = 'Boutique';
-   * this.page.title = () => `Compteur ${this.label.value}`;
+   * this.page.title = 'Shop';
+   * this.page.title = () => `Counter ${this.label.value}`;
    */
   get title(): never;
   set title(value: TitleValue);
@@ -27,28 +27,28 @@ export interface Page {
 
 export type TitleValue = string | (() => string);
 
-/** Une entrée de la pile : le texte courant du titre d'un composant (`null` : pas encore calculé). */
+/** A stack entry: the current text of a component's title (`null`: not computed yet). */
 export type TitleEntry = { text: string | null };
 
 export type TitleOptions = {
-  /** Le titre quand aucun composant n'en pose (défaut : le titre du document au premier titre posé). */
+  /** The title when no component sets one (default: the document title at the first title set). */
   default?: string;
-  /** Ajouté au titre posé par un composant : `' · Ma démo'`. */
+  /** Appended to the title set by a component: `' · My demo'`. */
   suffix?: string;
 };
 
 const stack: TitleEntry[] = [];
 let settings: { default: string | null; suffix: string } = { default: null, suffix: '' };
-/** Le titre du document avant le premier titre posé : rétabli quand la pile se vide, sans défaut. */
+/** The document title before the first title set: restored when the stack empties, without a default. */
 let original: string | null = null;
 
-/** Interne : réglages du router (`createRouter({ title })`). Sans réglage, ceux d'avant sont oubliés. */
+/** Internal: router settings (`createRouter({ title })`). Without settings, the previous ones are forgotten. */
 export function configureTitle(options: TitleOptions = {}): void {
   settings = { default: options.default ?? null, suffix: options.suffix ?? '' };
   apply();
 }
 
-/** Interne : une nouvelle entrée, au sommet de la pile. */
+/** Internal: a new entry, at the top of the stack. */
 export function pushTitle(): TitleEntry {
   if (original === null && typeof document !== 'undefined') original = document.title;
   const entry: TitleEntry = { text: null };
@@ -56,14 +56,14 @@ export function pushTitle(): TitleEntry {
   return entry;
 }
 
-/** Interne : change le texte d'une entrée. */
+/** Internal: changes an entry's text. */
 export function updateTitle(entry: TitleEntry, text: string): void {
   if (entry.text === text) return;
   entry.text = text;
   apply();
 }
 
-/** Interne : retire une entrée (démontage). */
+/** Internal: removes an entry (unmount). */
 export function removeTitle(entry: TitleEntry): void {
   const index = stack.indexOf(entry);
   if (index === -1) return;

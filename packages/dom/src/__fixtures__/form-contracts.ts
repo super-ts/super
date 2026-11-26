@@ -1,11 +1,11 @@
 /**
- * Contrats d'essai pour les tests de formulaires. Le registre est rempli à la main : dans une app,
- * c'est le plugin Vite qui s'en charge.
+ * Test contracts for the form tests. The registry is filled by hand: in an app,
+ * the Vite plugin takes care of it.
  */
 import { type Outcome, SuperContract } from '@super-ts/core';
 import { registerContract } from '@super-ts/core/internal';
 
-/** Inscription : une commande de soumission et une vérification d'adresse. */
+/** Sign-up: a submit command and an address check. */
 export class FormAccountContract extends SuperContract<{
   state: {};
   commands: {
@@ -18,7 +18,7 @@ export class FormAccountContract extends SuperContract<{
   }
 }
 
-/** Une sauvegarde dont le store peut planter sans raison déclarée. */
+/** A save whose store can crash without a declared reason. */
 export class FormCrashyContract extends SuperContract<{
   state: {};
   commands: { save(input: { name: string }): Outcome<void, 'network'> };
@@ -28,7 +28,7 @@ export class FormCrashyContract extends SuperContract<{
   }
 }
 
-/** Pour les tests de types : plusieurs raisons d'échec et une vérification. */
+/** For the type tests: several failure reasons and a check. */
 export class FormProfileContract extends SuperContract<{
   state: {};
   commands: {

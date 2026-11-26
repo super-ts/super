@@ -1,5 +1,5 @@
 /**
- * Plomberie de `@super-ts/dom` pour les autres paquets Super (le plugin Vite). Jamais importée par une
- * application : rien ici ne fait partie de l'API publique.
+ * Plumbing of `@super-ts/dom` for the other Super packages (the Vite plugin). Never imported by an
+ * application: nothing here is part of the public API.
  */
 export { hotReplace } from './element.ts';

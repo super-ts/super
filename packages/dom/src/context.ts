@@ -3,10 +3,10 @@ import { ERROR_REPORT, type ErrorDetail, type ErrorPhase } from './component.ts'
 import { ROUTER_NAME, type RouterHandle } from './router-contract.ts';
 import { routerAttachments } from './router-link.ts';
 
-/** Événement du context protocol : il remonte du composant jusqu'au fournisseur le plus proche. */
+/** Context protocol event: it bubbles up from the component to the nearest provider. */
 export const CONTEXT_REQUEST = 'super:context-request';
 
-/** Le store est demandé par le nom de son contrat. */
+/** The store is requested by its contract's name. */
 type ContextRequestDetail = { contract: string; provide: (store: AnyStore) => void };
 
 export function requestStore(from: HTMLElement, contract: string): any {
@@ -20,8 +20,8 @@ export function requestStore(from: HTMLElement, contract: string): any {
   );
   if (!found) {
     throw new Error(
-      `[super] <${from.localName}> : aucun store fourni pour le contrat "${contract}". ` +
-        'Ajoute-le à createApp({ stores }) ou à mount(..., { stores }).',
+      `[super] <${from.localName}>: no store provided for the contract "${contract}". ` +
+        'Add it to createApp({ stores }) or to mount(..., { stores }).',
     );
   }
   return found;
@@ -29,47 +29,47 @@ export function requestStore(from: HTMLElement, contract: string): any {
 
 export interface App {
   readonly root: HTMLElement;
-  /** Remplace le contenu de la racine par l'élément donné. */
+  /** Replaces the root's content with the given element. */
   mount<T extends Element>(element: T): T;
-  /** Retire le fournisseur et vide la racine. */
+  /** Removes the provider and empties the root. */
   dispose(): void;
 }
 
 export type AppOptions = {
   root: HTMLElement;
   stores?: AnyStore[];
-  /** Router créé par `createRouter` : fourni aux composants comme un store, et branché sur les liens. */
+  /** Router created by `createRouter`: provided to components like a store, and wired to links. */
   router?: RouterHandle<any>;
   /**
-   * Appelé pour toute erreur de construction, de rendu ou de `renderError` d'un composant rendu sous
-   * `root`, qu'elle ait été rattrapée ou non. Sans `onError`, l'erreur part dans la console.
+   * Called for any construction, render or `renderError` error of a component rendered under
+   * `root`, whether it was caught or not. Without `onError`, the error goes to the console.
    */
   onError?: (error: Error, info: ErrorInfo) => void;
 };
 
-/** Contexte d'une erreur de composant, reçu par `onError`. */
+/** Context of a component error, received by `onError`. */
 export type ErrorInfo = {
-  /** Tag du composant qui a planté. */
+  /** Tag of the component that crashed. */
   tag: string;
   phase: ErrorPhase;
-  /** Ce qui l'a rattrapée (un composant avec `renderError`, `super-router-outlet`), ou `null`. */
+  /** What caught it (a component with `renderError`, `super-router-outlet`), or `null`. */
   caughtBy: string | null;
 };
 
 /**
- * Fournit des stores (et le router) à tous les composants rendus sous `root`. Plusieurs apps
- * peuvent s'imbriquer : la plus proche du composant répond en premier.
+ * Provides stores (and the router) to all components rendered under `root`. Several apps
+ * can be nested: the one nearest to the component answers first.
  */
 export function createApp({ root, stores = [], router, onError }: AppOptions): App {
   const provided = stores;
   const byContract = new Map<string, AnyStore>();
   for (const store of provided) {
     if (byContract.has(store.contract.name)) {
-      throw new Error(`[super] deux stores fournis pour le contrat "${store.contract.name}"`);
+      throw new Error(`[super] two stores provided for the contract "${store.contract.name}"`);
     }
     byContract.set(store.contract.name, store);
   }
-  // Le router est fourni sous le nom 'router' : `this.router`, et `RouterOutlet`.
+  // The router is provided under the name 'router': `this.router`, and `RouterOutlet`.
   if (router) byContract.set(ROUTER_NAME, router);
 
   const controller = new AbortController();
@@ -94,7 +94,7 @@ export function createApp({ root, stores = [], router, onError }: AppOptions): A
       ERROR_REPORT,
       (event) => {
         const detail = (event as CustomEvent<ErrorDetail>).detail;
-        event.stopPropagation(); // l'application la plus proche signale, une seule fois
+        event.stopPropagation(); // the nearest application reports, only once
         detail.reported = true;
         onError(detail.error, { tag: detail.tag, phase: detail.phase, caughtBy: detail.caughtBy });
       },
@@ -102,7 +102,7 @@ export function createApp({ root, stores = [], router, onError }: AppOptions): A
     );
   }
 
-  // Le router lit désormais les stores de cette application, pour ses guards.
+  // The router now reads the stores of this application, for its guards.
   if (router) routerAttachments.get(router)?.((contract) => byContract.get(contract));
 
   return {
@@ -118,7 +118,7 @@ export function createApp({ root, stores = [], router, onError }: AppOptions): A
   };
 }
 
-/** Un clic sur `<a href="/…">` devient une navigation du router, sauf intention contraire. */
+/** A click on `<a href="/…">` becomes a router navigation, unless intended otherwise. */
 function interceptLink(event: MouseEvent, router: RouterHandle) {
   if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
     return;
@@ -127,7 +127,7 @@ function interceptLink(event: MouseEvent, router: RouterHandle) {
   if (!anchor || anchor.hasAttribute('download') || anchor.hasAttribute('data-native')) return;
   if (anchor.target && anchor.target !== '_self') return;
   const path = anchor.getAttribute('href');
-  if (!path || !path.startsWith('/') || path.startsWith('//')) return; // externe ou relatif : le navigateur gère
+  if (!path || !path.startsWith('/') || path.startsWith('//')) return; // external or relative: the browser handles it
   event.preventDefault();
   void router.send('visit', path);
 }

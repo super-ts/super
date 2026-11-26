@@ -22,12 +22,12 @@ class BasketStore extends SuperStore<BasketContract> implements Commands<BasketS
   }
 }
 
-// Ce qu'écrit le compilateur pour `@title = …` dans un `.super`.
+// What the compiler writes for `@title = …` in a `.super` file.
 class Shop extends SuperElement {
   static tag = 'pg-shop';
-  __superTitle = (this.page.title = 'Boutique');
+  __superTitle = (this.page.title = 'Shop');
   render() {
-    return html`<p>boutique</p>`;
+    return html`<p>shop</p>`;
   }
 }
 
@@ -35,7 +35,7 @@ class Basket extends SuperElement {
   static tag = 'pg-basket';
   basket = this.contract('basket');
   count = this.selector(this.basket.selectors.count);
-  __superTitle = (this.page.title = () => `Panier (${this.count.value})`);
+  __superTitle = (this.page.title = () => `Basket (${this.count.value})`);
   render() {
     return html`<button @click=${() => this.basket.send('add', { sku: 'mug' })}>+</button>`;
   }
@@ -45,34 +45,34 @@ class Dialog extends SuperElement {
   static tag = 'pg-dialog';
   __superTitle = (this.page.title = 'Confirmation');
   render() {
-    return html`<p>sûr ?</p>`;
+    return html`<p>sure?</p>`;
   }
 }
 
-describe('titre de la page', () => {
+describe('page title', () => {
   beforeEach(() => {
-    document.title = 'Départ';
+    document.title = 'Start';
     configureTitle();
   });
   afterEach(() => configureTitle());
 
-  test('un titre fixe est posé au montage et retiré au démontage', async () => {
+  test('a fixed title is set at mount and removed at unmount', async () => {
     const shop = await mount(Shop);
-    expect(document.title).toBe('Boutique');
+    expect(document.title).toBe('Shop');
     shop.unmount();
     await flush();
-    expect(document.title).toBe('Départ');
+    expect(document.title).toBe('Start');
   });
 
-  test('un titre en fonction suit les valeurs lues, comme render', async () => {
+  test('a function title follows the values read, like render', async () => {
     const { container } = await mount(Basket, { stores: [BasketStore.create()] });
-    expect(document.title).toBe('Panier (0)');
+    expect(document.title).toBe('Basket (0)');
     container.querySelector('button')!.click();
     await flush();
-    expect(document.title).toBe('Panier (1)');
+    expect(document.title).toBe('Basket (1)');
   });
 
-  test('pile : le dernier monté l’emporte, celui du dessous suit en coulisse et revient', async () => {
+  test('stack: the last mounted wins, the one below keeps up behind the scenes and comes back', async () => {
     const basket = BasketStore.create();
     await mount(Basket, { stores: [basket] });
     const dialog = await mount(Dialog);
@@ -84,46 +84,46 @@ describe('titre de la page', () => {
 
     dialog.unmount();
     await flush();
-    expect(document.title).toBe('Panier (1)');
+    expect(document.title).toBe('Basket (1)');
   });
 
-  test('posé une fois monté, il remplace le titre du composant jusqu’au démontage', async () => {
+  test('set once mounted, it replaces the component title until unmount', async () => {
     class Editor extends SuperElement {
       static tag = 'pg-editor';
-      __superTitle = (this.page.title = 'Compteur');
+      __superTitle = (this.page.title = 'Counter');
       render() {
-        return html`<button @click=${() => (this.page.title = 'Modification')}>éditer</button>`;
+        return html`<button @click=${() => (this.page.title = 'Editing')}>edit</button>`;
       }
     }
     const editor = await mount(Editor);
     editor.container.querySelector('button')!.click();
-    expect(document.title).toBe('Modification');
+    expect(document.title).toBe('Editing');
 
     editor.unmount();
     await flush();
     const again = await mount(Editor);
-    expect(document.title).toBe('Compteur'); // au remontage, le titre déclaré revient
+    expect(document.title).toBe('Counter'); // on remount, the declared title comes back
     again.unmount();
   });
 
-  test('un composant sans titre déclaré peut en poser un dans mounted', async () => {
+  test('a component without a declared title can set one in mounted', async () => {
     class Late extends SuperElement {
       static tag = 'pg-late';
       protected override mounted() {
-        this.page.title = 'Posé au montage';
+        this.page.title = 'Set at mount';
       }
       render() {
         return html``;
       }
     }
     const late = await mount(Late);
-    expect(document.title).toBe('Posé au montage');
+    expect(document.title).toBe('Set at mount');
     late.unmount();
     await flush();
-    expect(document.title).toBe('Départ');
+    expect(document.title).toBe('Start');
   });
 
-  test('ne se pose pas pendant render, et ne se lit pas', async () => {
+  test('cannot be set during render, and cannot be read', async () => {
     class InRender extends SuperElement {
       static tag = 'pg-in-render';
       render() {
@@ -131,7 +131,7 @@ describe('titre de la page', () => {
         return html``;
       }
     }
-    await expect(mount(InRender)).rejects.toThrow('ne se pose pas pendant render');
+    await expect(mount(InRender)).rejects.toThrow('cannot be set during render');
 
     class Reader extends SuperElement {
       static tag = 'pg-reader';
@@ -141,17 +141,17 @@ describe('titre de la page', () => {
       }
     }
     const reader = await mount(Reader);
-    expect(() => reader.element.read()).toThrow('se pose, il ne se lit pas');
+    expect(() => reader.element.read()).toThrow('is set, it cannot be read');
   });
 
-  test('le router fixe le titre par défaut et le suffixe', async () => {
+  test('the router sets the default title and the suffix', async () => {
     const Router = defineRouter({ home: '/' }).screens(() => ({ home: Shop }));
-    createRouter(Router, { mode: 'memory', title: { default: 'Ma démo', suffix: ' · Ma démo' } });
-    expect(document.title).toBe('Ma démo');
+    createRouter(Router, { mode: 'memory', title: { default: 'My demo', suffix: ' · My demo' } });
+    expect(document.title).toBe('My demo');
     const shop = await mount(Shop);
-    expect(document.title).toBe('Boutique · Ma démo');
+    expect(document.title).toBe('Shop · My demo');
     shop.unmount();
     await flush();
-    expect(document.title).toBe('Ma démo');
+    expect(document.title).toBe('My demo');
   });
 });

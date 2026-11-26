@@ -22,7 +22,7 @@ class BasketStore extends SuperStore<BasketContract> implements Commands<BasketS
 }
 
 describe('SuperElement', () => {
-  test('lit un store par son contrat, et se re-rend quand la valeur lue change', async () => {
+  test('reads a store by its contract, and re-renders when the value read changes', async () => {
     const renders = vi.fn();
     class Counter extends SuperElement {
       static tag = 'el-counter';
@@ -46,7 +46,7 @@ describe('SuperElement', () => {
     expect(renders).toHaveBeenCalledTimes(2);
   });
 
-  test('ne se re-rend pas si la valeur lue par selector ne change pas', async () => {
+  test('does not re-render if the value read by selector does not change', async () => {
     const renders = vi.fn();
     class MugOnly extends SuperElement {
       static tag = 'el-mug-only';
@@ -69,21 +69,21 @@ describe('SuperElement', () => {
     expect(renders).toHaveBeenCalledTimes(2);
   });
 
-  test('selector sur une liste : re-rend si son contenu change, pas pour une copie identique', async () => {
+  test('selector on a list: re-renders if its content changes, not for an identical copy', async () => {
     const renders = vi.fn();
     class Lines extends SuperElement {
       static tag = 'el-lines';
       basket = this.contract('basket');
-      lines = this.selector(this.basket.selectors.entries); // un tableau neuf à chaque lecture
+      lines = this.selector(this.basket.selectors.entries); // a new array on every read
       empty = this.selector(this.basket.selectors.isEmpty);
       render() {
         renders();
-        return html`<p>${this.empty.value ? 'vide' : this.lines.value.map(([sku, n]) => `${sku}=${n}`).join()}</p>`;
+        return html`<p>${this.empty.value ? 'empty' : this.lines.value.map(([sku, n]) => `${sku}=${n}`).join()}</p>`;
       }
     }
     const basket = BasketStore.create();
     const { container } = await mount(Lines, { stores: [basket] });
-    expect(container.textContent).toContain('vide');
+    expect(container.textContent).toContain('empty');
 
     await basket.send('add', { sku: 'mug' });
     await flush();
@@ -95,17 +95,17 @@ describe('SuperElement', () => {
     expect(container.textContent).toContain('mug=2');
     expect(renders).toHaveBeenCalledTimes(3);
 
-    await basket.send('save', { id: 'x' }); // l'état ne change pas : nouveau tableau, même contenu
+    await basket.send('save', { id: 'x' }); // the state does not change: new array, same content
     await flush();
     expect(renders).toHaveBeenCalledTimes(3);
 
     await basket.send('clear');
     await flush();
-    expect(container.textContent).toContain('vide');
+    expect(container.textContent).toContain('empty');
     expect(renders).toHaveBeenCalledTimes(4);
   });
 
-  test('un selector à paramètre suit les props : le sku change, la valeur aussi', async () => {
+  test('a selector with a parameter follows the props: the sku changes, so does the value', async () => {
     class Badge extends SuperElement<{ props: { sku: string } }> {
       static tag = 'el-badge';
       basket = this.contract('basket');
@@ -122,14 +122,14 @@ describe('SuperElement', () => {
     await mounted.setProps({ sku: 'sticker' });
     expect(mounted.container.textContent).toContain('sticker=0');
 
-    // Après le changement de prop, c'est le nouveau sku qui est suivi.
+    // After the prop change, it is the new sku that is tracked.
     await basket.send('add', { sku: 'sticker' });
     await flush();
     expect(mounted.container.textContent).toContain('sticker=1');
   });
 
-  test('un selector doit renvoyer la valeur d’un sélecteur telle quelle, null compris', async () => {
-    // null ne porte pas de marque de type : c'est l'exécution qui le refuse.
+  test("a selector must return a selector's value as is, null included", async () => {
+    // null carries no type brand: it is the runtime that rejects it.
     class Hidden extends SuperElement<{ props: { show: boolean } }> {
       static tag = 'el-hidden';
       basket = this.contract('basket');
@@ -140,23 +140,23 @@ describe('SuperElement', () => {
     }
     const errors: string[] = [];
     await mount(Hidden, { stores: [BasketStore.create()], props: { show: false }, onError: (error) => errors.push(error.message) });
-    expect(errors[0]).toContain('selector() doit renvoyer la valeur d’un sélecteur');
+    expect(errors[0]).toContain("selector() must return a selector's value");
   });
 
-  test('un sélecteur qui renvoie null est accepté', async () => {
+  test('a selector that returns null is accepted', async () => {
     class Saved extends SuperElement {
       static tag = 'el-saved';
       basket = this.contract('basket');
       saved = this.selector(this.basket.selectors.lastSaved);
       render() {
-        return html`<p>${this.saved.value ?? 'rien'}</p>`;
+        return html`<p>${this.saved.value ?? 'nothing'}</p>`;
       }
     }
     const { container } = await mount(Saved, { stores: [BasketStore.create()] });
-    expect(container.textContent).toContain('rien');
+    expect(container.textContent).toContain('nothing');
   });
 
-  test('un sélecteur lu directement dans render abonne aussi le composant', async () => {
+  test('a selector read directly in render also subscribes the component', async () => {
     class Direct extends SuperElement {
       static tag = 'el-direct';
       basket = this.contract('basket');
@@ -171,7 +171,7 @@ describe('SuperElement', () => {
     expect(container.textContent).toContain('1');
   });
 
-  test('lu directement dans render, un sélecteur ne re-rend que si sa valeur change', async () => {
+  test('read directly in render, a selector only re-renders if its value changes', async () => {
     const renders = vi.fn();
     class Direct extends SuperElement {
       static tag = 'el-direct-fine';
@@ -185,7 +185,7 @@ describe('SuperElement', () => {
     const { container } = await mount(Direct, { stores: [basket] });
     expect(renders).toHaveBeenCalledTimes(1);
 
-    await basket.send('add', { sku: 'pen' }); // autre ligne : la valeur lue ne change pas
+    await basket.send('add', { sku: 'pen' }); // another line: the value read does not change
     await flush();
     expect(renders).toHaveBeenCalledTimes(1);
 
@@ -195,7 +195,7 @@ describe('SuperElement', () => {
     expect(container.textContent).toBe('1');
   });
 
-  test('lu directement, un tableau neuf mais égal en contenu ne re-rend pas', async () => {
+  test('read directly, a new array with equal content does not re-render', async () => {
     const renders = vi.fn();
     class Lines extends SuperElement {
       static tag = 'el-direct-lines';
@@ -208,7 +208,7 @@ describe('SuperElement', () => {
     const basket = BasketStore.create();
     await mount(Lines, { stores: [basket] });
 
-    // `clear` pose un nouvel état ; `entries()` rend un tableau neuf, mais toujours vide.
+    // `clear` sets a new state; `entries()` returns a new array, but still empty.
     await basket.send('clear');
     await flush();
     expect(renders).toHaveBeenCalledTimes(1);
@@ -218,7 +218,7 @@ describe('SuperElement', () => {
     expect(renders).toHaveBeenCalledTimes(2);
   });
 
-  test('on, déclaré dans le constructeur, écoute tant que le composant est monté', async () => {
+  test('on, declared in the constructor, listens as long as the component is mounted', async () => {
     const heard = vi.fn();
     class Listener extends SuperElement {
       static tag = 'el-listener';
@@ -242,12 +242,12 @@ describe('SuperElement', () => {
     expect(heard).toHaveBeenCalledTimes(1);
   });
 
-  test('état local, props, et enfant monté par create dans le template', async () => {
+  test('local state, props, and child mounted by create in the template', async () => {
     class Dialog extends SuperElement<{ props: { question: string }; emits: { answered: { confirmed: boolean } } }> {
       static tag = 'el-dialog';
       render() {
         return html`<p>${this.props.question}</p>
-          <button @click=${() => this.emit('answered', { confirmed: true })}>Oui</button>`;
+          <button @click=${() => this.emit('answered', { confirmed: true })}>Yes</button>`;
       }
     }
     class Screen extends SuperElement {
@@ -256,20 +256,20 @@ describe('SuperElement', () => {
       onAnswered = ({ confirmed }: { confirmed: boolean }) => this.local.set({ open: false, answer: confirmed });
       render() {
         const { open, answer } = this.local.get();
-        return html`${open ? Dialog.create({ question: 'Sûr ?' }, { on: { answered: this.onAnswered } }) : null}
+        return html`${open ? Dialog.create({ question: 'Sure?' }, { on: { answered: this.onAnswered } }) : null}
           <output>${String(answer)}</output>`;
       }
     }
 
     const { container } = await mount(Screen);
-    expect(container.textContent).toContain('Sûr ?');
+    expect(container.textContent).toContain('Sure?');
     container.querySelector('button')!.click();
     await flush();
     expect(container.querySelector('el-dialog')).toBeNull();
     expect(container.querySelector('output')!.textContent).toBe('true');
   });
 
-  test('un enfant garde son instance d’un rendu à l’autre du parent', async () => {
+  test('a child keeps its instance from one parent render to the next', async () => {
     class Child extends SuperElement<{ props: { label: string } }> {
       static tag = 'el-child';
       local = this.state({ clicks: 0 });
@@ -298,7 +298,7 @@ describe('SuperElement', () => {
     expect(container.querySelectorAll('el-child')).toHaveLength(3);
   });
 
-  test('this.form : prêt dès la construction, branché sur le store au montage', async () => {
+  test('this.form: ready from construction, wired to the store at mount', async () => {
     let release!: () => void;
     class SlowBasket extends SuperStore<BasketContract> implements Commands<SlowBasket> {
       constructor() {
@@ -317,15 +317,15 @@ describe('SuperElement', () => {
       basket = this.contract('basket');
       save = this.form({
         initial: { id: '' },
-        rules: { id: (v) => v !== '' || 'Identifiant requis' },
+        rules: { id: (v) => v !== '' || 'Identifier required' },
         submit: { to: this.basket, command: 'save', toInput: ({ id }) => ({ id }) },
-        failures: { fields: { offline: { id: 'Hors ligne' } }, form: { empty: 'Panier vide' } },
+        failures: { fields: { offline: { id: 'Offline' } }, form: { empty: 'Empty basket' } },
       });
       render() {
         return html`<form ${this.save.bind()}>
           <input ${this.save.field('id')} />
           <p class="error">${this.save.error('id')}</p>
-          <button>${this.save.submitting() ? 'En cours' : 'Enregistrer'}</button>
+          <button>${this.save.submitting() ? 'Pending' : 'Save'}</button>
         </form>`;
       }
     }
@@ -335,15 +335,15 @@ describe('SuperElement', () => {
     input.dispatchEvent(new Event('input', { bubbles: true }));
     container.querySelector('button')!.click();
     await flush();
-    expect(container.querySelector('button')!.textContent).toBe('En cours');
+    expect(container.querySelector('button')!.textContent).toBe('Pending');
 
     release();
     await flush();
-    expect(container.querySelector('button')!.textContent).toBe('Enregistrer');
-    expect(container.querySelector('.error')!.textContent).toBe('Hors ligne');
+    expect(container.querySelector('button')!.textContent).toBe('Save');
+    expect(container.querySelector('.error')!.textContent).toBe('Offline');
   });
 
-  test('les props sont lisibles dès les champs et le constructeur', async () => {
+  test('props are readable from the fields and the constructor', async () => {
     const seen: string[] = [];
     class Editor extends SuperElement<{ props: { text: string } }> {
       static tag = 'el-editor';
@@ -359,17 +359,17 @@ describe('SuperElement', () => {
     class Host extends SuperElement {
       static tag = 'el-editor-host';
       render() {
-        return html`${Editor.create({ text: 'enfant' })}`;
+        return html`${Editor.create({ text: 'child' })}`;
       }
     }
-    const { container } = await mount(Editor, { props: { text: 'bonjour' } });
-    expect(container.textContent).toContain('bonjour');
+    const { container } = await mount(Editor, { props: { text: 'hello' } });
+    expect(container.textContent).toContain('hello');
     const hosted = await mount(Host);
-    expect(hosted.container.textContent).toContain('enfant');
-    expect(seen).toEqual(['bonjour', 'enfant']);
+    expect(hosted.container.textContent).toContain('child');
+    expect(seen).toEqual(['hello', 'child']);
   });
 
-  test('un store introuvable au montage est rattrapé par le renderError du composant lui-même', async () => {
+  test('a store not found at mount is caught by the renderError of the component itself', async () => {
     class NeedsBasket extends SuperElement {
       static tag = 'el-needs-basket';
       basket = this.contract('basket');
@@ -378,16 +378,16 @@ describe('SuperElement', () => {
         return html`<p>${this.count.value}</p>`;
       }
       override renderError(error: Error) {
-        return html`<p role="alert">indisponible (${error.message.includes('aucun store') ? 'store absent' : 'autre'})</p>`;
+        return html`<p role="alert">unavailable (${error.message.includes('no store') ? 'store missing' : 'other'})</p>`;
       }
     }
     const reports: unknown[] = [];
     const { container } = await mount(NeedsBasket, { onError: (error, info) => reports.push(info) });
-    expect(container.textContent).toContain('indisponible (store absent)');
+    expect(container.textContent).toContain('unavailable (store missing)');
     expect(reports).toEqual([{ tag: 'el-needs-basket', phase: 'setup', caughtBy: 'el-needs-basket' }]);
   });
 
-  test('mounted, unmounted et ref', async () => {
+  test('mounted, unmounted and ref', async () => {
     const events: string[] = [];
     class Focus extends SuperElement {
       static tag = 'el-focus';
@@ -408,11 +408,11 @@ describe('SuperElement', () => {
     expect(events).toEqual(['mounted:input', 'unmounted']);
   });
 
-  test('renderError remplace le rendu qui plante', async () => {
+  test('renderError replaces the render that crashes', async () => {
     class Broken extends SuperElement {
       static tag = 'el-broken';
       render(): unknown {
-        throw new Error('boum');
+        throw new Error('boom');
       }
       override renderError(error: Error) {
         return html`<p role="alert">${error.message}</p>`;
@@ -420,16 +420,16 @@ describe('SuperElement', () => {
     }
     const errors: string[] = [];
     const { container } = await mount(Broken, { onError: (error) => errors.push(error.message) });
-    expect(container.textContent).toContain('boum');
-    expect(errors).toEqual(['boum']);
+    expect(container.textContent).toContain('boom');
+    expect(errors).toEqual(['boom']);
   });
 
-  test('un enfant qui plante dans son constructeur est rattrapé par le renderError du parent, à son nom', async () => {
+  test("a child that crashes in its constructor is caught by the parent's renderError, under its own name", async () => {
     class BrokenChild extends SuperElement {
       static tag = 'el-broken-child';
       constructor() {
         super();
-        throw new Error('constructeur cassé');
+        throw new Error('broken constructor');
       }
       render() {
         return html``;
@@ -438,20 +438,20 @@ describe('SuperElement', () => {
     class Panel extends SuperElement {
       static tag = 'el-panel';
       render() {
-        return html`<p>panneau</p>${BrokenChild.create()}`;
+        return html`<p>panel</p>${BrokenChild.create()}`;
       }
       override renderError(error: Error) {
-        return html`<p role="alert">rattrapé : ${error.message}</p>`;
+        return html`<p role="alert">caught: ${error.message}</p>`;
       }
     }
     const reports: unknown[] = [];
     const { container } = await mount(Panel, { onError: (error, info) => reports.push({ message: error.message, ...info }) });
     await flush();
-    expect(container.textContent).toContain('rattrapé : constructeur cassé');
-    expect(reports).toEqual([{ message: 'constructeur cassé', tag: 'el-broken-child', phase: 'setup', caughtBy: 'el-panel' }]);
+    expect(container.textContent).toContain('caught: broken constructor');
+    expect(reports).toEqual([{ message: 'broken constructor', tag: 'el-broken-child', phase: 'setup', caughtBy: 'el-panel' }]);
   });
 
-  test('render ne peut ni lire un contrat ni créer d’état', async () => {
+  test('render can neither read a contract nor create state', async () => {
     class Sneaky extends SuperElement {
       static tag = 'el-sneaky';
       render() {
@@ -461,10 +461,10 @@ describe('SuperElement', () => {
     }
     const errors: string[] = [];
     await mount(Sneaky, { onError: (error) => errors.push(error.message) });
-    expect(errors[0]).toContain('pas pendant render');
+    expect(errors[0]).toContain('not during render');
   });
 
-  test('static tag est obligatoire, et les callbacks natifs ne se surchargent pas', () => {
+  test('static tag is required, and native callbacks cannot be overridden', () => {
     class NoTag extends SuperElement {
       render() {
         return html``;
