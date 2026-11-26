@@ -1,22 +1,22 @@
 import { posix } from 'node:path';
 
 /**
- * Règles d'architecture imposées par Super dans le `src` d'une app :
- * - un contrat ou un store (`SuperContract`, `SuperStore`) ne se définit que sous `@core/` ;
- * - un composant (`SuperElement`) ne se définit que sous `@components/` ;
- * - un composant n'importe de `@core/` que des types : il parle aux stores par leur contrat (`@contract cart;` dans un `.super`) ;
- * - `@core/` ne dépend pas du DOM : il n'importe rien de `@super-ts/dom` (hors types).
- * Le préfixe `@` marque les dossiers qui appartiennent à Super. Tout le reste du `src`
- * (ports, adapters, routes, bootstrap…) est user-land et libre.
+ * Architecture rules Super enforces in an app's `src`:
+ * - a contract or a store (`SuperContract`, `SuperStore`) can only be defined under `@core/`;
+ * - a component (`SuperElement`) can only be defined under `@components/`;
+ * - a component imports only types from `@core/`: it talks to stores through their contract (`@contract cart;` in a `.super`);
+ * - `@core/` does not depend on the DOM: it imports nothing from `@super-ts/dom` (except types).
+ * The `@` prefix marks the folders that belong to Super. Everything else in `src`
+ * (ports, adapters, routes, bootstrap…) is user-land and free.
  */
 export const RULES = [
-  { from: '@super-ts/core', names: ['SuperContract', 'SuperStore'], dir: '@core', what: 'Les contrats et les stores' },
-  { from: '@super-ts/dom', names: ['SuperElement'], dir: '@components', what: 'Les composants' },
+  { from: '@super-ts/core', names: ['SuperContract', 'SuperStore'], dir: '@core', what: 'Contracts and stores' },
+  { from: '@super-ts/dom', names: ['SuperElement'], dir: '@components', what: 'Components' },
 ] as const;
 
 const IMPORT = /import\s+(type\s+)?\{([^}]*)\}\s*from\s*['"](@super-ts\/[\w-]+)['"]/g;
 
-/** Noms importés (hors `import type`) depuis un module donné. */
+/** Names imported (excluding `import type`) from a given module. */
 function importedNames(code: string, from: string): string[] {
   const names: string[] = [];
   for (const [, typeOnly, specifiers, source] of code.matchAll(IMPORT)) {
@@ -31,54 +31,54 @@ function importedNames(code: string, from: string): string[] {
 }
 
 /**
- * Retourne le message d'erreur si le module viole une règle, `null` sinon.
- * `relativePath` est relatif au `src` de l'app, avec des `/`.
+ * Returns the error message if the module breaks a rule, `null` otherwise.
+ * `relativePath` is relative to the app's `src`, with `/` separators.
  */
 export function checkModule(relativePath: string, code: string): string | null {
   for (const rule of RULES) {
     const used = importedNames(code, rule.from).filter((name) => (rule.names as readonly string[]).includes(name));
     if (used.length === 0 || relativePath.startsWith(`${rule.dir}/`)) continue;
     return (
-      `[super] src/${relativePath} importe ${used.join(', ')} depuis ${rule.from}. ` +
-      `${rule.what} ne se définissent que sous src/${rule.dir}/ : ce module n'est pas chargé.`
+      `[super] src/${relativePath} imports ${used.join(', ')} from ${rule.from}. ` +
+      `${rule.what} can only be defined under src/${rule.dir}/: this module is not loaded.`
     );
   }
   return null;
 }
 
-/** Un import de `@super-ts/dom` qui n'est ni `import type`, ni un import nommé : défaut ou `* as`. */
+/** An import from `@super-ts/dom` that is neither `import type` nor a named import: default or `* as`. */
 const DOM_OTHER_IMPORT = /import\s+(?!type\s)(?![^'";]*\{)([^'";]+?)\s+from\s*['"]@super-ts\/dom['"]/g;
 
 /**
- * Le cœur de l'app (contrats et stores) ne dépend pas du DOM : un module de `@core/` n'importe
- * rien de `@super-ts/dom`, sauf des types. Retourne le message d'erreur, ou `null`.
+ * The app's core (contracts and stores) does not depend on the DOM: a module in `@core/` imports
+ * nothing from `@super-ts/dom`, except types. Returns the error message, or `null`.
  */
 export function checkCoreImports(relativePath: string, code: string): string | null {
   if (!relativePath.startsWith('@core/')) return null;
   const used = [...importedNames(code, '@super-ts/dom'), ...[...code.matchAll(DOM_OTHER_IMPORT)].map((m) => m[1]!.trim())];
   if (used.length === 0) return null;
   return (
-    `[super] src/${relativePath} importe ${used.join(', ')} depuis @super-ts/dom. ` +
-    "Les contrats et les stores ne dépendent pas du DOM : ce module n'est pas chargé."
+    `[super] src/${relativePath} imports ${used.join(', ')} from @super-ts/dom. ` +
+    'Contracts and stores do not depend on the DOM: this module is not loaded.'
   );
 }
 
-/** Imports vers le `src` : relatifs (`../@core/x`) ou par alias (`@core/x`, `@components/x`). */
+/** Imports into `src`: relative (`../@core/x`) or by alias (`@core/x`, `@components/x`). */
 const SRC_IMPORT = /import\s+(type\s+)?([^'";]+?)\s+from\s*['"]((?:\.{1,2}|@core|@components)\/[^'"]+)['"]/g;
 
-/** Les dossiers Super s'importent aussi par alias, depuis n'importe où : `@core/cart/contract`. */
+/** Super folders can also be imported by alias, from anywhere: `@core/cart/contract`. */
 export const ALIASES = ['@core', '@components'] as const;
 
 /**
- * Un composant ne connaît un store que par son contrat, demandé par son nom (`@contract cart;`, ou `this.contract('cart')` dans un `.ts`) :
- * de `@core/`, il n'importe que des types. Retourne le message d'erreur, ou `null`.
+ * A component only knows a store through its contract, requested by name (`@contract cart;`, or `this.contract('cart')` in a `.ts`):
+ * from `@core/`, it imports only types. Returns the error message, or `null`.
  */
 export function checkComponentImports(relativePath: string, code: string): string | null {
   if (!relativePath.startsWith('@components/')) return null;
 
   for (const [, typeOnly, clause, specifier] of code.matchAll(SRC_IMPORT)) {
     if (typeOnly) continue;
-    const target = specifier!.startsWith('.') ? posix.normalize(posix.join(posix.dirname(relativePath), specifier!)) : specifier!; // un alias désigne déjà un chemin depuis src
+    const target = specifier!.startsWith('.') ? posix.normalize(posix.join(posix.dirname(relativePath), specifier!)) : specifier!; // an alias already points to a path from src
     if (!target.startsWith('@core/')) continue;
 
     const named = /\{([^}]*)\}/.exec(clause!);
@@ -94,13 +94,13 @@ export function checkComponentImports(relativePath: string, code: string): strin
     const used = outside ? [outside, ...values] : values;
     if (used.length === 0) continue;
     return (
-      `[super] src/${relativePath} importe ${used.join(', ')} depuis ${specifier}. ` +
-      "Un composant n'importe de src/@core/ que des types : il parle aux stores par leur contrat (@contract cart;). " +
-      "Ce module n'est pas chargé."
+      `[super] src/${relativePath} imports ${used.join(', ')} from ${specifier}. ` +
+      'A component imports only types from src/@core/: it talks to stores through their contract (@contract cart;). ' +
+      'This module is not loaded.'
     );
   }
   return null;
 }
 
-/** Les tests ne sont pas chargés par l'app : ils peuvent définir des doublures où ils veulent. */
+/** Tests are not loaded by the app: they can define test doubles wherever they like. */
 export const isChecked = (relativePath: string) => /\.(m?[jt]s)$/.test(relativePath) && !/\.test(-d)?\.m?[jt]s$/.test(relativePath);

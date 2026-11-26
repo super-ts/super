@@ -1,13 +1,13 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 
-/** Module virtuel qui inscrit les contrats de l'app dans le registre de Super. */
+/** Virtual module that registers the app's contracts in Super's registry. */
 export const CONTRACTS_MODULE = 'virtual:super/contracts';
-/** Fichier de types généré : le dictionnaire nom → classe de contrat, pour le compilateur. */
+/** Generated types file: the name → contract class dictionary, for the compiler. */
 export const CONTRACTS_DECLARATION = '@core/contracts.d.ts';
 
 export type ContractEntry = {
-  /** Chemin relatif au `src`, avec des `/` : `@core/cart.contract.ts`. */
+  /** Path relative to `src`, with `/` separators: `@core/cart.contract.ts`. */
   file: string;
   className: string;
   name: string;
@@ -16,23 +16,23 @@ export type ContractEntry = {
 const CLASS = /export\s+class\s+(\w+)\s+extends\s+SuperContract\b/g;
 const NAME = /super\(\s*\{\s*name:\s*['"]([^'"]+)['"]/;
 
-/** Les contrats déclarés dans un module : `export class X extends SuperContract`, nommés par `super({ name })`. */
+/** The contracts declared in a module: `export class X extends SuperContract`, named by `super({ name })`. */
 export function contractsIn(file: string, code: string): ContractEntry[] {
   const matches = [...code.matchAll(CLASS)];
   return matches.map((match, i) => {
     const body = code.slice(match.index, matches[i + 1]?.index ?? code.length);
     const name = NAME.exec(body)?.[1];
     if (!name) {
-      throw new Error(`[super] src/${file} : ${match[1]} doit se nommer dans son constructeur, par super({ name: '…' })`);
+      throw new Error(`[super] src/${file}: ${match[1]} must name itself in its constructor, with super({ name: '…' })`);
     }
     return { file, className: match[1]!, name };
   });
 }
 
-/** Un fichier de contrat : `cart/contract.ts` (un dossier par contrat), ou `cart.contract.ts`. */
+/** A contract file: `cart/contract.ts` (one folder per contract), or `cart.contract.ts`. */
 export const isContractFile = (path: string) => /(^|[\\/])contract\.ts$|\.contract\.ts$/.test(path);
 
-/** Tous les contrats de `src/@core/`, triés par nom. Un nom en double est une erreur. */
+/** All the contracts in `src/@core/`, sorted by name. A duplicate name is an error. */
 export function scanContracts(root: string): ContractEntry[] {
   const dir = join(root, '@core');
   let files: string[];
@@ -53,7 +53,7 @@ export function scanContracts(root: string): ContractEntry[] {
     const other = seen.get(entry.name);
     if (other) {
       throw new Error(
-        `[super] deux contrats nommés "${entry.name}" : ${other.className} (src/${other.file}) et ${entry.className} (src/${entry.file})`,
+        `[super] two contracts named "${entry.name}": ${other.className} (src/${other.file}) and ${entry.className} (src/${entry.file})`,
       );
     }
     seen.set(entry.name, entry);
@@ -61,12 +61,12 @@ export function scanContracts(root: string): ContractEntry[] {
   return entries;
 }
 
-/** Le router de l'app : `export const Router = defineRouter(…)`, quelque part dans `src`. */
+/** The app router: `export const Router = defineRouter(…)`, somewhere in `src`. */
 export type RouterEntry = { file: string; exportName: string };
 
 const ROUTER = /export\s+const\s+(\w+)\s*=\s*defineRouter\b/;
 
-/** Le router déclaré dans `src` (hors tests), s'il y en a un. Deux déclarations sont une erreur. */
+/** The router declared in `src` (excluding tests), if there is one. Two declarations are an error. */
 export function scanRouter(root: string): RouterEntry | null {
   let files: string[];
   try {
@@ -81,12 +81,12 @@ export function scanRouter(root: string): RouterEntry | null {
     if (match) found.push({ file: file.split(sep).join('/'), exportName: match[1]! });
   }
   if (found.length > 1) {
-    throw new Error(`[super] plusieurs routers déclarés avec defineRouter : ${found.map((r) => `src/${r.file}`).join(', ')}`);
+    throw new Error(`[super] several routers declared with defineRouter: ${found.map((r) => `src/${r.file}`).join(', ')}`);
   }
   return found[0] ?? null;
 }
 
-/** Le module virtuel : chaque contrat est inscrit sous son nom, chargé à la demande. */
+/** The virtual module: each contract is registered under its name, loaded on demand. */
 export function contractsModule(root: string, entries: ContractEntry[]): string {
   const lines = ["import { registerContract } from '@super-ts/core/internal';"];
   entries.forEach((entry, i) => lines.push(`import * as m${i} from ${JSON.stringify(join(root, entry.file))};`));
@@ -94,14 +94,14 @@ export function contractsModule(root: string, entries: ContractEntry[]): string 
   return `${lines.join('\n')}\n`;
 }
 
-/** Le tag de chaque écran → les routes où il s'affiche : `{ 'counter-screen': ['counter'] }`. */
+/** The tag of each screen → the routes where it is displayed: `{ 'counter-screen': ['counter'] }`. */
 export type ScreenRoutes = Record<string, string[]>;
 
 const SCREENS = /\.screens\(\s*\(\)\s*=>\s*\(\{([\s\S]*?)\}\)\s*\)/;
 const SCREEN_ENTRY = /(?:^|[,{\s])(?:'([^']+)'|"([^"]+)"|([A-Za-z_$][\w$]*))\s*:\s*([A-Za-z_$][\w$]*)\s*(?=,|$)/g;
 const IMPORT = /import\s*(?:type\s+)?\{([^}]*)\}\s*from\s*['"]([^'"]+)['"]/g;
 
-/** Trouve le fichier d'un import : alias `@components/…` et `@core/…`, ou chemin relatif. */
+/** Finds the file of an import: `@components/…` and `@core/…` aliases, or relative path. */
 function resolveImport(root: string, from: string, specifier: string): string | null {
   const base = /^@(components|core)\//.test(specifier)
     ? join(root, specifier)
@@ -113,7 +113,7 @@ function resolveImport(root: string, from: string, specifier: string): string | 
   return candidates.find((file) => existsSync(file) && !file.endsWith(sep)) ?? null;
 }
 
-/** Le tag d'une classe de composant dans un module : `@tag = '…'` (`.super`) ou `static tag = '…'` (`.ts`), après `class X extends SuperElement`. */
+/** A component class's tag in a module: `@tag = '…'` (`.super`) or `static tag = '…'` (`.ts`), after `class X extends SuperElement`. */
 function tagOf(code: string, className: string): string | null {
   const start = new RegExp(`\\bclass\\s+${className}\\s+extends\\s+SuperElement\\b`).exec(code);
   if (!start) return null;
@@ -123,9 +123,9 @@ function tagOf(code: string, className: string): string | null {
 }
 
 /**
- * Le lien écran → route, lu dans `.screens(() => ({ counter: CounterScreen, … }))` : chaque écran
- * est retrouvé par son import, puis par son tag (`@tag` ou `static tag`). Les redirections et les écrans `'*'` et
- * `'!'` n'en font pas partie. Un écran introuvable est simplement ignoré (il verra toutes les routes).
+ * The screen → route link, read from `.screens(() => ({ counter: CounterScreen, … }))`: each screen
+ * is found through its import, then through its tag (`@tag` or `static tag`). Redirects and the `'*'` and
+ * `'!'` screens are not part of it. A screen that cannot be found is simply ignored (it will see every route).
  */
 export function scanScreenRoutes(root: string, router: RouterEntry | null): ScreenRoutes {
   if (!router) return {};
@@ -156,22 +156,22 @@ export function scanScreenRoutes(root: string, router: RouterEntry | null): Scre
 }
 
 /**
- * Le fichier de types, placé dans `src/@core/` : chemins relatifs à ce dossier. Le router de l'app,
- * s'il y en a un, y est inscrit sous le nom `'router'`, et chaque écran y est relié à sa route.
+ * The types file, placed in `src/@core/`: paths relative to that folder. The app router, if there
+ * is one, is registered in it under the name `'router'`, and each screen is linked to its route.
  */
 export function contractsDeclaration(entries: ContractEntry[], router: RouterEntry | null = null, screens: ScreenRoutes = {}): string {
   if (router && entries.some((entry) => entry.name === 'router')) {
-    throw new Error('[super] le nom de contrat "router" est réservé au router de l\'app');
+    throw new Error('[super] the contract name "router" is reserved for the app router');
   }
   const imports = entries.map(
     (entry) => `import type { ${entry.className} } from './${entry.file.replace(/^@core\//, '').replace(/\.ts$/, '')}';`,
   );
-  // Même style que le formateur du dépôt : clé nue si c'est un identifiant, guillemets simples sinon.
+  // Same style as the repository formatter: bare key if it is an identifier, single quotes otherwise.
   const key = (name: string) => (/^[A-Za-z_$][\w$]*$/.test(name) ? name : `'${name}'`);
   const fields = entries.map((entry) => `    ${key(entry.name)}: ${entry.className};`);
   if (router) {
     imports.unshift("import type { AppRouterContractOf } from '@super-ts/dom';");
-    // Ordre du formateur : paquets, puis dossiers parents, puis le dossier courant.
+    // Formatter order: packages, then parent folders, then the current folder.
     imports.splice(1, 0, `import type { ${router.exportName} } from '../${router.file.replace(/\.ts$/, '')}';`);
     fields.push(`    router: AppRouterContractOf<typeof ${router.exportName}>;`);
   }
@@ -187,7 +187,7 @@ export function contractsDeclaration(entries: ContractEntry[], router: RouterEnt
       ]
     : [];
   return [
-    '// Généré par le plugin Vite de Super depuis les contrats de src/@core/ et le router : ne pas modifier.',
+    '// Generated by the Super Vite plugin from the contracts in src/@core/ and the router: do not edit.',
     ...imports,
     '',
     "declare module '@super-ts/core' {",
@@ -201,21 +201,21 @@ export function contractsDeclaration(entries: ContractEntry[], router: RouterEnt
     '',
   ].join('\n');
 }
-/** Un module de `@core/` qui implémente un contrat a besoin du registre (hors contrats eux-mêmes). */
+/** A `@core/` module that implements a contract needs the registry (except the contracts themselves). */
 export const needsRegistry = (relativePath: string, code: string) =>
   relativePath.startsWith('@core/') && !isContractFile(relativePath) && /\bSuperStore\b/.test(code);
 
 /* ------------------------------------------------------------------------------------------ */
-/* Remplacement à chaud des composants (dev)                                                   */
+/* Hot replacement of components (dev)                                                         */
 /* ------------------------------------------------------------------------------------------ */
 
 const ELEMENT_CLASS = /\bclass\s+(\w+)\s+extends\s+SuperElement\b/g;
 const PRIVATE_MEMBER = /\bthis\.#\w|^\s+(?:static\s+)?#\w/m;
 
 /**
- * Le code ajouté en fin de module de composant, en dev : le module accepte son propre remplacement,
- * et la nouvelle version des composants qu'il déclare remplace l'ancienne (voir `hotReplace`).
- * `null` si le module ne déclare aucun composant. En fin de module, pour ne pas décaler les lignes.
+ * The code appended at the end of a component module, in dev: the module accepts its own replacement,
+ * and the new version of the components it declares replaces the old one (see `hotReplace`).
+ * `null` if the module declares no component. At the end of the module, so as not to shift the lines.
  */
 export function hotModuleCode(code: string): string | null {
   const classes = [...code.matchAll(ELEMENT_CLASS)].map((match) => match[1]!);

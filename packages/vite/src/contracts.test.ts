@@ -28,18 +28,18 @@ function app(files: Record<string, string>) {
   return root;
 }
 
-describe('contrats lus par le plugin', () => {
-  test('une classe qui étend SuperContract, nommée par super({ name })', () => {
+describe('contracts read by the plugin', () => {
+  test('a class that extends SuperContract, named by super({ name })', () => {
     expect(contractsIn('@core/cart.contract.ts', CART)).toEqual([
       { file: '@core/cart.contract.ts', className: 'CartContract', name: 'cart' },
     ]);
   });
 
-  test('un contrat sans nom est signalé', () => {
+  test('a contract without a name is reported', () => {
     expect(() => contractsIn('@core/x.contract.ts', 'export class X extends SuperContract<T> {}')).toThrow("super({ name: '…' })");
   });
 
-  test('scan de src/@core, y compris les sous-dossiers, et refus des noms en double', () => {
+  test('scans src/@core, subfolders included, and rejects duplicate names', () => {
     const root = app({
       '@core/cart/contract.ts': CART,
       '@core/cart/store.ts': 'export class CartStore extends SuperStore<CartContract> {}',
@@ -51,10 +51,10 @@ describe('contrats lus par le plugin', () => {
     ]);
 
     const twice = app({ '@core/a.contract.ts': CART, '@core/b.contract.ts': CART });
-    expect(() => scanContracts(twice)).toThrow('deux contrats nommés "cart"');
+    expect(() => scanContracts(twice)).toThrow('two contracts named "cart"');
   });
 
-  test('module virtuel et fichier de types', () => {
+  test('virtual module and types file', () => {
     const entries = [{ file: '@core/cart/contract.ts', className: 'CartContract', name: 'cart' }];
     expect(contractsModule('/app/src', entries)).toContain('registerContract("cart", () => m0.CartContract);');
     const declaration = contractsDeclaration(entries);
@@ -63,7 +63,7 @@ describe('contrats lus par le plugin', () => {
     expect(contractsDeclaration([{ ...entries[0]!, name: 'my-cart' }])).toContain("'my-cart': CartContract;");
   });
 
-  test('le router de l’app est inscrit sous le nom router', () => {
+  test('the app router is registered under the name router', () => {
     const root = app({
       'routes.ts': "export const Router = defineRouter({ home: '/' }).screens(() => ({}));",
       'x.test.ts': 'export const Other = defineRouter({})',
@@ -73,10 +73,10 @@ describe('contrats lus par le plugin', () => {
     const declaration = contractsDeclaration([], router);
     expect(declaration).toContain("import type { Router } from '../routes';");
     expect(declaration).toContain('    router: AppRouterContractOf<typeof Router>;');
-    expect(() => contractsDeclaration([{ file: '@core/r.contract.ts', className: 'R', name: 'router' }], router)).toThrow('réservé');
+    expect(() => contractsDeclaration([{ file: '@core/r.contract.ts', className: 'R', name: 'router' }], router)).toThrow('reserved');
   });
 
-  test('chaque écran est relié à sa route, par son import et son tag', () => {
+  test('each screen is linked to its route, through its import and its tag', () => {
     const root = app({
       'routes.ts': `import { defineRouter, redirect } from '@super-ts/dom';
 import { CounterScreen } from '@components/counter';
@@ -86,7 +86,7 @@ import { NotFound } from '@components/not-found';
 export const Router = defineRouter({ a: '/a', b: '/b', c: '/c', d: '/d' }).screens(() => ({
   a: CounterScreen,
   'b': Screens,
-  c: redirect({ to: 'a' }), // une redirection n'a pas d'écran
+  c: redirect({ to: 'a' }), // a redirect has no screen
   d: CounterScreen,
   '*': NotFound,
 }));`,
@@ -105,7 +105,7 @@ export const Router = defineRouter({ a: '/a', b: '/b', c: '/c', d: '/d' }).scree
     expect(contractsDeclaration([], scanRouter(root))).not.toContain('ScreenRoutes');
   });
 
-  test('remplacement à chaud : le code ajouté en fin de module de composant', () => {
+  test('hot replacement: the code appended at the end of a component module', () => {
     const plain = 'export class ShopScreen extends SuperElement {}\nclass Line extends SuperElement<{ props: P }> {}';
     expect(hotModuleCode(plain)).toContain('__superHotReplace([ShopScreen, Line], { privateFields: false });');
     expect(hotModuleCode(plain)).toContain('import.meta.hot.accept();');

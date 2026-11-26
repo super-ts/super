@@ -27,24 +27,24 @@ export {
 } from './contracts.ts';
 
 export type SuperPluginOptions = {
-  /** Dossier `src` de l'app (absolu, ou relatif au dossier courant). */
+  /** The app's `src` folder (absolute, or relative to the current folder). */
   src: string;
 };
 
 /**
- * Impose l'architecture Super : contrats et stores sous `src/@core/`, composants sous
- * `src/@components/`, des composants qui n'importent de `@core/` que des types, et un `@core/`
- * qui n'importe rien de `@super-ts/dom`. Un module
- * qui enfreint une règle n'est pas chargé : Vite affiche l'erreur (overlay en dev, échec du
- * build ou du test).
+ * Enforces the Super architecture: contracts and stores under `src/@core/`, components under
+ * `src/@components/`, components that import only types from `@core/`, and a `@core/`
+ * that imports nothing from `@super-ts/dom`. A module
+ * that breaks a rule is not loaded: Vite shows the error (overlay in dev, failure of the
+ * build or the test).
  *
- * Déclare aussi les alias `@core/…` et `@components/…`, résolus depuis `src`.
+ * Also declares the `@core/…` and `@components/…` aliases, resolved from `src`.
  */
 export function superPlugin({ src }: SuperPluginOptions): Plugin {
   const root = resolve(src);
   const resolvedModule = `\0${CONTRACTS_MODULE}`;
 
-  /** Réécrit le fichier de types s'il a changé (le comparer évite de relancer le typecheck de l'IDE). */
+  /** Rewrites the types file if it has changed (comparing it avoids re-running the IDE's type check). */
   const writeDeclaration = () => {
     const path = join(root, CONTRACTS_DECLARATION);
     const router = scanRouter(root);
@@ -56,7 +56,7 @@ export function superPlugin({ src }: SuperPluginOptions): Plugin {
     if (current !== next) writeFileSync(path, next);
   };
 
-  /** En dev (`vite` serve), les composants se remplacent à chaud. */
+  /** In dev (`vite` serve), components are hot-replaced. */
   let serving = false;
 
   return {
@@ -71,7 +71,7 @@ export function superPlugin({ src }: SuperPluginOptions): Plugin {
     configureServer(server) {
       server.watcher.on('all', (_event, file) => {
         if (!/\.(ts|super)$/.test(file) || !file.startsWith(root)) return;
-        writeDeclaration(); // un contrat, le router ou le tag d'un écran (n'écrit que si le fichier change)
+        writeDeclaration(); // a contract, the router or a screen's tag (only writes if the file changes)
         const virtual = server.moduleGraph.getModuleById(resolvedModule);
         if (virtual) server.moduleGraph.invalidateModule(virtual);
       });
@@ -85,7 +85,7 @@ export function superPlugin({ src }: SuperPluginOptions): Plugin {
     config: () => ({
       resolve: {
         alias: ALIASES.map((name) => ({ find: new RegExp(`^${name}/`), replacement: `${join(root, name)}/` })),
-        // `.super` en plus des extensions par défaut de Vite : `@components/shop` trouve `shop/index.super`.
+        // `.super` on top of Vite's default extensions: `@components/shop` finds `shop/index.super`.
         extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json', '.super'],
       },
     }),
@@ -93,7 +93,7 @@ export function superPlugin({ src }: SuperPluginOptions): Plugin {
       const file = id.split('?')[0]!;
       let code = source;
       let map: SourceMap | null = null;
-      // Un fichier `.super` est compilé en TS (gabarits lit), puis débarrassé de ses types.
+      // A `.super` file is compiled to TS (lit templates), then stripped of its types.
       if (file.endsWith('.super')) {
         const compiled = compile(source);
         const [first] = compiled.diagnostics;
@@ -103,9 +103,9 @@ export function superPlugin({ src }: SuperPluginOptions): Plugin {
         }
         const result = await transformWithOxc(compiled.code, `${file}.ts`, { lang: 'ts', sourcemap: true });
         code = result.code;
-        // JS → TS compilé (oxc), puis TS compilé → `.super` (plages recopiées) : la map vers la source.
+        // JS → compiled TS (oxc), then compiled TS → `.super` (copied ranges): the map to the source.
         map = result.map ? composeMap(file, source, compiled.code, compiled.copied, result.map.mappings) : null;
-        // En dev, le TS virtuel suit aussi : les `.ts` qui importent ce composant en voient les types.
+        // In dev, the virtual TypeScript follows too: the `.ts` files that import this component see its types.
         if (serving) writeVirtualFile(file, source);
       }
       const path = relative(root, file);
@@ -115,8 +115,8 @@ export function superPlugin({ src }: SuperPluginOptions): Plugin {
       const violation =
         checkModule(relativePath, code) ?? checkCoreImports(relativePath, code) ?? checkComponentImports(relativePath, code);
       if (violation) this.error(violation);
-      // Un store retrouve son contrat par son nom : le registre doit être chargé avant lui.
-      // Sur la même ligne, pour ne pas décaler les numéros de ligne.
+      // A store finds its contract by name: the registry must be loaded before it.
+      // On the same line, so as not to shift the line numbers.
       if (needsRegistry(relativePath, code)) return { code: `import '${CONTRACTS_MODULE}';${code}`, map: null };
       const hot = serving && relativePath.startsWith('@components/') ? hotModuleCode(code) : null;
       if (hot) return { code: code + hot, map };

@@ -8,36 +8,36 @@ describe('checkModule', () => {
   const contractModule = `import { SuperContract } from '@super-ts/core';`;
   const componentModule = `import { html, SuperElement } from '@super-ts/dom';`;
 
-  test('accepte contrats et stores sous @core/, à toute profondeur', () => {
+  test('accepts contracts and stores under @core/, at any depth', () => {
     expect(checkModule('@core/counter/store.ts', store)).toBeNull();
     expect(checkModule('@core/billing/invoice/contract.ts', contractModule)).toBeNull();
   });
 
-  test('accepte les composants sous @components/', () => {
+  test('accepts components under @components/', () => {
     expect(checkModule('@components/screens/home.ts', componentModule)).toBeNull();
   });
 
-  test('refuse un store ou un contrat hors de @core/', () => {
+  test('rejects a store or a contract outside @core/', () => {
     expect(checkModule('adapters/counter.store.ts', store)).toMatch(
-      /src\/adapters\/counter\.store\.ts importe SuperStore .* sous src\/@core\/ : ce module n'est pas chargé/,
+      /src\/adapters\/counter\.store\.ts imports SuperStore .* under src\/@core\/: this module is not loaded/,
     );
     expect(checkModule('ports/x.ts', contractModule)).toMatch(/SuperContract/);
   });
 
-  test('les dossiers sans préfixe ne sont pas des dossiers Super', () => {
-    expect(checkModule('core/counter.store.ts', store)).toMatch(/sous src\/@core\//);
-    expect(checkModule('components/home.ts', componentModule)).toMatch(/sous src\/@components\//);
+  test('folders without the prefix are not Super folders', () => {
+    expect(checkModule('core/counter.store.ts', store)).toMatch(/under src\/@core\//);
+    expect(checkModule('components/home.ts', componentModule)).toMatch(/under src\/@components\//);
   });
 
-  test('refuse un composant hors de @components/', () => {
-    expect(checkModule('@core/widget.ts', componentModule)).toMatch(/sous src\/@components\//);
+  test('rejects a component outside @components/', () => {
+    expect(checkModule('@core/widget.ts', componentModule)).toMatch(/under src\/@components\//);
   });
 
-  test('détecte les imports renommés', () => {
+  test('detects renamed imports', () => {
     expect(checkModule('main.ts', `import { SuperElement as E } from '@super-ts/dom';`)).toMatch(/SuperElement/);
   });
 
-  test('ignore les imports de type et les autres symboles', () => {
+  test('ignores type imports and other symbols', () => {
     expect(checkModule('ports/repo.ts', `import type { StoreOfContract } from '@super-ts/core';`)).toBeNull();
     expect(checkModule('main.ts', `import { createApp, createRouter, type ElementClass } from '@super-ts/dom';`)).toBeNull();
     expect(checkModule('routes.ts', `import { defineRouter } from '@super-ts/dom';`)).toBeNull();
@@ -46,7 +46,7 @@ describe('checkModule', () => {
 
 describe('superPlugin', () => {
   const plugin = superPlugin({ src: '/app/src' });
-  // `transform` est asynchrone (un `.super` passe par le compilateur, puis par oxc).
+  // `transform` is asynchronous (a `.super` goes through the compiler, then through oxc).
   const transform = async (code: string, id: string) => {
     const errors: string[] = [];
     const context = {
@@ -59,29 +59,29 @@ describe('superPlugin', () => {
     try {
       await (plugin.transform as Function).call(context, code, id);
     } catch {
-      /* l'erreur est capturée ci-dessus */
+      /* the error is captured above */
     }
     return errors;
   };
 
-  test('bloque un module hors règle du src de l’app', async () => {
+  test('blocks a module of the app src that breaks a rule', async () => {
     expect(await transform(`import { SuperElement } from '@super-ts/dom';`, '/app/src/shared/button.ts')).toHaveLength(1);
   });
 
-  test('laisse passer les tests, les fichiers hors src et les fichiers non JS/TS', async () => {
+  test('lets through tests, files outside src and non JS/TS files', async () => {
     expect(await transform(`import { SuperElement } from '@super-ts/dom';`, '/app/src/shared/button.test.ts')).toEqual([]);
     expect(await transform(`import { SuperElement } from '@super-ts/dom';`, '/elsewhere/button.ts')).toEqual([]);
     expect(await transform(`import { SuperElement } from '@super-ts/dom';`, '/app/src/styles.css')).toEqual([]);
   });
 
-  test('compile un .super, et applique les règles au code compilé', async () => {
+  test('compiles a .super, and applies the rules to the compiled code', async () => {
     const component =
       "import { SuperElement } from '@super-ts/dom';\nexport class A extends SuperElement {\n  @tag = 'a-a';\n  render() {\n    <p>a</p>\n  }\n}\n";
     expect(await transform(component, '/app/src/@components/a/index.super')).toEqual([]);
     expect(await transform(component, '/app/src/shared/a.super')).toHaveLength(1);
   });
 
-  test('signale une erreur de syntaxe d’un .super', async () => {
+  test('reports a syntax error in a .super', async () => {
     const errors = await transform('export class A {\n  render() {\n    <p>for (x) y</p>\n  }\n}\n', '/app/src/@components/a/index.super');
     expect(errors).toHaveLength(1);
     expect(errors[0]).toContain('Text read as `for`');
@@ -91,31 +91,31 @@ describe('superPlugin', () => {
 describe('checkComponentImports', () => {
   const check = (path: string, code: string) => checkComponentImports(path, code);
 
-  test('un composant n’importe de @core/ que des types', () => {
+  test('a component imports only types from @core/', () => {
     expect(check('@components/shop/index.ts', "import type { CartState } from '../../@core/cart/contract';")).toBeNull();
     expect(check('@components/shop/index.ts', "import { type CartState } from '@core/cart/contract';")).toBeNull();
   });
 
-  test('refuse toute valeur de @core/ : contrat, store, constante', () => {
+  test('rejects any value from @core/: contract, store, constant', () => {
     expect(check('@components/shop/index.ts', "import { CartContract } from '../../@core/cart/contract';")).toMatch(
-      /src\/@components\/shop\/index\.ts importe CartContract depuis \.\.\/\.\.\/@core\/cart\/contract\. Un composant n'importe de src\/@core\/ que des types/,
+      /src\/@components\/shop\/index\.ts imports CartContract from \.\.\/\.\.\/@core\/cart\/contract\. A component imports only types from src\/@core\//,
     );
-    expect(check('@components/shop/index.ts', "import { CartStore } from '@core/cart/store';")).toMatch(/importe CartStore/);
-    expect(check('@components/x.ts', "import { MIN as M, type T } from '@core/counter/contract';")).toMatch(/importe MIN depuis/);
+    expect(check('@components/shop/index.ts', "import { CartStore } from '@core/cart/store';")).toMatch(/imports CartStore/);
+    expect(check('@components/x.ts', "import { MIN as M, type T } from '@core/counter/contract';")).toMatch(/imports MIN from/);
   });
 
-  test('refuse les imports par défaut et `* as`', () => {
-    expect(check('@components/x.ts', "import * as core from '@core/cart/contract';")).toMatch(/importe \* as core/);
+  test('rejects default and `* as` imports', () => {
+    expect(check('@components/x.ts', "import * as core from '@core/cart/contract';")).toMatch(/imports \* as core/);
   });
 
-  test('ne regarde que les composants, et que les imports vers @core/', () => {
+  test('only looks at components, and only at imports into @core/', () => {
     expect(check('adapters/x.ts', "import { CartStore } from '../@core/cart/store';")).toBeNull();
     expect(check('@components/x.ts', "import { formatPrice } from '../format';")).toBeNull();
   });
 });
 
 describe('alias', () => {
-  test('le plugin déclare @core/ et @components/, résolus depuis src', () => {
+  test('the plugin declares @core/ and @components/, resolved from src', () => {
     const plugin = superPlugin({ src: '/app/src' }) as unknown as {
       config: () => { resolve: { alias: { find: RegExp; replacement: string }[] } };
     };
@@ -133,17 +133,17 @@ describe('alias', () => {
 });
 
 describe('checkCoreImports', () => {
-  test('refuse tout import de valeur depuis @super-ts/dom dans @core/', () => {
+  test('rejects any value import from @super-ts/dom in @core/', () => {
     expect(checkCoreImports('@core/counter.store.ts', "import { html } from '@super-ts/dom';")).toMatch(
-      /src\/@core\/counter\.store\.ts importe html depuis @super-ts\/dom\. Les contrats et les stores ne dépendent pas du DOM/,
+      /src\/@core\/counter\.store\.ts imports html from @super-ts\/dom\. Contracts and stores do not depend on the DOM/,
     );
-    expect(checkCoreImports('@core/x.ts', "import * as dom from '@super-ts/dom';")).toMatch(/importe \* as dom/);
+    expect(checkCoreImports('@core/x.ts', "import * as dom from '@super-ts/dom';")).toMatch(/imports \* as dom/);
     expect(checkCoreImports('@core/x.ts', "import { type ElementClass, SuperElement } from '@super-ts/dom';")).toMatch(
-      /importe SuperElement depuis/,
+      /imports SuperElement from/,
     );
   });
 
-  test('laisse passer les types, les autres paquets, et le reste du src', () => {
+  test('lets through types, other packages, and the rest of src', () => {
     expect(checkCoreImports('@core/x.ts', "import type { ElementClass } from '@super-ts/dom';")).toBeNull();
     expect(checkCoreImports('@core/x.ts', "import { type ElementClass } from '@super-ts/dom';")).toBeNull();
     expect(checkCoreImports('@core/x.ts', "import { SuperStore } from '@super-ts/core';")).toBeNull();
