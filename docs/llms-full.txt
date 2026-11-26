@@ -117,7 +117,7 @@ Le composant est un fichier `.super` : du TypeScript dont les méthodes écriven
 | `@super-ts/ui` | Le kit d'interface : champs reliés aux formulaires, `CommandButton`, `RouteLink`, toasts, fenêtres, menus, table. Voir [Kit d'interface](ui.html). |
 | `@super-ts/vite` | Le plugin qui compile les `.super`, fait respecter l'architecture et génère le dictionnaire des contrats (`@core/contracts.d.ts`). |
 | `@super-ts/lang` | Le langage des `.super` : parser, compilation vers lit, vérification des types (`super-tsc`). Voir [Outillage](outillage.html). |
-| `super-language-server` | Le serveur de langage des `.super` pour l'éditeur (`packages/lang-server`). |
+| `@super-ts/language-server` | Le serveur de langage des `.super` pour l'éditeur (`packages/lang-server`), commande `super-language-server`. |
 | `@super-ts/lint` | La configuration Biome qui fixe l'ordre des imports. |
 
 ## Avec un assistant IA
