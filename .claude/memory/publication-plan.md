@@ -173,15 +173,18 @@ Préparé le 2026-11-26 dans `editors/tree-sitter-super` (commits locaux, à pou
 - [x] Variable de dépôt `RELEASE_ENABLED=true` posée par l'utilisateur : `release.yml` publie désormais au merge de la PR « chore: version packages ».
 - [x] Tags `@super-ts/<nom>@0.1.0` poussés.
 
-## Phase 10 : première publication Zed (l'utilisateur)
+## Phase 10 : première publication Zed (préparée le 2026-11-26 ; PR au registre : l'utilisateur)
 
-Elle ne peut partir qu'après la phase 9, puisque l'extension installe le serveur depuis npm.
-
-1. Fork de `zed-industries/extensions`.
-2. Le dépôt Super en sous-module HTTPS.
-3. Une entrée dans `extensions.toml` : `submodule`, `path = "editors/zed"`, `version`.
-4. `pnpm sort-extensions`.
-5. Une PR, avec une seule extension par PR. La relecture prend quelques semaines.
+Super restant privé, l'extension a son **propre dépôt public** (choix de l'utilisateur) : `super-ts/super-extension-zed` (nom choisi par l'utilisateur ; branche par défaut déjà `main`, aucun `master` à renommer).
+- [x] Historique neuf (pas de `subtree split` : l'ancien `extension.toml` contenait le chemin local `file:///Users/dimitrilahaye/…`). Commits `c7d1f35` (feat: l'extension) et `519c627` (ci: release-please), tag annoté `v0.1.0`, poussés le 2026-11-26. Copie de travail : le sous-module `editors/zed` de Super (le dossier qui a servi au premier push a été supprimé une fois tout poussé).
+- [x] Contenu : fichiers de `editors/zed` ; `repository` (extension.toml et Cargo.toml) → le nouveau dépôt ; README autonome (logo servi par le dépôt de la grammaire) ; `.gitignore` (target, extension.wasm, grammars) ; CI `ci.yml` (build wasm32-wasip2) ; release-please type `rust` (Cargo.toml + Cargo.lock) + `extra-files` toml `$.version` de `extension.toml`, `bootstrap-sha` = `c7d1f35`, tag `vX.Y.Z` ; `CHANGELOG.md` 0.1.0.
+- [x] Dans Super : `editors/zed` est un sous-module (`.gitmodules` en HTTPS, branche main, URL locale surchargée en `git@github.perso:super-ts/super-extension-zed.git`, identité Git locale posée), `.github/workflows/zed-extension.yml` supprimé (la CI vit dans le nouveau dépôt), lignes `editors/zed/*` retirées du `.gitignore`, README et `tooling.html#zed` mis à jour.
+- [ ] **L'utilisateur** : PR sur le registre Zed.
+  1. Fork de `zed-industries/extensions`, clone du fork.
+  2. `git submodule add https://github.com/super-ts/super-extension-zed.git extensions/super-lang`
+  3. Dans `extensions.toml` : `[super-lang]`, `submodule = "extensions/super-lang"`, `version = "0.1.0"` (pas de `path` : l'extension est à la racine de son dépôt).
+  4. `pnpm sort-extensions`, commit, PR (une seule extension par PR ; relecture de plusieurs semaines).
+- Les mises à jour ensuite : merger la PR release-please du dépôt de l'extension, puis PR sur le registre (sous-module avancé + `version`).
 
 ## Publier ensuite (routine)
 
@@ -189,9 +192,9 @@ Elle ne peut partir qu'après la phase 9, puisque l'extension installe le serveu
 1. Chaque PR qui touche un paquet contient un changeset (`npx changeset` : paquets, niveau, phrase pour le changelog). La CI le réclame.
 2. Merger la PR « Version packages » quand on veut sortir une version : tout part sur npm, avec tag `vX.Y.Z` et release GitHub.
 
-**Zed**, seulement si l'extension ou la grammaire ont changé :
-1. monter `version` dans `extension.toml` et `Cargo.toml` (et `rev` si la grammaire a changé) ;
-2. merger ;
+**Zed**, seulement si l'extension ou la grammaire ont changé (dans `super-ts/super-extension-zed`) :
+1. pour une nouvelle grammaire, mettre à jour `rev` dans `extension.toml` (commit `feat:`/`fix:`) ; release-please monte `version` dans `extension.toml`, `Cargo.toml` et `Cargo.lock` ;
+2. merger la PR release-please ;
 3. ouvrir une PR sur le fork de `zed-industries/extensions` (sous-module à jour et `version`).
 
 Une nouvelle version du framework seule ne demande rien côté Zed.
