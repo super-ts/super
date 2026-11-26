@@ -1,4 +1,4 @@
 import { Card } from './card';
 
-/** Un .ts qui importe le composant .super (pour « aller à la définition » à travers le relais). */
+/** A .ts file that imports the .super component (for "go to definition" through the relay). */
 export const cardTag: string = Card.tag;

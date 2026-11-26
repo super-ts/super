@@ -3,7 +3,7 @@ import { Greeting } from './greeting';
 
 type Item = { id: string; label: string };
 
-/** Le composant ouvert par les tests du serveur (ils en envoient des variantes en mémoire). */
+/** The component opened by the server tests (they send in-memory variants of it). */
 export class Card extends SuperElement {
   @tag = 'srv-card';
   @state local = { items: [] as Item[], user: null as { name: string } | null };

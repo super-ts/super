@@ -1,6 +1,6 @@
 import { SuperElement } from '@super-ts/dom';
 
-/** Un composant .super que card.super n'importe pas (pour la complétion avec import). */
+/** A .super component that card.super does not import (for completion with import). */
 export class Badge extends SuperElement {
   @tag = 'srv-badge';
   @prop label: string;

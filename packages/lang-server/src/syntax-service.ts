@@ -1,6 +1,6 @@
 /**
- * Erreurs du parser `.super` (celles que TS ne voit pas : texte ambigu, `<` dans le texte, syntaxe
- * de lit…) et leurs corrections rapides, calculées sur la copie de la source (`SOURCE_LANGUAGE`).
+ * Errors from the `.super` parser (those TS does not see: ambiguous text, `<` in text, lit
+ * syntax…) and their quick fixes, computed on the copy of the source (`SOURCE_LANGUAGE`).
  */
 import type { LanguageServicePlugin } from '@volar/language-service';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
@@ -30,7 +30,7 @@ export const superSyntaxService: LanguageServicePlugin = {
           source: 'super',
         }));
       },
-      // Formatage du fichier : le TS par Biome, les templates par `format.ts` (rien si erreur de syntaxe).
+      // File formatting: TypeScript by Biome, templates by `format.ts` (nothing on a syntax error).
       provideDocumentFormattingEdits(document) {
         if (!isSuper(document)) return;
         const source = context.decodeEmbeddedDocumentUri(URI.parse(document.uri))?.[0];
@@ -42,7 +42,7 @@ export const superSyntaxService: LanguageServicePlugin = {
       },
       provideCodeActions(document, range) {
         if (!isSuper(document)) return;
-        // L'édition vise le fichier `.super` lui-même (positions identiques à la copie).
+        // The edit targets the `.super` file itself (positions identical to the copy).
         const sourceUri = context.decodeEmbeddedDocumentUri(URI.parse(document.uri))?.[0].toString() ?? document.uri;
         const start = document.offsetAt(range.start);
         const end = document.offsetAt(range.end);

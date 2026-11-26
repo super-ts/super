@@ -1,6 +1,6 @@
 /**
- * Les déclarations d'un composant dans le corps de sa classe (`@tag`, `@title`, `@prop`, `@emit`) :
- * complétion après `@` (`@t` propose `tag` et `title`) et documentation au survol.
+ * A component's declarations in its class body (`@tag`, `@title`, `@prop`, `@emit`):
+ * completion after `@` (`@t` offers `tag` and `title`) and documentation on hover.
  */
 import type { LanguageServicePlugin } from '@volar/language-service';
 import ts from 'typescript';
@@ -13,15 +13,15 @@ import { type Checked, checkedFile } from './template-completion.ts';
 
 type Declaration = SuperMember['kind'];
 
-/** Ce que le survol et la complétion montrent de chaque déclaration (Markdown). */
+/** What hover and completion show for each declaration (Markdown). */
 export const DECLARATION_DOCS: Record<Declaration, { snippet: string; detail: string; doc: string }> = {
   tag: {
-    snippet: "tag = '${1:mon-composant}';",
-    detail: "@tag = 'mon-composant';",
+    snippet: "tag = '${1:my-component}';",
+    detail: "@tag = 'my-component';",
     doc: [
-      'Le **tag** du composant : le nom de l’élément personnalisé dans le DOM.',
+      "The component's **tag**: the name of the custom element in the DOM.",
       '',
-      'Obligatoire dans un composant (sauf une classe `abstract`). Une chaîne écrite telle quelle, en minuscules, avec un tiret.',
+      'Required in a component (except an `abstract` class). A string written as is, in lower case, with a hyphen.',
       '',
       '```ts',
       "@tag = 'confirm-dialog';",
@@ -29,35 +29,35 @@ export const DECLARATION_DOCS: Record<Declaration, { snippet: string; detail: st
     ].join('\n'),
   },
   title: {
-    snippet: "title = '${1:Titre}';",
+    snippet: "title = '${1:Title}';",
     detail: '@title = string | (() => string);',
     doc: [
-      'Le **titre de la page** (`document.title`) tant que le composant est monté.',
+      'The **page title** (`document.title`) while the component is mounted.',
       '',
-      '- une chaîne est posée telle quelle ;',
-      '- une fonction est **suivie** : recalculée après chaque rendu, avec les mêmes lectures que `render`.',
+      '- a string is set as is;',
+      '- a function is **tracked**: recomputed after each render, with the same reads as `render`.',
       '',
-      'Le dernier composant monté qui pose un titre l’emporte ; à son démontage, le titre précédent revient. Le router ajoute le suffixe commun (`createRouter(Router, { title: { suffix } })`).',
+      'The last mounted component that sets a title wins; when it unmounts, the previous title comes back. The router adds the common suffix (`createRouter(Router, { title: { suffix } })`).',
       '',
-      'Raccourci pour `this.page.title = …`, posé à la préparation et repris à chaque montage.',
+      'Shorthand for `this.page.title = …`, set during preparation and reapplied on every mount.',
       '',
       '```ts',
-      "@title = 'Boutique';",
-      '@title = () => `Compteur ${this.label.value}`;',
+      "@title = 'Shop';",
+      '@title = () => `Counter ${this.label.value}`;',
       '```',
     ].join('\n'),
   },
   prop: {
-    snippet: 'prop ${1:nom}: ${2:string};',
-    detail: '@prop nom: Type;',
+    snippet: 'prop ${1:name}: ${2:string};',
+    detail: '@prop name: Type;',
     doc: [
-      'Une **prop** reçue du parent, lue par `this.nom` : toujours la valeur courante, et un changement re-rend le composant.',
+      'A **prop** received from the parent, read through `this.name`: always the current value, and a change re-renders the component.',
       '',
-      '- `@prop nom: T;` : obligatoire ;',
-      '- `@prop nom?: T;` : facultative (`T | undefined`) ;',
-      '- `@prop nom: T = valeur;` : facultative, avec une valeur par défaut calculée une fois par instance.',
+      '- `@prop name: T;`: required;',
+      '- `@prop name?: T;`: optional (`T | undefined`);',
+      '- `@prop name: T = value;`: optional, with a default value computed once per instance.',
       '',
-      'Le parent la passe en attribut : `<Composant nom={…} />`. Le nom ne peut pas être celui d’une propriété des éléments HTML (`id`, `title`, `hidden`…). Le contenu écrit entre les balises remplit la prop `content` (`@prop content: Children;`).',
+      'The parent passes it as an attribute: `<Component name={…} />`. The name cannot be that of an HTML element property (`id`, `title`, `hidden`…). The content written between the tags fills the `content` prop (`@prop content: Children;`).',
       '',
       '```ts',
       '@prop question: string;',
@@ -66,12 +66,12 @@ export const DECLARATION_DOCS: Record<Declaration, { snippet: string; detail: st
     ].join('\n'),
   },
   emit: {
-    snippet: 'emit ${1:nom}: ${2:void};',
-    detail: '@emit nom: Payload;',
+    snippet: 'emit ${1:name}: ${2:void};',
+    detail: '@emit name: Payload;',
     doc: [
-      'Un **événement** que le composant émet vers son parent, avec ce qu’il transporte (`void` s’il ne transporte rien).',
+      'An **event** the component emits to its parent, with what it carries (`void` if it carries nothing).',
       '',
-      "Émis par `this.emit('nom', payload)`, écouté par le parent avec `on:nom={…}`.",
+      "Emitted by `this.emit('name', payload)`, listened to by the parent with `on:name={…}`.",
       '',
       '```ts',
       '@emit answered: { confirmed: boolean };',
@@ -80,15 +80,15 @@ export const DECLARATION_DOCS: Record<Declaration, { snippet: string; detail: st
     ].join('\n'),
   },
   contract: {
-    snippet: 'contract ${1:nom};',
+    snippet: 'contract ${1:name};',
     detail: "@contract cart;  |  @contract basket = 'cart';",
     doc: [
-      'Le **store** fourni par l’app pour ce contrat, vu à travers son contrat : `this.cart.selectors`, `this.cart.send(…)`, `this.cart.on(…)`.',
+      'The **store** provided by the app for this contract, seen through its contract: `this.cart.selectors`, `this.cart.send(…)`, `this.cart.on(…)`.',
       '',
-      '- `@contract cart;` : le contrat qui porte le nom du champ ;',
-      "- `@contract basket = 'cart';` : un autre nom de champ.",
+      '- `@contract cart;`: the contract named after the field;',
+      "- `@contract basket = 'cart';`: a different field name.",
       '',
-      'Un contrat ne se déclare qu’une fois par composant. Le router se lit par `this.router`, sans `@contract`.',
+      'A contract is declared only once per component. The router is read through `this.router`, without `@contract`.',
       '',
       '```ts',
       '@contract cart;',
@@ -97,12 +97,12 @@ export const DECLARATION_DOCS: Record<Declaration, { snippet: string; detail: st
     ].join('\n'),
   },
   selector: {
-    snippet: 'selector ${1:nom} = ${2};',
-    detail: '@selector nom = sélecteur | () => sélecteur(…);',
+    snippet: 'selector ${1:name} = ${2};',
+    detail: '@selector name = selector | () => selector(…);',
     doc: [
-      'Une **valeur lue d’un store**, lue par `this.nom.value` dans `render`. Le composant se re-rend quand elle change.',
+      'A **value read from a store**, read through `this.name.value` in `render`. The component re-renders when it changes.',
       '',
-      'Un sélecteur sans paramètre, ou une fonction qui renvoie la valeur d’un sélecteur telle quelle (recalculée à chaque rendu, donc avec les props courantes). Une condition ou un calcul se font dans `render`.',
+      "A selector without parameters, or a function that returns a selector's value as is (recomputed on every render, so with the current props). A condition or a computation goes in `render`.",
       '',
       '```ts',
       '@selector lines = this.cart.selectors.lines;',
@@ -112,11 +112,11 @@ export const DECLARATION_DOCS: Record<Declaration, { snippet: string; detail: st
   },
   state: {
     snippet: 'state ${1:local} = { $2 };',
-    detail: '@state nom = { … };',
+    detail: '@state name = { … };',
     doc: [
-      'L’**état local** du composant : privé à l’instance, pour les données d’interface (panneau ouvert, message, saisie en cours).',
+      "The component's **local state**: private to the instance, for UI data (open panel, message, input in progress).",
       '',
-      'Lu par `this.nom.get()`, changé par `this.nom.set(patch)` (re-rend le composant). Le type vient de la valeur : élargis avec `as` (`null as string | null`).',
+      'Read through `this.name.get()`, changed through `this.name.set(patch)` (re-renders the component). The type comes from the value: widen it with `as` (`null as string | null`).',
       '',
       '```ts',
       "@state local = { dialog: null as 'confirm-clear' | null };",
@@ -125,10 +125,10 @@ export const DECLARATION_DOCS: Record<Declaration, { snippet: string; detail: st
     ].join('\n'),
   },
   ref: {
-    snippet: 'ref ${1:nom}: ${2:HTMLElement};',
-    detail: '@ref nom: TypeDElement;',
+    snippet: 'ref ${1:name}: ${2:HTMLElement};',
+    detail: '@ref name: ElementType;',
     doc: [
-      'Une **référence** vers un élément du template, posée par `ref={this.nom}` et lue par `this.nom.value` (`undefined` avant le rendu).',
+      'A **reference** to an element of the template, set by `ref={this.name}` and read through `this.name.value` (`undefined` before the render).',
       '',
       '```ts',
       '@ref input: HTMLInputElement;',
@@ -138,11 +138,11 @@ export const DECLARATION_DOCS: Record<Declaration, { snippet: string; detail: st
   },
   form: {
     snippet: "form ${1:edit} = {\n\tinitial: { $2 },\n\tsubmit: { to: this.$3, command: '$4' },\n};",
-    detail: '@form nom = { initial, rules?, submit, … };',
+    detail: '@form name = { initial, rules?, submit, … };',
     doc: [
-      'Un **formulaire** : valeurs, règles, vérifications asynchrones, et une soumission qui est une commande d’un store (`submit.to`, un `@contract`).',
+      'A **form**: values, rules, asynchronous checks, and a submission that is a store command (`submit.to`, a `@contract`).',
       '',
-      "Le template s’y relie par `<form {this.edit.bind()}>` et `{this.edit.field('nom')}`.",
+      "The template binds to it through `<form {this.edit.bind()}>` and `{this.edit.field('name')}`.",
       '',
       '```ts',
       '@contract profile;',
@@ -151,12 +151,12 @@ export const DECLARATION_DOCS: Record<Declaration, { snippet: string; detail: st
     ].join('\n'),
   },
   on: {
-    snippet: "on('${1:contrat}', '${2:événement}')\n${3:onEvent}(${4:payload}) {\n\t$0\n}",
-    detail: "@on('contrat', 'événement') méthode(payload) { … }",
+    snippet: "on('${1:contract}', '${2:event}')\n${3:onEvent}(${4:payload}) {\n\t$0\n}",
+    detail: "@on('contract', 'event') method(payload) { … }",
     doc: [
-      'Un **écouteur** d’un événement du store (ou du cycle de vie d’une commande : `save:done`, `save:failed`), actif tant que le composant est monté.',
+      'A **listener** for a store event (or a command lifecycle event: `save:done`, `save:failed`), active while the component is mounted.',
       '',
-      "Le contrat n’a pas besoin d’être déclaré par `@contract`. Le paramètre de la méthode est typé par l’événement. `@on('router', 'navigated')` écoute le router.",
+      "The contract does not need to be declared with `@contract`. The method's parameter is typed by the event. `@on('router', 'navigated')` listens to the router.",
       '',
       '```ts',
       "@on('profile', 'save:done')",
@@ -172,20 +172,20 @@ const ORDER: Declaration[] = ['tag', 'title', 'prop', 'emit', 'contract', 'selec
 const KIND_KEYWORD = 14;
 const SNIPPET = 2;
 
-/** Le composant dont `offset` est dans le corps, hors de ses méthodes (là où s'écrit une déclaration). */
+/** The component whose body contains `offset`, outside its methods (where a declaration is written). */
 function componentAt(source: string, offset: number): ClassInfo | null {
   const file = parse(source);
   const inMethod = file.methods.some((m) => m.start < offset && offset <= m.end);
   if (inMethod) return null;
-  // Corps encore ouvert (fichier en cours de frappe) : il va jusqu'à la fin.
+  // Body still open (file being typed): it runs to the end.
   const end = (info: ClassInfo) => (info.body.end > info.body.start ? info.body.end : source.length);
   const candidates = file.classes.filter((c) => c.element && c.body.start < offset && offset <= end(c));
   return candidates.sort((a, b) => b.body.start - a.body.start)[0] ?? null;
 }
 
 /**
- * Les noms des contrats de l'app, tels que les accepte `this.contract(…)` (le router en est exclu),
- * lus sur `SuperElement` en portée dans le TS virtuel.
+ * The names of the app's contracts, as accepted by `this.contract(…)` (the router is excluded),
+ * read from `SuperElement` in scope in the virtual TypeScript.
  */
 function contractNames({ checker, file }: Checked): string[] {
   const element = checker.getSymbolsInScope(file, ts.SymbolFlags.Alias | ts.SymbolFlags.Class).find((s) => s.name === 'SuperElement');
@@ -202,7 +202,7 @@ function contractNames({ checker, file }: Checked): string[] {
     .sort();
 }
 
-/** `error-log` → `errorLog` : un nom de champ pour un contrat dont le nom n'est pas un identifiant. */
+/** `error-log` → `errorLog`: a field name for a contract whose name is not an identifier. */
 const fieldName = (contract: string) => contract.replace(/[^\w$]+(\w)/g, (_, c: string) => c.toUpperCase()).replace(/^[^A-Za-z_$]/, '_');
 
 export const componentDeclarationsService: LanguageServicePlugin = {
@@ -215,7 +215,7 @@ export const componentDeclarationsService: LanguageServicePlugin = {
         const source = document.getText();
         const offset = document.offsetAt(position);
         const line = source.slice(source.lastIndexOf('\n', offset - 1) + 1, offset);
-        // `@contract |` : les contrats de l'app, sauf ceux que le composant déclare déjà.
+        // `@contract |`: the app's contracts, except those the component already declares.
         const contract = /^\s*@contract\s+([A-Za-z_$][\w$]*)?$/.exec(line);
         if (contract) {
           const info = componentAt(source, offset);
@@ -238,7 +238,7 @@ export const componentDeclarationsService: LanguageServicePlugin = {
               return {
                 label: name,
                 kind: 9, // module
-                detail: 'contrat',
+                detail: 'contract',
                 filterText: field,
                 textEdit: { range, newText: field === name ? `${name};` : `${field} = '${name}';` },
               };
@@ -251,7 +251,7 @@ export const componentDeclarationsService: LanguageServicePlugin = {
         if (!info) return;
         const prefix = typed[1] ?? '';
         const range = { start: document.positionAt(offset - prefix.length), end: position };
-        // `@tag` et `@title` ne se déclarent qu'une fois.
+        // `@tag` and `@title` are declared only once.
         const declared = new Set(info.members.map((m) => m.kind));
         const items: CompletionItem[] = ORDER.filter((kind) => kind.startsWith(prefix))
           .filter((kind) => !((kind === 'tag' || kind === 'title') && declared.has(kind)))

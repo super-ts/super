@@ -1,6 +1,6 @@
 import { type Children, SuperElement } from '@super-ts/dom';
 
-/** Un composant à enfants et à emplacement nommé, pour la complétion de `<:`. */
+/** A component with children and a named slot, for `<:` completion. */
 export class Panel extends SuperElement {
   @tag = 'srv-panel';
   @prop heading: string;

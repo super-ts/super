@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Serveur de langage des fichiers `.super`, sur stdio : `node packages/lang-server/src/server.ts --stdio`.
- * Volar + service TypeScript, avec TypeScript 6 (Volar ne supporte pas encore TypeScript 7).
+ * Language server for `.super` files, on stdio: `node packages/lang-server/src/server.ts --stdio`.
+ * Volar + TypeScript service, with TypeScript 6 (Volar does not support TypeScript 7 yet).
  */
 import { createConnection, createServer, createTypeScriptProject } from '@volar/language-server/node.js';
 import type { LanguageServicePlugin, LanguageServicePluginInstance } from '@volar/language-service';
@@ -13,9 +13,9 @@ import { superSyntaxService } from './syntax-service.ts';
 import { templateCompletionService } from './template-completion.ts';
 
 /**
- * Le service TypeScript limité aux `.super`. L'éditeur peut nous envoyer aussi des `.ts` (Zed le
- * fait) : leur serveur habituel s'en occupe déjà, on ne double ni les erreurs ni la complétion.
- * Les noms internes du TS virtuel (`__s`, `__e0`…) sont retirés de la complétion.
+ * The TypeScript service restricted to `.super` files. The editor may also send us `.ts` files (Zed
+ * does): their usual server already handles them, so neither errors nor completion are duplicated.
+ * The internal names of the virtual TypeScript (`__s`, `__e0`…) are removed from completion.
  */
 function onlySuper(plugin: LanguageServicePlugin): LanguageServicePlugin {
   return {

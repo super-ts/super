@@ -1,6 +1,6 @@
 /**
- * Client LSP minimal pour les tests : lance un serveur sur stdio, envoie requêtes et notifications,
- * et garde les erreurs publiées (`textDocument/publishDiagnostics`) par fichier.
+ * Minimal LSP client for tests: starts a server on stdio, sends requests and notifications,
+ * and keeps the published errors (`textDocument/publishDiagnostics`) per file.
  */
 import { type ChildProcess, spawn } from 'node:child_process';
 import { readFileSync } from 'node:fs';
@@ -20,7 +20,7 @@ export class TestClient {
   #nextId = 1;
   #buffer = Buffer.alloc(0);
 
-  /** Lance `node <script> ...args`. */
+  /** Runs `node <script> ...args`. */
   constructor(script: string, args: string[] = []) {
     this.process = spawn(process.execPath, [script, ...args], { stdio: ['pipe', 'pipe', 'pipe'] });
     this.process.stdout?.on('data', (chunk: Buffer) => this.#read(chunk));
@@ -36,7 +36,7 @@ export class TestClient {
       const message = JSON.parse(this.#buffer.subarray(headerEnd + 4, headerEnd + 4 + length).toString());
       this.#buffer = this.#buffer.subarray(headerEnd + 4 + length);
       if (message.id !== undefined && message.method)
-        this.#send({ id: message.id, result: null }); // Requête du serveur.
+        this.#send({ id: message.id, result: null }); // Request from the server.
       else if (message.id !== undefined) this.#pending.get(message.id)?.(message.result ?? null);
       else if (message.method === 'textDocument/publishDiagnostics') {
         this.published.set(message.params.uri, message.params.diagnostics);
@@ -62,14 +62,14 @@ export class TestClient {
     this.#send({ method, params });
   }
 
-  /** `initialize` puis `initialized`, à la racine `root`. Sans `diagnostic`, le serveur pousse ses erreurs. */
+  /** `initialize` then `initialized`, at the `root` root. Without `diagnostic`, the server pushes its errors. */
   async initialize(root: string, capabilities: object = {}) {
     const uri = pathToFileURL(root).href;
     await this.request('initialize', { processId: process.pid, rootUri: uri, workspaceFolders: [{ uri, name: 'test' }], capabilities });
     this.notify('initialized', {});
   }
 
-  /** Ouvre un fichier, avec son texte sur disque ou `text`. */
+  /** Opens a file, with its text on disk or `text`. */
   open(file: string, languageId: string, text = readFileSync(file, 'utf8')) {
     const uri = pathToFileURL(file).href;
     this.notify('textDocument/didOpen', { textDocument: { uri, languageId, version: 1, text } });
@@ -80,7 +80,7 @@ export class TestClient {
     this.notify('textDocument/didChange', { textDocument: { uri, version }, contentChanges: [{ text }] });
   }
 
-  /** Attend des erreurs publiées pour `uri` qui satisfont `accept` (le serveur en publie souvent deux fois). */
+  /** Waits for errors published for `uri` that satisfy `accept` (the server often publishes twice). */
   diagnostics(uri: string, accept: (diagnostics: Diagnostic[]) => boolean = () => true, timeout = 20000): Promise<Diagnostic[]> {
     return new Promise((resolve, reject) => {
       const check = () => {
@@ -92,7 +92,7 @@ export class TestClient {
         return true;
       };
       const listener = () => void check();
-      const timer = setTimeout(() => reject(new Error(`pas d'erreurs publiées pour ${uri}`)), timeout);
+      const timer = setTimeout(() => reject(new Error(`no errors published for ${uri}`)), timeout);
       if (!check()) this.#listeners.push(listener);
     });
   }
@@ -102,11 +102,11 @@ export class TestClient {
   }
 }
 
-/** La position (ligne, colonne à partir de 0) de la `occurrence`-ième apparition de `needle`, décalée de `offset`. */
+/** The position (line, column from 0) of the `occurrence`-th occurrence of `needle`, shifted by `offset`. */
 export function positionOf(text: string, needle: string, offset = 0, occurrence = 1) {
   let index = -1;
   for (let n = 0; n < occurrence; n++) index = text.indexOf(needle, index + 1);
-  if (index === -1) throw new Error(`« ${needle} » introuvable`);
+  if (index === -1) throw new Error(`"${needle}" not found`);
   const before = text.slice(0, index + offset).split('\n');
   return { line: before.length - 1, character: (before.at(-1) as string).length };
 }

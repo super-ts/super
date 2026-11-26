@@ -5,8 +5,8 @@ import { writeVirtualFile } from '../../lang/src/virtual-files.ts';
 import { positionOf } from './test-client.ts';
 
 /**
- * Les déclarations des `.super` (`.super/types/`), vues par le vrai tsserver (celui que vtsls et
- * les autres éditeurs enveloppent) : « aller à la définition » depuis un `.ts` ouvre le `.super`.
+ * The declarations of `.super` files (`.super/types/`), seen by the real tsserver (the one vtsls and
+ * other editors wrap): "go to definition" from a `.ts` file opens the `.super` file.
  */
 const PROJECT = join(import.meta.dirname, '__fixtures__/project');
 const CARD = join(PROJECT, 'card.super');
@@ -15,12 +15,12 @@ const TSSERVER = join(import.meta.dirname, '../node_modules/typescript/lib/tsser
 
 type Location = { file: string; start: { line: number; offset: number } };
 
-/** Les définitions renvoyées par tsserver à cette position (ligne et colonne à partir de 1). */
+/** The definitions tsserver returns at this position (line and column from 1). */
 function definitions(file: string, line: number, offset: number): Promise<Location[]> {
   return new Promise((resolve, reject) => {
     const server = spawn(process.execPath, [TSSERVER, '--disableAutomaticTypingAcquisition'], { stdio: ['pipe', 'pipe', 'ignore'] });
     let output = '';
-    const timer = setTimeout(() => (server.kill(), reject(new Error('tsserver ne répond pas'))), 20000);
+    const timer = setTimeout(() => (server.kill(), reject(new Error('tsserver does not respond'))), 20000);
     server.stdout.on('data', (chunk) => {
       output += chunk;
       for (const match of output.matchAll(/\{"seq".*\}/g)) {
@@ -38,10 +38,10 @@ function definitions(file: string, line: number, offset: number): Promise<Locati
   });
 }
 
-describe('déclarations des .super', () => {
+describe('.super declarations', () => {
   beforeAll(() => writeVirtualFile(CARD, readFileSync(CARD, 'utf8')));
 
-  it('« aller à la définition » depuis un .ts ouvre le .super, sur le nom de la classe, une seule fois', async () => {
+  it('"go to definition" from a .ts file opens the .super file, on the class name, only once', async () => {
     const uses = readFileSync(USES, 'utf8');
     const at = positionOf(uses, 'Card.tag');
     const found = await definitions(USES, at.line + 1, at.character + 1);

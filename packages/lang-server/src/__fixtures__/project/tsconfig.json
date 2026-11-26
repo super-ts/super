@@ -1,5 +1,5 @@
 {
-  // Projet des tests du serveur : le serveur écrit son TS virtuel dans ce dossier-ci (.super/).
+  // Project for the server tests: the server writes its virtual TypeScript in this folder (.super/).
   "extends": "../../../../../tsconfig.json",
   "compilerOptions": { "rootDirs": [".", "./.super/types", "./.super/virtual"] },
   "include": ["."],
