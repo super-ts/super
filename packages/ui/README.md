@@ -17,7 +17,7 @@ that any rule of your app overrides. Importing a component loads the kit stylesh
 import { Button } from '@super-ts/ui';
 ```
 
-```tsx
+```super
 <Button variant="secondary" on:press={() => this.theme.send('toggle')}>Toggle</Button>
 ```
 

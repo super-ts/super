@@ -14,7 +14,7 @@ Components are custom elements written in `.super` files (compiled by
 [`@super-ts/vite`](https://www.npmjs.com/package/@super-ts/vite)). `createApp` provides the stores
 to the components, which ask for them by contract name.
 
-```ts
+```super
 // src/@components/shared/theme-toggle.super
 import { SuperElement } from '@super-ts/dom';
 
@@ -38,9 +38,7 @@ import { createApp } from '@super-ts/dom';
 import { ThemeToggle } from '@components/shared/theme-toggle';
 import { ThemeStore } from '@core/theme/store';
 
-createApp({ root: document.querySelector<HTMLElement>('#app')!, stores: [ThemeStore.create()] }).mount(
-  ThemeToggle.create(),
-);
+createApp({ root: document.querySelector<HTMLElement>('#app')!, stores: [ThemeStore.create()] }).mount(ThemeToggle.create());
 ```
 
 The `@super-ts/*` packages share one version: install them at the same version. In 0.x, a minor
