@@ -1,16 +1,16 @@
 import { SuperElement } from '@super-ts/dom';
 
-/** 1. Un bloc qui plante au rendu quand on le casse : son propre renderError remplace seulement sa zone. */
+/** 1. A block that crashes on render when you break it: its own renderError replaces only its area. */
 export class FragileCard extends SuperElement {
   @tag = 'fragile-card';
   @prop broken: boolean;
 
   render() {
-    if (this.broken) throw new Error('le bloc a lu une donnée absente');
-    <p class="ok">Ce bloc s'affiche normalement.</p>
+    if (this.broken) throw new Error('the block read missing data');
+    <p class="ok">This block renders normally.</p>
   }
 
   override renderError(error: Error) {
-    <p class="fallback">Ce bloc a planté ({error.message}) : son renderError le remplace, le reste de la page continue.</p>
+    <p class="fallback">This block crashed ({error.message}): its renderError replaces it, the rest of the page carries on.</p>
   }
 }

@@ -6,7 +6,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, test } from 'vitest';
 import { Router } from '../../routes';
 
-const idle: CounterState = { counts: { cafes: 2, pompes: 0, livres: 1 }, loadErrorMessage: null };
+const idle: CounterState = { counts: { coffees: 2, pushups: 0, books: 1 }, loadErrorMessage: null };
 
 async function setup(initialPath: string) {
   const counter = fakeStore('counter', { state: idle });
@@ -17,21 +17,21 @@ async function setup(initialPath: string) {
 }
 
 describe('CounterListScreen', () => {
-  test('affiche les compteurs dans l’ordre d’origine, ou par nom avec ?sort=label', async () => {
-    expect((await setup('/counters')).labels()).toEqual(['Cafés', 'Pompes', 'Livres']);
-    expect((await setup('/counters?sort=label')).labels()).toEqual(['Cafés', 'Livres', 'Pompes']);
+  test('shows the counters in the original order, or by name with ?sort=label', async () => {
+    expect((await setup('/counters')).labels()).toEqual(['Coffees', 'Push-ups', 'Books']);
+    expect((await setup('/counters?sort=label')).labels()).toEqual(['Books', 'Coffees', 'Push-ups']);
   });
 
-  test('changer de tri met à jour l’URL sans remonter l’écran', async () => {
+  test('changing the sort updates the URL without remounting the screen', async () => {
     const { router, container, labels, ui } = await setup('/counters');
     const screen = container.querySelector('counter-list-screen');
 
-    await userEvent.click(ui.getByRole('link', { name: 'Par nom' }));
+    await userEvent.click(ui.getByRole('link', { name: 'By name' }));
     await flush();
 
     expect(router.state().path).toBe('/counters?sort=label');
-    expect(labels()).toEqual(['Cafés', 'Livres', 'Pompes']);
-    expect(ui.getByRole('link', { name: 'Par nom' }).getAttribute('aria-current')).toBe('page');
+    expect(labels()).toEqual(['Books', 'Coffees', 'Push-ups']);
+    expect(ui.getByRole('link', { name: 'By name' }).getAttribute('aria-current')).toBe('page');
     expect(container.querySelector('counter-list-screen')).toBe(screen);
   });
 });

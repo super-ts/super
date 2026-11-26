@@ -9,10 +9,10 @@ import { createInMemoryProductCatalog } from '../../adapters/in-memory-product-c
 import type { Product } from '../../domain/catalog';
 import { Router } from '../../routes';
 
-const idle: CounterState = { counts: { cafes: 2, pompes: 0, livres: 1 }, loadErrorMessage: null };
+const idle: CounterState = { counts: { coffees: 2, pushups: 0, books: 1 }, loadErrorMessage: null };
 const PRODUCTS: Product[] = Array.from({ length: 20 }, (_, i) => ({
   id: i + 1,
-  title: `Produit ${String(i + 1).padStart(2, '0')}`,
+  title: `Product ${String(i + 1).padStart(2, '0')}`,
   brand: i % 2 ? 'Acme' : null,
   price: (i * 7) % 20,
   rating: 4,
@@ -38,10 +38,10 @@ const cells = (ui: ReturnType<typeof within>, column = 0) =>
     .slice(1)
     .map((row: HTMLElement) => row.querySelectorAll('td')[column]!.textContent);
 
-describe('kit : le sommaire', () => {
-  test('mène à chaque famille de composants', async () => {
+describe('kit: table of contents', () => {
+  test('leads to each component family', async () => {
     const { router, ui } = await setup('/kit');
-    const families = ['Formulaires et commandes', 'Fenêtres', 'Primitives', 'Affichage', 'Table', 'Thème'];
+    const families = ['Forms and commands', 'Windows', 'Primitives', 'Display', 'Table', 'Theme'];
     expect(families.map((name) => ui.getByRole('link', { name }).getAttribute('href'))).toEqual([
       '/kit/forms',
       '/kit/windows',
@@ -50,121 +50,121 @@ describe('kit : le sommaire', () => {
       '/kit/table',
       '/kit/theme',
     ]);
-    await userEvent.click(ui.getByRole('link', { name: 'Fenêtres' }));
+    await userEvent.click(ui.getByRole('link', { name: 'Windows' }));
     await flush();
     expect(router.state().name).toBe('kit-windows');
-    expect(ui.getByRole('link', { name: '← Le kit' }).getAttribute('href')).toBe('/kit');
+    expect(ui.getByRole('link', { name: '← The kit' }).getAttribute('href')).toBe('/kit');
   });
 });
 
-describe('kit : formulaires et commandes', () => {
-  test('les champs valident et soumettent le formulaire, puis un message confirme', async () => {
+describe('kit: forms and commands', () => {
+  test('the fields validate and submit the form, then a message confirms', async () => {
     const { profile, ui } = await setup('/kit/forms');
-    await userEvent.click(ui.getByRole('button', { name: 'Enregistrer' }));
+    await userEvent.click(ui.getByRole('button', { name: 'Save' }));
     await flush();
-    expect(ui.getByText('Nom obligatoire')).toBeTruthy();
-    expect(ui.getByLabelText('Nom').getAttribute('aria-invalid')).toBe('true');
+    expect(ui.getByText('Name required')).toBeTruthy();
+    expect(ui.getByLabelText('Name').getAttribute('aria-invalid')).toBe('true');
 
-    await userEvent.type(ui.getByLabelText('Nom'), 'Ada');
-    await userEvent.type(ui.getByLabelText('E-mail'), 'ada@example.com');
+    await userEvent.type(ui.getByLabelText('Name'), 'Ada');
+    await userEvent.type(ui.getByLabelText('Email'), 'ada@example.com');
     await userEvent.click(ui.getByLabelText('Pro'));
-    await userEvent.click(ui.getByRole('button', { name: 'Enregistrer' }));
-    await new Promise((resolve) => setTimeout(resolve, 450)); // la vérification de l'adresse attend 400 ms
+    await userEvent.click(ui.getByRole('button', { name: 'Save' }));
+    await new Promise((resolve) => setTimeout(resolve, 450)); // the address check waits 400 ms
     await flush();
 
     expect(profile.sent.at(-1)).toMatchObject({ name: 'save', args: [{ name: 'Ada', email: 'ada@example.com', plan: 'pro' }] });
-    expect(ui.getByText('Profil enregistré.')).toBeTruthy();
+    expect(ui.getByText('Profile saved.')).toBeTruthy();
   });
-  test('le bouton de commande affiche le compteur et envoie reset avec son entrée', async () => {
+  test('the command button shows the counter and sends reset with its input', async () => {
     const { counter, ui } = await setup('/kit/forms');
-    expect(ui.getByText('Cafés :').textContent).toContain('2');
-    await userEvent.click(ui.getByRole('button', { name: 'Remettre les cafés à zéro' }));
+    expect(ui.getByText('Coffees:').textContent).toContain('2');
+    await userEvent.click(ui.getByRole('button', { name: 'Reset the coffees to zero' }));
     await flush();
-    expect(counter.sent.at(-1)).toMatchObject({ name: 'reset', args: [{ id: 'cafes' }] });
+    expect(counter.sent.at(-1)).toMatchObject({ name: 'reset', args: [{ id: 'coffees' }] });
   });
 });
 
-describe('kit : fenêtres et primitives', () => {
-  test('la modale s’ouvre et se ferme avec Échap', async () => {
+describe('kit: windows and primitives', () => {
+  test('the modal opens and closes with Escape', async () => {
     const { ui } = await setup('/kit/windows');
-    await userEvent.click(ui.getByRole('button', { name: 'Ouvrir une modale' }));
+    await userEvent.click(ui.getByRole('button', { name: 'Open a modal' }));
     await flush();
-    expect(ui.getByRole('heading', { name: 'À propos' })).toBeTruthy();
+    expect(ui.getByRole('heading', { name: 'About' })).toBeTruthy();
 
     await userEvent.keyboard('{Escape}');
     await flush();
-    expect(ui.queryByRole('heading', { name: 'À propos' })).toBeNull();
+    expect(ui.queryByRole('heading', { name: 'About' })).toBeNull();
   });
 
-  test('le menu pousse un message', async () => {
+  test('the menu pushes a message', async () => {
     const { ui } = await setup('/kit/primitives');
     await userEvent.click(ui.getByRole('button', { name: 'Actions' }));
-    await userEvent.click(ui.getByRole('menuitem', { name: 'Dire bonjour' }));
+    await userEvent.click(ui.getByRole('menuitem', { name: 'Say hello' }));
     await flush();
-    expect(ui.getByText('Bonjour !')).toBeTruthy();
+    expect(ui.getByText('Hello!')).toBeTruthy();
   });
 
-  test('le combobox à valeurs en dur filtre lui-même, sans accents ni casse', async () => {
+  test('the hard-coded combobox filters by itself, ignoring case', async () => {
     const { ui } = await setup('/kit/primitives');
-    await userEvent.type(ui.getByRole('combobox', { name: 'Fruit' }), 'peche');
+    await userEvent.type(ui.getByRole('combobox', { name: 'Fruit' }), 'PEACH');
     const options = ui.getAllByRole('option').map((option) => option.textContent!.trim());
-    expect(options).toEqual(['Pêche']);
+    expect(options).toEqual(['Peach']);
     await userEvent.keyboard('{ArrowDown}{Enter}');
     await flush();
-    expect(ui.getByText('Fruit choisi : Pêche')).toBeTruthy();
+    expect(ui.getByText('Fruit chosen: Peach')).toBeTruthy();
   });
 
-  test('le combobox branché cherche dans le catalogue et propose ce qu’il trouve', async () => {
+  test('the connected combobox searches the catalogue and suggests what it finds', async () => {
     const { productCatalog, ui } = await setup('/kit/primitives');
-    await userEvent.type(ui.getByRole('combobox', { name: 'Produit' }), 'produit 1');
+    await userEvent.type(ui.getByRole('combobox', { name: 'Product' }), 'product 1');
     await flush();
-    expect(productCatalog.searches.at(-1)).toBe('produit 1');
-    const listbox = within(ui.getByRole('listbox', { name: 'Produit' }));
+    expect(productCatalog.searches.at(-1)).toBe('product 1');
+    const listbox = within(ui.getByRole('listbox', { name: 'Product' }));
     expect(listbox.getAllByRole('option').map((option) => option.textContent!.trim())).toEqual([
-      'Produit 10',
-      'Produit 11',
-      'Produit 12',
-      'Produit 13',
-      'Produit 14',
-      'Produit 15',
-      'Produit 16',
-      'Produit 17',
+      'Product 10',
+      'Product 11',
+      'Product 12',
+      'Product 13',
+      'Product 14',
+      'Product 15',
+      'Product 16',
+      'Product 17',
     ]);
-    await userEvent.click(listbox.getByRole('option', { name: 'Produit 12' }));
+    await userEvent.click(listbox.getByRole('option', { name: 'Product 12' }));
     await flush();
-    expect(ui.getByText('Produit choisi : Produit 12')).toBeTruthy();
+    expect(ui.getByText('Product chosen: Product 12')).toBeTruthy();
   });
 });
 
-describe('kit : table', () => {
-  test('la table statique trie elle-même', async () => {
+describe('kit: table', () => {
+  test('the static table sorts by itself', async () => {
     const { ui } = await setup('/kit/table');
-    const table = within(ui.getByRole('table', { name: 'Compteurs' }));
-    await userEvent.click(table.getByRole('button', { name: 'Valeur' }));
+    const table = within(ui.getByRole('table', { name: 'Counters' }));
+    await userEvent.click(table.getByRole('button', { name: 'Value' }));
     await flush();
     expect(cells(table, 1)).toEqual(['0', '1']);
   });
 
-  test('la table branchée charge la page de l’URL, et trier ou paginer passe par l’URL', async () => {
+  test('the connected table loads the page from the URL, and sorting or paging goes through the URL', async () => {
     const { productCatalog, router, ui } = await setup('/kit/table?sort=price&order=desc&page=2&size=5');
-    const table = within(ui.getByRole('table', { name: 'Produits' }));
+    const table = within(ui.getByRole('table', { name: 'Products' }));
     expect(productCatalog.queries.at(-1)).toEqual({ page: 2, pageSize: 5, sort: 'price', order: 'desc' });
     expect(ui.getByText('Page 2 of 4')).toBeTruthy();
     expect(table.getAllByRole('row')).toHaveLength(6);
 
-    await userEvent.click(table.getByRole('button', { name: 'Produit' }));
+    await userEvent.click(table.getByRole('button', { name: 'Product' }));
     await flush();
     expect(router.state().path).toBe('/kit/table?sort=title&order=asc&page=1&size=5');
     expect(productCatalog.queries.at(-1)).toEqual({ page: 1, pageSize: 5, sort: 'title', order: 'asc' });
-    expect(cells(table)[0]).toBe('Produit 01');
+    expect(cells(table)[0]).toBe('Product 01');
 
-    const products = within(ui.getByRole('table', { name: 'Produits' }).closest<HTMLElement>('.super-table')!);
+    const products = within(ui.getByRole('table', { name: 'Products' }).closest<HTMLElement>('.super-table')!);
     await userEvent.click(products.getByRole('button', { name: 'Next' }));
     await flush();
     expect(router.state().path).toBe('/kit/table?sort=title&order=asc&page=2&size=5');
-    expect(cells(table)[0]).toBe('Produit 06');
+    expect(cells(table)[0]).toBe('Product 06');
 
-    // Le nombre de lignes par page passe aussi par l'URL, et ramène à la première page.
+    // The number of rows per page also goes through the URL, and brings back the first page.
     const size = products.getByLabelText('Rows per page') as HTMLSelectElement;
     expect(size.value).toBe('5');
     await userEvent.selectOptions(size, '20');
@@ -174,18 +174,18 @@ describe('kit : table', () => {
     expect(table.getAllByRole('row')).toHaveLength(21);
   });
 
-  test('une valeur inconnue dans l’URL est ignorée : pas de tri, page 1', async () => {
-    const { productCatalog } = await setup('/kit/table?sort=nimporte&page=abc&size=7');
+  test('an unknown value in the URL is ignored: no sort, page 1', async () => {
+    const { productCatalog } = await setup('/kit/table?sort=whatever&page=abc&size=7');
     expect(productCatalog.queries.at(-1)).toEqual({ page: 1, pageSize: 10, sort: null, order: 'asc' });
   });
 });
 
-describe('kit : thème', () => {
-  test('chaque exemple affiche le CSS qui le produit', async () => {
+describe('kit: theme', () => {
+  test('each example shows the CSS that produces it', async () => {
     const { ui } = await setup('/kit/theme');
     const code = [...document.querySelectorAll('.kit-code')].map((pre) => pre.textContent);
     expect(code.some((css) => css!.includes('.kit-ocean'))).toBe(true);
     expect(code.some((css) => css!.includes('color-scheme: dark'))).toBe(true);
-    expect(ui.getByRole('button', { name: 'Avec class="kit-violet"' }).classList.contains('kit-violet')).toBe(true);
+    expect(ui.getByRole('button', { name: 'With class="kit-violet"' }).classList.contains('kit-violet')).toBe(true);
   });
 });

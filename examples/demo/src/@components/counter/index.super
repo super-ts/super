@@ -4,38 +4,38 @@ import { CounterControls } from './counter-controls';
 import './index.css';
 
 const DONE: Record<CounterChange, string> = {
-  increment: 'Incrémenté',
-  decrement: 'Décrémenté',
-  reset: 'Remis à zéro',
+  increment: 'Incremented',
+  decrement: 'Decremented',
+  reset: 'Reset to zero',
 };
 
-// L'écran choisit le texte de chaque raison d'échec (le compilateur signale une raison oubliée).
+// The screen chooses the text for each failure reason (the compiler flags a forgotten reason).
 const FAILED: Record<CounterFailure | 'error', string> = {
-  unknown: 'Ce compteur n’existe pas.',
-  'below-min': 'Le compteur est déjà à zéro.',
-  storage: 'Impossible d’enregistrer : le stockage est indisponible.',
-  error: 'Une erreur inattendue est survenue.',
+  unknown: 'This counter does not exist.',
+  'below-min': 'The counter is already at zero.',
+  storage: 'Could not save: storage is unavailable.',
+  error: 'An unexpected error occurred.',
 };
 
-/** Écran de la route `/counters/:id` : il lit `id` dans sa route. */
+/** Screen of the `/counters/:id` route: it reads `id` from its route. */
 export class CounterScreen extends SuperElement {
   @tag = 'counter-screen';
-  // Suivi : renommer le compteur change aussi le titre de l'onglet.
-  @title = () => this.label.value ?? 'Compteur introuvable';
+  // Tracked: renaming the counter also changes the tab title.
+  @title = () => this.label.value ?? 'Counter not found';
 
-  // Le paramètre de la route, lu à l'appel : `this.counterId()`.
+  // The route parameter, read on call: `this.counterId()`.
   counterId = this.router.current.params.id;
 
-  // Ne lit que ce qui concerne le compteur affiché : les autres compteurs ne re-rendent pas l'écran.
+  // Reads only what concerns the displayed counter: the other counters do not re-render the screen.
   @contract counter;
   @selector label = () => this.counter.selectors.label(this.counterId());
   @selector count = () => this.counter.selectors.count(this.counterId());
   @selector canDecrement = () => this.counter.selectors.canDecrement(this.counterId());
-  // Un chargement ou une écriture en cours : on attend avant d'en relancer une.
+  // A load or a write is pending: wait before starting another one.
   @selector busy = () => this.counter.selectors.pending();
   @state local = { message: null as string | null };
 
-  // L'écran envoie une commande et laisse filer ; Super publie l'issue de chacune.
+  // The screen sends a command and moves on; Super publishes the outcome of each one.
   @on('counter', 'increment:done')
   onIncremented({ input, result }) {
     this.#done('increment', input.id, result.count);
@@ -66,9 +66,9 @@ export class CounterScreen extends SuperElement {
     this.#failed(input.id, reason);
   }
 
-  // Seules les issues du compteur affiché deviennent un message.
+  // Only the outcomes of the displayed counter become a message.
   #done(change: CounterChange, id: string, count: number) {
-    if (id === this.counterId()) this.local.set({ message: `${DONE[change]} : ${count}` });
+    if (id === this.counterId()) this.local.set({ message: `${DONE[change]}: ${count}` });
   }
 
   #failed(id: string, reason: CounterFailure | 'error') {
@@ -78,13 +78,13 @@ export class CounterScreen extends SuperElement {
   run = (command: CounterChange) => this.counter.send(command, { id: this.counterId() });
 
   #back() {
-    <a class="back-link" href={this.router.href('counters')}>← Tous les compteurs</a>
+    <a class="back-link" href={this.router.href('counters')}>← All counters</a>
   }
 
   render() {
     const label = this.label.value;
     if (label === null) {
-      <main class="screen">{this.#back()}<h1>Compteur introuvable</h1><p>Aucun compteur « {this.counterId()} ».</p></main>
+      <main class="screen">{this.#back()}<h1>Counter not found</h1><p>No counter "{this.counterId()}".</p></main>
       return;
     }
 
@@ -100,7 +100,7 @@ export class CounterScreen extends SuperElement {
         on:increment={() => this.run('increment')}
         on:decrement={() => this.run('decrement')}
       />
-      <button type="button" class="counter-reset" disabled={count === 0 || busy} on:click={() => this.run('reset')}>Remettre à zéro</button>
+      <button type="button" class="counter-reset" disabled={count === 0 || busy} on:click={() => this.run('reset')}>Reset to zero</button>
       <p class="counter-message" role="status">{this.local.get().message}</p>
     </main>
   }

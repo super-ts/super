@@ -14,68 +14,68 @@ async function setup() {
 }
 
 async function fillValid(ui: ReturnType<typeof within>, email = 'ada@example.com') {
-  await userEvent.type(ui.getByLabelText('Nom'), 'Ada');
-  await userEvent.type(ui.getByLabelText('E-mail'), email);
-  await userEvent.type(ui.getByLabelText('Mot de passe'), 'longpassword');
+  await userEvent.type(ui.getByLabelText('Name'), 'Ada');
+  await userEvent.type(ui.getByLabelText('Email'), email);
+  await userEvent.type(ui.getByLabelText('Password'), 'longpassword');
   await userEvent.type(ui.getByLabelText('Confirmation'), 'longpassword');
-  await userEvent.selectOptions(ui.getByLabelText('Langues'), ['fr']);
-  await userEvent.type(ui.getByLabelText('Numéro'), '06 12 34 56 78');
+  await userEvent.selectOptions(ui.getByLabelText('Languages'), ['fr']);
+  await userEvent.type(ui.getByLabelText('Number'), '06 12 34 56 78');
 }
 const settleCheck = () => new Promise((resolve) => setTimeout(resolve, 450));
 
 describe('ProfileScreen', () => {
-  test('soumettre vide affiche les erreurs des règles, sans rien envoyer', async () => {
+  test('submitting empty shows the rule errors, without sending anything', async () => {
     const { profileClient, ui } = await setup();
 
-    await userEvent.click(ui.getByRole('button', { name: 'Enregistrer' }));
+    await userEvent.click(ui.getByRole('button', { name: 'Save' }));
 
-    expect(ui.getByText('Nom obligatoire')).toBeTruthy();
-    expect(ui.getByText('Choisis au moins une langue')).toBeTruthy();
-    expect(ui.getByText('Numéro invalide')).toBeTruthy();
+    expect(ui.getByText('Name required')).toBeTruthy();
+    expect(ui.getByText('Choose at least one language')).toBeTruthy();
+    expect(ui.getByText('Invalid number')).toBeTruthy();
     expect(profileClient.saved).toEqual([]);
   });
 
-  test('la vérification asynchrone signale une adresse prise pendant la saisie', async () => {
+  test('the asynchronous check flags a taken address while typing', async () => {
     const { ui } = await setup();
 
-    await userEvent.type(ui.getByLabelText('E-mail'), 'taken@example.com');
+    await userEvent.type(ui.getByLabelText('Email'), 'taken@example.com');
     await settleCheck();
     await flush();
 
-    expect(ui.getByText('Adresse déjà utilisée')).toBeTruthy();
+    expect(ui.getByText('Address already in use')).toBeTruthy();
   });
 
-  test('une panne réseau à l’enregistrement s’affiche pour tout le formulaire', async () => {
+  test('a network failure on save is shown for the whole form', async () => {
     const { ui } = await setup();
     await fillValid(ui, 'offline@example.com');
     await settleCheck();
 
-    await userEvent.click(ui.getByRole('button', { name: 'Enregistrer' }));
+    await userEvent.click(ui.getByRole('button', { name: 'Save' }));
 
-    expect(await ui.findByText('Connexion impossible, réessaie.')).toBeTruthy();
+    expect(await ui.findByText('Could not connect, try again.')).toBeTruthy();
   });
 
-  test('une image refusée par le serveur s’affiche sous le champ avatar', async () => {
+  test('an image refused by the server is shown under the avatar field', async () => {
     const { ui } = await setup();
     await fillValid(ui);
     await userEvent.upload(ui.getByLabelText('Avatar'), new File(['x'.repeat(20)], 'big.png', { type: 'image/png' }));
     await settleCheck();
 
-    await userEvent.click(ui.getByRole('button', { name: 'Enregistrer' }));
+    await userEvent.click(ui.getByRole('button', { name: 'Save' }));
 
-    expect(await ui.findByText('Image trop lourde (1 Mo maximum)')).toBeTruthy();
+    expect(await ui.findByText('Image too large (1 MB maximum)')).toBeTruthy();
   });
 
-  test('ajouter et retirer des téléphones, puis tout effacer', async () => {
+  test('add and remove phones, then clear all', async () => {
     const { ui } = await setup();
 
-    await userEvent.click(ui.getByRole('button', { name: 'Ajouter un numéro' }));
-    expect(ui.getAllByLabelText('Numéro')).toHaveLength(2);
-    await userEvent.click(ui.getAllByRole('button', { name: 'Retirer' })[0]!);
-    expect(ui.getAllByLabelText('Numéro')).toHaveLength(1);
+    await userEvent.click(ui.getByRole('button', { name: 'Add a number' }));
+    expect(ui.getAllByLabelText('Number')).toHaveLength(2);
+    await userEvent.click(ui.getAllByRole('button', { name: 'Remove' })[0]!);
+    expect(ui.getAllByLabelText('Number')).toHaveLength(1);
 
-    await userEvent.type(ui.getByLabelText('Nom'), 'Ada');
-    await userEvent.click(ui.getByRole('button', { name: 'Tout effacer' }));
-    expect((ui.getByLabelText('Nom') as HTMLInputElement).value).toBe('');
+    await userEvent.type(ui.getByLabelText('Name'), 'Ada');
+    await userEvent.click(ui.getByRole('button', { name: 'Clear all' }));
+    expect((ui.getByLabelText('Name') as HTMLInputElement).value).toBe('');
   });
 });

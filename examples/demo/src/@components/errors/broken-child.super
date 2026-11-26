@@ -1,14 +1,14 @@
 import { SuperElement } from '@super-ts/dom';
 
-/** 2. Un enfant qui plante dès son constructeur, sans renderError… */
+/** 2. A child that crashes in its constructor, without renderError... */
 export class BrokenChild extends SuperElement {
   @tag = 'broken-child';
 
   constructor() {
     super();
-    throw new Error('l’enfant n’a pas trouvé ce qu’il attendait');
+    throw new Error('the child did not find what it expected');
   }
 
-  // N'émet rien : ne rend rien (de toute façon, le constructeur plante avant).
+  // Emits nothing: renders nothing (the constructor crashes first anyway).
   render() {}
 }

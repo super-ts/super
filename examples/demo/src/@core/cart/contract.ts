@@ -10,8 +10,8 @@ export type CartTypes = {
     remove(input: { sku: string }): void;
     clear(): void;
   };
-  // Un événement écrit à la main : un fait qui n'est pas l'issue d'une seule commande.
-  // Le panier devient vide après `clear`, ou après le `remove` du dernier article.
+  // A hand-written event: a fact that is not the outcome of a single command.
+  // The cart becomes empty after `clear`, or after the `remove` of the last item.
   events: {
     emptied: void;
   };

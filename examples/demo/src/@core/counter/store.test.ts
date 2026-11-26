@@ -3,82 +3,82 @@ import { describe, expect, test } from 'vitest';
 import { createInMemoryCounterRepository } from '../../adapters/in-memory-counter-repository';
 import { CounterStore } from './store';
 
-// Store testé sans DOM, sur un adapter en mémoire.
+// Store tested without a DOM, on an in-memory adapter.
 describe('CounterStore', () => {
-  test('load lit les valeurs persistées', async () => {
-    const store = CounterStore.create({ counterRepository: createInMemoryCounterRepository({ cafes: 5 }) });
+  test('load reads the persisted values', async () => {
+    const store = CounterStore.create({ counterRepository: createInMemoryCounterRepository({ coffees: 5 }) });
 
     await store.send('load');
 
-    expect(store.state()).toMatchObject({ counts: { cafes: 5 }, loadErrorMessage: null });
+    expect(store.state()).toMatchObject({ counts: { coffees: 5 }, loadErrorMessage: null });
     expect(store.pending('load')).toBe(false);
-    expect(store.selectors.count('pompes')).toBe(0);
+    expect(store.selectors.count('pushups')).toBe(0);
   });
 
-  test('increment persiste, met à jour l’état, et Super publie increment:done avec le résultat', async () => {
-    const counterRepository = createInMemoryCounterRepository({ cafes: 1 });
+  test('increment persists, updates the state, and Super publishes increment:done with the result', async () => {
+    const counterRepository = createInMemoryCounterRepository({ coffees: 1 });
     const store = CounterStore.create({ counterRepository });
     const done = record(store, 'increment:done');
     await store.send('load');
 
-    await store.send('increment', { id: 'cafes' });
+    await store.send('increment', { id: 'coffees' });
 
-    expect(store.selectors.count('cafes')).toBe(2);
-    expect(counterRepository.stored).toEqual({ cafes: 2 });
-    expect(done.calls).toEqual([{ input: { id: 'cafes' }, result: { count: 2 } }]);
+    expect(store.selectors.count('coffees')).toBe(2);
+    expect(counterRepository.stored).toEqual({ coffees: 2 });
+    expect(done.calls).toEqual([{ input: { id: 'coffees' }, result: { count: 2 } }]);
   });
 
-  test('les compteurs sont indépendants', async () => {
-    const store = CounterStore.create({ counterRepository: createInMemoryCounterRepository({ cafes: 3 }) });
+  test('counters are independent', async () => {
+    const store = CounterStore.create({ counterRepository: createInMemoryCounterRepository({ coffees: 3 }) });
     await store.send('load');
 
-    await store.send('increment', { id: 'pompes' });
+    await store.send('increment', { id: 'pushups' });
 
-    expect(store.state().counts).toEqual({ cafes: 3, pompes: 1 });
+    expect(store.state().counts).toEqual({ coffees: 3, pushups: 1 });
   });
 
-  test('decrement refuse de descendre sous 0 : decrement:failed avec la raison below-min', async () => {
+  test('decrement refuses to go below 0: decrement:failed with the reason below-min', async () => {
     const store = CounterStore.create({ counterRepository: createInMemoryCounterRepository() });
     const failed = record(store, 'decrement:failed');
 
-    await expect(store.send('decrement', { id: 'cafes' })).rejects.toMatchObject({ reason: 'below-min' });
+    await expect(store.send('decrement', { id: 'coffees' })).rejects.toMatchObject({ reason: 'below-min' });
 
-    expect(failed.calls).toEqual([{ input: { id: 'cafes' }, reason: 'below-min', error: null }]);
-    expect(store.selectors.canDecrement('cafes')).toBe(false);
+    expect(failed.calls).toEqual([{ input: { id: 'coffees' }, reason: 'below-min', error: null }]);
+    expect(store.selectors.canDecrement('coffees')).toBe(false);
   });
 
-  test('un compteur hors catalogue est refusé', async () => {
+  test('a counter outside the catalogue is refused', async () => {
     const counterRepository = createInMemoryCounterRepository();
     const store = CounterStore.create({ counterRepository });
     const failed = record(store, 'increment:failed');
 
-    await expect(store.send('increment', { id: 'inconnu' })).rejects.toMatchObject({ reason: 'unknown' });
+    await expect(store.send('increment', { id: 'unknown-id' })).rejects.toMatchObject({ reason: 'unknown' });
 
-    expect(failed.last).toEqual({ input: { id: 'inconnu' }, reason: 'unknown', error: null });
+    expect(failed.last).toEqual({ input: { id: 'unknown-id' }, reason: 'unknown', error: null });
     expect(counterRepository.stored).toEqual({});
   });
 
-  test('un échec de sauvegarde donne la raison storage et conserve la valeur', async () => {
+  test('a save failure gives the reason storage and keeps the value', async () => {
     const store = CounterStore.create({
-      counterRepository: { loadAll: async () => ({ cafes: 3 }), save: async () => Promise.reject(new Error('quota dépassé')) },
+      counterRepository: { loadAll: async () => ({ coffees: 3 }), save: async () => Promise.reject(new Error('quota exceeded')) },
     });
     const failed = record(store, 'increment:failed');
     await store.send('load');
 
-    await store.send('increment', { id: 'cafes' }).catch(() => {});
+    await store.send('increment', { id: 'coffees' }).catch(() => {});
 
-    expect(failed.last).toEqual({ input: { id: 'cafes' }, reason: 'storage', error: null });
-    expect(store.state().counts).toEqual({ cafes: 3 });
-    expect(store.pending()).toBe(false); // plus rien en cours, même après un échec
+    expect(failed.last).toEqual({ input: { id: 'coffees' }, reason: 'storage', error: null });
+    expect(store.state().counts).toEqual({ coffees: 3 });
+    expect(store.pending()).toBe(false); // nothing pending any more, even after a failure
   });
 
-  test('un échec de chargement alimente loadErrorMessage', async () => {
+  test('a load failure feeds loadErrorMessage', async () => {
     const store = CounterStore.create({
-      counterRepository: { loadAll: async () => Promise.reject(new Error('stockage indisponible')), save: async () => {} },
+      counterRepository: { loadAll: async () => Promise.reject(new Error('storage unavailable')), save: async () => {} },
     });
 
     await store.send('load');
 
-    expect(store.state()).toMatchObject({ loadErrorMessage: 'stockage indisponible' });
+    expect(store.state()).toMatchObject({ loadErrorMessage: 'storage unavailable' });
   });
 });

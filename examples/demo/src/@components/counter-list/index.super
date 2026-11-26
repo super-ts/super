@@ -2,37 +2,37 @@ import { SuperElement } from '@super-ts/dom';
 import { CounterListItem } from './counter-list-item';
 import './index.css';
 
-/** Écran de la route `counters` : la liste des compteurs, triée par nom si `?sort=label`. */
+/** Screen of the `counters` route: the counter list, sorted by name if `?sort=label`. */
 export class CounterListScreen extends SuperElement {
   @tag = 'counter-list-screen';
-  @title = 'Mes compteurs';
+  @title = 'My counters';
 
-  // L'écran lit le catalogue et l'état du chargement ; chaque ligne lit sa propre valeur.
+  // The screen reads the catalogue and the loading state; each row reads its own value.
   @contract counter;
   @selector catalog = this.counter.selectors.catalog;
-  @selector isLoading = () => this.counter.selectors.pending('load'); // suivi par Super : aucun drapeau dans le store
+  @selector isLoading = () => this.counter.selectors.pending('load'); // tracked by Super: no flag in the store
   @selector loadErrorMessage = this.counter.selectors.loadErrorMessage;
-  // La query de la route, typée par sa description : 'original' | 'label'.
+  // The route query, typed by its description: 'original' | 'label'.
   @selector sort = this.router.current.query.sort;
 
   render() {
     const byLabel = this.sort.value === 'label';
     const catalog = this.catalog.value;
-    const shown = byLabel ? [...catalog].sort((a, b) => a.label.localeCompare(b.label, 'fr')) : catalog;
+    const shown = byLabel ? [...catalog].sort((a, b) => a.label.localeCompare(b.label, 'en')) : catalog;
     const loadErrorMessage = this.loadErrorMessage.value;
     <main class="screen">
-      <h1>Mes compteurs</h1>
-      <nav class="counter-sort" aria-label="Tri">
-        <a href={this.router.href('counters')} aria-current={byLabel ? null : 'page'}>Ordre d’origine</a>
-        <a href={this.router.href('counters', { query: { sort: 'label' } })} aria-current={byLabel ? 'page' : null}>Par nom</a>
+      <h1>My counters</h1>
+      <nav class="counter-sort" aria-label="Sort">
+        <a href={this.router.href('counters')} aria-current={byLabel ? null : 'page'}>Original order</a>
+        <a href={this.router.href('counters', { query: { sort: 'label' } })} aria-current={byLabel ? 'page' : null}>By name</a>
       </nav>
       if (this.isLoading.value) {
-        <p>Chargement…</p>
+        <p>Loading…</p>
       }
       if (loadErrorMessage) {
         <div role="alert">
-          <p>Impossible de charger les compteurs : {loadErrorMessage}</p>
-          <button type="button" on:click={() => this.counter.send('load')}>Réessayer</button>
+          <p>Could not load the counters: {loadErrorMessage}</p>
+          <button type="button" on:click={() => this.counter.send('load')}>Retry</button>
         </div>
       }
       <ul class="counter-list">

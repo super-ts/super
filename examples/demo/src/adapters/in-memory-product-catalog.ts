@@ -5,7 +5,7 @@ type Options = { products: Product[]; delay?: number; offline?: boolean };
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/** Adapter (user-land) en mémoire, pour les tests : il trie, pagine et cherche comme le ferait le serveur. */
+/** In-memory adapter (user-land), for tests: it sorts, paginates and searches as the server would. */
 export function createInMemoryProductCatalog({
   products,
   delay = 0,
@@ -19,14 +19,14 @@ export function createInMemoryProductCatalog({
     async search(text, limit) {
       searches.push(text);
       await wait(delay);
-      if (offline) throw new Error('réseau indisponible');
+      if (offline) throw new Error('network unavailable');
       const wanted = text.toLowerCase();
       return products.filter((p) => p.title.toLowerCase().includes(wanted)).slice(0, limit);
     },
     async list(query): Promise<ProductPage> {
       queries.push(query);
       await wait(delay);
-      if (offline) throw new Error('réseau indisponible');
+      if (offline) throw new Error('network unavailable');
       const { page, pageSize, sort, order } = query;
       const sorted = sort
         ? [...products].sort((a, b) => {

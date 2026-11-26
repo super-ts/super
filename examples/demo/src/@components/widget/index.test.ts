@@ -5,27 +5,27 @@ import { describe, expect, test, vi } from 'vitest';
 import { WidgetScreen } from '.';
 
 describe('WidgetScreen', () => {
-  test('ouvre le minuteur dans sa propre application, le fait tourner au clavier, puis le libère', async () => {
-    const { container } = await mount(WidgetScreen); // aucun store fourni : le widget a le sien
+  test('opens the timer in its own application, runs it from the keyboard, then releases it', async () => {
+    const { container } = await mount(WidgetScreen); // no store provided: the widget has its own
     const ui = within(container);
 
-    // Minuteries simulées avant l'ouverture : l'intervalle du widget est créé à son montage.
+    // Fake timers before opening: the widget's interval is created on mount.
     vi.useFakeTimers();
     try {
-      ui.getByRole('button', { name: 'Ouvrir le minuteur' }).click();
+      ui.getByRole('button', { name: 'Open the timer' }).click();
       await vi.advanceTimersByTimeAsync(0);
-      expect(ui.getByLabelText('Temps écoulé').textContent).toBe('00:00');
+      expect(ui.getByLabelText('Elapsed time').textContent).toBe('00:00');
 
-      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space' })); // le raccourci démarre le minuteur
+      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space' })); // the shortcut starts the timer
       await vi.advanceTimersByTimeAsync(3000);
-      expect(ui.getByLabelText('Temps écoulé').textContent).toBe('00:03');
+      expect(ui.getByLabelText('Elapsed time').textContent).toBe('00:03');
     } finally {
       vi.useRealTimers();
     }
 
-    await userEvent.click(ui.getByRole('button', { name: 'Fermer le minuteur' }));
+    await userEvent.click(ui.getByRole('button', { name: 'Close the timer' }));
     await flush();
-    expect(ui.queryByLabelText('Temps écoulé')).toBeNull();
+    expect(ui.queryByLabelText('Elapsed time')).toBeNull();
     expect(container.querySelector('.widget-slot')!.childElementCount).toBe(0);
   });
 });

@@ -3,32 +3,32 @@ import './index.css';
 
 const COUNTRIES = [
   { code: 'FR', label: 'France' },
-  { code: 'BE', label: 'Belgique' },
-  { code: 'CH', label: 'Suisse' },
+  { code: 'BE', label: 'Belgium' },
+  { code: 'CH', label: 'Switzerland' },
   { code: 'CA', label: 'Canada' },
 ];
 const LANGUAGES = [
-  { code: 'fr', label: 'Français' },
-  { code: 'en', label: 'Anglais' },
-  { code: 'es', label: 'Espagnol' },
+  { code: 'fr', label: 'French' },
+  { code: 'en', label: 'English' },
+  { code: 'es', label: 'Spanish' },
 ];
 const INTERESTS = [
   { value: 'sport', label: 'Sport' },
-  { value: 'lecture', label: 'Lecture' },
-  { value: 'musique', label: 'Musique' },
+  { value: 'reading', label: 'Reading' },
+  { value: 'music', label: 'Music' },
 ];
 
-/** Écran de la route `/profile` : un formulaire avec chaque type de champ, soumis à un serveur simulé. */
+/** Screen of the `/profile` route: a form with every type of field, submitted to a simulated server. */
 export class ProfileScreen extends SuperElement {
   @tag = 'profile-screen';
-  @title = 'Profil';
+  @title = 'Profile';
 
-  // Le store ne sert qu'à envoyer les commandes et suivre leur issue : on n'en lit rien.
+  // The store is only used to send commands and follow their outcome: nothing is read from it.
   @contract profile;
   @state local = { saved: null as string | null };
 
   @form edit = {
-    // Les valeurs initiales donnent le type de chaque champ.
+    // The initial values give the type of each field.
     initial: {
       name: '',
       email: '',
@@ -50,45 +50,45 @@ export class ProfileScreen extends SuperElement {
       phones: [{ label: 'mobile', number: '' }],
     },
 
-    // Une règle par champ : `true`, ou le message d'erreur.
+    // One rule per field: `true`, or the error message.
     rules: {
-      name: (v) => v.trim() !== '' || 'Nom obligatoire',
-      email: (v) => /.+@.+\..+/.test(v) || 'Adresse invalide',
-      password: (v) => v.length >= 8 || '8 caractères minimum',
-      age: (v) => v === null || (v >= 13 && v <= 120) || 'Entre 13 et 120 ans',
-      website: (v) => v === '' || /^https?:\/\/.+/.test(v) || 'Adresse commençant par http:// ou https://',
-      bio: (v) => v.length <= 280 || '280 caractères maximum',
-      languages: (v) => v.length > 0 || 'Choisis au moins une langue',
-      avatar: (v) => v === null || v.type.startsWith('image/') || 'Choisis une image',
-      phones: { number: (v) => /^\+?[0-9 ]{6,}$/.test(v) || 'Numéro invalide' },
+      name: (v) => v.trim() !== '' || 'Name required',
+      email: (v) => /.+@.+\..+/.test(v) || 'Invalid address',
+      password: (v) => v.length >= 8 || '8 characters minimum',
+      age: (v) => v === null || (v >= 13 && v <= 120) || 'Between 13 and 120 years old',
+      website: (v) => v === '' || /^https?:\/\/.+/.test(v) || 'Address starting with http:// or https://',
+      bio: (v) => v.length <= 280 || '280 characters maximum',
+      languages: (v) => v.length > 0 || 'Choose at least one language',
+      avatar: (v) => v === null || v.type.startsWith('image/') || 'Choose an image',
+      phones: { number: (v) => /^\+?[0-9 ]{6,}$/.test(v) || 'Invalid number' },
     },
 
-    // Les règles qui croisent plusieurs champs.
+    // The rules that span several fields.
     validate: (v) => ({
-      ...(v.password === v.confirm ? {} : { confirm: 'Les mots de passe diffèrent' }),
-      ...(v.phones.length > 0 ? {} : { phones: 'Au moins un numéro' }),
+      ...(v.password === v.confirm ? {} : { confirm: 'The passwords differ' }),
+      ...(v.phones.length > 0 ? {} : { phones: 'At least one number' }),
     }),
 
-    // La vérification asynchrone de l'adresse, pendant la saisie.
+    // The asynchronous check of the address, while typing.
     checks: {
       email: {
         command: 'checkEmail',
         toInput: (email) => ({ email }),
-        accept: ({ available }) => available || 'Adresse déjà utilisée',
+        accept: ({ available }) => available || 'Address already in use',
         delay: 400,
       },
     },
 
-    // La soumission est une commande : `confirm` ne sert qu'à l'écran, on le retire.
+    // The submission is a command: `confirm` is only for the screen, so it is removed.
     submit: { to: this.profile, command: 'save', toInput: ({ confirm, ...values }) => values },
 
-    // Chaque raison d'échec de `save`, sur un champ ou sur le formulaire.
+    // Each failure reason of `save`, on a field or on the form.
     failures: {
       fields: {
-        'email-taken': { email: 'Adresse déjà utilisée' },
-        'avatar-too-large': { avatar: 'Image trop lourde (1 Mo maximum)' },
+        'email-taken': { email: 'Address already in use' },
+        'avatar-too-large': { avatar: 'Image too large (1 MB maximum)' },
       },
-      form: { network: 'Connexion impossible, réessaie.' },
+      form: { network: 'Could not connect, try again.' },
     },
   };
 
@@ -102,43 +102,43 @@ export class ProfileScreen extends SuperElement {
   render() {
     const { edit, phones, local } = this;
     <main class="screen">
-      <h1>Formulaire de profil</h1>
+      <h1>Profile form</h1>
       <p class="hint">
-        Le serveur est simulé. Essaie <code>taken@example.com</code> (adresse déjà prise), une adresse contenant <code>offline</code> (panne
-        réseau), ou une image de plus de 1 Mo.
+        The server is simulated. Try <code>taken@example.com</code> (address already taken), an address containing <code>offline</code>
+        (network failure), or an image larger than 1 MB.
       </p>
 
       <form {edit.bind()}>
         <fieldset>
-          <legend>Identité</legend>
-          <label>Nom <input {edit.field('name')} /></label>
+          <legend>Identity</legend>
+          <label>Name <input {edit.field('name')} /></label>
           <p class="error">{edit.error('name')}</p>
 
-          <label>E-mail <input type="email" {edit.field('email')} /></label>
+          <label>Email <input type="email" {edit.field('email')} /></label>
           if (edit.checking('email')) {
-            <small class="checking">Vérification…</small>
+            <small class="checking">Checking…</small>
           }
           <p class="error">{edit.error('email')}</p>
 
-          <label>Mot de passe <input type="password" {edit.field('password')} /></label>
+          <label>Password <input type="password" {edit.field('password')} /></label>
           <p class="error">{edit.error('password')}</p>
           <label>Confirmation <input type="password" {edit.field('confirm')} /></label>
           <p class="error">{edit.error('confirm')}</p>
 
-          <label>Âge <input type="number" {edit.field('age')} /></label>
+          <label>Age <input type="number" {edit.field('age')} /></label>
           <p class="error">{edit.error('age')}</p>
 
-          <label>Site web <input type="url" {edit.field('website')} /></label>
+          <label>Website <input type="url" {edit.field('website')} /></label>
           <p class="error">{edit.error('website')}</p>
 
-          <label>Présentation <textarea rows="3" {edit.field('bio')}></textarea></label>
+          <label>About you <textarea rows="3" {edit.field('bio')}></textarea></label>
           <p class="error">{edit.error('bio')}</p>
         </fieldset>
 
         <fieldset>
-          <legend>Préférences</legend>
+          <legend>Preferences</legend>
           <label>
-            Pays
+            Country
             <select {edit.field('country')}>
               for (const c of COUNTRIES; key c.code) {
                 <option value={c.code}>{c.label}</option>
@@ -147,7 +147,7 @@ export class ProfileScreen extends SuperElement {
           </label>
 
           <label>
-            Langues
+            Languages
             <select multiple {edit.field('languages')}>
               for (const l of LANGUAGES; key l.code) {
                 <option value={l.code}>{l.label}</option>
@@ -157,16 +157,16 @@ export class ProfileScreen extends SuperElement {
           <p class="error">{edit.error('languages')}</p>
 
           <fieldset class="inline">
-            <legend>Offre</legend>
-            <label><input type="radio" {edit.field('plan', 'free')} /> Gratuite</label>
+            <legend>Plan</legend>
+            <label><input type="radio" {edit.field('plan', 'free')} /> Free</label>
             <label><input type="radio" {edit.field('plan', 'pro')} /> Pro</label>
-            <label><input type="radio" {edit.field('plan', 'team')} /> Équipe</label>
+            <label><input type="radio" {edit.field('plan', 'team')} /> Team</label>
           </fieldset>
 
-          <label class="inline"><input type="checkbox" {edit.field('newsletter')} /> Recevoir la newsletter</label>
+          <label class="inline"><input type="checkbox" {edit.field('newsletter')} /> Receive the newsletter</label>
 
           <fieldset class="inline">
-            <legend>Centres d'intérêt</legend>
+            <legend>Interests</legend>
             for (const i of INTERESTS; key i.value) {
               <label><input type="checkbox" {edit.field('interests', i.value)} /> {i.label}</label>
             }
@@ -174,37 +174,37 @@ export class ProfileScreen extends SuperElement {
         </fieldset>
 
         <fieldset>
-          <legend>Dates, couleur, volume, avatar</legend>
-          <label>Date de naissance <input type="date" {edit.field('birthdate')} /></label>
-          <label>Heure de rendez-vous <input type="time" {edit.field('meetingTime')} /></label>
-          <label>Couleur préférée <input type="color" {edit.field('color')} /></label>
+          <legend>Dates, colour, volume, avatar</legend>
+          <label>Date of birth <input type="date" {edit.field('birthdate')} /></label>
+          <label>Meeting time <input type="time" {edit.field('meetingTime')} /></label>
+          <label>Favourite colour <input type="color" {edit.field('color')} /></label>
           <label>Volume ({edit.values().volume}) <input type="range" min="0" max="100" {edit.field('volume')} /></label>
           <label>Avatar <input type="file" accept="image/*" {edit.field('avatar')} /></label>
           <p class="error">{edit.error('avatar')}</p>
         </fieldset>
 
         <fieldset>
-          <legend>Téléphones</legend>
+          <legend>Phones</legend>
           for (const item of phones.items(); key item.key) {
             <div class="phone">
-              <select aria-label="Type de numéro" {item.field('label')}>
-                <option value="mobile">mobile</option><option value="travail">travail</option><option value="domicile">domicile</option>
+              <select aria-label="Number type" {item.field('label')}>
+                <option value="mobile">mobile</option><option value="work">work</option><option value="home">home</option>
               </select>
-              <input type="tel" aria-label="Numéro" {item.field('number')} />
-              <button type="button" on:click={() => phones.remove(item)}>Retirer</button>
+              <input type="tel" aria-label="Number" {item.field('number')} />
+              <button type="button" on:click={() => phones.remove(item)}>Remove</button>
               <p class="error">{item.error('number')}</p>
             </div>
           }
           <p class="error">{edit.error('phones')}</p>
-          <button type="button" on:click={() => phones.add({ label: 'mobile', number: '' })}>Ajouter un numéro</button>
+          <button type="button" on:click={() => phones.add({ label: 'mobile', number: '' })}>Add a number</button>
         </fieldset>
 
         <p role="alert" class="form-error">{edit.formError()}</p>
-        <p role="status" class="saved">{local.get().saved ? `Profil enregistré (n° ${local.get().saved}).` : ''}</p>
+        <p role="status" class="saved">{local.get().saved ? `Profile saved (no. ${local.get().saved}).` : ''}</p>
 
         <div class="actions">
-          <button type="button" on:click={() => (edit.reset(), local.set({ saved: null }))}>Tout effacer</button>
-          <button type="submit" disabled={edit.submitting()}>{edit.submitting() ? 'Enregistrement…' : 'Enregistrer'}</button>
+          <button type="button" on:click={() => (edit.reset(), local.set({ saved: null }))}>Clear all</button>
+          <button type="submit" disabled={edit.submitting()}>{edit.submitting() ? 'Saving…' : 'Save'}</button>
         </div>
       </form>
     </main>

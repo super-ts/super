@@ -6,9 +6,9 @@ export type CatalogState = { products: Product[]; total: number; loadErrorMessag
 export type CatalogTypes = {
   state: CatalogState;
   commands: {
-    /** Charge une page de produits, triée par le serveur. */
+    /** Loads a page of products, sorted by the server. */
     load(input: ProductQuery): Outcome<void, 'network'>;
-    /** Cherche des produits par leur nom, pour des suggestions. */
+    /** Searches products by name, for suggestions. */
     search(input: { text: string }): Outcome<void, 'network'>;
   };
 };

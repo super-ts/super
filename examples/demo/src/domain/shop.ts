@@ -1,4 +1,4 @@
-/** Le métier de la boutique : catalogue, lignes de panier, commandes. Ni Super, ni DOM. */
+/** The shop domain: catalogue, cart lines, orders. Neither Super nor DOM. */
 
 export type Product = { sku: string; label: string; price: number };
 
@@ -6,14 +6,14 @@ export type CartLine = { product: Product; quantity: number; subtotal: number };
 
 export type Order = { orderId: string; total: number };
 
-/** Catalogue de la boutique (prix en centimes). */
+/** The shop catalogue (prices in cents). */
 export const PRODUCTS: readonly Product[] = [
-  { sku: 'mug', label: 'Mug Super', price: 1200 },
-  { sku: 'tshirt', label: 'T-shirt Super', price: 2500 },
-  { sku: 'sticker', label: 'Lot de stickers', price: 400 },
+  { sku: 'mug', label: 'Super mug', price: 1200 },
+  { sku: 'tshirt', label: 'Super T-shirt', price: 2500 },
+  { sku: 'sticker', label: 'Sticker pack', price: 400 },
 ];
 
-/** Les lignes du panier, dans l'ordre du catalogue, sans les produits absents. */
+/** The cart lines, in catalogue order, without the absent products. */
 export const linesOf = (quantities: Readonly<Record<string, number>>): CartLine[] =>
   PRODUCTS.filter((p) => (quantities[p.sku] ?? 0) > 0).map((product) => {
     const quantity = quantities[product.sku]!;

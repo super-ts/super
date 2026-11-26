@@ -6,8 +6,8 @@ import './index.css';
 type Note = { id: number; text: string; pinned: boolean };
 
 /**
- * Écran de la route `/composition` : un composant qui reçoit des enfants (Card, Tabs), et les deux
- * façons de remplir un emplacement nommé, un emplacement `<:actions>` ou une méthode `#actions()`.
+ * Screen of the `/composition` route: a component that receives children (Card, Tabs), and the two
+ * ways to fill a named slot, a `<:actions>` slot or a `#actions()` method.
  */
 export class CompositionScreen extends SuperElement {
   @tag = 'composition-screen';
@@ -16,29 +16,29 @@ export class CompositionScreen extends SuperElement {
   @state local = {
     likes: 0,
     notes: [
-      { id: 1, text: 'Acheter du café', pinned: false },
-      { id: 2, text: 'Relire la doc des .super', pinned: true },
-      { id: 3, text: 'Arroser les plantes', pinned: false },
+      { id: 1, text: 'Buy coffee', pinned: false },
+      { id: 2, text: 'Reread the .super docs', pinned: true },
+      { id: 3, text: 'Water the plants', pinned: false },
     ] as Note[],
   };
 
   togglePin = (id: number) => this.local.set((s) => ({ notes: s.notes.map((n) => (n.id === id ? { ...n, pinned: !n.pinned } : n)) }));
   removeNote = (id: number) => this.local.set((s) => ({ notes: s.notes.filter((n) => n.id !== id) }));
 
-  // Une méthode qui émet des éléments remplit un emplacement : pratique dans une boucle, la note
-  // arrive en paramètre.
+  // A method that emits elements fills a slot: handy in a loop, the note
+  // comes in as a parameter.
   #actions(note: Note) {
-    <button type="button" on:click={() => this.togglePin(note.id)}>{note.pinned ? 'Désépingler' : 'Épingler'}</button>
-    <button type="button" class="danger" on:click={() => this.removeNote(note.id)}>Supprimer</button>
+    <button type="button" on:click={() => this.togglePin(note.id)}>{note.pinned ? 'Unpin' : 'Pin'}</button>
+    <button type="button" class="danger" on:click={() => this.removeNote(note.id)}>Delete</button>
   }
 
-  // Les panneaux des onglets : une liste d'emplacements, un par méthode.
+  // The tab panels: a list of slots, one per method.
   #general() {
-    <p>Les enfants d’un composant s’écrivent entre ses balises et remplissent sa prop <code>content</code>.</p>
+    <p>A component's children are written between its tags and fill its <code>content</code> prop.</p>
   }
 
   #details() {
-    <p>Un emplacement nommé est une autre prop de type <code>Children</code>, remplie par <code>{'<:nom>'}</code> ou par une méthode.</p>
+    <p>A named slot is another prop of type <code>Children</code>, filled by <code>{'<:name>'}</code> or by a method.</p>
   }
 
   render() {
@@ -46,30 +46,30 @@ export class CompositionScreen extends SuperElement {
     <main class="screen">
       <h1>Composition</h1>
       <p class="hint">
-        Des composants qui reçoivent du contenu de leur parent. Le contenu reste celui du parent : ses boutons modifient son état à lui.
+        Components that receive content from their parent. The content still belongs to the parent: its buttons change the parent's state.
       </p>
 
-      <Card heading="Des enfants">
-        <p>Tout ce qui est écrit entre les balises de la carte remplit sa prop <code>content</code>.</p>
+      <Card heading="Children">
+        <p>Everything written between the card's tags fills its <code>content</code> prop.</p>
       </Card>
 
-      <Card heading="Un emplacement <:actions>">
-        <p>J’aime : {likes}</p>
+      <Card heading="A <:actions> slot">
+        <p>Likes: {likes}</p>
         <:actions>
-          <button type="button" on:click={() => this.local.set({ likes: likes + 1 })}>J’aime</button>
+          <button type="button" on:click={() => this.local.set({ likes: likes + 1 })}>Like</button>
         </:actions>
       </Card>
-      <h2>Une méthode #actions(note)</h2>
+      <h2>A #actions(note) method</h2>
       if (notes.length === 0) {
-        <p class="empty">Plus aucune note.</p>
+        <p class="empty">No notes left.</p>
       }
       for (const note of notes; key note.id) {
         <Card heading={note.pinned ? `📌 ${note.text}` : note.text} actions={this.#actions(note)}>
-          <p>Note n° {note.id}</p>
+          <p>Note no. {note.id}</p>
         </Card>
       }
 
-      <h2>Une liste d’emplacements</h2> <Tabs labels={['Enfants', 'Emplacements']} panels={[this.#general(), this.#details()]} />
+      <h2>A list of slots</h2> <Tabs labels={['Children', 'Slots']} panels={[this.#general(), this.#details()]} />
     </main>
   }
 }

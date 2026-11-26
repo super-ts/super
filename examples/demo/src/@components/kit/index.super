@@ -2,26 +2,26 @@ import { SuperElement } from '@super-ts/dom';
 import { RouteLink } from '@super-ts/ui';
 import './kit.css';
 
-/** Écran de la route `/kit` : le sommaire du kit, une page par famille de composants. */
+/** Screen of the `/kit` route: the kit's table of contents, one page per component family. */
 export class KitScreen extends SuperElement {
   @tag = 'kit-screen';
-  @title = 'Kit d’interface';
+  @title = 'UI kit';
 
   render() {
     <main class="screen">
       <div class="kit-page">
-        <h1>Kit d’interface</h1>
-        <p class="kit-page-intro">Chaque page montre une famille de composants de @super-ts/ui, branchée sur les stores de la démo.</p>
+        <h1>UI kit</h1>
+        <p class="kit-page-intro">Each page shows a family of @super-ts/ui components, connected to the demo's stores.</p>
         <ul class="kit-families">
           <li>
             <RouteLink to={{ to: 'kit-forms' }}>
-              Formulaires et commandes
+              Forms and commands
             </RouteLink>
             <p>Field, Select, Checkbox, RadioGroup, CommandButton, Toasts.</p>
           </li>
           <li>
             <RouteLink to={{ to: 'kit-windows' }}>
-              Fenêtres
+              Windows
             </RouteLink>
             <p>Dialog, Modal, ConfirmDialog.</p>
           </li>
@@ -33,7 +33,7 @@ export class KitScreen extends SuperElement {
           </li>
           <li>
             <RouteLink to={{ to: 'kit-display' }}>
-              Affichage
+              Display
             </RouteLink>
             <p>Button, Badge, Spinner, Skeleton, EmptyState, ErrorPanel.</p>
           </li>
@@ -41,13 +41,13 @@ export class KitScreen extends SuperElement {
             <RouteLink to={{ to: 'kit-table' }}>
               Table
             </RouteLink>
-            <p>Une table statique, et une table branchée sur une API, pilotée par l’URL.</p>
+            <p>A static table, and a table connected to an API, driven by the URL.</p>
           </li>
           <li>
             <RouteLink to={{ to: 'kit-theme' }}>
-              Thème
+              Theme
             </RouteLink>
-            <p>Surcharger le style du kit : variables, zones, une instance, une règle.</p>
+            <p>Overriding the kit's style: variables, zones, an instance, a rule.</p>
           </li>
         </ul>
       </div>

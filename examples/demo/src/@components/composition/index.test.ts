@@ -10,39 +10,39 @@ async function setup() {
 }
 
 describe('CompositionScreen', () => {
-  test('une carte affiche les enfants écrits entre ses balises', async () => {
+  test('a card displays the children written between its tags', async () => {
     const { ui } = await setup();
-    const card = within(ui.getByRole('region', { name: 'Des enfants' }));
-    expect(card.getByText(/remplit sa prop/)).toBeTruthy();
+    const card = within(ui.getByRole('region', { name: 'Children' }));
+    expect(card.getByText(/fills its/)).toBeTruthy();
   });
 
-  test('un emplacement <:actions> : le bouton est celui du parent, et modifie son état', async () => {
+  test('a <:actions> slot: the button belongs to the parent, and changes its state', async () => {
     const { ui } = await setup();
-    const card = within(ui.getByRole('region', { name: 'Un emplacement <:actions>' }));
-    await userEvent.click(card.getByRole('button', { name: 'J’aime' }));
+    const card = within(ui.getByRole('region', { name: 'A <:actions> slot' }));
+    await userEvent.click(card.getByRole('button', { name: 'Like' }));
     await flush();
-    expect(card.getByText('J’aime : 1')).toBeTruthy();
+    expect(card.getByText('Likes: 1')).toBeTruthy();
   });
 
-  test('une méthode #actions(note) remplit l’emplacement de chaque carte de la boucle', async () => {
+  test('a #actions(note) method fills the slot of each card in the loop', async () => {
     const { ui } = await setup();
-    const coffee = within(ui.getByRole('region', { name: 'Acheter du café' }));
-    await userEvent.click(coffee.getByRole('button', { name: 'Épingler' }));
+    const coffee = within(ui.getByRole('region', { name: 'Buy coffee' }));
+    await userEvent.click(coffee.getByRole('button', { name: 'Pin' }));
     await flush();
-    const pinned = within(ui.getByRole('region', { name: '📌 Acheter du café' }));
-    expect(pinned.getByRole('button', { name: 'Désépingler' })).toBeTruthy();
+    const pinned = within(ui.getByRole('region', { name: '📌 Buy coffee' }));
+    expect(pinned.getByRole('button', { name: 'Unpin' })).toBeTruthy();
 
-    await userEvent.click(pinned.getByRole('button', { name: 'Supprimer' }));
+    await userEvent.click(pinned.getByRole('button', { name: 'Delete' }));
     await flush();
-    expect(ui.queryByRole('region', { name: /Acheter du café/ })).toBeNull();
-    expect(ui.getByRole('region', { name: '📌 Relire la doc des .super' })).toBeTruthy();
+    expect(ui.queryByRole('region', { name: /Buy coffee/ })).toBeNull();
+    expect(ui.getByRole('region', { name: '📌 Reread the .super docs' })).toBeTruthy();
   });
 
-  test('des onglets : une liste d’emplacements remplis par des méthodes', async () => {
+  test('tabs: a list of slots filled by methods', async () => {
     const { ui } = await setup();
-    expect(ui.getByRole('tabpanel', { name: 'Enfants' }).textContent).toContain('content');
-    await userEvent.click(ui.getByRole('tab', { name: 'Emplacements' }));
+    expect(ui.getByRole('tabpanel', { name: 'Children' }).textContent).toContain('content');
+    await userEvent.click(ui.getByRole('tab', { name: 'Slots' }));
     await flush();
-    expect(ui.getByRole('tabpanel', { name: 'Emplacements' }).textContent).toContain('<:nom>');
+    expect(ui.getByRole('tabpanel', { name: 'Slots' }).textContent).toContain('<:name>');
   });
 });

@@ -3,7 +3,7 @@ import type { LoggedError } from '../../domain/error-log';
 
 export type ErrorLogState = { entries: readonly LoggedError[] };
 
-/** Les erreurs reçues par `onError`, pour les afficher dans l'exemple « Erreurs ». */
+/** The errors received by `onError`, to display them in the "Errors" example. */
 export class ErrorLogContract extends SuperContract<{
   state: ErrorLogState;
   commands: { record(input: LoggedError): void; clear(): void };

@@ -1,40 +1,36 @@
 import { SuperElement } from '@super-ts/dom';
 import './index.css';
 
-/** Écran d'accueil : la liste des exemples de l'app. */
+/** Home screen: the list of the app's examples. */
 export class ExamplesScreen extends SuperElement {
   @tag = 'examples-screen';
 
   render() {
     <main class="screen">
-      <h1>Exemples Super</h1>
+      <h1>Super examples</h1>
       <ul class="examples">
         <li>
-          <a href={this.router.href('counters')}>Compteurs</a>
-          <p>Un store et ses sélecteurs, des commandes et leur issue, une persistance dans le localStorage, le router.</p>
+          <a href={this.router.href('counters')}>Counters</a>
+          <p>A store and its selectors, commands and their outcome, persistence in localStorage, the router.</p>
         </li>
         <li>
-          <a href={this.router.href('profile')}>Formulaire de profil</a>
-          <p>Tous les types de champs, des règles, une vérification asynchrone, une liste dynamique, des erreurs du serveur simulées.</p>
+          <a href={this.router.href('profile')}>Profile form</a>
+          <p>Every type of field, rules, an asynchronous check, a dynamic list, simulated server errors.</p>
         </li>
         <li>
-          <a href={this.router.href('shop')}>Boutique</a>
-          <p>Un store qui dépend d'un autre, un événement écrit à la main, un dialogue de confirmation, un guard.</p>
+          <a href={this.router.href('shop')}>Shop</a>
+          <p>A store that depends on another, a hand-written event, a confirmation dialog, a guard.</p>
         </li>
         <li>
-          <a href={this.router.href('errors')}>Erreurs</a>
-          <p>Des renderError, l'écran '!', les erreurs d'action, et le journal de ce que reçoit onError.</p>
+          <a href={this.router.href('errors')}>Errors</a>
+          <p>renderError, the '!' screen, action errors, and the log of what onError receives.</p>
         </li>
         <li>
-          <a href={this.router.href('widget')}>Widget</a>
-          <p>Une seconde application dans la page, mounted / unmounted, un raccourci clavier.</p>
+          <a href={this.router.href('widget')}>Widget</a> <p>A second application in the page, mounted / unmounted, a keyboard shortcut.</p>
         </li>
         <li>
           <a href={this.router.href('composition')}>Composition</a>
-          <p>
-            Des composants qui reçoivent des enfants, et les deux façons de remplir un emplacement : <code>{'<:actions>'}</code> ou une
-            méthode.
-          </p>
+          <p>Components that receive children, and the two ways to fill a slot: <code>{'<:actions>'}</code> or a method.</p>
         </li>
       </ul>
     </main>

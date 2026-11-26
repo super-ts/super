@@ -2,7 +2,7 @@ import { SuperElement } from '@super-ts/dom';
 import { Button, ConfirmDialog, createToasts, Dialog, Modal, Toasts } from '@super-ts/ui';
 import { KitPage } from './kit-page';
 
-/** Écran de la route `/kit/windows` : une fenêtre montée est ouverte, c'est l'écran qui décide de la rendre. */
+/** Screen of the `/kit/windows` route: a mounted window is open, the screen decides whether to render it. */
 export class KitWindowsScreen extends SuperElement {
   @tag = 'kit-windows-screen';
 
@@ -13,44 +13,47 @@ export class KitWindowsScreen extends SuperElement {
 
   render() {
     const open = this.local.get().window;
-    <KitPage heading="Fenêtres" intro="Échap et la croix ferment par défaut ; closeOn règle chaque moyen, dont le clic sur le fond.">
+    <KitPage
+      heading="Windows"
+      intro="Escape and the cross close by default; closeOn configures each way, including a click on the backdrop."
+    >
       <div class="kit-row">
         <Button variant="secondary" on:press={() => this.local.set({ window: 'dialog' })}>
-          Ouvrir un dialogue
+          Open a dialog
         </Button>
         <Button variant="secondary" on:press={() => this.local.set({ window: 'modal' })}>
-          Ouvrir une modale
+          Open a modal
         </Button>
         <Button variant="danger" on:press={() => this.local.set({ window: 'confirm' })}>
-          Tout supprimer
+          Delete everything
         </Button>
       </div>
       if (open === 'dialog') {
-        <Dialog title="Renommer" on:close={this.#close}>
-          <p>Un dialogue a un contenu et des actions.</p>
+        <Dialog title="Rename" on:close={this.#close}>
+          <p>A dialog has content and actions.</p>
           <:actions>
             <Button variant="secondary" on:press={this.#close}>
-              Annuler
+              Cancel
             </Button>
             <Button on:press={this.#close}>
-              Enregistrer
+              Save
             </Button>
           </:actions>
         </Dialog>
       }
       if (open === 'modal') {
-        <Modal title="À propos" closeOn={{ backdrop: true }} on:close={this.#close}>
-          <p>Une modale n’a pas d’actions : Échap, la croix ou un clic sur le fond la ferment.</p>
+        <Modal title="About" closeOn={{ backdrop: true }} on:close={this.#close}>
+          <p>A modal has no actions: Escape, the cross or a click on the backdrop closes it.</p>
         </Modal>
       }
       if (open === 'confirm') {
         <ConfirmDialog
-          question="Supprimer tous les compteurs ?"
-          confirmLabel="Supprimer"
+          question="Delete all the counters?"
+          confirmLabel="Delete"
           danger
           on:answered={({ confirmed }) => {
               this.#close();
-              if (confirmed) this.notices.show('C’était pour de faux.', { tone: 'error' });
+              if (confirmed) this.notices.show('Just pretending.', { tone: 'error' });
             }}
         />
       }

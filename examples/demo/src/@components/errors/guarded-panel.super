@@ -1,19 +1,19 @@
 import { SuperElement } from '@super-ts/dom';
 import { BrokenChild } from './broken-child';
 
-/** 2. (suite) Le parent de BrokenChild : son renderError rattrape l'erreur de l'enfant. */
+/** 2. (continued) The parent of BrokenChild: its renderError catches the child's error. */
 export class GuardedPanel extends SuperElement {
   @tag = 'guarded-panel';
   @prop withChild: boolean;
 
   render() {
-    <p class="ok">Panneau parent.</p>
+    <p class="ok">Parent panel.</p>
     if (this.withChild) {
       <BrokenChild />
     }
   }
 
   override renderError(error: Error) {
-    <p class="fallback">Le parent a rattrapé l'erreur de son enfant ({error.message}).</p>
+    <p class="fallback">The parent caught its child's error ({error.message}).</p>
   }
 }

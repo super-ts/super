@@ -7,66 +7,66 @@ import { describe, expect, test } from 'vitest';
 import { Router } from '../../routes';
 import { CounterScreen } from '.';
 
-// Écran testé seul, avec un faux store qui respecte le contrat.
-const idle: CounterState = { counts: { cafes: 2 }, loadErrorMessage: null };
+// Screen tested on its own, with a fake store that honours the contract.
+const idle: CounterState = { counts: { coffees: 2 }, loadErrorMessage: null };
 
 type CounterCommands = FakeCommands<'counter'>;
 
 async function setup(id: string, commands: CounterCommands = {}) {
   const counter = fakeStore('counter', { state: idle, commands });
-  // L'écran contient des liens : il lui faut un router (ici en mémoire).
+  // The screen contains links: it needs a router (here in memory).
   const router = createRouter(Router, { mode: 'memory', initialPath: `/counters/${id}` });
   const { container } = await mount(CounterScreen, { stores: [counter], router });
   return { counter, router, ui: within(container) };
 }
 
 describe('CounterScreen', () => {
-  test('affiche le compteur demandé par le paramètre de route', async () => {
-    const { ui } = await setup('cafes');
+  test('displays the counter requested by the route parameter', async () => {
+    const { ui } = await setup('coffees');
 
-    expect(ui.getByRole('heading').textContent).toBe('Cafés');
-    expect(ui.getByLabelText('Valeur du compteur').textContent).toBe('2');
+    expect(ui.getByRole('heading').textContent).toBe('Coffees');
+    expect(ui.getByLabelText('Counter value').textContent).toBe('2');
   });
 
-  test('envoie les commandes avec l’id du compteur', async () => {
-    const { counter, ui } = await setup('cafes');
+  test('sends the commands with the counter id', async () => {
+    const { counter, ui } = await setup('coffees');
 
-    await userEvent.click(ui.getByRole('button', { name: 'Incrémenter' }));
+    await userEvent.click(ui.getByRole('button', { name: 'Increment' }));
 
-    expect(counter.sent).toEqual([{ name: 'increment', args: [{ id: 'cafes' }] }]);
+    expect(counter.sent).toEqual([{ name: 'increment', args: [{ id: 'coffees' }] }]);
   });
 
-  test('affiche le message de la raison d’échec, pour son compteur seulement', async () => {
-    const { counter, ui } = await setup('cafes');
+  test('displays the failure reason message, for its own counter only', async () => {
+    const { counter, ui } = await setup('coffees');
 
-    counter.emit('decrement:failed', { input: { id: 'pompes' }, reason: 'storage', error: null });
-    counter.emit('decrement:failed', { input: { id: 'cafes' }, reason: 'below-min', error: null });
+    counter.emit('decrement:failed', { input: { id: 'pushups' }, reason: 'storage', error: null });
+    counter.emit('decrement:failed', { input: { id: 'coffees' }, reason: 'below-min', error: null });
     await flush();
 
-    expect(ui.getByText('Le compteur est déjà à zéro.')).toBeTruthy();
-    expect(ui.queryByText('Impossible d’enregistrer : le stockage est indisponible.')).toBeNull();
+    expect(ui.getByText('The counter is already at zero.')).toBeTruthy();
+    expect(ui.queryByText('Could not save: storage is unavailable.')).toBeNull();
   });
 
-  test('ne réagit qu’aux écritures réussies de son compteur', async () => {
-    const { counter, ui } = await setup('cafes');
+  test('reacts only to successful writes of its own counter', async () => {
+    const { counter, ui } = await setup('coffees');
 
-    counter.emit('increment:done', { input: { id: 'pompes' }, result: { count: 9 } });
-    counter.emit('increment:done', { input: { id: 'cafes' }, result: { count: 10 } });
+    counter.emit('increment:done', { input: { id: 'pushups' }, result: { count: 9 } });
+    counter.emit('increment:done', { input: { id: 'coffees' }, result: { count: 10 } });
     await flush();
 
-    expect(ui.getByText('Incrémenté : 10')).toBeTruthy();
-    expect(ui.queryByText('Incrémenté : 9')).toBeNull();
+    expect(ui.getByText('Incremented: 10')).toBeTruthy();
+    expect(ui.queryByText('Incremented: 9')).toBeNull();
   });
 
-  test('un id hors catalogue affiche « Compteur introuvable »', async () => {
-    const { ui } = await setup('inconnu');
+  test('an id outside the catalogue shows "Counter not found"', async () => {
+    const { ui } = await setup('unknown-id');
 
-    expect(ui.getByRole('heading').textContent).toBe('Compteur introuvable');
+    expect(ui.getByRole('heading').textContent).toBe('Counter not found');
   });
 
-  test('le lien retour pointe vers la liste des compteurs et navigue via le router', async () => {
-    const { router, ui } = await setup('cafes');
-    const back = ui.getByRole('link', { name: '← Tous les compteurs' });
+  test('the back link points to the counter list and navigates through the router', async () => {
+    const { router, ui } = await setup('coffees');
+    const back = ui.getByRole('link', { name: '← All counters' });
 
     expect(back.getAttribute('href')).toBe('/counters');
     await userEvent.click(back);

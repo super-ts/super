@@ -2,7 +2,7 @@ import { type Commands, SuperStore } from '@super-ts/core';
 import type { CartContract } from './contract';
 
 export class CartStore extends SuperStore<CartContract> implements Commands<CartStore> {
-  /** `quantities` : le panier de départ (relu du stockage par `main.ts`), vide par défaut. */
+  /** `quantities`: the starting cart (read back from storage by `main.ts`), empty by default. */
   constructor({ quantities = {} }: { quantities?: Readonly<Record<string, number>> } = {}) {
     super({ contract: 'cart', initialState: { quantities } });
   }

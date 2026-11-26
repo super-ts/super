@@ -1,4 +1,4 @@
-/* Le thème du kit pour toute la démo : quelques variables sur :root suffisent. */
+/* The kit theme for the whole demo: a few variables on :root are enough. */
 :root {
   --super-accent: light-dark(#4f46e5, #a5b4fc);
   --super-radius: 8px;

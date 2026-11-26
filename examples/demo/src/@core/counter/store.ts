@@ -3,13 +3,13 @@ import { MIN_COUNT } from '../../domain/counter';
 import type { CounterRepository } from '../../ports/counter-repository';
 import type { CounterContract } from './contract';
 
-/** Les dépendances sont ce que tu veux : Super ne les inspecte jamais. */
+/** Dependencies are whatever you want: Super never inspects them. */
 type Deps = { counterRepository: CounterRepository };
 
 const message = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
-// Pas de drapeau « en cours » ni d'événement à émettre : Super suit chaque commande et publie son
-// issue. Le handler fait son travail, échoue avec `this.fail(raison)`, ou retourne son résultat.
+// No "pending" flag and no event to emit: Super tracks each command and publishes its
+// outcome. The handler does its work, fails with `this.fail(reason)`, or returns its result.
 export class CounterStore extends SuperStore<CounterContract> implements Commands<CounterStore> {
   #repository: CounterRepository;
 
@@ -18,7 +18,7 @@ export class CounterStore extends SuperStore<CounterContract> implements Command
     this.#repository = counterRepository;
   }
 
-  // L'erreur de chargement reste dans l'état : elle doit rester visible, même pour un écran monté plus tard.
+  // The load error stays in the state: it must remain visible, even for a screen mounted later.
   async load() {
     this.set({ loadErrorMessage: null });
     try {
@@ -41,7 +41,7 @@ export class CounterStore extends SuperStore<CounterContract> implements Command
     return this.#write(id, MIN_COUNT);
   }
 
-  /** Le code commun aux trois écritures : une méthode privée, pas une commande. */
+  /** The code shared by the three writes: a private method, not a command. */
   async #write(id: string, next: number) {
     if (!this.selectors.find(id)) this.fail('unknown');
     await this.#repository.save(id, next).catch(() => this.fail('storage'));

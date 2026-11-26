@@ -2,8 +2,8 @@ import { SuperElement } from '@super-ts/dom';
 import './confirm-dialog.css';
 
 /**
- * Dialogue de confirmation : monté, il est ouvert. C'est le parent qui décide de le rendre ou non,
- * et le dialogue répond par un événement. Il ne connaît ni store ni commande : il reste réutilisable.
+ * Confirmation dialog: once mounted, it is open. The parent decides whether to render it or not,
+ * and the dialog answers with an event. It knows neither store nor command: it stays reusable.
  */
 export class ConfirmDialog extends SuperElement {
   @tag = 'confirm-dialog';
@@ -15,8 +15,8 @@ export class ConfirmDialog extends SuperElement {
       <div role="dialog" aria-modal="true" aria-label="Confirmation">
         <p>{this.question}</p>
         <div class="actions">
-          <button type="button" on:click={() => this.emit('answered', { confirmed: false })}>Annuler</button>
-          <button type="button" class="danger" on:click={() => this.emit('answered', { confirmed: true })}>Confirmer</button>
+          <button type="button" on:click={() => this.emit('answered', { confirmed: false })}>Cancel</button>
+          <button type="button" class="danger" on:click={() => this.emit('answered', { confirmed: true })}>Confirm</button>
         </div>
       </div>
     </div>

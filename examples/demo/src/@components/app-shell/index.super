@@ -2,7 +2,7 @@ import { RouterOutlet, SuperElement } from '@super-ts/dom';
 import { RouteLink } from '@super-ts/ui';
 import './index.css';
 
-/** Mise en page commune : la navigation entre les exemples, puis l'écran de la route active. */
+/** Shared layout: the navigation between the examples, then the screen of the active route. */
 export class AppShell extends SuperElement {
   @tag = 'app-shell';
 
@@ -13,24 +13,24 @@ export class AppShell extends SuperElement {
   }
 
   render() {
-    // Chaque lien se marque lui-même `aria-current="page"` sur la page affichée ; `activeFor`
-    // étend une section à ses autres routes (la liste des compteurs et un compteur).
+    // Each link marks itself `aria-current="page"` on the displayed page; `activeFor`
+    // extends a section to its other routes (the counter list and a single counter).
     <header class="app-header">
-      <nav aria-label="Exemples">
+      <nav aria-label="Examples">
         <RouteLink to={{ to: 'examples' }}>
-          Exemples
+          Examples
         </RouteLink>
         <RouteLink to={{ to: 'counters' }} activeFor={['counter']}>
-          Compteurs
+          Counters
         </RouteLink>
         <RouteLink to={{ to: 'profile' }}>
-          Formulaire
+          Form
         </RouteLink>
         <RouteLink to={{ to: 'shop' }} activeFor={['checkout']}>
-          Boutique
+          Shop
         </RouteLink>
         <RouteLink to={{ to: 'errors' }}>
-          Erreurs
+          Errors
         </RouteLink>
         <RouteLink to={{ to: 'widget' }}>
           Widget

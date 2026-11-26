@@ -1,6 +1,6 @@
 import { SuperElement } from '@super-ts/dom';
 
-/** Un raccourci clavier posé sur window au montage, retiré par `signal` au démontage. */
+/** A keyboard shortcut added on window on mount, removed by `signal` on unmount. */
 export class TimerShortcuts extends SuperElement {
   @tag = 'timer-shortcuts';
 
@@ -20,6 +20,6 @@ export class TimerShortcuts extends SuperElement {
   }
 
   render() {
-    <p class="shortcut">Barre d'espace : démarrer ou mettre en pause.</p>
+    <p class="shortcut">Space bar: start or pause.</p>
   }
 }

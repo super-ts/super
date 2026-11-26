@@ -9,13 +9,13 @@ const SELECT = 'title,brand,price,rating';
 const toProducts = (raw: Raw): Product[] => raw.products.map((p) => ({ ...p, brand: p.brand ?? null }));
 
 /**
- * Adapter (user-land) sur l'API publique de test dummyjson.com : pagination (`limit`, `skip`),
- * tri (`sortBy`, `order`) et recherche (`/search?q=`) faits par le serveur.
+ * Adapter (user-land) over the public test API dummyjson.com: pagination (`limit`, `skip`),
+ * sorting (`sortBy`, `order`) and search (`/search?q=`) done by the server.
  */
 export function createDummyJsonProductCatalog(fetchImpl: typeof fetch = fetch): ProductCatalog {
   const get = async (url: string): Promise<Raw> => {
     const response = await fetchImpl(url);
-    if (!response.ok) throw new Error(`dummyjson : ${response.status}`);
+    if (!response.ok) throw new Error(`dummyjson: ${response.status}`);
     return (await response.json()) as Raw;
   };
   return {

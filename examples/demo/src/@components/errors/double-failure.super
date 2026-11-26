@@ -1,16 +1,16 @@
 import { SuperElement } from '@super-ts/dom';
 
-/** 3. Un bloc dont le renderError plante aussi : l'erreur remonte jusqu'à l'écran '!' du router. */
+/** 3. A block whose renderError crashes too: the error bubbles up to the router's '!' screen. */
 export class DoubleFailure extends SuperElement {
   @tag = 'double-failure';
   @prop armed: boolean;
 
   render() {
-    if (this.armed) throw new Error('rendu cassé');
-    <p class="ok">Prêt.</p>
+    if (this.armed) throw new Error('broken render');
+    <p class="ok">Ready.</p>
   }
 
   override renderError(): unknown {
-    throw new Error('le renderError a planté lui aussi');
+    throw new Error('the renderError crashed too');
   }
 }

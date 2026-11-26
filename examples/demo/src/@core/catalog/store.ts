@@ -5,7 +5,7 @@ import type { CatalogContract } from './contract';
 
 type Deps = {
   productCatalog: ProductCatalog;
-  /** Attente après la dernière frappe avant de chercher, en millisecondes (défaut 250). */
+  /** Wait after the last keystroke before searching, in milliseconds (default 250). */
   searchDelay?: number;
 };
 
@@ -14,7 +14,7 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export class CatalogStore extends SuperStore<CatalogContract> implements Commands<CatalogStore> {
   #catalog: ProductCatalog;
-  /** La dernière demande : une réponse plus ancienne, arrivée après elle, est ignorée. */
+  /** The latest request: an older response arriving after it is ignored. */
   #latest = 0;
   #latestSearch = 0;
   #searchDelay: number;
@@ -26,8 +26,8 @@ export class CatalogStore extends SuperStore<CatalogContract> implements Command
   }
 
   /**
-   * Une recherche par frappe : on attend un court instant, et seule la dernière demande part au
-   * serveur. Une réponse dépassée par une frappe plus récente est ignorée.
+   * One search per keystroke: wait a short moment, and only the latest request goes to the
+   * server. A response overtaken by a more recent keystroke is ignored.
    */
   async search({ text }: { text: string }) {
     const request = ++this.#latestSearch;
@@ -42,10 +42,10 @@ export class CatalogStore extends SuperStore<CatalogContract> implements Command
     const request = ++this.#latest;
     this.set({ loadErrorMessage: null });
     const page = await this.#catalog.list(query).catch(() => {
-      if (request === this.#latest) this.set({ loadErrorMessage: 'Le catalogue ne répond pas.' });
+      if (request === this.#latest) this.set({ loadErrorMessage: 'The catalogue is not responding.' });
       return this.fail('network');
     });
-    if (request !== this.#latest) return; // un tri ou une page plus récents ont été demandés entre-temps
+    if (request !== this.#latest) return; // a more recent sort or page was requested in the meantime
     this.set({ products: page.products, total: page.total });
   }
 }

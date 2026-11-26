@@ -4,46 +4,46 @@ import type { Product } from '../../domain/catalog';
 import { CatalogStore } from './store';
 
 const PRODUCTS: Product[] = [
-  { id: 1, title: 'Chaise', brand: 'Bois', price: 40, rating: 4.1 },
-  { id: 2, title: 'Armoire', brand: 'Bois', price: 300, rating: 3.2 },
-  { id: 3, title: 'Lampe', brand: null, price: 25, rating: 4.8 },
+  { id: 1, title: 'Chair', brand: 'Wood', price: 40, rating: 4.1 },
+  { id: 2, title: 'Wardrobe', brand: 'Wood', price: 300, rating: 3.2 },
+  { id: 3, title: 'Lamp', brand: null, price: 25, rating: 4.8 },
 ];
 
 describe('CatalogStore', () => {
-  test('charge une page triée, et le total', async () => {
+  test('loads a sorted page, and the total', async () => {
     const store = CatalogStore.create({ productCatalog: createInMemoryProductCatalog({ products: PRODUCTS }) });
     await store.send('load', { page: 1, pageSize: 2, sort: 'price', order: 'desc' });
-    expect(store.selectors.products().map((p) => p.title)).toEqual(['Armoire', 'Chaise']);
+    expect(store.selectors.products().map((p) => p.title)).toEqual(['Wardrobe', 'Chair']);
     expect(store.selectors.total()).toBe(3);
   });
 
-  test('une réponse dépassée par une demande plus récente est ignorée', async () => {
+  test('a response overtaken by a more recent request is ignored', async () => {
     const slow = createInMemoryProductCatalog({ products: PRODUCTS, delay: 30 });
     const store = CatalogStore.create({ productCatalog: slow });
     const first = store.send('load', { page: 1, pageSize: 3, sort: 'title', order: 'asc' });
     const second = store.send('load', { page: 1, pageSize: 3, sort: 'title', order: 'desc' });
     await Promise.all([first, second]);
-    expect(store.selectors.products().map((p) => p.title)).toEqual(['Lampe', 'Chaise', 'Armoire']);
+    expect(store.selectors.products().map((p) => p.title)).toEqual(['Wardrobe', 'Lamp', 'Chair']);
   });
 
-  test('une panne réseau : un message, et l’échec network', async () => {
+  test('a network failure: a message, and the network failure reason', async () => {
     const store = CatalogStore.create({ productCatalog: createInMemoryProductCatalog({ products: PRODUCTS, offline: true }) });
     await expect(store.send('load', { page: 1, pageSize: 2, sort: null, order: 'asc' })).rejects.toMatchObject({ reason: 'network' });
-    expect(store.selectors.loadErrorMessage()).toBe('Le catalogue ne répond pas.');
+    expect(store.selectors.loadErrorMessage()).toBe('The catalogue is not responding.');
   });
 });
 
-describe('CatalogStore : recherche', () => {
-  test('seule la dernière frappe part au serveur, et donne les suggestions', async () => {
+describe('CatalogStore: search', () => {
+  test('only the last keystroke goes to the server, and gives the suggestions', async () => {
     const catalog = createInMemoryProductCatalog({ products: PRODUCTS });
     const store = CatalogStore.create({ productCatalog: catalog, searchDelay: 20 });
     const typing = ['l', 'la', 'lam'].map((text) => store.send('search', { text }));
     await Promise.all(typing);
     expect(catalog.searches).toEqual(['lam']);
-    expect(store.selectors.suggestions().map((p) => p.title)).toEqual(['Lampe']);
+    expect(store.selectors.suggestions().map((p) => p.title)).toEqual(['Lamp']);
   });
 
-  test('une saisie vide efface les suggestions sans rien demander', async () => {
+  test('an empty input clears the suggestions without requesting anything', async () => {
     const catalog = createInMemoryProductCatalog({ products: PRODUCTS });
     const store = CatalogStore.create({ productCatalog: catalog, searchDelay: 0 });
     await store.send('search', { text: 'ch' });

@@ -5,7 +5,7 @@ type Options = {
   key?: string;
 };
 
-/** Adapter (user-land) : persiste les compteurs dans le localStorage, sous une seule clé JSON. */
+/** Adapter (user-land): persists the counters in localStorage, under a single JSON key. */
 export function createLocalStorageCounterRepository({
   storage = window.localStorage,
   key = 'super.counters',
@@ -17,14 +17,14 @@ export function createLocalStorageCounterRepository({
     try {
       parsed = JSON.parse(raw);
     } catch {
-      throw new Error(`Valeur stockée invalide pour "${key}"`);
+      throw new Error(`Invalid stored value for "${key}"`);
     }
     const valid =
       typeof parsed === 'object' &&
       parsed !== null &&
       !Array.isArray(parsed) &&
       Object.values(parsed).every((value) => Number.isInteger(value));
-    if (!valid) throw new Error(`Valeur stockée invalide pour "${key}"`);
+    if (!valid) throw new Error(`Invalid stored value for "${key}"`);
     return parsed as Record<string, number>;
   }
 

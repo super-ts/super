@@ -1,6 +1,6 @@
 import type { CounterRepository } from '../ports/counter-repository';
 
-/** Adapter (user-land) en mémoire : pratique pour les tests et les démos sans persistance. */
+/** In-memory adapter (user-land): handy for tests and demos without persistence. */
 export function createInMemoryCounterRepository(
   initial: Record<string, number> = {},
 ): CounterRepository & { stored: Record<string, number> } {

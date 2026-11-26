@@ -15,30 +15,30 @@ async function setup() {
 }
 
 describe('ShopScreen', () => {
-  test('ajouter au panier met à jour les lignes et le total', async () => {
+  test('adding to the cart updates the lines and the total', async () => {
     const { ui } = await setup();
 
-    await userEvent.click(ui.getByRole('button', { name: 'Ajouter Mug Super' }));
-    await userEvent.click(ui.getByRole('button', { name: 'Ajouter Lot de stickers' }));
-    await userEvent.click(ui.getByRole('button', { name: 'Ajouter un Mug Super' }));
+    await userEvent.click(ui.getByRole('button', { name: 'Add Super mug' }));
+    await userEvent.click(ui.getByRole('button', { name: 'Add Sticker pack' }));
+    await userEvent.click(ui.getByRole('button', { name: 'Add one Super mug' }));
 
-    expect(ui.getByText('28,00 €')).toBeTruthy(); // total : 2 × 12 € + 4 €
+    expect(ui.getByText('€28.00')).toBeTruthy(); // total: 2 × €12 + €4
   });
 
-  test('vider le panier passe par un dialogue : annuler ne change rien, confirmer vide', async () => {
+  test('emptying the cart goes through a dialog: cancel changes nothing, confirm empties', async () => {
     const { ui } = await setup();
-    await userEvent.click(ui.getByRole('button', { name: 'Ajouter Mug Super' }));
+    await userEvent.click(ui.getByRole('button', { name: 'Add Super mug' }));
 
-    await userEvent.click(ui.getByRole('button', { name: 'Vider le panier' }));
+    await userEvent.click(ui.getByRole('button', { name: 'Empty the cart' }));
     expect(ui.getByRole('dialog')).toBeTruthy();
-    await userEvent.click(ui.getByRole('button', { name: 'Annuler' }));
+    await userEvent.click(ui.getByRole('button', { name: 'Cancel' }));
     expect(ui.queryByRole('dialog')).toBeNull();
-    expect(ui.getByText('Mug Super', { selector: '.cart span' })).toBeTruthy();
+    expect(ui.getByText('Super mug', { selector: '.cart span' })).toBeTruthy();
 
-    await userEvent.click(ui.getByRole('button', { name: 'Vider le panier' }));
-    await userEvent.click(ui.getByRole('button', { name: 'Confirmer' }));
+    await userEvent.click(ui.getByRole('button', { name: 'Empty the cart' }));
+    await userEvent.click(ui.getByRole('button', { name: 'Confirm' }));
     await flush();
 
-    expect(ui.getByText('Ton panier est vide.')).toBeTruthy(); // le message vient de l'événement emptied
+    expect(ui.getByText('Your cart is empty.')).toBeTruthy(); // the message comes from the emptied event
   });
 });

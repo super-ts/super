@@ -1,14 +1,14 @@
 import { type Outcome, SuperContract } from '@super-ts/core';
 import type { ProfileInput } from '../../domain/profile';
 
-// Ce store n'a pas d'état : il fait l'intermédiaire avec le serveur. Ses commandes et leur cycle de vie
-// (en cours, réussie, échouée) suffisent au formulaire.
+// This store has no state: it acts as the go-between with the server. Its commands and their lifecycle
+// (pending, succeeded, failed) are enough for the form.
 export class ProfileContract extends SuperContract<{
   state: {};
   commands: {
-    // La soumission du formulaire : son issue alimente « en cours » et les erreurs du serveur.
+    // The form submission: its outcome feeds "pending" and the server errors.
     save(input: ProfileInput): Outcome<{ id: string }, 'email-taken' | 'avatar-too-large' | 'network'>;
-    // La vérification asynchrone de l'adresse, pendant la saisie.
+    // The asynchronous check of the address, while typing.
     checkEmail(input: { email: string }): Outcome<{ available: boolean }, 'network'>;
   };
 }> {

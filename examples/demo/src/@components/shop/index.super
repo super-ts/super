@@ -3,13 +3,13 @@ import { formatPrice } from '../../format';
 import { ConfirmDialog } from '../shared/confirm-dialog';
 import './index.css';
 
-/** Écran de la route `/shop` : le catalogue et le panier. */
+/** Screen of the `/shop` route: the catalogue and the cart. */
 export class ShopScreen extends SuperElement {
   @tag = 'shop-screen';
-  // Suivi : le titre de l'onglet change avec le panier, comme le rendu.
+  // Tracked: the tab title changes with the cart, like the render.
   @title = () => {
     const count = this.cart.selectors.count();
-    return count > 0 ? `Boutique (${count} au panier)` : 'Boutique';
+    return count > 0 ? `Shop (${count} in cart)` : 'Shop';
   };
 
   @contract cart;
@@ -17,13 +17,13 @@ export class ShopScreen extends SuperElement {
   @selector lines = this.cart.selectors.lines;
   @selector total = this.cart.selectors.total;
   @selector isEmpty = this.cart.selectors.isEmpty;
-  // Le dialogue ouvert (aucun : null), et un message ponctuel.
+  // The open dialog (none: null), and a one-off message.
   @state local = { dialog: null as 'confirm-clear' | null, message: null as string | null };
 
-  // L'événement écrit à la main par le store : le panier vient de se vider.
+  // The event written by hand by the store: the cart has just been emptied.
   @on('cart', 'emptied')
   onEmptied() {
-    this.local.set({ message: 'Ton panier est vide.' });
+    this.local.set({ message: 'Your cart is empty.' });
   }
 
   @on('cart', 'add:done')
@@ -31,7 +31,7 @@ export class ShopScreen extends SuperElement {
     this.local.set({ message: null });
   }
 
-  // Le dialogue répond par un événement : le parent décide de la suite.
+  // The dialog answers with an event: the parent decides what happens next.
   onClearAnswered = ({ confirmed }: { confirmed: boolean }) => {
     this.local.set({ dialog: null });
     if (confirmed) this.cart.send('clear');
@@ -39,21 +39,21 @@ export class ShopScreen extends SuperElement {
 
   render() {
     <main class="screen">
-      <h1>Boutique</h1>
+      <h1>Shop</h1>
       <ul class="products">
         for (const p of this.catalog.value; key p.sku) {
           <li>
             <span>{p.label}</span>
             <span class="price">{formatPrice(p.price)}</span>
-            <button type="button" aria-label={`Ajouter ${p.label}`} on:click={() => this.cart.send('add', { sku: p.sku })}>Ajouter</button>
+            <button type="button" aria-label={`Add ${p.label}`} on:click={() => this.cart.send('add', { sku: p.sku })}>Add</button>
           </li>
         }
       </ul>
 
-      <section class="cart" aria-label="Panier">
-        <h2>Panier</h2>
+      <section class="cart" aria-label="Cart">
+        <h2>Cart</h2>
         if (this.isEmpty.value) {
-          <p class="empty">{this.local.get().message ?? 'Aucun article pour l’instant.'}</p>
+          <p class="empty">{this.local.get().message ?? 'No items yet.'}</p>
         } else {
           <ul>
             for (const l of this.lines.value; key l.product.sku) {
@@ -63,7 +63,7 @@ export class ShopScreen extends SuperElement {
                 <span class="quantity">
                   <button
                     type="button"
-                    aria-label={`Retirer un ${product.label}`}
+                    aria-label={`Remove one ${product.label}`}
                     on:click={() => this.cart.send('remove', { sku: product.sku })}
                   >
                     −
@@ -71,7 +71,7 @@ export class ShopScreen extends SuperElement {
                   {quantity}
                   <button
                     type="button"
-                    aria-label={`Ajouter un ${product.label}`}
+                    aria-label={`Add one ${product.label}`}
                     on:click={() => this.cart.send('add', { sku: product.sku })}
                   >
                     +
@@ -81,16 +81,16 @@ export class ShopScreen extends SuperElement {
               </li>
             }
           </ul>
-          <p class="total">Total : <strong>{formatPrice(this.total.value)}</strong></p>
+          <p class="total">Total: <strong>{formatPrice(this.total.value)}</strong></p>
           <div class="actions">
-            <button type="button" on:click={() => this.local.set({ dialog: 'confirm-clear' })}>Vider le panier</button>
-            <a class="button" href={this.router.href('checkout')}>Commander</a>
+            <button type="button" on:click={() => this.local.set({ dialog: 'confirm-clear' })}>Empty the cart</button>
+            <a class="button" href={this.router.href('checkout')}>Checkout</a>
           </div>
         }
       </section>
 
       if (this.local.get().dialog === 'confirm-clear') {
-        <ConfirmDialog question="Vider le panier ?" on:answered={this.onClearAnswered} />
+        <ConfirmDialog question="Empty the cart?" on:answered={this.onClearAnswered} />
       }
     </main>
   }

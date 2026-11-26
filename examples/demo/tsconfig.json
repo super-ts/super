@@ -1,8 +1,8 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    // `paths` remplace celui du tsconfig racine : on redonne les paquets Super (résolus par alias
-    // dans ce dépôt), puis les deux alias de l'app, ceux que le plugin Super déclare à Vite.
+    // `paths` replaces the root tsconfig's: the Super packages again (resolved by alias in this
+    // repository), then the app's two aliases, the ones the Super plugin declares to Vite.
     "paths": {
       "@super-ts/core/internal": ["../../packages/core/src/internal.ts"],
       "@super-ts/core": ["../../packages/core/src/index.ts"],
@@ -13,8 +13,8 @@
       "@core/*": ["./src/@core/*", "./.super/types/src/@core/*"],
       "@components/*": ["./src/@components/*", "./.super/types/src/@components/*"]
     },
-    // Les déclarations des fichiers .super (écrites par super-tsc, le serveur .super et Vite en dev) :
-    // un .ts qui importe un composant .super en trouve les types, et sa définition mène au .super.
+    // The declarations of .super files (written by super-tsc, the .super server and Vite in dev):
+    // a .ts that imports a .super component finds its types, and its definition leads to the .super.
     "rootDirs": ["./src", "./.super/types/src", "./.super/virtual/src"]
   },
   "include": ["src", "../../vitest.setup.ts"]

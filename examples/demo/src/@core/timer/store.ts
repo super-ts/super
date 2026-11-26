@@ -10,7 +10,7 @@ export class TimerStore extends SuperStore<TimerContract> implements Commands<Ti
     this.set({ running: !this.get().running });
   }
 
-  // Appelée chaque seconde par le composant : n'avance que si le minuteur tourne.
+  // Called every second by the component: only advances if the timer is running.
   tick() {
     if (this.get().running) this.set({ seconds: this.get().seconds + 1 });
   }

@@ -1,4 +1,4 @@
-/* Une zone : tous les composants du kit qu'elle contient. */
+/* A zone: all the kit components it contains. */
 .kit-ocean {
   --super-accent: light-dark(#0e7490, #67e8f9);
   --super-radius: 999px;

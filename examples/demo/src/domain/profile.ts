@@ -1,4 +1,4 @@
-/** Ce que le serveur enregistre : le formulaire convertit ses valeurs en cet `input` (sans la confirmation). */
+/** What the server stores: the form converts its values into this `input` (without the confirmation). */
 export type ProfileInput = {
   name: string;
   email: string;

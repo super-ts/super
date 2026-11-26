@@ -25,7 +25,7 @@ const input = (email: string): ProfileInput => ({
 });
 
 describe('ProfileStore', () => {
-  test('save : succès, puis raison email-taken, puis network', async () => {
+  test('save: success, then reason email-taken, then network', async () => {
     const store = ProfileStore.create({ profileClient: createFakeProfileClient({ delay: 0 }) });
     const done = record(store, 'save:done');
     const failed = record(store, 'save:failed');
@@ -38,7 +38,7 @@ describe('ProfileStore', () => {
     expect(failed.calls.map((c) => c.reason)).toEqual(['email-taken', 'network']);
   });
 
-  test('checkEmail renvoie la disponibilité', async () => {
+  test('checkEmail returns the availability', async () => {
     const store = ProfileStore.create({ profileClient: createFakeProfileClient({ delay: 0 }) });
     const done = record(store, 'checkEmail:done');
 

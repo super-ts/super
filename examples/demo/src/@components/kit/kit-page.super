@@ -3,10 +3,10 @@ import { SuperElement } from '@super-ts/dom';
 import { RouteLink } from '@super-ts/ui';
 import './kit.css';
 
-/** La mise en page commune des pages du kit : retour au sommaire, titre, présentation, contenu. */
+/** The shared layout of the kit pages: back to the table of contents, heading, introduction, content. */
 export class KitPage extends SuperElement {
   @tag = 'kit-page';
-  // Pas un écran : chaque page du kit passe par lui, il donne donc leur titre à toutes.
+  // Not a screen: every kit page goes through it, so it gives all of them their title.
   @title = () => this.heading;
   @prop heading: string;
   @prop intro: string;
@@ -16,7 +16,7 @@ export class KitPage extends SuperElement {
     <main class="screen">
       <div class="kit-page">
         <RouteLink to={{ to: 'kit' }}>
-          ← Le kit
+          ← The kit
         </RouteLink>
         <h1>{this.heading}</h1>
         <p class="kit-page-intro">{this.intro}</p>

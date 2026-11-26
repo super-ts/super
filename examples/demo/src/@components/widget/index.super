@@ -2,7 +2,7 @@ import { SuperElement } from '@super-ts/dom';
 import { mountTimerWidget } from '../../widgets/timer-widget';
 import './index.css';
 
-/** Écran de la route `/widget` : ouvre et ferme un widget qui vit dans sa propre application. */
+/** Screen of the `/widget` route: opens and closes a widget that lives in its own application. */
 export class WidgetScreen extends SuperElement {
   @tag = 'widget-screen';
   @title = 'Widget';
@@ -31,10 +31,10 @@ export class WidgetScreen extends SuperElement {
     <main class="screen">
       <h1>Widget</h1>
       <p class="hint">
-        Le minuteur ci-dessous est une seconde application, montée sur son propre élément avec son propre store. La fermer libère
-        l'application et le store.
+        The timer below is a second application, mounted on its own element with its own store. Closing it releases the application and the
+        store.
       </p>
-      <button type="button" on:click={this.toggle}>{this.local.get().open ? 'Fermer le minuteur' : 'Ouvrir le minuteur'}</button>
+      <button type="button" on:click={this.toggle}>{this.local.get().open ? 'Close the timer' : 'Open the timer'}</button>
       <div class="widget-slot" ref={this.widgetSlot}></div>
     </main>
   }

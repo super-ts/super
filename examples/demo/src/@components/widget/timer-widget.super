@@ -2,7 +2,7 @@ import { SuperElement } from '@super-ts/dom';
 import { TimerShortcuts } from './timer-shortcuts';
 import './timer-widget.css';
 
-/** Le minuteur, rendu dans sa propre application (voir widgets/timer-widget.ts). */
+/** The timer, rendered in its own application (see widgets/timer-widget.ts). */
 export class TimerWidget extends SuperElement {
   @tag = 'timer-widget';
 
@@ -11,7 +11,7 @@ export class TimerWidget extends SuperElement {
   @selector running = this.timer.selectors.running;
   #interval: ReturnType<typeof setInterval> | undefined;
 
-  // L'intervalle vit entre le montage et le démontage du widget.
+  // The interval lives between the widget's mount and unmount.
   protected override mounted() {
     this.#interval = setInterval(() => this.timer.send('tick'), 1000);
   }
@@ -21,10 +21,10 @@ export class TimerWidget extends SuperElement {
   }
 
   render() {
-    <div class="timer" role="group" aria-label="Minuteur">
-      <output aria-label="Temps écoulé">{this.label.value}</output>
-      <button type="button" on:click={() => this.timer.send('toggle')}>{this.running.value ? 'Pause' : 'Démarrer'}</button>
-      <button type="button" on:click={() => this.timer.send('reset')}>Remettre à zéro</button>
+    <div class="timer" role="group" aria-label="Timer">
+      <output aria-label="Elapsed time">{this.label.value}</output>
+      <button type="button" on:click={() => this.timer.send('toggle')}>{this.running.value ? 'Pause' : 'Start'}</button>
+      <button type="button" on:click={() => this.timer.send('reset')}>Reset</button>
       <TimerShortcuts />
     </div>
   }

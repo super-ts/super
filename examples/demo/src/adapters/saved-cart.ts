@@ -4,13 +4,13 @@ type Options = {
 };
 
 /**
- * Adapter (user-land) : le panier enregistré dans le localStorage, pour qu'il survive au
- * rechargement de la page. Le store ne le connaît pas : `main.ts` relit le panier enregistré à la
- * création du store, puis l'enregistre à chaque changement (`cart.subscribe`).
+ * Adapter (user-land): the cart saved in localStorage, so that it survives a page reload.
+ * The store does not know about it: `main.ts` reads the saved cart back when the store is created,
+ * then saves it on every change (`cart.subscribe`).
  */
 export function createSavedCart({ storage = window.localStorage, key = 'super.cart' }: Options = {}) {
   return {
-    /** Le panier enregistré ; vide si rien n'est enregistré ou si la valeur est illisible. */
+    /** The saved cart; empty if nothing is saved or if the value is unreadable. */
     load(): Record<string, number> {
       try {
         const parsed: unknown = JSON.parse(storage.getItem(key) ?? '{}');

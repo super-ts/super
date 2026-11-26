@@ -1,7 +1,7 @@
 import { SuperElement } from '@super-ts/dom';
 import './counter-controls.css';
 
-/** Composant de présentation pur : il ne connaît aucun store. */
+/** Pure presentational component: it knows no store. */
 export class CounterControls extends SuperElement {
   @tag = 'counter-controls';
   @prop count: number;
@@ -11,10 +11,10 @@ export class CounterControls extends SuperElement {
   @emit decrement: void;
 
   render() {
-    <div class="counter-controls" role="group" aria-label="Compteur">
-      <button type="button" aria-label="Décrémenter" disabled={!this.canDecrement} on:click={() => this.emit('decrement')}>−</button>
-      <output class="counter-value" aria-label="Valeur du compteur">{this.count}</output>
-      <button type="button" aria-label="Incrémenter" disabled={!this.canIncrement} on:click={() => this.emit('increment')}>+</button>
+    <div class="counter-controls" role="group" aria-label="Counter">
+      <button type="button" aria-label="Decrement" disabled={!this.canDecrement} on:click={() => this.emit('decrement')}>−</button>
+      <output class="counter-value" aria-label="Counter value">{this.count}</output>
+      <button type="button" aria-label="Increment" disabled={!this.canIncrement} on:click={() => this.emit('increment')}>+</button>
     </div>
   }
 }

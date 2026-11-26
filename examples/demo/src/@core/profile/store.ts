@@ -13,10 +13,10 @@ export class ProfileStore extends SuperStore<ProfileContract> implements Command
     this.#client = profileClient;
   }
 
-  // Le store traduit les réponses du serveur en issue de commande : un résultat, ou une raison d'échec.
+  // The store turns the server responses into a command outcome: a result, or a failure reason.
   async save(input: ProfileInput) {
     const result = await this.#client.save(input).catch(() => this.fail('network'));
-    if (!result.ok) return this.fail(result.reason); // fail ne revient pas : ensuite, le compilateur sait que result.ok est vrai
+    if (!result.ok) return this.fail(result.reason); // fail does not return: afterwards, the compiler knows result.ok is true
     return { id: result.id };
   }
 

@@ -4,10 +4,10 @@ import { FragileCard } from './fragile-card';
 import { GuardedPanel } from './guarded-panel';
 import './index.css';
 
-/** Écran de la route `/errors` : provoque chaque cas, et affiche ce que reçoit `onError`. */
+/** Screen of the `/errors` route: triggers each case, and shows what `onError` receives. */
 export class ErrorsScreen extends SuperElement {
   @tag = 'errors-screen';
-  @title = 'Erreurs';
+  @title = 'Errors';
 
   @contract log = 'error-log';
   @selector entries = this.log.selectors.entries;
@@ -20,52 +20,50 @@ export class ErrorsScreen extends SuperElement {
     const entries = this.entries.value;
     const { round, broken, withChild, armed } = local.get();
     <main class="screen">
-      <h1>Erreurs</h1>
-      <p class="hint">Chaque bouton provoque une erreur réelle. Le journal en bas montre ce que reçoit <code>onError</code>.</p>
+      <h1>Errors</h1>
+      <p class="hint">Each button triggers a real error. The log at the bottom shows what <code>onError</code> receives.</p>
 
-      {/* Une boucle à une seule clé, `round` : « Recommencer » recrée les trois blocs. */}
+      {/* A loop with a single key, `round`: "Start over" recreates the three blocks. */}
       for (const _round of [round]; key _round) {
         <section>
-          <h2>1. Un composant qui plante au rendu</h2>
+          <h2>1. A component that crashes on render</h2>
           <FragileCard broken={broken} />
-          <button type="button" on:click={() => local.set({ broken: true })}>Casser le bloc</button>
+          <button type="button" on:click={() => local.set({ broken: true })}>Break the block</button>
         </section>
 
         <section>
-          <h2>2. Un enfant qui plante, rattrapé par son parent</h2>
+          <h2>2. A child that crashes, caught by its parent</h2>
           <GuardedPanel withChild={withChild} />
-          <button type="button" on:click={() => local.set({ withChild: true })}>Afficher l'enfant cassé</button>
+          <button type="button" on:click={() => local.set({ withChild: true })}>Show the broken child</button>
         </section>
 
         <section>
-          <h2>3. Un renderError qui plante aussi</h2>
+          <h2>3. A renderError that crashes too</h2>
           <DoubleFailure armed={armed} />
-          <button type="button" on:click={() => local.set({ armed: true })}>Tout casser (écran '!')</button>
+          <button type="button" on:click={() => local.set({ armed: true })}>Break everything ('!' screen)</button>
         </section>
       }
 
       <section>
-        <h2>4. Un clic qui plante</h2>
-        <p>L'affichage ne change pas : l'erreur est seulement signalée (phase <code>event</code>).</p>
-        <button type="button" on:click={() => { throw new Error('le gestionnaire de clic a planté'); }}>Clic qui plante</button>
+        <h2>4. A click that crashes</h2>
+        <p>The display does not change: the error is only reported (phase <code>event</code>).</p>
+        <button type="button" on:click={() => { throw new Error('the click handler crashed'); }}>Click that crashes</button>
       </section>
 
-      <section class="log" aria-label="Journal onError">
-        <h2>Journal de onError</h2>
+      <section class="log" aria-label="onError log">
+        <h2>onError log</h2>
         if (entries.length === 0) {
-          <p class="empty">Aucune erreur pour l'instant.</p>
+          <p class="empty">No errors yet.</p>
         } else {
           <ol>
             for (const [i, e] of entries.entries(); key i) {
-              <li>
-                <strong>{e.tag}</strong>, phase <code>{e.phase}</code>, rattrapée par <code>{e.caughtBy ?? 'personne'}</code> : {e.message}
-              </li>
+              <li><strong>{e.tag}</strong>, phase <code>{e.phase}</code>, caught by <code>{e.caughtBy ?? 'nobody'}</code>: {e.message}</li>
             }
           </ol>
         }
         <div class="actions">
-          <button type="button" on:click={restart}>Recommencer</button>
-          <button type="button" on:click={() => this.log.send('clear')}>Vider le journal</button>
+          <button type="button" on:click={restart}>Start over</button>
+          <button type="button" on:click={() => this.log.send('clear')}>Clear the log</button>
         </div>
       </section>
     </main>

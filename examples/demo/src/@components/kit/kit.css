@@ -1,7 +1,7 @@
-/* Mise en page des pages du kit : c'est l'app qui la décide, pas le kit. */
+/* Layout of the kit pages: the app decides it, not the kit. */
 .kit-page {
   display: grid;
-  /* minmax(0, 1fr) : une colonne ne s'élargit jamais au-delà de l'écran (la table défile à la place). */
+  /* minmax(0, 1fr): a column never grows beyond the screen (the table scrolls instead). */
   grid-template-columns: minmax(0, 1fr);
   gap: 1.5rem;
   width: min(48rem, 100%);
@@ -57,7 +57,7 @@
   margin: 0;
 }
 
-/* Le CSS d'une surcharge, affiché à côté de son effet. */
+/* The CSS of an override, shown next to its effect. */
 .kit-code {
   margin: 0;
   padding: 0.75rem 1rem;

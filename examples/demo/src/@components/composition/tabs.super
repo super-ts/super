@@ -1,7 +1,7 @@
 import { type Children, SuperElement } from '@super-ts/dom';
 import './tabs.css';
 
-/** Des onglets : une liste d'emplacements (`panels`), un par libellé. L'onglet ouvert est son état local. */
+/** Tabs: a list of slots (`panels`), one per label. The open tab is its local state. */
 export class Tabs extends SuperElement {
   @tag = 'composition-tabs';
   @prop labels: string[];

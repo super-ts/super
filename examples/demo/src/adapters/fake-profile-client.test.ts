@@ -24,13 +24,13 @@ const profile = (overrides: Partial<ProfileInput> = {}): ProfileInput => ({
 });
 
 describe('createFakeProfileClient', () => {
-  test('enregistre un profil et renvoie un identifiant', async () => {
+  test('saves a profile and returns an identifier', async () => {
     const client = createFakeProfileClient({ delay: 0 });
     await expect(client.save(profile())).resolves.toEqual({ ok: true, id: 'p1' });
     expect(client.saved).toHaveLength(1);
   });
 
-  test('refuse une adresse prise et une image trop lourde', async () => {
+  test('refuses a taken address and an image that is too large', async () => {
     const client = createFakeProfileClient({ delay: 0, maxAvatarSize: 10 });
     await expect(client.save(profile({ email: 'taken@example.com' }))).resolves.toEqual({ ok: false, reason: 'email-taken' });
     const avatar = new File(['x'.repeat(20)], 'big.png', { type: 'image/png' });
@@ -39,9 +39,9 @@ describe('createFakeProfileClient', () => {
     expect(await client.isEmailAvailable('ada@example.com')).toBe(true);
   });
 
-  test('une adresse contenant « offline » simule une panne réseau', async () => {
+  test('an address containing "offline" simulates a network failure', async () => {
     const client = createFakeProfileClient({ delay: 0 });
-    await expect(client.save(profile({ email: 'offline@example.com' }))).rejects.toThrow('Réseau indisponible');
-    await expect(client.isEmailAvailable('offline@example.com')).rejects.toThrow('Réseau indisponible');
+    await expect(client.save(profile({ email: 'offline@example.com' }))).rejects.toThrow('Network unavailable');
+    await expect(client.isEmailAvailable('offline@example.com')).rejects.toThrow('Network unavailable');
   });
 });

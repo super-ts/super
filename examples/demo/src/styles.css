@@ -1,10 +1,10 @@
-/* Références globales : base typographique et motifs partagés par plusieurs écrans. */
+/* Global references: typographic base and patterns shared by several screens. */
 *, *::before, *::after { box-sizing: border-box; }
 :root { font-family: system-ui, sans-serif; color-scheme: light dark; }
 body { margin: 0; }
 a { color: inherit; }
 button:disabled { cursor: not-allowed; opacity: 0.4; }
-/* minmax(0, 1fr) : la colonne ne s'élargit jamais au-delà de l'écran à cause d'un contenu trop large. */
+/* minmax(0, 1fr): the column never grows beyond the screen because of content that is too wide. */
 .screen { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; justify-items: center; padding: 2rem 1rem; }
 .screen > * { max-width: 100%; }
 h1 { font-size: clamp(1.5rem, 6vw, 2rem); text-align: center; margin: 0; }

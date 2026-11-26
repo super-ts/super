@@ -1,6 +1,6 @@
 /**
- * Port (user-land) : ce dont le store a besoin pour persister les compteurs.
- * Super ne connaît pas ce dossier : `ports/` est un choix de ce projet.
+ * Port (user-land): what the store needs to persist the counters.
+ * Super does not know about this folder: `ports/` is a choice of this project.
  */
 export interface CounterRepository {
   loadAll(): Promise<Record<string, number>>;

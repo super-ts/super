@@ -1,4 +1,4 @@
-/* L'élément s'efface : son lien et sa valeur deviennent les enfants flex du <li> parent. */
+/* The element steps aside: its link and its value become flex children of the parent <li>. */
 counter-list-item {
   display: contents;
   .counter-list-value { font-variant-numeric: tabular-nums; opacity: 0.7; }

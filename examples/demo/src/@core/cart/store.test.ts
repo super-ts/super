@@ -4,7 +4,7 @@ import { PRODUCTS } from '../../domain/shop';
 import { CartStore } from './store';
 
 describe('CartStore', () => {
-  test('ajoute, retire, calcule le total', async () => {
+  test('adds, removes, computes the total', async () => {
     const cart = CartStore.create();
     await cart.send('add', { sku: 'mug' });
     await cart.send('add', { sku: 'mug' });
@@ -20,7 +20,7 @@ describe('CartStore', () => {
     ]);
   });
 
-  test('émet emptied quand le panier devient vide, par clear ou par le dernier remove', async () => {
+  test('emits emptied when the cart becomes empty, through clear or the last remove', async () => {
     const cart = CartStore.create();
     const emptied = record(cart, 'emptied');
 
@@ -28,14 +28,14 @@ describe('CartStore', () => {
     await cart.send('remove', { sku: 'mug' });
     await cart.send('add', { sku: 'tshirt' });
     await cart.send('clear');
-    await cart.send('clear'); // déjà vide : rien
+    await cart.send('clear'); // already empty: nothing
 
     expect(emptied.calls).toHaveLength(2);
   });
 });
 
-describe('CartStore : panier de départ', () => {
-  test('part du panier reçu (relu du stockage par main.ts)', () => {
+describe('CartStore: starting cart', () => {
+  test('starts from the received cart (read back from storage by main.ts)', () => {
     const cart = CartStore.create({ quantities: { [PRODUCTS[0]!.sku]: 2 } });
     expect(cart.selectors.count()).toBe(2);
   });

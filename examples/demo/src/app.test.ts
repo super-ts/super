@@ -14,8 +14,8 @@ import { createFakeProfileClient } from './adapters/fake-profile-client';
 import { createLocalStorageCounterRepository } from './adapters/local-storage-counter-repository';
 import { Router } from './routes';
 
-// L'app entière, assemblée comme dans main.ts : vrais stores, adapters (serveurs simulés sans latence),
-// router en mémoire, et onError qui alimente le journal de l'exemple « Erreurs ».
+// The whole app, assembled as in main.ts: real stores, adapters (simulated servers without latency),
+// an in-memory router, and onError feeding the log of the "Errors" example.
 async function startApp(initialPath = '/') {
   const counter = CounterStore.create({ counterRepository: createLocalStorageCounterRepository() });
   const profileClient = createFakeProfileClient({ delay: 0 });
@@ -24,185 +24,185 @@ async function startApp(initialPath = '/') {
   const orderClient = createFakeOrderClient({ delay: 0 });
   const checkout = CheckoutStore.create({ cart, orderClient });
   const errorLog = ErrorLogStore.create();
-  const router = createRouter(Router, { mode: 'memory', initialPath, title: { default: 'Super · exemples', suffix: ' · Super' } });
+  const router = createRouter(Router, { mode: 'memory', initialPath, title: { default: 'Super · examples', suffix: ' · Super' } });
   const { container } = await mount(AppShell, {
     stores: [counter, profile, cart, checkout, errorLog],
     router,
     onError: (error, { tag, phase, caughtBy }) => errorLog.send('record', { message: error.message, tag, phase, caughtBy }),
   });
-  await flush(); // laisse `load` se terminer
+  await flush(); // lets `load` finish
   return { router, profileClient, orderClient, cart, ui: within(container) };
 }
 
-describe('app d’exemples', () => {
+describe('examples app', () => {
   beforeEach(() => localStorage.clear());
 
-  test('l’accueil liste les exemples et mène à chacun', async () => {
+  test('the home page lists the examples and leads to each one', async () => {
     const { router, ui } = await startApp();
 
-    expect(ui.getByRole('heading', { name: 'Exemples Super' })).toBeTruthy();
-    await userEvent.click(ui.getByRole('link', { name: 'Formulaire de profil' }));
+    expect(ui.getByRole('heading', { name: 'Super examples' })).toBeTruthy();
+    await userEvent.click(ui.getByRole('link', { name: 'Profile form' }));
     expect(router.state().name).toBe('profile');
   });
 
-  test('le titre de l’onglet suit l’écran affiché, et le panier sur la boutique', async () => {
+  test('the tab title follows the displayed screen, and the cart on the shop', async () => {
     const { router, cart } = await startApp('/shop');
-    expect(document.title).toBe('Boutique · Super');
+    expect(document.title).toBe('Shop · Super');
     await cart.send('add', { sku: 'mug' });
     await flush();
-    expect(document.title).toBe('Boutique (1 au panier) · Super');
+    expect(document.title).toBe('Shop (1 in cart) · Super');
     router.send('navigate', { to: 'kit-forms' });
     await flush();
-    expect(document.title).toBe('Formulaires et commandes · Super'); // posé par KitPage, qui n'est pas un écran
+    expect(document.title).toBe('Forms and commands · Super'); // set by KitPage, which is not a screen
   });
 
-  test('la liste des compteurs affiche les valeurs persistées', async () => {
-    localStorage.setItem('super.counters', JSON.stringify({ pompes: 12 }));
+  test('the counter list shows the persisted values', async () => {
+    localStorage.setItem('super.counters', JSON.stringify({ pushups: 12 }));
     const { ui } = await startApp('/counters');
 
-    expect(ui.getByRole('heading', { name: 'Mes compteurs' })).toBeTruthy();
-    const pompes = ui.getByRole('link', { name: 'Pompes' });
-    expect(pompes.getAttribute('href')).toBe('/counters/pompes');
-    expect(pompes.parentElement!.textContent).toContain('12');
+    expect(ui.getByRole('heading', { name: 'My counters' })).toBeTruthy();
+    const pushUps = ui.getByRole('link', { name: 'Push-ups' });
+    expect(pushUps.getAttribute('href')).toBe('/counters/pushups');
+    expect(pushUps.parentElement!.textContent).toContain('12');
   });
 
-  test('parcours complet des compteurs : liste, détail, incrément, retour', async () => {
+  test('full counter journey: list, detail, increment, back', async () => {
     const { router, ui } = await startApp('/counters');
 
-    await userEvent.click(ui.getByRole('link', { name: 'Cafés' }));
-    expect(router.state()).toMatchObject({ path: '/counters/cafes', name: 'counter', params: { id: 'cafes' } });
-    expect(ui.getByRole('heading', { name: 'Cafés' })).toBeTruthy();
+    await userEvent.click(ui.getByRole('link', { name: 'Coffees' }));
+    expect(router.state()).toMatchObject({ path: '/counters/coffees', name: 'counter', params: { id: 'coffees' } });
+    expect(ui.getByRole('heading', { name: 'Coffees' })).toBeTruthy();
 
-    await userEvent.click(ui.getByRole('button', { name: 'Incrémenter' }));
-    await userEvent.click(ui.getByRole('button', { name: 'Incrémenter' }));
-    expect(await ui.findByText('Incrémenté : 2')).toBeTruthy();
+    await userEvent.click(ui.getByRole('button', { name: 'Increment' }));
+    await userEvent.click(ui.getByRole('button', { name: 'Increment' }));
+    expect(await ui.findByText('Incremented: 2')).toBeTruthy();
 
-    await userEvent.click(ui.getByRole('link', { name: '← Tous les compteurs' }));
-    expect(ui.getByRole('link', { name: 'Cafés' }).parentElement!.textContent).toContain('2');
-    expect(JSON.parse(localStorage.getItem('super.counters')!)).toEqual({ cafes: 2 });
+    await userEvent.click(ui.getByRole('link', { name: '← All counters' }));
+    expect(ui.getByRole('link', { name: 'Coffees' }).parentElement!.textContent).toContain('2');
+    expect(JSON.parse(localStorage.getItem('super.counters')!)).toEqual({ coffees: 2 });
   });
 
-  test('back revient à l’écran précédent', async () => {
+  test('back returns to the previous screen', async () => {
     const { router, ui } = await startApp('/counters');
-    await userEvent.click(ui.getByRole('link', { name: 'Livres lus' }));
+    await userEvent.click(ui.getByRole('link', { name: 'Books read' }));
 
     await router.send('back');
     await flush();
 
-    expect(ui.getByRole('heading', { name: 'Mes compteurs' })).toBeTruthy();
+    expect(ui.getByRole('heading', { name: 'My counters' })).toBeTruthy();
   });
 
-  test('un chemin inconnu affiche l’écran introuvable, qui ramène aux exemples', async () => {
-    const { router, ui } = await startApp('/nulle-part');
+  test('an unknown path shows the not-found screen, which leads back to the examples', async () => {
+    const { router, ui } = await startApp('/nowhere');
 
-    expect(ui.getByRole('heading', { name: 'Page introuvable' })).toBeTruthy();
-    await userEvent.click(ui.getByRole('button', { name: 'Retour aux exemples' }));
+    expect(ui.getByRole('heading', { name: 'Page not found' })).toBeTruthy();
+    await userEvent.click(ui.getByRole('button', { name: 'Back to the examples' }));
     await flush();
 
     expect(router.state().name).toBe('examples');
   });
 
-  test('/form redirige vers le formulaire de profil', async () => {
+  test('/form redirects to the profile form', async () => {
     const { router, ui } = await startApp('/form');
 
     expect(router.state()).toMatchObject({ path: '/profile', name: 'profile' });
-    expect(ui.getByRole('heading', { name: 'Formulaire de profil' })).toBeTruthy();
+    expect(ui.getByRole('heading', { name: 'Profile form' })).toBeTruthy();
   });
 
-  test('la navigation marque la section courante, y compris sur le détail d’un compteur', async () => {
-    const { ui } = await startApp('/counters/cafes');
-    const nav = within(ui.getByRole('navigation', { name: 'Exemples' }));
+  test('the navigation marks the current section, including on a counter detail', async () => {
+    const { ui } = await startApp('/counters/coffees');
+    const nav = within(ui.getByRole('navigation', { name: 'Examples' }));
 
-    expect(nav.getByRole('link', { name: 'Compteurs' }).getAttribute('aria-current')).toBe('page');
-    expect(nav.getByRole('link', { name: 'Exemples' }).hasAttribute('aria-current')).toBe(false);
+    expect(nav.getByRole('link', { name: 'Counters' }).getAttribute('aria-current')).toBe('page');
+    expect(nav.getByRole('link', { name: 'Examples' }).hasAttribute('aria-current')).toBe(false);
   });
 
-  test('le formulaire s’enregistre auprès du serveur simulé', async () => {
+  test('the form saves to the simulated server', async () => {
     const { profileClient, ui } = await startApp('/profile');
 
-    await userEvent.type(ui.getByLabelText('Nom'), 'Ada');
-    await userEvent.type(ui.getByLabelText('E-mail'), 'ada@example.com');
-    await userEvent.type(ui.getByLabelText('Mot de passe'), 'longpassword');
+    await userEvent.type(ui.getByLabelText('Name'), 'Ada');
+    await userEvent.type(ui.getByLabelText('Email'), 'ada@example.com');
+    await userEvent.type(ui.getByLabelText('Password'), 'longpassword');
     await userEvent.type(ui.getByLabelText('Confirmation'), 'longpassword');
-    await userEvent.selectOptions(ui.getByLabelText('Langues'), ['fr']);
-    await userEvent.type(ui.getByLabelText('Numéro'), '06 12 34 56 78');
-    await new Promise((resolve) => setTimeout(resolve, 450)); // la vérification de l'adresse
-    await userEvent.click(ui.getByRole('button', { name: 'Enregistrer' }));
+    await userEvent.selectOptions(ui.getByLabelText('Languages'), ['fr']);
+    await userEvent.type(ui.getByLabelText('Number'), '06 12 34 56 78');
+    await new Promise((resolve) => setTimeout(resolve, 450)); // the address check
+    await userEvent.click(ui.getByRole('button', { name: 'Save' }));
 
-    expect(await ui.findByText('Profil enregistré (n° p1).')).toBeTruthy();
+    expect(await ui.findByText('Profile saved (no. p1).')).toBeTruthy();
     expect(profileClient.saved[0]).toMatchObject({ name: 'Ada', email: 'ada@example.com', languages: ['fr'] });
   });
 
-  test('boutique : on ne commande pas un panier vide (guard), puis une commande vide le panier', async () => {
+  test('shop: you cannot order an empty cart (guard), then an order empties the cart', async () => {
     const { router, orderClient, ui } = await startApp('/shop/checkout');
-    expect(router.state().name).toBe('shop'); // redirigé par le guard
+    expect(router.state().name).toBe('shop'); // redirected by the guard
 
-    await userEvent.click(ui.getByRole('button', { name: 'Ajouter Mug Super' }));
-    await userEvent.click(ui.getByRole('link', { name: 'Commander' }));
+    await userEvent.click(ui.getByRole('button', { name: 'Add Super mug' }));
+    await userEvent.click(ui.getByRole('link', { name: 'Checkout' }));
     expect(router.state().name).toBe('checkout');
 
-    await userEvent.type(ui.getByLabelText('Adresse de livraison'), '12 rue des Lilas, Paris');
-    await userEvent.click(ui.getByRole('button', { name: 'Payer' }));
+    await userEvent.type(ui.getByLabelText('Delivery address'), '12 Lilac Street, London');
+    await userEvent.click(ui.getByRole('button', { name: 'Pay' }));
 
-    expect(await ui.findByText('Commande n° C0001, 12,00 €.')).toBeTruthy();
+    expect(await ui.findByText('Order no. C0001, €12.00.')).toBeTruthy();
     expect(orderClient.orders[0]).toMatchObject({ lines: [{ sku: 'mug', quantity: 1 }], total: 1200 });
-    await userEvent.click(ui.getByRole('link', { name: 'Retour à la boutique' }));
-    expect(ui.getByText('Aucun article pour l’instant.')).toBeTruthy(); // le panier a été vidé par Checkout
+    await userEvent.click(ui.getByRole('link', { name: 'Back to the shop' }));
+    expect(ui.getByText('No items yet.')).toBeTruthy(); // the cart was emptied by Checkout
   });
 
-  test('erreurs : chaque cas est rattrapé au bon niveau et apparaît dans le journal', async () => {
+  test('errors: each case is caught at the right level and appears in the log', async () => {
     const { router, ui } = await startApp('/errors');
-    const log = () => within(ui.getByRole('region', { name: 'Journal onError' }));
+    const log = () => within(ui.getByRole('region', { name: 'onError log' }));
 
-    await userEvent.click(ui.getByRole('button', { name: 'Casser le bloc' }));
-    expect(await ui.findByText(/Ce bloc a planté/)).toBeTruthy();
+    await userEvent.click(ui.getByRole('button', { name: 'Break the block' }));
+    expect(await ui.findByText(/This block crashed/)).toBeTruthy();
     expect(
       log()
         .getAllByText(/fragile-card/)[0]!
         .closest('li')!.textContent,
-    ).toContain('rattrapée par fragile-card');
+    ).toContain('caught by fragile-card');
 
-    await userEvent.click(ui.getByRole('button', { name: "Afficher l'enfant cassé" }));
-    expect(await ui.findByText(/Le parent a rattrapé l'erreur de son enfant/)).toBeTruthy();
+    await userEvent.click(ui.getByRole('button', { name: 'Show the broken child' }));
+    expect(await ui.findByText(/The parent caught its child's error/)).toBeTruthy();
     expect(
       log()
         .getByText(/broken-child/)
         .closest('li')!.textContent,
-    ).toContain('rattrapée par guarded-panel');
+    ).toContain('caught by guarded-panel');
 
-    await userEvent.click(ui.getByRole('button', { name: 'Clic qui plante' }));
+    await userEvent.click(ui.getByRole('button', { name: 'Click that crashes' }));
     await flush();
     expect(
       log()
-        .getByText(/le gestionnaire de clic a planté/)
+        .getByText(/the click handler crashed/)
         .closest('li')!.textContent,
     ).toContain('phase event');
 
-    await userEvent.click(ui.getByRole('button', { name: "Tout casser (écran '!')" }));
+    await userEvent.click(ui.getByRole('button', { name: "Break everything ('!' screen)" }));
     await flush();
-    expect(ui.getByRole('heading', { name: 'Cette page a rencontré un problème' })).toBeTruthy();
-    expect(router.state().name).toBe('errors'); // toujours sur la même route : l'écran '!' remplace l'écran
+    expect(ui.getByRole('heading', { name: 'This page ran into a problem' })).toBeTruthy();
+    expect(router.state().name).toBe('errors'); // still on the same route: the '!' screen replaces the screen
   });
 
-  test("erreurs : après l'écran '!', recliquer sur « Erreurs » ou passer par une autre page ramène l'écran d'origine", async () => {
+  test("errors: after the '!' screen, clicking 'Errors' again or going through another page brings back the original screen", async () => {
     const { ui } = await startApp('/errors');
-    const nav = () => within(ui.getByRole('navigation', { name: 'Exemples' }));
+    const nav = () => within(ui.getByRole('navigation', { name: 'Examples' }));
     const crash = async () => {
-      await userEvent.click(ui.getByRole('button', { name: "Tout casser (écran '!')" }));
+      await userEvent.click(ui.getByRole('button', { name: "Break everything ('!' screen)" }));
       await flush();
-      expect(ui.getByRole('heading', { name: 'Cette page a rencontré un problème' })).toBeTruthy();
+      expect(ui.getByRole('heading', { name: 'This page ran into a problem' })).toBeTruthy();
     };
 
     await crash();
-    await userEvent.click(nav().getByRole('link', { name: 'Erreurs' })); // même chemin
+    await userEvent.click(nav().getByRole('link', { name: 'Errors' })); // same path
     await flush();
-    expect(ui.getByRole('heading', { name: 'Erreurs' })).toBeTruthy();
+    expect(ui.getByRole('heading', { name: 'Errors' })).toBeTruthy();
 
     await crash();
     await userEvent.click(nav().getByRole('link', { name: 'Widget' }));
-    await userEvent.click(nav().getByRole('link', { name: 'Erreurs' }));
+    await userEvent.click(nav().getByRole('link', { name: 'Errors' }));
     await flush();
-    expect(ui.getByRole('heading', { name: 'Erreurs' })).toBeTruthy();
-    expect(ui.getByText('Prêt.')).toBeTruthy(); // un écran neuf : le bloc n'est plus cassé
+    expect(ui.getByRole('heading', { name: 'Errors' })).toBeTruthy();
+    expect(ui.getByText('Ready.')).toBeTruthy(); // a fresh screen: the block is no longer broken
   });
 });

@@ -15,13 +15,13 @@ import './theme-zone.css';
 
 type Row = { id: string; label: string; count: number };
 const COLUMNS = columns<Row>([
-  { key: 'label', label: 'Compteur', sortable: true },
-  { key: 'count', label: 'Valeur', sortable: true, align: 'end' },
+  { key: 'label', label: 'Counter', sortable: true },
+  { key: 'count', label: 'Value', sortable: true, align: 'end' },
 ]);
 
 /**
- * Écran de la route `/kit/theme` : comment surcharger le style du kit. Chaque exemple affiche le
- * CSS qui le produit, lu dans le fichier même qui est appliqué (`?raw`).
+ * Screen of the `/kit/theme` route: how to override the kit's style. Each example shows the
+ * CSS that produces it, read from the very file that is applied (`?raw`).
  */
 export class KitThemeScreen extends SuperElement {
   @tag = 'kit-theme-screen';
@@ -31,10 +31,10 @@ export class KitThemeScreen extends SuperElement {
   #sample() {
     <div class="kit-row">
       <Button>
-        Principal
+        Primary
       </Button>
       <Button variant="secondary">
-        Secondaire
+        Secondary
       </Button>
       <Badge tone="info">
         Badge
@@ -47,46 +47,46 @@ export class KitThemeScreen extends SuperElement {
       .catalog()
       .map((c) => ({ id: c.id, label: c.label, count: this.counter.selectors.count(c.id) }));
     <KitPage
-      heading="Thème"
-      intro="Le kit range son CSS dans une couche à part et ne pose que des sélecteurs sans poids : la moindre règle de l’app passe devant, sans !important."
+      heading="Theme"
+      intro="The kit puts its CSS in a separate layer and only uses zero-specificity selectors: any rule of the app wins, without !important."
     >
       <section class="kit-example">
-        <h2>Toute l’app</h2>
-        <p>Les variables --super-* sur :root, dans src/kit-theme.css, chargé par main.ts. C’est ce qui donne à toute la démo son indigo.</p>
+        <h2>The whole app</h2>
+        <p>The --super-* variables on :root, in src/kit-theme.css, loaded by main.ts. This is what gives the whole demo its indigo.</p>
         <pre class="kit-code"><code>{GLOBAL_CSS}</code></pre>
         {this.#sample()}
       </section>
       <section class="kit-example">
-        <h2>Une zone</h2> <pre class="kit-code"><code>{ZONE_CSS}</code></pre> <div class="kit-ocean">{this.#sample()}</div>
+        <h2>A zone</h2> <pre class="kit-code"><code>{ZONE_CSS}</code></pre> <div class="kit-ocean">{this.#sample()}</div>
       </section>
       <section class="kit-example">
-        <h2>Le thème sombre dans une zone</h2>
-        <p>Chaque couleur du kit a une valeur claire et une valeur sombre : le kit suit le color-scheme de l’élément.</p>
+        <h2>The dark theme in a zone</h2>
+        <p>Each kit colour has a light value and a dark value: the kit follows the element's color-scheme.</p>
         <pre class="kit-code"><code>{DARK_CSS}</code></pre>
         <div class="kit-dark-zone">
           {this.#sample()}
-          <EmptyState title="Aucun favori">
-            Le texte secondaire reste lisible sur le fond sombre.
+          <EmptyState title="No favourites">
+            The secondary text stays readable on the dark background.
           </EmptyState>
         </div>
       </section>
       <section class="kit-example">
-        <h2>Un seul composant</h2>
+        <h2>A single component</h2>
         <pre class="kit-code"><code>{INSTANCE_CSS}</code></pre>
         <div class="kit-row">
           <Button>
-            Sans classe
+            Without a class
           </Button>
           <Button class="kit-violet">
-            Avec class="kit-violet"
+            With class="kit-violet"
           </Button>
         </div>
       </section>
       <section class="kit-example">
-        <h2>Une règle ordinaire</h2> <pre class="kit-code"><code>{RULE_CSS}</code></pre> <div class="kit-caps">{this.#sample()}</div>
+        <h2>An ordinary rule</h2> <pre class="kit-code"><code>{RULE_CSS}</code></pre> <div class="kit-caps">{this.#sample()}</div>
       </section>
       <section class="kit-example">
-        <h2>Une table dense</h2>
+        <h2>A dense table</h2>
         <pre class="kit-code"><code>{COMPACT_CSS}</code></pre>
         <Table class="kit-compact" columns={COLUMNS} rows={rows} rowKey={(row) => row.id} />
       </section>

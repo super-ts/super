@@ -19,19 +19,19 @@ import { ShopScreen } from '@components/shop';
 import { WidgetScreen } from '@components/widget';
 import { PRODUCT_SORTS, type ProductSort } from './domain/catalog';
 
-// La query de la liste des compteurs : son type, puis sa description pour lire l'URL. Une valeur
-// inconnue (`?sort=nimporte`) est remplacée par la valeur par défaut.
+// The query of the counter list: its type, then its description for reading the URL. An unknown
+// value (`?sort=whatever`) is replaced by the default value.
 type CountersQuery = { sort: 'original' | 'label' };
-// Le tri et la page de la table branchée du kit : ils vivent dans l'URL.
+// The sort and page of the kit's connected table: they live in the URL.
 type KitTableQuery = { sort?: ProductSort; order: 'asc' | 'desc'; page: number; size: 5 | 10 | 20 | 50 };
 
-// Le router de l'app : typé par ces routes (`this.router` dans un composant) et source des liens hors composants (`Router.href`).
-// `Router.href('counter')` sans `id`, ou `navigate({ to: 'compteur' })`, ne compilent pas.
-// Chaque écran lit sa route par `this.router.current`, typé par sa route (`/counters/:id` -> `params.id`).
-// `'*'` est l'écran affiché quand aucun chemin ne correspond, `'!'` celui d'un écran qui plante.
+// The app's router: typed by these routes (`this.router` in a component) and the source of links outside components (`Router.href`).
+// `Router.href('counter')` without `id`, or `navigate({ to: 'counterz' })`, do not compile.
+// Each screen reads its route through `this.router.current`, typed by its route (`/counters/:id` -> `params.id`).
+// `'*'` is the screen shown when no path matches, `'!'` the one for a screen that crashes.
 export const Router = defineRouter({
   examples: '/',
-  // `?sort=label` trie la liste : changer de tri ne remonte pas l'écran.
+  // `?sort=label` sorts the list: changing the sort does not remount the screen.
   counters: {
     path: '/counters',
     query: query<CountersQuery>({ sort: { oneOf: ['original', 'label'], default: 'original' } }),
@@ -60,8 +60,8 @@ export const Router = defineRouter({
   },
   'kit-theme': '/kit/theme',
 })
-  // Un guard lit les stores par leur contrat : on ne commande pas un panier vide.
-  // Les guards viennent avant .screens(), qui doit rester le dernier appel.
+  // A guard reads stores through their contract: you cannot order an empty cart.
+  // Guards come before .screens(), which must remain the last call.
   .guards(({ read }) => ({
     checkout: () => !read('cart').isEmpty() || { to: 'shop' },
   }))
@@ -70,7 +70,7 @@ export const Router = defineRouter({
     counters: CounterListScreen,
     counter: CounterScreen,
     profile: ProfileScreen,
-    form: redirect({ to: 'profile' }), // un raccourci : /form mène au formulaire
+    form: redirect({ to: 'profile' }), // a shortcut: /form leads to the form
     shop: ShopScreen,
     checkout: CheckoutScreen,
     errors: ErrorsScreen,

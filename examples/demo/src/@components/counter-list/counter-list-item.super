@@ -1,7 +1,7 @@
 import { SuperElement } from '@super-ts/dom';
 import './counter-list-item.css';
 
-/** Une ligne de la liste d'accueil : ne se re-rend que si la valeur de son compteur change. */
+/** A row of the home list: only re-renders if its counter's value changes. */
 export class CounterListItem extends SuperElement {
   @tag = 'counter-list-item';
   @prop counterId: string;

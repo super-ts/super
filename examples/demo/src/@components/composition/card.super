@@ -2,8 +2,8 @@ import { type Children, SuperElement } from '@super-ts/dom';
 import './card.css';
 
 /**
- * Une carte : un titre, un contenu (les enfants écrits entre ses balises) et des actions
- * facultatives (un emplacement nommé). Elle ne sait rien de ce qu'elle affiche : le parent décide.
+ * A card: a heading, content (the children written between its tags) and optional actions
+ * (a named slot). It knows nothing about what it displays: the parent decides.
  */
 export class Card extends SuperElement {
   @tag = 'composition-card';

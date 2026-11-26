@@ -3,96 +3,96 @@ import { Button, Combobox, createToasts, Disclosure, Menu, Popover, Tabs, Toasts
 import { KitPage } from './kit-page';
 
 const ACTIONS = [
-  { id: 'hello', label: 'Dire bonjour' },
-  { id: 'archive', label: 'Archiver', disabled: true },
-  { id: 'oops', label: 'Signaler une erreur' },
+  { id: 'hello', label: 'Say hello' },
+  { id: 'archive', label: 'Archive', disabled: true },
+  { id: 'oops', label: 'Report an error' },
 ];
-// Des valeurs écrites en dur : le combobox les filtre lui-même, sans accents ni casse.
+// Hard-coded values: the combobox filters them itself, ignoring accents and case.
 const FRUITS = [
-  'Abricot',
-  'Ananas',
-  'Banane',
-  'Cerise',
-  'Citron',
-  'Fraise',
-  'Framboise',
-  'Mangue',
-  'Myrtille',
-  'Pêche',
-  'Poire',
-  'Pomme',
+  'Apple',
+  'Apricot',
+  'Banana',
+  'Blueberry',
+  'Cherry',
+  'Lemon',
+  'Mango',
+  'Peach',
+  'Pear',
+  'Pineapple',
+  'Raspberry',
+  'Strawberry',
 ].map((fruit) => ({ value: fruit.toLowerCase(), label: fruit }));
 const TABS = [
-  { id: 'profile', label: 'Profil' },
-  { id: 'security', label: 'Sécurité' },
+  { id: 'profile', label: 'Profile' },
+  { id: 'security', label: 'Security' },
 ];
 
-/** Écran de la route `/kit/primitives` : des composants accessibles au clavier. */
+/** Screen of the `/kit/primitives` route: keyboard-accessible components. */
 export class KitPrimitivesScreen extends SuperElement {
   @tag = 'kit-primitives-screen';
 
   notices = createToasts();
-  // Les suggestions viennent du store du catalogue, qui cherche dans l'API dummyjson.com.
+  // The suggestions come from the catalogue store, which searches the dummyjson.com API.
   @contract catalog;
   @selector suggestions = this.catalog.selectors.suggestions;
   @selector searching = () => this.catalog.selectors.pending('search');
 
   #action = ({ id }: { id: string }) => {
-    if (id === 'hello') this.notices.show('Bonjour !');
-    if (id === 'oops') this.notices.show('Quelque chose s’est mal passé.', { tone: 'error', duration: 0 });
+    if (id === 'hello') this.notices.show('Hello!');
+    if (id === 'oops') this.notices.show('Something went wrong.', { tone: 'error', duration: 0 });
   };
 
   #profile() {
-    <p>Le panneau du profil.</p>
+    <p>The profile panel.</p>
   }
 
   #security() {
-    <p>Le panneau de la sécurité. Les flèches gauche et droite passent d’un onglet à l’autre.</p>
+    <p>The security panel. The left and right arrows move from one tab to the other.</p>
   }
 
   render() {
-    <KitPage heading="Primitives" intro="Flèches, Début, Fin, Entrée et Échap : tout se fait aussi au clavier.">
+    <KitPage heading="Primitives" intro="Arrows, Home, End, Enter and Escape: everything also works from the keyboard.">
       <section class="kit-section">
         <h2>Menu, Popover, Tooltip</h2>
         <div class="kit-row">
           <Menu label="Actions" items={ACTIONS} on:select={this.#action} />
-          <Popover label="Filtres">
-            <p>Un contenu flottant, non modal.</p>
+          <Popover label="Filters">
+            <p>Floating, non-modal content.</p>
           </Popover>
-          <Tooltip text="Une info-bulle, au survol et au focus">
+          <Tooltip text="A tooltip, on hover and on focus">
             <Button variant="ghost">
-              Survole-moi
+              Hover me
             </Button>
           </Tooltip>
         </div>
       </section>
-      <section class="kit-section"><h2>Tabs</h2> <Tabs tabs={TABS} panels={[this.#profile(), this.#security()]} label="Compte" /></section>
+      <section class="kit-section"><h2>Tabs</h2> <Tabs tabs={TABS} panels={[this.#profile(), this.#security()]} label="Account" /></section>
       <section class="kit-section">
         <h2>Disclosure</h2>
-        <Disclosure summary="Pourquoi ce compteur ?">
-          <p>Un contenu repliable, sur les balises details et summary.</p>
+        <Disclosure summary="Why this counter?">
+          <p>Collapsible content, built on the details and summary tags.</p>
         </Disclosure>
       </section>
       <section class="kit-section">
-        <h2>Combobox à valeurs en dur</h2>
+        <h2>Combobox with hard-coded values</h2>
         <Combobox
           label="Fruit"
           options={FRUITS}
-          placeholder="Tape « peche »…"
-          on:select={({ label }) => this.notices.show(`Fruit choisi : ${label}`)}
+          placeholder={'Type "peach"…'}
+          on:select={({ label }) => this.notices.show(`Fruit chosen: ${label}`)}
         />
       </section>
       <section class="kit-section">
-        <h2>Combobox branché sur une API</h2>
-        <p>Chaque frappe demande des suggestions au store ; il attend la fin de la frappe, puis cherche dans dummyjson.com.</p>
+        <h2>Combobox connected to an API</h2>
+        <p>Each keystroke asks the store for suggestions; it waits for typing to stop, then searches dummyjson.com.</p>
         <Combobox
-          label="Produit"
+          label="Product"
           options={this.suggestions.value.map((p) => ({ value: String(p.id), label: p.title }))}
           filter={false}
           loading={this.searching.value}
-          placeholder="Tape « apple »…"
+          placeholder={'Type "apple"…'}
           on:search={({ text }) => this.catalog.send('search', { text })}
-          on:select={({ label }) => this.notices.show(`Produit choisi : ${label}`)}
+          on:select={({ label }) => this.notices.show(`Product chosen: ${label}`)}
         />
       </section>
       <Toasts of={this.notices} />

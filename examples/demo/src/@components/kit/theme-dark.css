@@ -1,4 +1,4 @@
-/* Forcer le thème sombre dans une zone, quel que soit celui du système. */
+/* Force the dark theme in a zone, whatever the system's theme. */
 .kit-dark-zone {
   color-scheme: dark;
   padding: 1rem;

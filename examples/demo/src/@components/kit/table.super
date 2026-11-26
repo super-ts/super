@@ -8,23 +8,23 @@ type CounterRow = { id: string; label: string; count: number };
 const PAGE_SIZES = [5, 10, 20, 50] as const;
 type PageSize = (typeof PAGE_SIZES)[number];
 const isPageSize = (size: number): size is PageSize => (PAGE_SIZES as readonly number[]).includes(size);
-const PRICE = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'USD' });
+const PRICE = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'USD' });
 
 const COUNTER_COLUMNS = columns<CounterRow>([
-  { key: 'label', label: 'Compteur', sortable: true },
-  { key: 'count', label: 'Valeur', sortable: true, align: 'end' },
+  { key: 'label', label: 'Counter', sortable: true },
+  { key: 'count', label: 'Value', sortable: true, align: 'end' },
 ]);
 const PRODUCT_COLUMNS = columns<Product>([
-  { key: 'title', label: 'Produit', sortable: true },
-  { key: 'brand', label: 'Marque', sortable: true, value: (p) => p.brand ?? 'Sans marque' },
-  { key: 'price', label: 'Prix', sortable: true, align: 'end', value: (p) => PRICE.format(p.price) },
-  { key: 'rating', label: 'Note', sortable: true, align: 'end' },
+  { key: 'title', label: 'Product', sortable: true },
+  { key: 'brand', label: 'Brand', sortable: true, value: (p) => p.brand ?? 'No brand' },
+  { key: 'price', label: 'Price', sortable: true, align: 'end', value: (p) => PRICE.format(p.price) },
+  { key: 'rating', label: 'Rating', sortable: true, align: 'end' },
 ]);
 
 /**
- * Écran de la route `/kit/table`. La table des produits est branchée : le tri et la page vivent
- * dans la query de l'URL (`?sort=price&order=desc&page=3`), la table demande ses données par
- * `request`, et l'écran les charge depuis l'API de test dummyjson.com.
+ * Screen of the `/kit/table` route. The product table is connected: the sort and the page live
+ * in the URL query (`?sort=price&order=desc&page=3`), the table requests its data through
+ * `request`, and the screen loads it from the dummyjson.com test API.
  */
 export class KitTableScreen extends SuperElement {
   @tag = 'kit-table-screen';
@@ -36,13 +36,13 @@ export class KitTableScreen extends SuperElement {
   @selector loading = () => this.catalog.selectors.pending('load');
   @selector loadError = this.catalog.selectors.loadErrorMessage;
 
-  // La query de la route, typée par sa description dans routes.ts.
+  // The route query, typed by its description in routes.ts.
   @selector sort = this.router.current.query.sort;
   @selector order = this.router.current.query.order;
   @selector pageNumber = this.router.current.query.page;
   @selector size = this.router.current.query.size;
 
-  /** Change le tri, la page ou leur taille : c'est l'URL qui change, et la table suit. */
+  /** Changes the sort, the page or the page size: the URL changes, and the table follows. */
   #go(next: { sort: ProductSort | undefined; order: SortOrder; page: number; size: PageSize }) {
     const { sort, ...rest } = next;
     this.router.send('navigate', { to: 'kit-table', query: sort ? { sort, ...rest } : rest });
@@ -63,24 +63,24 @@ export class KitTableScreen extends SuperElement {
     const size = this.size.value;
     <KitPage
       heading="Table"
-      intro="Statique, la table trie et pagine seule. Branchée, elle demande ses données, et l’écran peut piloter son tri et sa page depuis l’URL."
+      intro="Static, the table sorts and paginates on its own. Connected, it requests its data, and the screen can drive its sort and page from the URL."
     >
       <section class="kit-section">
-        <h2>Table statique</h2>
-        <p>Toutes les lignes sont là : la table trie et pagine elle-même, sans rien demander.</p>
-        <Table columns={COUNTER_COLUMNS} rows={counters} rowKey={(row) => row.id} caption="Compteurs" pageSize={2} />
+        <h2>Static table</h2>
+        <p>All the rows are there: the table sorts and paginates itself, without requesting anything.</p>
+        <Table columns={COUNTER_COLUMNS} rows={counters} rowKey={(row) => row.id} caption="Counters" pageSize={2} />
       </section>
       <section class="kit-section">
-        <h2>Table branchée sur une API</h2>
+        <h2>Table connected to an API</h2>
         <p>
-          Les produits viennent de dummyjson.com, page par page, triés par le serveur. Trier ou changer de page change l’URL : recharger la
-          page ou revenir en arrière retrouve le même état.
+          The products come from dummyjson.com, page by page, sorted by the server. Sorting or changing page changes the URL: reloading the
+          page or going back restores the same state.
         </p>
         if (this.loadError.value) {
           <div role="alert" class="kit-row">
             <p>{this.loadError.value}</p>
             <Button variant="secondary" on:press={this.#retry}>
-              Réessayer
+              Retry
             </Button>
           </div>
         }
@@ -88,7 +88,7 @@ export class KitTableScreen extends SuperElement {
           columns={PRODUCT_COLUMNS}
           rows={this.products.value}
           rowKey={(product) => product.id}
-          caption="Produits"
+          caption="Products"
           total={this.total.value}
           pageSize={size}
           pageSizes={PAGE_SIZES}

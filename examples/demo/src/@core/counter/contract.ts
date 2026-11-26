@@ -8,8 +8,8 @@ export type CounterState = {
 
 export type CounterTypes = {
   state: CounterState;
-  // composant -> store : le paramètre est le body. Rien ne revient à l'appelant :
-  // Super publie l'issue (`increment:done` avec le résultat, `increment:failed` avec la raison).
+  // component -> store: the parameter is the body. Nothing comes back to the caller:
+  // Super publishes the outcome (`increment:done` with the result, `increment:failed` with the reason).
   commands: {
     load(): void;
     increment(input: { id: string }): Outcome<{ count: number }, 'unknown' | 'storage'>;
@@ -18,7 +18,7 @@ export type CounterTypes = {
   };
 };
 
-// Les seules lectures autorisées de l'état. Un composant lit par là (plus `pending`, fourni par Super).
+// The only allowed reads of the state. A component reads through these (plus `pending`, provided by Super).
 export class CounterContract extends SuperContract<CounterTypes> {
   constructor() {
     super({ name: 'counter' });

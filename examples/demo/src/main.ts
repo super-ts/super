@@ -1,5 +1,5 @@
-import './styles.css'; // références globales d'abord : les feuilles des composants passent après
-import './kit-theme.css'; // le thème de @super-ts/ui pour toute l'app
+import './styles.css'; // global references first: component stylesheets come after
+import './kit-theme.css'; // the @super-ts/ui theme for the whole app
 import { createApp, createRouter } from '@super-ts/dom';
 import { AppShell } from '@components/app-shell';
 import { CartStore } from '@core/cart/store';
@@ -15,26 +15,26 @@ import { createLocalStorageCounterRepository } from './adapters/local-storage-co
 import { createSavedCart } from './adapters/saved-cart';
 import { Router } from './routes';
 
-// Racine de composition (user-land) : on choisit ici les adapters et on assemble les stores.
+// Composition root (user-land): this is where you choose the adapters and assemble the stores.
 const counter = CounterStore.create({ counterRepository: createLocalStorageCounterRepository() });
-const profile = ProfileStore.create({ profileClient: createFakeProfileClient() }); // serveur simulé, avec latence
+const profile = ProfileStore.create({ profileClient: createFakeProfileClient() }); // simulated server, with latency
 const savedCart = createSavedCart();
-const cart = CartStore.create({ quantities: savedCart.load() }); // le panier d'avant le rechargement
-const checkout = CheckoutStore.create({ cart, orderClient: createFakeOrderClient() }); // un store qui dépend d'un autre
+const cart = CartStore.create({ quantities: savedCart.load() }); // the cart from before the reload
+const checkout = CheckoutStore.create({ cart, orderClient: createFakeOrderClient() }); // a store that depends on another
 const errorLog = ErrorLogStore.create();
-const catalog = CatalogStore.create({ productCatalog: createDummyJsonProductCatalog() }); // l'API publique de test dummyjson.com
-// Le titre de l'onglet : celui que pose l'écran affiché (`@title`), suivi du nom de l'app.
-const router = createRouter(Router, { title: { default: 'Super · exemples', suffix: ' · Super' } });
+const catalog = CatalogStore.create({ productCatalog: createDummyJsonProductCatalog() }); // the public test API dummyjson.com
+// The tab title: the one set by the displayed screen (`@title`), followed by the app name.
+const router = createRouter(Router, { title: { default: 'Super · examples', suffix: ' · Super' } });
 
-// subscribe : le panier est enregistré à chaque changement, et survit au rechargement de la page.
-// Le store ne sait rien du stockage : c'est la racine de composition qui le branche.
+// subscribe: the cart is saved on every change, and survives a page reload.
+// The store knows nothing about storage: the composition root wires it in.
 cart.subscribe((state) => savedCart.save(state.quantities));
 
 createApp({
   root: document.querySelector<HTMLElement>('#app')!,
   stores: [counter, profile, cart, checkout, errorLog, catalog],
   router,
-  // Toute erreur de composant, rattrapée ou non : la console, et le journal affiché par l'exemple « Erreurs ».
+  // Every component error, caught or not: the console, and the log shown by the "Errors" example.
   onError: (error, { tag, phase, caughtBy }) => {
     console.error(`[${tag}] ${phase}`, { caughtBy }, error);
     errorLog.send('record', { message: error.message, tag, phase, caughtBy });
