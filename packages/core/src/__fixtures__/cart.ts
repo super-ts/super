@@ -1,6 +1,6 @@
 /**
- * Contrats d'essai des sélecteurs (`contract.test.ts`, `contract.test-d.ts`). Le registre est rempli
- * à la main : dans une app, c'est le plugin Vite qui s'en charge.
+ * Test contracts for selectors (`contract.test.ts`, `contract.test-d.ts`). The registry is filled by
+ * hand: in an app, the Vite plugin takes care of it.
  */
 import { SuperContract } from '@super-ts/core';
 import { registerContract } from '@super-ts/core/internal';
@@ -24,7 +24,7 @@ export class CartContract extends SuperContract<{ state: CartState; commands: { 
 
 export type LinesState = { items: Record<string, number>; note: string };
 
-/** Nombre de calculs des sélecteurs `lines` et `everything`, remis à zéro par chaque test. */
+/** Number of computations of the `lines` and `everything` selectors, reset by each test. */
 export const calls = { n: 0 };
 
 const toLines = (items: Record<string, number>) => Object.entries(items).map(([sku, qty]) => ({ sku, qty }));

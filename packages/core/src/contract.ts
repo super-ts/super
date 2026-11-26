@@ -3,9 +3,9 @@ import { SelectorCache } from './memo.ts';
 declare const OUTCOME: unique symbol;
 
 /**
- * Issue d'une commande, déclarée dans le contrat : le résultat publié en cas de succès, et les
- * raisons d'échec possibles. `increment(input: { id: string }): Outcome<{ count: number }, 'below-min'>`.
- * Rien ne revient à celui qui envoie la commande : Super publie l'issue par `increment:done` et
+ * Outcome of a command, declared in the contract: the result published on success, and the
+ * possible failure reasons. `increment(input: { id: string }): Outcome<{ count: number }, 'below-min'>`.
+ * Nothing comes back to whoever sends the command: Super publishes the outcome through `increment:done` and
  * `increment:failed`.
  */
 export interface Outcome<Result = void, Failure extends string = never> {
@@ -13,60 +13,60 @@ export interface Outcome<Result = void, Failure extends string = never> {
 }
 
 /**
- * Commandes d'un contrat : composant vers store. Au plus un paramètre, le body. Une commande ne
- * renvoie rien à l'appelant : elle déclare `void`, ou `Outcome<…>` pour typer son issue.
+ * Commands of a contract: component to store. At most one parameter, the body. A command returns
+ * nothing to the caller: it declares `void`, or `Outcome<…>` to type its outcome.
  */
 export type CommandMap = Record<string, (input?: any) => void | Promise<void> | Outcome<any, any>>;
 
-/** Le body d'une commande (`undefined` si elle n'en a pas). */
+/** The body of a command (`undefined` if it has none). */
 export type InputOf<F> = F extends (...args: infer A) => any ? (A extends [] ? undefined : A[0]) : never;
-/** Le résultat publié par une commande réussie (`void` si elle ne déclare pas d'`Outcome`). */
+/** The result published by a successful command (`void` if it declares no `Outcome`). */
 export type ResultOf<F> = F extends (...args: any[]) => infer R ? (R extends Outcome<infer X, any> ? X : void) : never;
-/** Les raisons d'échec déclarées par une commande. */
+/** The failure reasons declared by a command. */
 export type FailureOf<F> = F extends (...args: any[]) => infer R ? (R extends Outcome<any, infer Y> ? Y : never) : never;
 
-/** Raison d'échec d'une exception inattendue (un bug), en plus des raisons déclarées. */
+/** Failure reason for an unexpected exception (a bug), on top of the declared reasons. */
 export type UnexpectedFailure = 'error';
 
 /**
- * Les événements de cycle de vie, émis par Super pour chaque commande :
- * `nom:done` (`{ input, result }`) et `nom:failed` (`{ input, reason, error }`).
+ * The lifecycle events, emitted by Super for each command:
+ * `name:done` (`{ input, result }`) and `name:failed` (`{ input, reason, error }`).
  */
 export type CommandEvents<C> = {
   [K in keyof C & string as `${K}:done`]: { input: InputOf<C[K]>; result: ResultOf<C[K]> };
 } & {
   [K in keyof C & string as `${K}:failed`]: {
     input: InputOf<C[K]>;
-    /** Une raison déclarée dans l'`Outcome`, ou `'error'` pour une exception inattendue. */
+    /** A reason declared in the `Outcome`, or `'error'` for an unexpected exception. */
     reason: FailureOf<C[K]> | UnexpectedFailure;
-    /** L'exception, pour `'error'` ; `null` pour un échec déclaré. */
+    /** The exception, for `'error'`; `null` for a declared failure. */
     error: Error | null;
   };
 };
 
-/** Tout ce qu'on peut écouter sur un store : ses événements, et le cycle de vie de ses commandes. */
+/** Everything you can listen to on a store: its events, and the lifecycle of its commands. */
 export type AllEvents<C, E> = E & CommandEvents<C>;
 
-/** « Une commande est-elle en cours ? » : toutes, une commande, ou une commande pour un body donné. */
+/** "Is a command pending?": all of them, one command, or one command for a given body. */
 export interface PendingReader<C> {
   pending<K extends keyof C & string>(command?: K, match?: Partial<NonNullable<InputOf<C[K]>>>): boolean;
 }
 
-/** Événements d'un contrat : diffusions store vers abonnés, sans réponse. */
+/** Events of a contract: broadcasts from the store to subscribers, with no response. */
 export type Events = Record<string, unknown>;
 
-/** Sélecteurs d'un contrat : des lectures pures de l'état, avec ou sans paramètres. */
+/** Selectors of a contract: pure reads of the state, with or without parameters. */
 export type Selectors<S> = Record<string, (state: Readonly<S>, ...args: any[]) => unknown>;
 
-/** Les sélecteurs, état déjà fourni : `count: (s, id: string) => number` devient `count(id: string): number`. */
+/** The selectors, with the state already supplied: `count: (s, id: string) => number` becomes `count(id: string): number`. */
 export type BoundSelectors<Q> = {
   [K in keyof Q]: Q[K] extends (state: any, ...args: infer A) => infer R ? (...args: A) => R : never;
 };
 
 /**
- * Sous le capot : le contrat tel que le runtime le lit, construit à partir d'une classe
- * `SuperContract` (son nom et ses sélecteurs). Les types `state`, `commands` et `events` vivent
- * dans une propriété fantôme qui n'existe que pour le compilateur.
+ * Under the hood: the contract as the runtime reads it, built from a `SuperContract` class (its
+ * name and its selectors). The `state`, `commands` and `events` types live in a phantom property
+ * that only exists for the compiler.
  */
 export interface Contract<
   S extends object = object,
@@ -76,13 +76,13 @@ export interface Contract<
 > {
   readonly name: string;
   readonly __types?: { state: S; commands: C; events: E; selectors: Q };
-  /** Les sélecteurs déclarés (les méthodes de la classe du contrat). */
+  /** The declared selectors (the methods of the contract class). */
   readonly __selectors?: Q;
 }
 
 /**
- * Lie les sélecteurs d'un contrat à un état, à travers un cache. Interne : les stores passent leur
- * propre cache, `read` un cache attaché à l'état lu.
+ * Binds the selectors of a contract to a state, through a cache. Internal: stores pass their own
+ * cache, `read` passes a cache attached to the state being read.
  */
 export function bindSelectors(contract: Contract<any, any, any, any>, state: object, cache: SelectorCache) {
   const bound: Record<string, (...args: unknown[]) => unknown> = {};

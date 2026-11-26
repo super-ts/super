@@ -16,39 +16,39 @@ import { deepFreeze, SelectorCache } from './memo.ts';
 export type Unsubscribe = () => void;
 export type ListenOptions = { signal?: AbortSignal };
 
-/** `emit('x')` sans payload quand le type vaut `void`, `emit('x', payload)` sinon. */
+/** `emit('x')` without a payload when the type is `void`, `emit('x', payload)` otherwise. */
 export type PayloadArgs<P> = [P] extends [void] ? [] : [payload: P];
 
-/** Handle public d'un store : c'est tout ce qu'un composant ou un autre store voit. */
+/** Public handle of a store: it is all a component or another store sees. */
 export interface StoreHandle<S extends object, C extends CommandMap, E extends Events, Q = {}> {
   readonly contract: Contract<S, C, E>;
-  /** État courant, figé (lecture seule). */
+  /** Current state, frozen (read-only). */
   state(): Readonly<S>;
   /**
-   * Les sélecteurs du contrat, lus sur l'état courant à chaque appel, plus `pending(…)`.
-   * `cart.selectors.count()` dans un test, ou dans un store qui reçoit `cart` en dépendance.
+   * The contract selectors, read on the current state at each call, plus `pending(…)`.
+   * `cart.selectors.count()` in a test, or in a store that receives `cart` as a dependency.
    */
   readonly selectors: BoundSelectors<Q> & PendingReader<C>;
   /**
-   * Envoie une commande. La promesse ne porte aucune donnée : elle se résout quand le handler a
-   * réussi, et se rejette s'il échoue (avec une `CommandFailure` pour un échec déclaré). Utile aux
-   * tests, à la racine de composition et aux autres stores ; un composant, lui, n'attend jamais.
+   * Sends a command. The promise carries no data: it resolves when the handler has succeeded,
+   * and rejects if it fails (with a `CommandFailure` for a declared failure). Useful for tests,
+   * the composition root and other stores; a component never waits.
    */
   send<K extends keyof C & string>(name: K, ...args: Parameters<C[K]>): Promise<void>;
   /**
-   * Écoute un événement du contrat, ou le cycle de vie d'une commande (`increment:done`,
-   * `increment:failed`). Retourne la fonction de désabonnement.
+   * Listens to a contract event, or to the lifecycle of a command (`increment:done`,
+   * `increment:failed`). Returns the unsubscribe function.
    */
   on<K extends keyof AllEvents<C, E> & string>(
     name: K,
     listener: (payload: AllEvents<C, E>[K]) => void,
     options?: ListenOptions,
   ): Unsubscribe;
-  /** Une commande est-elle en cours ? Toutes (`pending()`), une commande, ou une commande pour un body. */
+  /** Is a command pending? All of them (`pending()`), one command, or one command for a body. */
   pending: PendingReader<C>['pending'];
-  /** Écoute chaque changement d'état (notifications regroupées par microtask). */
+  /** Listens to every state change (notifications batched per microtask). */
   subscribe(listener: (state: Readonly<S>) => void, options?: ListenOptions): Unsubscribe;
-  /** Retire tous les écouteurs internes : les `send` suivants sont rejetés. */
+  /** Removes all internal listeners: later `send` calls are rejected. */
   dispose(): void;
 }
 
@@ -56,63 +56,63 @@ export type AnyStore = StoreHandle<any, any, any, any>;
 
 export type StatePatch<S> = Partial<S> | ((state: Readonly<S>) => Partial<S>);
 
-/** Interne : ce que `SuperStore` reçoit du runtime pour lire et modifier l'état. */
+/** Internal: what `SuperStore` receives from the runtime to read and change the state. */
 export interface StoreTools<S extends object, E extends Events, Q = {}, C extends CommandMap = CommandMap> {
   get(): Readonly<S>;
   /**
-   * Les sélecteurs du contrat, lus sur l'état courant à chaque appel (`selectors.count(id)` voit
-   * toujours le dernier `set`), plus `selectors.pending(…)` pour les commandes en cours.
+   * The contract selectors, read on the current state at each call (`selectors.count(id)` always
+   * sees the latest `set`), plus `selectors.pending(…)` for pending commands.
    */
   selectors: BoundSelectors<Q> & PendingReader<C>;
-  /** Merge superficiel, puis notification regroupée par microtask. */
+  /** Shallow merge, then notification batched per microtask. */
   set(patch: StatePatch<S>): void;
   emit<K extends keyof E & string>(name: K, ...args: PayloadArgs<E[K]>): void;
   /**
-   * Avorté par `dispose()`. Inutile pour les stores reçus en dépendance (leurs `on` et `subscribe`
-   * s'arrêtent seuls) ; à passer aux écouteurs posés hors de Super (`window.addEventListener`…).
+   * Aborted by `dispose()`. Not needed for stores received as dependencies (their `on` and `subscribe`
+   * stop by themselves); pass it to listeners added outside Super (`window.addEventListener`…).
    */
   signal: AbortSignal;
 }
 
-/** Outils d'un handler de commande (faux stores de `@super-ts/testing`). */
+/** Tools of a command handler (fake stores of `@super-ts/testing`). */
 export interface CommandTools<Failure> {
-  /** Fait échouer la commande avec une raison déclarée dans son `Outcome`. Ne revient pas. */
+  /** Fails the command with a reason declared in its `Outcome`. Does not return. */
   fail(reason: Failure): never;
 }
 
 /**
- * Des handlers pour les commandes d'un contrat (faux stores de `@super-ts/testing`). Chacun reçoit le
- * body, puis `{ fail }`. Il peut être asynchrone ; il retourne le résultat déclaré par l'`Outcome`
- * (rien sinon), que Super publie dans `nom:done`.
+ * Handlers for the commands of a contract (fake stores of `@super-ts/testing`). Each receives the
+ * body, then `{ fail }`. It can be asynchronous; it returns the result declared by the `Outcome`
+ * (nothing otherwise), which Super publishes in `name:done`.
  */
 export type Handlers<C extends CommandMap> = {
   [K in keyof C]: (input: InputOf<C[K]>, tools: CommandTools<FailureOf<C[K]>>) => ResultOf<C[K]> | Promise<ResultOf<C[K]>>;
 };
 
 /**
- * Usage interne (`@super-ts/testing`) : un handler qui retourne ce marqueur termine la commande sans
- * publier d'issue. C'est le cas des commandes non implémentées d'un faux store.
+ * Internal use (`@super-ts/testing`): a handler that returns this marker finishes the command without
+ * publishing an outcome. That is the case for the unimplemented commands of a fake store.
  */
 export const NO_OUTCOME: unique symbol = Symbol('super.no-outcome');
 
-/** Échec déclaré d'une commande (`fail('below-min')`) : la promesse de `send` est rejetée avec. */
+/** Declared failure of a command (`fail('below-min')`): the `send` promise is rejected with it. */
 export class CommandFailure<Reason extends string = string> extends Error {
   /**
-   * @param command La commande qui échoue, ou `null` pour « la commande en cours » (`this.fail`
-   * d'un `SuperStore`, qui ne sait pas quel handler l'appelle).
+   * @param command The failing command, or `null` for "the current command" (`this.fail`
+   * of a `SuperStore`, which does not know which handler calls it).
    */
   constructor(
     readonly command: string | null,
     readonly reason: Reason,
     readonly input: unknown,
   ) {
-    super(command === null ? `[super] commande échouée : ${reason}` : `[super] commande "${command}" échouée : ${reason}`);
+    super(command === null ? `[super] command failed: ${reason}` : `[super] command "${command}" failed: ${reason}`);
     this.name = 'CommandFailure';
   }
 }
 
 /* ------------------------------------------------------------------------------------------ */
-/* Sous le capot                                                                               */
+/* Under the hood                                                                              */
 /* ------------------------------------------------------------------------------------------ */
 
 const withSignal = (signal: AbortSignal, options?: ListenOptions): ListenOptions => ({
@@ -120,9 +120,9 @@ const withSignal = (signal: AbortSignal, options?: ListenOptions): ListenOptions
 });
 
 /**
- * Les stores reçus en dépendance (au premier niveau de `deps`) sont remplacés par une vue dont
- * `on` et `subscribe` s'arrêtent d'eux-mêmes au `dispose()` du store qui les reçoit : aucun
- * `{ signal }` à passer. Les autres dépendances sont transmises telles quelles.
+ * Stores received as dependencies (at the top level of `deps`) are replaced by a view whose `on`
+ * and `subscribe` stop by themselves on the `dispose()` of the store that receives them: no
+ * `{ signal }` to pass. The other dependencies are passed on as is.
  */
 export function bindDependencies(deps: unknown, signal: AbortSignal): unknown {
   if (typeof deps !== 'object' || deps === null || Array.isArray(deps)) return deps;
@@ -152,7 +152,7 @@ export function bindDependencies(deps: unknown, signal: AbortSignal): unknown {
   return changed ? bound : deps;
 }
 
-/** Ce qu'il faut pour construire un store : le contrat, l'état de départ, et les handlers. */
+/** What it takes to build a store: the contract, the initial state, and the handlers. */
 export type StorePreparation<S extends object, C extends CommandMap, E extends Events> = {
   contract: Contract<S, C, E>;
   initialState: S;
@@ -182,9 +182,9 @@ class Store<S extends object, C extends CommandMap, E extends Events> extends Ev
   #wired = new Set<string>();
   #notifyScheduled = false;
   #controller = new AbortController();
-  /** Commandes dont le handler n'a pas encore fini. */
+  /** Commands whose handler has not finished yet. */
   #pending: PendingEntry[] = [];
-  /** Cache des sélecteurs : propre à ce store, libéré avec lui. */
+  /** Selector cache: specific to this store, released with it. */
   #selectorCache = new SelectorCache();
 
   constructor(prepare: (signal: AbortSignal) => StorePreparation<S, C, E>) {
@@ -193,7 +193,7 @@ class Store<S extends object, C extends CommandMap, E extends Events> extends Ev
     this.contract = contract;
     this.#state = deepFreeze({ ...initialState });
 
-    // Chaque sélecteur relit l'état au moment de l'appel : jamais figé sur l'état initial.
+    // Each selector rereads the state at call time: never stuck on the initial state.
     const selectors: Record<string, (...args: unknown[]) => unknown> = {};
     for (const [key, select] of Object.entries(((contract as Contract<any, any, any, any>).__selectors ?? {}) as Selectors<any>)) {
       selectors[key] = (...args) => this.#selectorCache.run(select, this.#state, args);
@@ -218,23 +218,23 @@ class Store<S extends object, C extends CommandMap, E extends Events> extends Ev
     return Store.read(this, this.#state);
   }
 
-  /** Voir `readStore`. Statique pour atteindre le cache privé sans l'exposer sur le handle. */
+  /** See `readStore`. Static to reach the private cache without exposing it on the handle. */
   static read(
     store: AnyStore,
     state: object,
     contract: Contract<any, any, any, any> = store.contract,
   ): Record<string, (...args: any[]) => unknown> {
-    if (!(store instanceof Store)) throw new Error('[super] readStore : ce store n’a pas été créé par Super');
+    if (!(store instanceof Store)) throw new Error('[super] readStore: this store was not created by Super');
     return { ...bindSelectors(contract, state, store.#selectorCache), pending: store.pending.bind(store) };
   }
 
   send<K extends keyof C & string>(name: K, ...args: Parameters<C[K]>): Promise<void> {
     return new Promise((resolve, reject) => {
       if (this.#controller.signal.aborted) {
-        return reject(new Error(`[super] store "${this.contract.name}" disposé : commande "${name}" refusée`));
+        return reject(new Error(`[super] store "${this.contract.name}" disposed: command "${name}" rejected`));
       }
       if (!(name in this.#handlers)) {
-        return reject(new Error(`[super] commande inconnue "${name}" sur le store "${this.contract.name}"`));
+        return reject(new Error(`[super] unknown command "${name}" on the store "${this.contract.name}"`));
       }
       this.#wire(name);
       const detail: CommandDetail = { args, resolve, reject };
@@ -262,7 +262,7 @@ class Store<S extends object, C extends CommandMap, E extends Events> extends Ev
     this.#controller.abort();
   }
 
-  /** Pose l'écouteur d'une commande au premier `send` (permet des handlers fournis par un Proxy). */
+  /** Adds the listener of a command on the first `send` (allows handlers provided by a Proxy). */
   #wire(name: string) {
     if (this.#wired.has(name)) return;
     this.#wired.add(name);
@@ -285,7 +285,7 @@ class Store<S extends object, C extends CommandMap, E extends Events> extends Ev
 
         new Promise((run) => run(this.#handlers[name]!(input, { fail }))).then(
           (result) => {
-            settle(); // les écouteurs de `:done` voient déjà la commande comme terminée
+            settle(); // `:done` listeners already see the command as finished
             if (result !== NO_OUTCOME) this.#emit(`${name}:done`, { input, result });
             resolve();
           },
@@ -293,7 +293,7 @@ class Store<S extends object, C extends CommandMap, E extends Events> extends Ev
             settle();
             if (error instanceof CommandFailure && (error.command === name || error.command === null)) {
               this.#emit(`${name}:failed`, { input, reason: error.reason, error: null });
-              // `this.fail` ne sait pas quelle commande l'appelle : le store complète l'échec.
+              // `this.fail` does not know which command calls it: the store completes the failure.
               if (error.command === null) error = new CommandFailure(name, error.reason, input);
             } else {
               const unexpected = error instanceof Error ? error : new Error(String(error));
@@ -313,7 +313,7 @@ class Store<S extends object, C extends CommandMap, E extends Events> extends Ev
     this.#notify();
   }
 
-  /** Prévient les abonnés (état ou commandes en cours changés), une fois par tâche. */
+  /** Notifies subscribers (state or pending commands changed), once per task. */
   #notify() {
     if (this.#notifyScheduled) return;
     this.#notifyScheduled = true;
@@ -338,13 +338,13 @@ class Store<S extends object, C extends CommandMap, E extends Events> extends Ev
 }
 
 /**
- * Interne (`@super-ts/core/internal`) : les sélecteurs du contrat d'un store, liés à `state` à travers
- * le cache de ce store, plus `pending`. Ce que reçoivent `use` et les guards du router.
+ * Internal (`@super-ts/core/internal`): the selectors of a store's contract, bound to `state` through
+ * that store's cache, plus `pending`. What `use` and the router guards receive.
  */
 export const readStore = (store: AnyStore, state: object = store.state(), contract?: Contract<any, any, any, any>) =>
   Store.read(store, state, contract);
 
-/** Interne : construit un store à partir d'une préparation (utilisé par `SuperStore.create`). */
+/** Internal: builds a store from a preparation (used by `SuperStore.create`). */
 export const buildStore = <S extends object, C extends CommandMap, E extends Events>(
   prepare: (signal: AbortSignal) => StorePreparation<S, C, E>,
 ): StoreHandle<S, C, E> => new Store(prepare);

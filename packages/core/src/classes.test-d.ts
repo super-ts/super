@@ -1,6 +1,6 @@
 /**
- * Tests d'inférence de l'API à classes : vérifiés par `npm run typecheck`. Chaque
- * `@ts-expect-error` échoue la compilation si l'erreur attendue disparaît.
+ * Class API inference tests: checked by `npm run typecheck`. Each `@ts-expect-error` fails the
+ * compilation if the expected error disappears.
  */
 
 import { type Commands, type StoreOfContract, SuperContract, SuperStore } from '@super-ts/core';
@@ -24,25 +24,25 @@ class Ok extends SuperStore<BasketContract> implements Commands<Ok> {
   #helper() {}
 }
 
-test('create renvoie le handle typé du contrat', () => {
+test('create returns the typed handle of the contract', () => {
   const basket = Ok.create();
   expectTypeOf(basket).toEqualTypeOf<StoreOfContract<'basket'>>();
   expectTypeOf(basket.selectors.quantity('mug')).toEqualTypeOf<number>();
   expectTypeOf(basket.state()).toEqualTypeOf<Readonly<BasketState>>();
-  // @ts-expect-error l'instance ne sort pas : pas de méthode add sur le handle
+  // @ts-expect-error the instance does not leave the store: no add method on the handle
   basket.add({ sku: 'mug' });
-  // @ts-expect-error body mal typé
+  // @ts-expect-error wrongly typed body
   basket.send('add', { sku: 42 });
-  // @ts-expect-error paramètre du sélecteur requis
+  // @ts-expect-error selector parameter required
   basket.selectors.quantity();
 });
 
-test('un handler aux paramètres plus étroits que le contrat ne compile pas', () => {
+test('a handler with narrower parameters than the contract does not compile', () => {
   class Narrow extends SuperStore<BasketContract> implements Commands<Narrow> {
     constructor() {
       super(init);
     }
-    // @ts-expect-error paramètres différents de ceux du contrat
+    // @ts-expect-error parameters differ from the contract's
     add(_: { sku: 'mug' }) {}
     clear() {}
     async save(_: { id: string }) {
@@ -51,25 +51,25 @@ test('un handler aux paramètres plus étroits que le contrat ne compile pas', (
   }
 });
 
-test('un handler qui renvoie une donnée non déclarée ne compile pas', () => {
+test('a handler that returns undeclared data does not compile', () => {
   class Returns extends SuperStore<BasketContract> implements Commands<Returns> {
     constructor() {
       super(init);
     }
     add(_: { sku: string }) {}
-    // @ts-expect-error clear est déclaré void
+    // @ts-expect-error clear is declared void
     clear() {
       return 42;
     }
-    // @ts-expect-error le résultat déclaré est { count: number }
+    // @ts-expect-error the declared result is { count: number }
     async save(_: { id: string }) {
       return { total: 0 };
     }
   }
 });
 
-test('une commande manquante ne compile pas', () => {
-  // @ts-expect-error clear et save manquent
+test('a missing command does not compile', () => {
+  // @ts-expect-error clear and save are missing
   class Missing extends SuperStore<BasketContract> implements Commands<Missing> {
     constructor() {
       super(init);
@@ -78,7 +78,7 @@ test('une commande manquante ne compile pas', () => {
   }
 });
 
-test('une méthode publique hors contrat ne compile pas : un helper s’écrit en #privé', () => {
+test('a public method outside the contract does not compile: a helper is written as #private', () => {
   class Extra extends SuperStore<BasketContract> implements Commands<Extra> {
     constructor() {
       super(init);
@@ -88,67 +88,67 @@ test('une méthode publique hors contrat ne compile pas : un helper s’écrit e
     async save(_: { id: string }) {
       return { count: 0 };
     }
-    // @ts-expect-error méthode publique hors contrat
+    // @ts-expect-error public method outside the contract
     increment() {}
   }
 });
 
-test('super() vérifie le nom du contrat et l’état initial', () => {
+test('super() checks the contract name and the initial state', () => {
   class BadName extends SuperStore<BasketContract> {
     constructor() {
-      // @ts-expect-error aucun contrat 'panier'
-      super({ contract: 'panier', initialState: { items: {} } });
+      // @ts-expect-error no 'cart' contract
+      super({ contract: 'cart', initialState: { items: {} } });
     }
   }
   class BadState extends SuperStore<BasketContract> {
     constructor() {
-      // @ts-expect-error initialState ne respecte pas le state du contrat
-      super({ contract: 'basket', initialState: { items: 'aucun' } });
+      // @ts-expect-error initialState does not match the contract state
+      super({ contract: 'basket', initialState: { items: 'none' } });
     }
   }
 });
 
-test('emit, fail et send sont typés par le contrat', () => {
+test('emit, fail and send are typed by the contract', () => {
   class Tools extends SuperStore<BasketContract> {
     constructor() {
       super(init);
     }
     run() {
-      // @ts-expect-error événement inconnu
+      // @ts-expect-error unknown event
       this.emit('nope');
-      // @ts-expect-error payload requis
+      // @ts-expect-error payload required
       this.emit('saved');
-      // @ts-expect-error raison d'échec non déclarée
+      // @ts-expect-error undeclared failure reason
       this.fail('nope');
-      // @ts-expect-error commande inconnue
+      // @ts-expect-error unknown command
       void this.send('nope');
       void this.send('add', { sku: 'mug' });
     }
   }
 });
 
-test('les dépendances du constructeur sont exigées par create', () => {
+test('the constructor dependencies are required by create', () => {
   class WithDeps extends SuperStore<BasketContract> {
     constructor(_: { backend: string }) {
       super(init);
     }
   }
-  // @ts-expect-error dépendance manquante
+  // @ts-expect-error missing dependency
   WithDeps.create();
   WithDeps.create({ backend: 'x' });
 });
 
-test('une clé inconnue dans les types d’un contrat est refusée (faute de frappe)', () => {
+test('an unknown key in the types of a contract is rejected (typo)', () => {
   class Typo extends SuperContract<{ state: {}; command: { add(): void } }> {
     constructor() {
-      // @ts-expect-error clé inconnue dans les types du contrat : command
+      // @ts-expect-error unknown key in the contract types: command
       super({ name: 'typo' });
     }
   }
   void Typo;
 });
 
-test('les sélecteurs sont vérifiés à la déclaration du store', () => {
+test('selectors are checked at the store declaration', () => {
   type State = { items: string[] };
   class Good extends SuperContract<{ state: State }> {
     constructor() {
@@ -158,10 +158,10 @@ test('les sélecteurs sont vérifiés à la déclaration du store', () => {
       return s.items.length;
     }
     has(s: { items: readonly string[] }, item: string) {
-      return s.items.includes(item); // un type compatible avec l'état suffit
+      return s.items.includes(item); // a type compatible with the state is enough
     }
     constant() {
-      return 42; // sans paramètre : il ignore l'état
+      return 42; // no parameter: it ignores the state
     }
   }
   class WrongState extends SuperContract<{ state: State }> {
@@ -181,9 +181,9 @@ test('les sélecteurs sont vérifiés à la déclaration du store', () => {
     }
   }
   abstract class GoodStore extends SuperStore<Good> {}
-  // @ts-expect-error le premier paramètre d'un sélecteur est l'état du contrat
+  // @ts-expect-error the first parameter of a selector is the contract state
   abstract class WrongStore extends SuperStore<WrongState> {}
-  // @ts-expect-error « pending » est réservé
+  // @ts-expect-error "pending" is reserved
   abstract class PendingStore extends SuperStore<Pending> {}
   void [GoodStore, WrongStore, PendingStore];
 });

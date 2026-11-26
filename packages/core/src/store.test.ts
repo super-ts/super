@@ -28,25 +28,25 @@ class TodosStore extends SuperStore<TodosContract> implements Commands<TodosStor
 }
 
 describe('SuperStore', () => {
-  test('send exécute le handler et se résout, sans donnée, quand il a fini', async () => {
+  test('send runs the handler and resolves, with no data, when it has finished', async () => {
     const store = TodosStore.create({ prefix: '- ' });
-    await expect(store.send('add', { label: 'pain' })).resolves.toBeUndefined();
-    expect(store.state().items).toEqual(['- pain']);
+    await expect(store.send('add', { label: 'bread' })).resolves.toBeUndefined();
+    expect(store.state().items).toEqual(['- bread']);
   });
 
-  test('une commande synchrone est aussi exposée sous forme de promesse', async () => {
+  test('a synchronous command is also exposed as a promise', async () => {
     const store = TodosStore.create({ prefix: '' });
     await store.send('add', { label: 'a' });
     await expect(store.send('clear')).resolves.toBeUndefined();
     expect(store.state().items).toEqual([]);
   });
 
-  test("une erreur du handler rejette la promesse de l'appelant", async () => {
+  test("an error in the handler rejects the caller's promise", async () => {
     const store = TodosStore.create({ prefix: '' });
     await expect(store.send('explode')).rejects.toThrow('boom');
   });
 
-  test("l'état est figé et remplacé à chaque set", async () => {
+  test('the state is frozen and replaced on each set', async () => {
     const store = TodosStore.create({ prefix: '' });
     const before = store.state();
     await store.send('add', { label: 'a' });
@@ -54,7 +54,7 @@ describe('SuperStore', () => {
     expect(Object.isFrozen(store.state())).toBe(true);
   });
 
-  test('les notifications sont regroupées par microtask', async () => {
+  test('notifications are batched per microtask', async () => {
     const store = TodosStore.create({ prefix: '' });
     const seen: number[] = [];
     store.subscribe((state) => seen.push(state.items.length));
@@ -64,12 +64,12 @@ describe('SuperStore', () => {
     await Promise.resolve();
     await new Promise((r) => setTimeout(r, 0));
 
-    // Les deux `set` donnent une seule notification ; la fin des commandes en donne une autre (pending a changé).
+    // The two `set` calls give a single notification; the end of the commands gives another (pending changed).
     expect(seen[0]).toBe(2);
     expect(seen).not.toContain(1);
   });
 
-  test('on reçoit les payloads typés et se désabonne', async () => {
+  test('on receives the typed payloads and unsubscribes', async () => {
     const store = TodosStore.create({ prefix: '' });
     const labels: string[] = [];
     const off = store.on('added', ({ label }) => labels.push(label));
@@ -81,7 +81,7 @@ describe('SuperStore', () => {
     expect(labels).toEqual(['a']);
   });
 
-  test('un signal avorté retire l’écouteur', async () => {
+  test('an aborted signal removes the listener', async () => {
     const store = TodosStore.create({ prefix: '' });
     const controller = new AbortController();
     let count = 0;
@@ -94,7 +94,7 @@ describe('SuperStore', () => {
     expect(count).toBe(1);
   });
 
-  test('les commandes transitent par des CustomEvent préfixés par le contrat', async () => {
+  test('commands travel through CustomEvents prefixed by the contract', async () => {
     const store = TodosStore.create({ prefix: '' }) as EventTarget & ContractStore<TodosContract>;
     const seen: unknown[] = [];
     store.addEventListener(topics.command('core-todos', 'add'), (e) => seen.push((e as CustomEvent).detail.args));
@@ -104,29 +104,29 @@ describe('SuperStore', () => {
     expect(seen).toEqual([[{ label: 'x' }]]);
   });
 
-  test('dispose refuse les commandes suivantes et coupe les écouteurs', async () => {
+  test('dispose rejects later commands and cuts off the listeners', async () => {
     const store = TodosStore.create({ prefix: '' });
     let notified = false;
     store.subscribe(() => (notified = true));
 
     store.dispose();
 
-    await expect(store.send('clear')).rejects.toThrow(/disposé/);
+    await expect(store.send('clear')).rejects.toThrow(/disposed/);
     expect(notified).toBe(false);
   });
 
-  test('chaque create part de l’état initial', async () => {
+  test('each create starts from the initial state', async () => {
     const a = TodosStore.create({ prefix: '' });
     await a.send('add', { label: 'a' });
     expect(TodosStore.create({ prefix: '' }).state().items).toEqual([]);
   });
 });
 
-describe('store qui dépend d’un autre store', () => {
+describe('store that depends on another store', () => {
   class StatsStore extends SuperStore<StatsContract> implements Commands<StatsStore> {
     constructor({ todos }: { todos: StoreOfContract<'core-todos'> }) {
       super({ contract: 'core-stats', initialState: { added: 0 } });
-      // Pas de `{ signal }` : l'écoute s'arrête d'elle-même au dispose() de ce store.
+      // No `{ signal }`: listening stops by itself on this store's dispose().
       todos.on('added', () => this.#count());
     }
 
@@ -135,7 +135,7 @@ describe('store qui dépend d’un autre store', () => {
     }
   }
 
-  test('il réagit aux événements de sa dépendance', async () => {
+  test('it reacts to the events of its dependency', async () => {
     const todos = TodosStore.create({ prefix: '' });
     const stats = StatsStore.create({ todos });
 
@@ -145,7 +145,7 @@ describe('store qui dépend d’un autre store', () => {
     expect(stats.state().added).toBe(2);
   });
 
-  test('son écoute de la dépendance s’arrête à son dispose(), sans signal à passer', async () => {
+  test('its listening to the dependency stops on its dispose(), with no signal to pass', async () => {
     const todos = TodosStore.create({ prefix: '' });
     const stats = StatsStore.create({ todos });
 
@@ -156,7 +156,7 @@ describe('store qui dépend d’un autre store', () => {
     expect(stats.state().added).toBe(1);
   });
 
-  test('la dépendance reste utilisable normalement', async () => {
+  test('the dependency remains usable as normal', async () => {
     const seen: number[] = [];
 
     class WatcherStore extends SuperStore<WatcherContract> implements Commands<WatcherStore> {
@@ -179,6 +179,6 @@ describe('store qui dépend d’un autre store', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
     watcher.dispose();
 
-    expect(seen.at(-1)).toBe(1); // la dépendance a bien reçu la commande, et son abonnement a été notifié
+    expect(seen.at(-1)).toBe(1); // the dependency did receive the command, and its subscription was notified
   });
 });

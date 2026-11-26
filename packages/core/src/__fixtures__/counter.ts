@@ -1,6 +1,6 @@
 /**
- * Contrats d'essai du cycle de vie des commandes (`command.test.ts`, `command.test-d.ts`). Le
- * registre est rempli à la main : dans une app, c'est le plugin Vite qui s'en charge.
+ * Test contracts for the command lifecycle (`command.test.ts`, `command.test-d.ts`). The registry is
+ * filled by hand: in an app, the Vite plugin takes care of it.
  */
 import { type Outcome, SuperContract } from '@super-ts/core';
 import { registerContract } from '@super-ts/core/internal';

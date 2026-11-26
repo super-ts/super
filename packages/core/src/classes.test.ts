@@ -40,7 +40,7 @@ class BasketStore extends SuperStore<BasketContract> implements Commands<BasketS
 const backend = (ok = true): Backend => ({ save: async () => ok });
 
 describe('SuperStore', () => {
-  test('create renvoie le handle : commandes, sélecteurs, état', async () => {
+  test('create returns the handle: commands, selectors, state', async () => {
     const basket = BasketStore.create({ backend: backend() });
     await basket.send('add', { sku: 'mug' });
     await basket.send('add', { sku: 'mug' });
@@ -49,16 +49,16 @@ describe('SuperStore', () => {
     expect(basket.selectors.count()).toBe(2);
     expect(basket.state()).toEqual({ items: { mug: 2 } });
     expect(basket.contract.name).toBe('basket');
-    expect('add' in basket).toBe(false); // l'instance ne sort pas du store
+    expect('add' in basket).toBe(false); // the instance does not leave the store
   });
 
-  test('les helpers #privés ne sont pas des commandes', async () => {
+  test('#private helpers are not commands', async () => {
     const basket = BasketStore.create({ backend: backend() });
     const send = basket.send.bind(basket) as (name: string) => Promise<void>;
-    await expect(send('increment')).rejects.toThrow('commande inconnue "increment"');
+    await expect(send('increment')).rejects.toThrow('unknown command "increment"');
   });
 
-  test('emit publie les événements du contrat', async () => {
+  test('emit publishes the contract events', async () => {
     const basket = BasketStore.create({ backend: backend() });
     const emptied: unknown[] = [];
     basket.on('emptied', () => emptied.push(true));
@@ -68,7 +68,7 @@ describe('SuperStore', () => {
     expect(emptied).toHaveLength(1);
   });
 
-  test('le résultat est publié dans :done, fail dans :failed avec sa raison', async () => {
+  test('the result is published in :done, fail in :failed with its reason', async () => {
     const basket = BasketStore.create({ backend: backend(false) });
     const failed: string[] = [];
     basket.on('save:failed', ({ reason }) => failed.push(reason));
@@ -85,7 +85,7 @@ describe('SuperStore', () => {
     expect(done).toEqual([{ count: 1 }]);
   });
 
-  test('pending suit les commandes en cours', async () => {
+  test('pending tracks pending commands', async () => {
     let release!: (ok: boolean) => void;
     const slow: Backend = { save: () => new Promise((resolve) => (release = resolve)) };
     const basket = BasketStore.create({ backend: slow });
@@ -98,26 +98,26 @@ describe('SuperStore', () => {
     expect(basket.selectors.pending('save')).toBe(false);
   });
 
-  test('un contrat inconnu est signalé à la création', () => {
+  test('an unknown contract is reported at creation', () => {
     class Orphan extends SuperStore<BasketContract> {
       constructor() {
         super({ contract: 'nope' as 'basket', initialState: { items: {} } });
       }
     }
-    expect(() => Orphan.create()).toThrow('aucun contrat nommé "nope"');
+    expect(() => Orphan.create()).toThrow('no contract named "nope"');
   });
 
-  test('un store lit son état après sa création, pas dans son constructeur', () => {
+  test('a store reads its state after its creation, not in its constructor', () => {
     class Eager extends SuperStore<BasketContract> {
       constructor() {
         super({ contract: 'basket', initialState: { items: {} } });
         this.get();
       }
     }
-    expect(() => Eager.create()).toThrow('constructeur');
+    expect(() => Eager.create()).toThrow('constructor');
   });
 
-  test('un store reçu en dépendance s’arrête d’écouter au dispose()', async () => {
+  test('a store received as a dependency stops listening on dispose()', async () => {
     const basket = BasketStore.create({ backend: backend() });
 
     class Watcher extends SuperStore<BasketContract> {

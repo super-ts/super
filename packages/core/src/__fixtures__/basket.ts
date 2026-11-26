@@ -1,6 +1,6 @@
 /**
- * Contrat et store d'essai pour les tests de l'API à classes. Le registre est rempli à la main :
- * dans une app, c'est le plugin Vite qui s'en charge.
+ * Test contract and store for the class API tests. The registry is filled by hand: in an app, the
+ * Vite plugin takes care of it.
  */
 import { type Outcome, SuperContract } from '@super-ts/core';
 import { registerContract } from '@super-ts/core/internal';
@@ -27,7 +27,7 @@ export class BasketContract extends SuperContract<BasketTypes> {
   count(s: BasketState) {
     return Object.values(s.items).reduce((sum, n) => sum + n, 0);
   }
-  /** Un tableau neuf à chaque lecture, comme les lignes d'un panier. */
+  /** A fresh array on every read, like the lines of a basket. */
   entries(s: BasketState) {
     return Object.entries(s.items).filter(([, n]) => n > 0);
   }

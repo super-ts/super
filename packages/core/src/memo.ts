@@ -1,17 +1,17 @@
 /**
- * Mémoïsation des sélecteurs. Interne à Super : exposé aux autres paquets par `@super-ts/core/internal`,
- * jamais par `@super-ts/core`.
+ * Selector memoisation. Internal to Super: exposed to the other packages through `@super-ts/core/internal`,
+ * never through `@super-ts/core`.
  */
 
 type AnySelector = (state: any, ...args: any[]) => unknown;
 
-/** Les champs de premier niveau lus par un sélecteur, ou `ALL` s'il a parcouru l'état entier. */
+/** The top-level fields read by a selector, or `ALL` if it walked the whole state. */
 const ALL = Symbol('all');
 type Deps = Set<PropertyKey> | typeof ALL;
 
 /**
- * Un emplacement de cache par liste d'arguments : un niveau par argument, le résultat au bout.
- * Les arguments objets passent par une `WeakMap` pour ne pas les retenir.
+ * One cache slot per argument list: one level per argument, the result at the end.
+ * Object arguments go through a `WeakMap` so they are not retained.
  */
 type Slot = {
   prims?: Map<unknown, Slot>;
@@ -41,8 +41,8 @@ function slotFor(root: Slot, args: readonly unknown[]): Slot {
 }
 
 /**
- * Exécute `select` sur un proxy de l'état qui note les champs de premier niveau lus. Le suivi ne
- * descend pas plus bas : l'état est gelé, et un proxy doit rendre telle quelle une propriété gelée.
+ * Runs `select` on a proxy of the state that records the top-level fields read. Tracking goes no
+ * deeper: the state is frozen, and a proxy must return a frozen property as is.
  */
 function tracked(select: AnySelector, state: object, args: readonly unknown[]): { value: unknown; deps: Deps } {
   let deps: Deps = new Set();
@@ -61,10 +61,10 @@ function tracked(select: AnySelector, state: object, args: readonly unknown[]): 
   });
   try {
     const value = select(proxy, ...args);
-    // `(s) => s` ne doit pas laisser fuir le proxy.
+    // `(s) => s` must not leak the proxy.
     return { value: value === proxy ? state : value, deps };
   } finally {
-    active = false; // un proxy capturé par le résultat ne fausse plus les dépendances
+    active = false; // a proxy captured by the result no longer skews the dependencies
   }
 }
 
@@ -73,10 +73,10 @@ const unchanged = (deps: Deps, previous: object, next: object) =>
   [...deps].every((key) => Object.is((previous as Record<PropertyKey, unknown>)[key], (next as Record<PropertyKey, unknown>)[key]));
 
 /**
- * Cache des sélecteurs d'un store : créé avec lui, libéré avec lui. Pour chaque sélecteur et liste
- * d'arguments :
- * - même état, ou aucun champ lu n'a changé de référence : le résultat précédent, sans recalcul ;
- * - sinon : recalcul, puis partage structurel avec le résultat précédent (voir `share`).
+ * Selector cache of a store: created with it, released with it. For each selector and argument
+ * list:
+ * - same state, or no field read has changed reference: the previous result, without recomputing;
+ * - otherwise: recompute, then structural sharing with the previous result (see `share`).
  */
 export class SelectorCache {
   #roots = new WeakMap<AnySelector, Slot>();
@@ -98,7 +98,7 @@ export class SelectorCache {
   }
 }
 
-/** Égalité par référence, ou clé par clé sur un seul niveau pour les objets et les tableaux. */
+/** Equality by reference, or key by key on a single level for objects and arrays. */
 export function shallowEqual(a: unknown, b: unknown): boolean {
   if (Object.is(a, b)) return true;
   if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
@@ -115,12 +115,12 @@ const isPlainObject = (value: unknown): value is Record<string, unknown> => {
 };
 
 /**
- * Partage structurel : renvoie `previous` si `next` lui est structurellement égal, sinon `next` en
- * reprenant les parties de `previous` qui n'ont pas changé. Ne descend que dans les tableaux et les
- * objets simples ; tout le reste (Date, Map, instances) se compare par référence.
+ * Structural sharing: returns `previous` if `next` is structurally equal to it, otherwise `next`
+ * reusing the parts of `previous` that have not changed. Only descends into arrays and plain
+ * objects; everything else (Date, Map, instances) is compared by reference.
  *
- * Dans un tableau, un élément déjà présent tel quel dans l'ancien tableau est gardé sans être
- * parcouru : une insertion ou un tri ne coûte qu'une comparaison de références par élément.
+ * In an array, an element already present as is in the old array is kept without being walked:
+ * an insertion or a sort only costs one reference comparison per element.
  */
 export function share(previous: unknown, next: unknown): unknown {
   if (Object.is(previous, next)) return previous;
@@ -149,15 +149,15 @@ export function share(previous: unknown, next: unknown): unknown {
   return next;
 }
 
-/** La copie garde le gel de l'original : un résultat figé par le sélecteur le reste. */
+/** The copy keeps the original's freeze: a result frozen by the selector stays frozen. */
 const sameFreeze = <T>(original: unknown, copy: T): T => (Object.isFrozen(original) ? Object.freeze(copy) : copy);
 
 const deeplyFrozen = new WeakSet<object>();
 
 /**
- * Gèle en profondeur les tableaux et objets simples de l'état. Une mutation en place lève alors une
- * erreur au point où elle est écrite, au lieu de passer inaperçue du suivi des sélecteurs. Les
- * sous-arbres déjà gelés par Super sont sautés : le coût suit ce que le `set` vient de créer.
+ * Deep-freezes the arrays and plain objects of the state. An in-place mutation then throws an
+ * error where it is written, instead of going unnoticed by selector tracking. Subtrees already
+ * frozen by Super are skipped: the cost follows what the `set` has just created.
  */
 export function deepFreeze<T>(value: T): T {
   if ((!Array.isArray(value) && !isPlainObject(value)) || deeplyFrozen.has(value)) return value;

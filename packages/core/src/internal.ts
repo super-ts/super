@@ -1,6 +1,6 @@
 /**
- * Plomberie partagée entre les paquets Super (`@super-ts/dom`, `@super-ts/testing`). Jamais importée par
- * une application : rien ici ne fait partie de l'API publique.
+ * Plumbing shared between the Super packages (`@super-ts/dom`, `@super-ts/testing`). Never imported by
+ * an application: nothing here is part of the public API.
  */
 
 export { compileContract, contractByName, contractClass, registerContract } from './classes.ts';

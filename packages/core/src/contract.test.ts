@@ -14,7 +14,7 @@ class CartStore extends SuperStore<CartContract> implements Commands<CartStore> 
 
   add({ sku }: { sku: string }) {
     this.set({ items: { ...this.get().items, [sku]: this.selectors.quantity(sku) + 1 } });
-    this.#seen.push(this.selectors.quantity(sku)); // déjà à jour juste après le set
+    this.#seen.push(this.selectors.quantity(sku)); // already up to date right after the set
   }
 }
 
@@ -43,7 +43,7 @@ class LinesStore extends SuperStore<LinesContract> implements Commands<LinesStor
   }
 }
 
-/** Remplace `items` par un objet neuf au contenu identique. */
+/** Replaces `items` with a fresh object with identical content. */
 class SameItemsStore extends SuperStore<LinesContract> implements Commands<SameItemsStore> {
   constructor() {
     super({ contract: 'core-lines', initialState: { items: { a: 1 }, note: '' } });
@@ -56,8 +56,8 @@ class SameItemsStore extends SuperStore<LinesContract> implements Commands<SameI
   mutate() {}
 }
 
-describe('sélecteurs de contrat', () => {
-  test('les sélecteurs du handle lisent l’état courant, état fourni', async () => {
+describe('contract selectors', () => {
+  test('the handle selectors read the current state, state supplied', async () => {
     const cart = CartStore.create();
     await cart.send('add', { sku: 'a' });
     await cart.send('add', { sku: 'a' });
@@ -69,7 +69,7 @@ describe('sélecteurs de contrat', () => {
     expect(cart.selectors.busy()).toBe(false);
   });
 
-  test('le store lit `this.selectors`, qui relisent l’état courant à chaque appel', async () => {
+  test('the store reads `this.selectors`, which reread the current state at each call', async () => {
     const seen: number[] = [];
     const store = CartStore.create({ seen });
 
@@ -80,19 +80,19 @@ describe('sélecteurs de contrat', () => {
     expect(store.selectors.quantity('a')).toBe(2);
   });
 
-  describe('mémoïsation', () => {
+  describe('memoisation', () => {
     beforeEach(() => {
       calls.n = 0;
     });
 
-    test('même état, pas de recalcul', () => {
+    test('same state, no recomputation', () => {
       const store = LinesStore.create();
 
       expect(store.selectors.lines()).toBe(store.selectors.lines());
       expect(calls.n).toBe(1);
     });
 
-    test('un champ que le sélecteur ne lit pas change : pas de recalcul, même référence', async () => {
+    test('a field the selector does not read changes: no recomputation, same reference', async () => {
       const store = LinesStore.create();
       const first = store.selectors.lines();
 
@@ -101,15 +101,15 @@ describe('sélecteurs de contrat', () => {
       expect(calls.n).toBe(1);
     });
 
-    test('un champ lu change mais le résultat est égal : la référence précédente est gardée', async () => {
+    test('a field read changes but the result is equal: the previous reference is kept', async () => {
       const store = SameItemsStore.create();
       const first = store.selectors.lines();
 
-      await store.send('add', { sku: 'a' }); // nouvel objet items, même contenu : recalcul, même référence
+      await store.send('add', { sku: 'a' }); // new items object, same content: recomputation, same reference
       expect(store.selectors.lines()).toBe(first);
     });
 
-    test('résultat changé : nouvelle référence, les parties inchangées sont reprises', async () => {
+    test('result changed: new reference, the unchanged parts are reused', async () => {
       const store = LinesStore.create();
       const first = store.selectors.lines();
 
@@ -123,7 +123,7 @@ describe('sélecteurs de contrat', () => {
       expect(second[0]).toBe(first[0]);
     });
 
-    test('un sélecteur qui parcourt tout l’état dépend de tout', async () => {
+    test('a selector that walks the whole state depends on everything', async () => {
       const store = LinesStore.create();
       store.selectors.everything();
 
@@ -132,13 +132,13 @@ describe('sélecteurs de contrat', () => {
       expect(calls.n).toBe(2);
     });
 
-    test('un sélecteur qui renvoie l’état renvoie l’état, pas le proxy de suivi', () => {
+    test('a selector that returns the state returns the state, not the tracking proxy', () => {
       const store = LinesStore.create();
 
       expect(store.selectors.raw()).toBe(store.state());
     });
 
-    test('le cache est propre à chaque liste d’arguments', () => {
+    test('the cache is specific to each argument list', () => {
       const store = LinesStore.create();
 
       expect(store.selectors.line('a')).toEqual({ sku: 'a', qty: 1 });
@@ -146,7 +146,7 @@ describe('sélecteurs de contrat', () => {
       expect(store.selectors.line('a')).toBe(store.selectors.line('a'));
     });
 
-    test('le cache est propre à chaque store', async () => {
+    test('the cache is specific to each store', async () => {
       const one = LinesStore.create();
       const two = LinesStore.create();
       await two.send('add', { sku: 'b' });
@@ -157,7 +157,7 @@ describe('sélecteurs de contrat', () => {
       expect(calls.n).toBe(2);
     });
 
-    test('`this.selectors` du store passent par le même cache que le handle', async () => {
+    test('the store `this.selectors` go through the same cache as the handle', async () => {
       const seen: unknown[] = [];
       const store = LinesStore.create({ seen });
 
@@ -167,7 +167,7 @@ describe('sélecteurs de contrat', () => {
       expect(calls.n).toBe(1);
     });
 
-    test('l’état est gelé en profondeur : une mutation en place lève une erreur', async () => {
+    test('the state is deeply frozen: an in-place mutation throws an error', async () => {
       const store = LinesStore.create();
 
       await expect(store.send('mutate')).rejects.toThrow(TypeError);
@@ -176,7 +176,7 @@ describe('sélecteurs de contrat', () => {
   });
 
   describe('share', () => {
-    test('une insertion en tête garde les éléments existants', () => {
+    test('an insertion at the head keeps the existing elements', () => {
       const a = { id: 'a' };
       const b = { id: 'b' };
       const previous = [a, b];
@@ -186,7 +186,7 @@ describe('sélecteurs de contrat', () => {
       expect(next[2]).toBe(b);
     });
 
-    test('un tri renvoie le nouveau tableau, avec les mêmes éléments', () => {
+    test('a sort returns the new array, with the same elements', () => {
       const a = { id: 'a' };
       const b = { id: 'b' };
       const sorted = [b, a];
@@ -194,7 +194,7 @@ describe('sélecteurs de contrat', () => {
       expect(share([a, b], sorted)).toBe(sorted);
     });
 
-    test('un résultat figé reste figé après partage', () => {
+    test('a frozen result stays frozen after sharing', () => {
       const kept = { id: 'a', tags: ['x'] };
       const next = share(
         [kept],
@@ -209,7 +209,7 @@ describe('sélecteurs de contrat', () => {
     });
   });
 
-  test('"pending" est un nom de sélecteur réservé', () => {
+  test('"pending" is a reserved selector name', () => {
     type State = { busy: boolean };
     class Reserved extends SuperContract<{ state: State }> {
       constructor() {
@@ -220,6 +220,6 @@ describe('sélecteurs de contrat', () => {
       }
     }
 
-    expect(() => compileContract(Reserved)).toThrow(/"pending" est réservé/);
+    expect(() => compileContract(Reserved)).toThrow(/"pending" is reserved/);
   });
 });
