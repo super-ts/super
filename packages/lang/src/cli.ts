@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * `super-tsc` : vérifie les types d'un projet qui contient des fichiers `.super`.
  *
@@ -9,7 +10,7 @@
  * Usage : node packages/lang/src/cli.ts <tsconfig du projet>
  */
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { toSource, toVirtual, type VirtualCode } from './virtual.ts';
@@ -168,7 +169,8 @@ export function check(configPath: string): string[] {
   return errors;
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+// Lancé directement, y compris par le lien de `node_modules/.bin`, qui n'a pas le même chemin.
+if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const configPath = process.argv[2];
   if (!configPath) {
     console.error('Usage : super-tsc <tsconfig.json>');

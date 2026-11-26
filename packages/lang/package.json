@@ -28,6 +28,10 @@
       "default": "./dist/index.js"
     }
   },
+  "bin": {
+    "super-tsc": "./dist/cli.js",
+    "super-fmt": "./dist/format-cli.js"
+  },
   "files": [
     "dist"
   ],

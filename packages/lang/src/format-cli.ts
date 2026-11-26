@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * `super-fmt` : formate les fichiers `.super` (le TS par Biome, les templates par `format.ts`).
  *
@@ -5,7 +6,7 @@
  * `--check` sort en erreur si un fichier n'est pas formaté. Un fichier qui a des erreurs de syntaxe
  * est laissé tel quel (`npm run typecheck` les signale).
  */
-import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { readdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { formatWithBiome } from './biome.ts';
@@ -38,7 +39,8 @@ export function formatFiles(dirs: string[], write: boolean): { changed: string[]
   return { changed, skipped };
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+// Lancé directement, y compris par le lien de `node_modules/.bin`, qui n'a pas le même chemin.
+if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
   const write = args.includes('--write');
   const check = args.includes('--check');
