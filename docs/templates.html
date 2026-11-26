@@ -1,28 +1,28 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Templates : les fichiers .super · Super</title>
+    <title>Templates: .super files · Super</title>
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
     <link rel="stylesheet" href="assets/site.css" />
   </head>
   <body>
     <article>
-      <h1>Templates : les fichiers .super</h1>
+      <h1>Templates: .super files</h1>
       <p class="lead">
-        Un composant s'écrit dans un fichier <code>.super</code> : du TypeScript dont les méthodes contiennent des éléments
-        HTML écrits comme des instructions. Le contrôle de flux est celui de TypeScript (<code>if</code>, <code>for</code>,
-        <code>switch</code>), et tout le template est vérifié par le compilateur : props, événements, attributs, références.
+        A component is written in a <code>.super</code> file: TypeScript whose methods contain HTML elements
+        written as statements. Control flow is TypeScript's (<code>if</code>, <code>for</code>,
+        <code>switch</code>), and the whole template is checked by the compiler: props, events, attributes, references.
       </p>
 
-      <h2 id="fichiers-super">Un fichier .super</h2>
+      <h2 id="super-files">A .super file</h2>
       <script type="text/x-code" data-title="src/@components/counter-list/counter-list-item.super" data-source="examples/demo/src/@components/counter-list/counter-list-item.super">
         import { SuperElement } from '@super-ts/dom';
         import './counter-list-item.css';
 
-        /** Une ligne de la liste d'accueil : ne se re-rend que si la valeur de son compteur change. */
+        /** A row of the home list: only re-renders if its counter's value changes. */
         export class CounterListItem extends SuperElement {
           @tag = 'counter-list-item';
           @prop counterId: string;
@@ -38,102 +38,102 @@
         }
       </script>
       <ul>
-        <li><strong>Le composant se déclare dans sa classe</strong> : <code>@tag</code> pour son tag, <code>@prop</code> pour ses props (lues par <code>this.label</code>), <code>@emit</code> pour ses événements, sans générique. Voir <a href="components.html#declarations">Composants : les déclarations</a>.</li>
-        <li><strong>Ce qu'il prépare une fois se déclare aussi</strong> : <code>@contract</code> pour un store, <code>@selector</code> pour une lecture (lue par <code>this.count.value</code>), et de même <code>@state</code>, <code>@form</code>, <code>@ref</code> et les écouteurs <code>@on('contrat', 'événement')</code>. Voir <a href="components.html#declarations-de-preparation">Composants : les déclarations de préparation</a>.</li>
-        <li><strong>Tout le reste est du TypeScript</strong> : imports, types, champs, méthodes. Seuls les éléments et ces déclarations sont nouveaux.</li>
-        <li><strong>On l'importe sans extension</strong>, comme un <code>.ts</code> : <code>import { ConfirmDialog } from '../shared/confirm-dialog'</code>, ou <code>@components/shop</code> pour <code>shop/index.super</code>.</li>
-        <li><strong>Un module sans template reste un <code>.ts</code></strong> : contrats, stores, domaine, routes, tests.</li>
+        <li><strong>The component is declared in its class</strong>: <code>@tag</code> for its tag, <code>@prop</code> for its props (read through <code>this.label</code>), <code>@emit</code> for its events, without generics. See <a href="components.html#component-declarations">Components: declarations</a>.</li>
+        <li><strong>What it prepares once is declared too</strong>: <code>@contract</code> for a store, <code>@selector</code> for a reading (read through <code>this.count.value</code>), and likewise <code>@state</code>, <code>@form</code>, <code>@ref</code> and the <code>@on('contract', 'event')</code> listeners. See <a href="components.html#preparing-stores-reads-state-form-references-listeners">Components: setup declarations</a>.</li>
+        <li><strong>Everything else is TypeScript</strong>: imports, types, fields, methods. Only the elements and these declarations are new.</li>
+        <li><strong>You import it without an extension</strong>, like a <code>.ts</code>: <code>import { ConfirmDialog } from '../shared/confirm-dialog'</code>, or <code>@components/shop</code> for <code>shop/index.super</code>.</li>
+        <li><strong>A module without a template stays a <code>.ts</code></strong>: contracts, stores, domain, routes, tests.</li>
       </ul>
-      <p>Le plugin Vite compile le fichier, <code>npm run typecheck</code> le vérifie et l'éditeur le comprend : voir <a href="tooling.html">Outillage des .super</a>.</p>
+      <p>The Vite plugin compiles the file, <code>npm run typecheck</code> checks it and the editor understands it: see <a href="tooling.html">Tooling for .super files</a>.</p>
 
-      <h2 id="elements">Des éléments écrits comme des instructions</h2>
+      <h2 id="elements">Elements written as statements</h2>
       <p>
-        Un élément s'écrit là où TypeScript attend une instruction, dans une méthode de la classe, et il est émis à cet endroit.
-        <code>render()</code> ne renvoie rien : il émet. Plusieurs éléments à la suite sont permis, sans racine commune.
+        An element is written where TypeScript expects a statement, in a method of the class, and it is emitted at that point.
+        <code>render()</code> returns nothing: it emits. Several elements in a row are allowed, without a common root.
       </p>
       <script type="text/x-code">
         render() {
           const label = this.label.value;
           if (label === null) {
-            <p>Compteur introuvable</p>
+            <p>Counter not found</p>
             return;
           }
           <h1>{label}</h1>
-          <p>Valeur : {this.count.value}</p>
+          <p>Value: {this.count.value}</p>
         }
       </script>
       <ul>
-        <li><strong>Pas d'élément dans une expression</strong> : <code>const x = &lt;p /&gt;</code> ou <code>() =&gt; &lt;p /&gt;</code> sont refusés. Pour réutiliser un morceau, écris une méthode (voir <a href="#fragments">Fragments</a>).</li>
-        <li><strong><code>return;</code> arrête le rendu</strong> en gardant ce qui est déjà émis. <code>return x;</code> est refusé dans une méthode qui émet des éléments : elle renvoie ce qu'elle émet.</li>
-        <li><strong>Un élément sans enfant se ferme par <code>/&gt;</code></strong> (<code>&lt;div /&gt;</code>), sauf les éléments vides du HTML (<code>&lt;br&gt;</code>, <code>&lt;input&gt;</code>, <code>&lt;img&gt;</code>…).</li>
+        <li><strong>No element inside an expression</strong>: <code>const x = &lt;p /&gt;</code> or <code>() =&gt; &lt;p /&gt;</code> are refused. To reuse a piece, write a method (see <a href="#fragments">Fragments</a>).</li>
+        <li><strong><code>return;</code> stops the render</strong> while keeping what is already emitted. <code>return x;</code> is refused in a method that emits elements: it returns what it emits.</li>
+        <li><strong>An element without children is closed with <code>/&gt;</code></strong> (<code>&lt;div /&gt;</code>), except HTML void elements (<code>&lt;br&gt;</code>, <code>&lt;input&gt;</code>, <code>&lt;img&gt;</code>…).</li>
       </ul>
 
-      <h2 id="texte">Le texte</h2>
-      <p>Le texte s'écrit tel quel entre les balises. Un enfant est lu comme une instruction seulement s'il commence par une forme réservée :</p>
+      <h2 id="text">Text</h2>
+      <p>Text is written as is between the tags. A child is read as a statement only if it starts with a reserved form:</p>
       <table>
-        <thead><tr><th>Début de l'enfant</th><th>Lu comme</th></tr></thead>
+        <thead><tr><th>Start of the child</th><th>Read as</th></tr></thead>
         <tbody>
-          <tr><td><code>if (</code>, <code>for (</code>, <code>switch (</code></td><td>Une instruction de contrôle</td></tr>
-          <tr><td><code>const</code> ou <code>let</code>, un nom ou une déstructuration, puis <code>=</code></td><td>Une déclaration</td></tr>
-          <tr><td>Tout le reste (<code>Total :</code>, <code>if you need help</code>, <code>let me know</code>)</td><td>Du texte</td></tr>
+          <tr><td><code>if (</code>, <code>for (</code>, <code>switch (</code></td><td>A control statement</td></tr>
+          <tr><td><code>const</code> or <code>let</code>, a name or a destructuring, then <code>=</code></td><td>A declaration</td></tr>
+          <tr><td>Everything else (<code>Total:</code>, <code>if you need help</code>, <code>let me know</code>)</td><td>Text</td></tr>
         </tbody>
       </table>
       <p>
-        Un texte qui commence par une forme réservée sans en être une est une erreur, jamais une devinette. L'éditeur propose
-        la correction : l'entourer d'accolades.
+        Text that starts with a reserved form without being one is an error, never a guess. The editor offers
+        the fix: wrapping it in braces.
       </p>
       <script type="text/x-code">
-        <p>for (more info) see below</p>          // erreur : texte lu comme une boucle for
+        <p>for (more info) see below</p>          // error: text read as a for loop
         <p>{'for (more info) see below'}</p>     // correct
       </script>
-      <p><code>&lt;</code>, <code>{</code> et <code>}</code> ne s'écrivent pas dans le texte : <code>{'&lt;'}</code>, <code>{'{'}</code>, <code>{'}'}</code>. Entre les balises, <code>//</code> est du texte : un commentaire s'écrit <code>{/* … */}</code>.</p>
+      <p><code>&lt;</code>, <code>{</code> and <code>}</code> are not written in text: <code>{'&lt;'}</code>, <code>{'{'}</code>, <code>{'}'}</code>. Between tags, <code>//</code> is text: a comment is written <code>{/* … */}</code>.</p>
 
-      <h3 id="espaces">Les espaces</h3>
-      <p>Ils suivent les règles du HTML, comme un template HTML écrit à la main :</p>
+      <h3 id="whitespace">Whitespace</h3>
+      <p>It follows HTML rules, like an HTML template written by hand:</p>
       <ul>
-        <li><strong>Chaque suite de blancs compte pour une espace</strong>, retours à la ligne compris : <code>contenant</code> puis <code>&lt;code&gt;offline&lt;/code&gt;</code> à la ligne suivante s'affiche « contenant offline ».</li>
-        <li><strong>Les blancs au début et à la fin d'un élément ou d'un bloc ne rendent rien</strong> : <code>&lt;button&gt;</code>, un retour à la ligne, <code>−</code>, un retour à la ligne, <code>&lt;/button&gt;</code> donne un bouton « − ».</li>
-        <li><strong>Deux éléments de la méthode séparés seulement par des blancs sont séparés par une espace</strong> ; s'il y a du code entre eux, non.</li>
+        <li><strong>Each run of whitespace counts as one space</strong>, line breaks included: <code>containing</code> then <code>&lt;code&gt;offline&lt;/code&gt;</code> on the next line displays "containing offline".</li>
+        <li><strong>Whitespace at the start and end of an element or block renders nothing</strong>: <code>&lt;button&gt;</code>, a line break, <code>−</code>, a line break, <code>&lt;/button&gt;</code> gives a "−" button.</li>
+        <li><strong>Two elements of the method separated only by whitespace are separated by a space</strong>; if there is code between them, they are not.</li>
       </ul>
 
       <h2 id="interpolations">Interpolations</h2>
       <p>
-        <code>{expression}</code> affiche une chaîne, un nombre ou un booléen. <code>null</code> et <code>undefined</code>
-        n'affichent rien. Un objet est refusé par le compilateur, ce qui évite les <code>[object Object]</code>.
+        <code>{expression}</code> displays a string, a number or a boolean. <code>null</code> and <code>undefined</code>
+        display nothing. An object is refused by the compiler, which avoids <code>[object Object]</code>.
       </p>
       <script type="text/x-code">
-        <p role="status">Commande n° {lastOrder.orderId}, {formatPrice(lastOrder.total)}.</p>
-        <p>{count} article{count > 1 ? 's' : ''}</p>
+        <p role="status">Order no. {lastOrder.orderId}, {formatPrice(lastOrder.total)}.</p>
+        <p>{count} item{count > 1 ? 's' : ''}</p>
       </script>
       <div class="callout">
-        <strong>Tout est échappé</strong>
-        <code>{'&lt;b&gt;Ada&lt;/b&gt;'}</code> affiche le texte « &lt;b&gt;Ada&lt;/b&gt; », sans créer de balise. Une donnée
-        saisie par un utilisateur ne peut pas injecter de HTML.
+        <strong>Everything is escaped</strong>
+        <code>{'&lt;b&gt;Ada&lt;/b&gt;'}</code> displays the text "&lt;b&gt;Ada&lt;/b&gt;", without creating a tag. Data
+        entered by a user cannot inject HTML.
       </div>
 
-      <h2 id="attributs">Attributs</h2>
+      <h2 id="attributes">Attributes</h2>
       <table>
-        <thead><tr><th>Écriture</th><th>Effet</th></tr></thead>
+        <thead><tr><th>Syntax</th><th>Effect</th></tr></thead>
         <tbody>
-          <tr><td><code>class="screen"</code></td><td>Attribut fixe.</td></tr>
-          <tr><td><code>href={url}</code></td><td>Attribut calculé. <code>null</code> ou <code>undefined</code> le retirent.</td></tr>
-          <tr><td><code>disabled={busy}</code></td><td>Attribut booléen du HTML (<code>disabled</code>, <code>hidden</code>, <code>checked</code>…) : présent si vrai.</td></tr>
-          <tr><td><code>disabled</code></td><td>Attribut booléen toujours présent.</td></tr>
-          <tr><td><code>prop:value={v}</code></td><td>Propriété DOM plutôt qu'attribut (<code>el.value = v</code>).</td></tr>
-          <tr><td><code>on:click={handler}</code></td><td>Écouteur d'événement (voir <a href="#evenements">Événements</a>).</td></tr>
-          <tr><td><code>ref={this.input}</code></td><td>Référence vers l'élément (voir <a href="#references">Références</a>).</td></tr>
-          <tr><td><code>{order.field('address')}</code> dans la balise</td><td>Directive d'élément : <code>form.bind()</code>, <code>form.field(…)</code> (voir <a href="forms.html">Formulaires</a>).</td></tr>
+          <tr><td><code>class="screen"</code></td><td>Static attribute.</td></tr>
+          <tr><td><code>href={url}</code></td><td>Computed attribute. <code>null</code> or <code>undefined</code> remove it.</td></tr>
+          <tr><td><code>disabled={busy}</code></td><td>HTML boolean attribute (<code>disabled</code>, <code>hidden</code>, <code>checked</code>…): present if true.</td></tr>
+          <tr><td><code>disabled</code></td><td>Boolean attribute, always present.</td></tr>
+          <tr><td><code>prop:value={v}</code></td><td>DOM property rather than attribute (<code>el.value = v</code>).</td></tr>
+          <tr><td><code>on:click={handler}</code></td><td>Event listener (see <a href="#events">Events</a>).</td></tr>
+          <tr><td><code>ref={this.input}</code></td><td>Reference to the element (see <a href="#references">References</a>).</td></tr>
+          <tr><td><code>{order.field('address')}</code> in the tag</td><td>Element directive: <code>form.bind()</code>, <code>form.field(…)</code> (see <a href="forms.html">Forms</a>).</td></tr>
         </tbody>
       </table>
       <script type="text/x-code">
         render() {
           const name = this.route.value;
-          // `null` retire l'attribut.
+          // `null` removes the attribute.
           const current = (active: boolean) => (active ? 'page' : null);
           <header class="app-header">
-            <nav aria-label="Exemples">
-              <a href={this.router.href('examples')} aria-current={current(name === 'examples')}>Exemples</a>
-              <a href={this.router.href('counters')} aria-current={current(name === 'counters' || name === 'counter')}>Compteurs</a>
+            <nav aria-label="Examples">
+              <a href={this.router.href('examples')} aria-current={current(name === 'examples')}>Examples</a>
+              <a href={this.router.href('counters')} aria-current={current(name === 'counters' || name === 'counter')}>Counters</a>
               {/* … */}
             </nav>
           </header>
@@ -141,42 +141,42 @@
         }
       </script>
       <ul>
-        <li><strong>Une valeur d'attribut</strong> est une chaîne, un nombre, un booléen, <code>null</code> ou <code>undefined</code>.</li>
-        <li><strong>Une balise sans tiret doit exister en HTML ou en SVG</strong> : <code>&lt;dvi&gt;</code> est une erreur. Une balise avec tiret est un élément personnalisé.</li>
-        <li><strong>La syntaxe de lit est refusée</strong>, avec la forme à utiliser : <code>@click</code> → <code>on:click</code>, <code>?disabled</code> → <code>disabled</code>, <code>.value</code> → <code>prop:value</code>.</li>
+        <li><strong>An attribute value</strong> is a string, a number, a boolean, <code>null</code> or <code>undefined</code>.</li>
+        <li><strong>A tag without a hyphen must exist in HTML or SVG</strong>: <code>&lt;dvi&gt;</code> is an error. A tag with a hyphen is a custom element.</li>
+        <li><strong>lit syntax is refused</strong>, with the form to use: <code>@click</code> → <code>on:click</code>, <code>?disabled</code> → <code>disabled</code>, <code>.value</code> → <code>prop:value</code>.</li>
       </ul>
 
-      <h2 id="evenements">Événements</h2>
+      <h2 id="events">Events</h2>
       <p>
-        <code>on:événement={gestionnaire}</code> pose un écouteur. Sur une balise HTML, le nom doit être un événement de cette
-        balise (<code>on:clik</code> est une erreur) et le gestionnaire reçoit l'événement typé, avec
-        <code>currentTarget</code> du type de l'élément.
+        <code>on:event={handler}</code> adds a listener. On an HTML tag, the name must be an event of that
+        tag (<code>on:clik</code> is an error) and the handler receives the typed event, with
+        <code>currentTarget</code> typed as the element.
       </p>
       <script type="text/x-code">
         <input on:input={(event) => this.local.set({ draft: event.currentTarget.value })} />
-        <button type="button" on:click={() => this.run('reset')}>Remettre à zéro</button>
+        <button type="button" on:click={() => this.run('reset')}>Reset to zero</button>
       </script>
-      <p>Sur un composant enfant, <code>on:</code> s'abonne à ses événements, déclarés par <code>@emit</code> (voir <a href="#enfants">Composants enfants</a>). Une erreur levée dans un gestionnaire est signalée à <code>onError</code> (voir <a href="errors.html">Gérer les erreurs</a>).</p>
+      <p>On a child component, <code>on:</code> subscribes to its events, declared with <code>@emit</code> (see <a href="#child-components">Child components</a>). An error thrown in a handler is reported to <code>onError</code> (see <a href="errors.html">Handling errors</a>).</p>
 
-      <h2 id="afficher-ou-non">Afficher ou non : if</h2>
-      <p>Un <code>if</code> dans le template est le <code>if</code> de TypeScript, avec son rétrécissement de types : après <code>if (user)</code>, <code>user</code> n'est plus <code>null</code>.</p>
+      <h2 id="showing-or-not">Showing or not: if</h2>
+      <p>An <code>if</code> in the template is TypeScript's <code>if</code>, with its type narrowing: after <code>if (user)</code>, <code>user</code> is no longer <code>null</code>.</p>
       <script type="text/x-code" data-title="src/@components/counter-list/index.super" data-source="examples/demo/src/@components/counter-list/index.super">
         if (this.isLoading.value) {
-          <p>Chargement…</p>
+          <p>Loading…</p>
         }
         if (loadErrorMessage) {
           <div role="alert">
-            <p>Impossible de charger les compteurs : {loadErrorMessage}</p>
-            <button type="button" on:click={() => this.counter.send('load')}>Réessayer</button>
+            <p>Could not load the counters: {loadErrorMessage}</p>
+            <button type="button" on:click={() => this.counter.send('load')}>Retry</button>
           </div>
         }
       </script>
-      <p><code>else if</code> et <code>else</code> s'écrivent comme en TypeScript. Le corps d'un bloc suit les mêmes règles que les enfants d'un élément.</p>
+      <p><code>else if</code> and <code>else</code> are written as in TypeScript. The body of a block follows the same rules as an element's children.</p>
 
-      <h2 id="listes">Listes : for</h2>
+      <h2 id="lists">Lists: for</h2>
       <p>
-        Seul <code>for…of</code> est accepté. <code>key</code>, après un <code>;</code> dans les parenthèses, identifie chaque
-        élément : quand l'ordre change, les éléments sont déplacés plutôt que recréés, et les composants enfants gardent leur état local.
+        Only <code>for…of</code> is accepted. <code>key</code>, after a <code>;</code> inside the parentheses, identifies each
+        item: when the order changes, elements are moved rather than recreated, and child components keep their local state.
       </p>
       <script type="text/x-code" data-title="src/@components/counter-list/index.super" data-source="examples/demo/src/@components/counter-list/index.super">
         <ul class="counter-list">
@@ -185,25 +185,25 @@
           }
         </ul>
       </script>
-      <p>Sans <code>key</code>, le rendu est positionnel : il suffit pour une liste qui ne change jamais d'ordre. Une boucle à une seule clé recrée une zone quand la clé change : <code>for (const _round of [round]; key _round) { … }</code> dans l'<a href="errors.html">écran des erreurs</a>.</p>
+      <p>Without <code>key</code>, rendering is positional: that is enough for a list whose order never changes. A loop over a single key recreates an area when the key changes: <code>for (const _round of [round]; key _round) { … }</code> in the <a href="errors.html">errors screen</a>.</p>
 
-      <h2 id="switch">Choisir : switch</h2>
+      <h2 id="switch">Choosing: switch</h2>
       <p>
-        Chaque <code>case</code> s'arrête au <code>case</code> ou au <code>default</code> suivant : pas de cascade, et
-        <code>break</code> est inutile. Sur une union, un <code>default</code> qui appelle une fonction attendant
-        <code>never</code> rend le choix exhaustif : TypeScript signale un cas oublié.
+        Each <code>case</code> stops at the next <code>case</code> or <code>default</code>: no fall-through, and
+        <code>break</code> is not needed. On a union, a <code>default</code> that calls a function expecting
+        <code>never</code> makes the choice exhaustive: TypeScript flags a forgotten case.
       </p>
       <script type="text/x-code">
         switch (status) {
-          case 'idle': <p>Au repos</p>
-          case 'busy': <p>Occupé</p>
-          case 'done': <p>Fini</p>
+          case 'idle': <p>Idle</p>
+          case 'busy': <p>Busy</p>
+          case 'done': <p>Done</p>
           default: {assertNever(status)}
         }
       </script>
 
-      <h2 id="declarations">Déclarations dans le template</h2>
-      <p>Une déclaration <code>const</code> ou <code>let</code> peut s'écrire au milieu des enfants, terminée par <code>;</code>. Elle est visible des enfants qui la suivent, dans le même élément ou le même bloc.</p>
+      <h2 id="declarations">Declarations in the template</h2>
+      <p>A <code>const</code> or <code>let</code> declaration can be written among the children, ended with <code>;</code>. It is visible to the children that follow it, in the same element or the same block.</p>
       <script type="text/x-code">
         for (const l of this.lines.value; key l.product.sku) {
           const { product, quantity } = l;
@@ -211,8 +211,8 @@
         }
       </script>
 
-      <h2 id="enfants">Composants enfants</h2>
-      <p>Une balise qui commence par une majuscule est un composant, une classe <code>SuperElement</code> en portée :</p>
+      <h2 id="child-components">Child components</h2>
+      <p>A tag that starts with a capital letter is a component, a <code>SuperElement</code> class in scope:</p>
       <script type="text/x-code" data-title="src/@components/counter/index.super" data-source="examples/demo/src/@components/counter/index.super">
         <CounterControls
           count={count}
@@ -223,16 +223,16 @@
         />
       </script>
       <ul>
-        <li><strong>Les attributs sont ses props</strong>, vérifiés contre ses <code>@prop</code> : une prop manquante, en trop ou mal typée est une erreur.</li>
-        <li><strong><code>on:x</code> s'abonne à ses <code>@emit</code></strong>, avec le type de la donnée émise.</li>
-        <li><strong>Pas de directive sur un composant</strong> : <code>{…}</code> dans la balise se place sur un élément HTML.</li>
+        <li><strong>The attributes are its props</strong>, checked against its <code>@prop</code> declarations: a missing, extra or wrongly typed prop is an error.</li>
+        <li><strong><code>on:x</code> subscribes to its <code>@emit</code></strong>, with the type of the emitted data.</li>
+        <li><strong>No directive on a component</strong>: <code>{…}</code> in the tag goes on an HTML element.</li>
       </ul>
-      <p>Voir <a href="parents-and-children.html">Parents et enfants</a>.</p>
+      <p>See <a href="parents-and-children.html">Parents and children</a>.</p>
 
-      <h3 id="content">Des enfants : content</h3>
+      <h3 id="content">Children: content</h3>
       <p>
-        Un composant qui accepte des enfants le déclare par une prop <code>content</code> du type <code>Children</code>
-        de <code>@super-ts/dom</code>, et les place où il veut par une interpolation : <code>{this.content}</code>.
+        A component that accepts children declares it with a <code>content</code> prop of type <code>Children</code>
+        from <code>@super-ts/dom</code>, and places them wherever it wants with an interpolation: <code>{this.content}</code>.
       </p>
       <script type="text/x-code" data-title="src/@components/shared/modal.super">
         import { type Children, SuperElement } from '@super-ts/dom';
@@ -255,100 +255,100 @@
           }
         }
       </script>
-      <p>Les enfants écrits entre ses balises remplissent <code>content</code> :</p>
+      <p>The children written between its tags fill <code>content</code>:</p>
       <script type="text/x-code">
-        <Modal heading="Supprimer le compteur ?" on:closed={this.cancel}>
-          <p>« {this.label.value} » sera définitivement supprimé.</p>
+        <Modal heading="Delete the counter?" on:closed={this.cancel}>
+          <p>"{this.label.value}" will be permanently deleted.</p>
         </Modal>
       </script>
 
-      <h3 id="emplacements">Des emplacements nommés</h3>
+      <h3 id="named-slots">Named slots</h3>
       <p>
-        Un emplacement nommé (le pied de la modale) est une autre prop de type <code>Children</code>, déclarée comme les
-        autres (<code>@prop footer?: Children;</code>) et lue par <code>this.footer</code>. Elle se remplit de deux façons,
-        au choix.
+        A named slot (the modal's footer) is another prop of type <code>Children</code>, declared like the
+        others (<code>@prop footer?: Children;</code>) and read through <code>this.footer</code>. It can be filled in two
+        ways, as you prefer.
       </p>
-      <p><strong>Par un emplacement <code>&lt;:nom&gt;</code></strong>, écrit entre les balises du composant, là où il est utilisé :</p>
+      <p><strong>With a <code>&lt;:name&gt;</code> slot</strong>, written between the component's tags, where it is used:</p>
       <script type="text/x-code">
-        <Modal heading="Supprimer le compteur ?" on:closed={this.cancel}>
-          <p>« {this.label.value} » sera définitivement supprimé.</p>
+        <Modal heading="Delete the counter?" on:closed={this.cancel}>
+          <p>"{this.label.value}" will be permanently deleted.</p>
           <:footer>
-            <button on:click={this.cancel}>Annuler</button>
-            <button class="danger" on:click={this.confirm}>Supprimer</button>
+            <button on:click={this.cancel}>Cancel</button>
+            <button class="danger" on:click={this.confirm}>Delete</button>
           </:footer>
         </Modal>
       </script>
-      <p><strong>Par une méthode qui émet des éléments</strong> : une telle méthode renvoie <code>Children</code> (voir <a href="#fragments">Fragments</a>).</p>
+      <p><strong>With a method that emits elements</strong>: such a method returns <code>Children</code> (see <a href="#fragments">Fragments</a>).</p>
       <script type="text/x-code">
         #footer() {
-          <button on:click={this.cancel}>Annuler</button>
-          <button class="danger" on:click={this.confirm}>Supprimer</button>
+          <button on:click={this.cancel}>Cancel</button>
+          <button class="danger" on:click={this.confirm}>Delete</button>
         }
 
         render() {
-          <Modal heading="Supprimer le compteur ?" footer={this.#footer()} on:closed={this.cancel}>
-            <p>« {this.label.value} » sera définitivement supprimé.</p>
+          <Modal heading="Delete the counter?" footer={this.#footer()} on:closed={this.cancel}>
+            <p>"{this.label.value}" will be permanently deleted.</p>
           </Modal>
         }
       </script>
       <p>
-        La méthode sert surtout pour une liste d'emplacements, comme des onglets dont les panneaux sont une prop
-        <code>panels: Children[]</code> : <code>&lt;Tabs labels={['Profil', 'Sécurité']} panels={[this.#profile(), this.#security()]} /&gt;</code>.
+        The method is mostly useful for a list of slots, such as tabs whose panels are a
+        <code>panels: Children[]</code> prop: <code>&lt;Tabs labels={['Profile', 'Security']} panels={[this.#profile(), this.#security()]} /&gt;</code>.
       </p>
       <ul>
-        <li><strong>Tout est vérifié contre les <code>@prop</code> du composant</strong> : des enfants pour un composant qui n'en déclare pas, des enfants ou un emplacement obligatoires qui manquent, un emplacement inconnu.</li>
-        <li><strong>Les enfants restent ceux du parent</strong> : leurs écouteurs, leurs lectures de store et leur état sont ceux du parent, et ils suivent son rendu. Le composant qui les reçoit les garde quand il se re-rend seul.</li>
-        <li><strong>Un emplacement <code>&lt;:nom&gt;</code></strong> se place directement dans un composant, sans attribut, une seule fois par nom. <code>&lt;:content&gt;</code> n'existe pas : les enfants directs remplissent déjà <code>content</code>.</li>
-        <li><strong>Dans l'éditeur</strong>, <code>&lt;:</code> dans un composant propose ses emplacements.</li>
-        <li><strong>Un exemple complet</strong> : l'écran <a href="examples.html#composition">Composition</a> de l'app d'exemples.</li>
+        <li><strong>Everything is checked against the component's <code>@prop</code> declarations</strong>: children for a component that declares none, required children or slots that are missing, an unknown slot.</li>
+        <li><strong>The children stay the parent's</strong>: their listeners, their store readings and their state are the parent's, and they follow its render. The component receiving them keeps them when it re-renders on its own.</li>
+        <li><strong>A <code>&lt;:name&gt;</code> slot</strong> goes directly inside a component, without attributes, once per name. <code>&lt;:content&gt;</code> does not exist: the direct children already fill <code>content</code>.</li>
+        <li><strong>In the editor</strong>, <code>&lt;:</code> inside a component suggests its slots.</li>
+        <li><strong>A complete example</strong>: the <a href="examples.html#composition">Composition</a> screen of the examples app.</li>
       </ul>
 
-      <h2 id="references">Références</h2>
-      <p><code>ref={…}</code> relie un élément à une référence déclarée par <code>@ref nom: T;</code>. Le type de l'élément est vérifié : une référence <code>HTMLInputElement</code> posée sur un <code>&lt;div&gt;</code> est une erreur.</p>
+      <h2 id="references">References</h2>
+      <p><code>ref={…}</code> links an element to a reference declared with <code>@ref name: T;</code>. The element's type is checked: an <code>HTMLInputElement</code> reference put on a <code>&lt;div&gt;</code> is an error.</p>
       <script type="text/x-code" data-title="src/@components/widget/index.super" data-source="examples/demo/src/@components/widget/index.super">
         @ref widgetSlot: HTMLElement;
         // …
         <div class="widget-slot" ref={this.widgetSlot}></div>
       </script>
 
-      <h2 id="fragments">Fragments réutilisables</h2>
+      <h2 id="fragments">Reusable fragments</h2>
       <p>
-        Tout n'a pas besoin d'être un composant. Une méthode qui émet des éléments se réutilise dans <code>render</code> par
-        une interpolation de son appel. Elle renvoie ce qu'elle émet, de type <code>Children</code> : <code>return x;</code>
-        y est refusé, et son appel peut aussi remplir un <a href="#emplacements">emplacement nommé</a> d'un composant.
+        Not everything needs to be a component. A method that emits elements is reused in <code>render</code> through
+        an interpolation of its call. It returns what it emits, of type <code>Children</code>: <code>return x;</code>
+        is refused there, and its call can also fill a component's <a href="#named-slots">named slot</a>.
       </p>
       <script type="text/x-code" data-title="src/@components/counter/index.super" data-source="examples/demo/src/@components/counter/index.super">
         #back() {
-          <a class="back-link" href={this.router.href('counters')}>← Tous les compteurs</a>
+          <a class="back-link" href={this.router.href('counters')}>← All counters</a>
         }
 
         render() {
           const label = this.label.value;
           if (label === null) {
-            <main class="screen">{this.#back()}<h1>Compteur introuvable</h1><p>Aucun compteur « {this.counterId()} ».</p></main>
+            <main class="screen">{this.#back()}<h1>Counter not found</h1><p>No counter "{this.counterId()}".</p></main>
             return;
           }
           // …
         }
       </script>
-      <p>Crée un composant quand il te faut un état local, un store, des événements ou un re-rendu indépendant (comme une ligne de liste).</p>
+      <p>Create a component when you need local state, a store, events or an independent re-render (like a list row).</p>
 
-      <h2 id="ne-rien-rendre">Ne rien rendre</h2>
-      <p>Une méthode qui n'émet aucun élément ne rend rien : <code>render() {}</code> est un composant vide, et un <code>if</code> sans <code>else</code> ne rend rien quand sa condition est fausse.</p>
+      <h2 id="rendering-nothing">Rendering nothing</h2>
+      <p>A method that emits no element renders nothing: <code>render() {}</code> is an empty component, and an <code>if</code> without <code>else</code> renders nothing when its condition is false.</p>
 
-      <h2 id="dom-et-styles">DOM et styles</h2>
+      <h2 id="dom-and-styles">DOM and styles</h2>
       <ul>
-        <li><strong>Le DOM est patché, pas remplacé</strong> : le focus et la saisie en cours survivent à un re-rendu.</li>
-        <li><strong>Light DOM</strong> : pas de shadow DOM. Tes styles globaux s'appliquent aux composants, et tu peux cibler leur tag en CSS (<code>counter-list-item { display: contents; }</code>).</li>
-        <li><strong>Un élément racine n'est pas nécessaire</strong> : <code>render</code> peut émettre plusieurs éléments de premier niveau.</li>
+        <li><strong>The DOM is patched, not replaced</strong>: focus and ongoing input survive a re-render.</li>
+        <li><strong>Light DOM</strong>: no shadow DOM. Your global styles apply to components, and you can target their tag in CSS (<code>counter-list-item { display: contents; }</code>).</li>
+        <li><strong>A root element is not needed</strong>: <code>render</code> can emit several top-level elements.</li>
       </ul>
 
-      <h2 id="styles-d-un-composant">Styles d'un composant</h2>
+      <h2 id="component-styles">Component styles</h2>
       <p>
-        Super n'a pas de système de styles : un composant est un élément du DOM comme un autre. L'<a href="examples.html">app d'exemples</a> suit une
-        convention simple, que tu peux reprendre : <strong>une feuille par composant</strong>, posée à côté de lui
-        (<code>index.css</code> pour un écran, <code>counter-controls.css</code> pour un sous-composant), importée par le
-        composant, et dont les règles sont imbriquées sous son tag.
+        Super has no styling system: a component is a DOM element like any other. The <a href="examples.html">examples app</a> follows a
+        simple convention you can reuse: <strong>one stylesheet per component</strong>, placed next to it
+        (<code>index.css</code> for a screen, <code>counter-controls.css</code> for a child component), imported by the
+        component, with its rules nested under its tag.
       </p>
       <script type="text/x-code" data-title="src/@components/app-shell/index.css" data-source="examples/demo/src/@components/app-shell/index.css" data-lang="text">
         app-shell {
@@ -364,20 +364,20 @@
         import './index.css';
       </script>
       <script type="text/x-code" data-title="src/main.ts" data-source="examples/demo/src/main.ts">
-        import './styles.css'; // références globales d'abord : les feuilles des composants passent après
+        import './styles.css'; // global references first: component stylesheets come after
       </script>
       <ul>
-        <li><strong>Le tag sert de portée</strong> : imbriquer sous <code>app-shell</code> évite qu'une classe <code>.app-header</code> touche le reste de la page, sans shadow DOM.</li>
-        <li><strong>Le composant charge ce dont il a besoin</strong> : Vite inclut la feuille dès que le composant est importé, et la retire s'il ne l'est plus.</li>
-        <li><strong>Les styles globaux d'abord</strong> : <code>main.ts</code> importe <code>styles.css</code> (variables, typographie, éléments de base) avant tout composant, pour que les feuilles des composants passent après.</li>
+        <li><strong>The tag acts as a scope</strong>: nesting under <code>app-shell</code> keeps an <code>.app-header</code> class from affecting the rest of the page, without shadow DOM.</li>
+        <li><strong>The component loads what it needs</strong>: Vite includes the stylesheet as soon as the component is imported, and drops it once it no longer is.</li>
+        <li><strong>Global styles first</strong>: <code>main.ts</code> imports <code>styles.css</code> (variables, typography, base elements) before any component, so that the component stylesheets come after.</li>
       </ul>
 
-      <h2 id="html">Et html, nothing, repeat ?</h2>
+      <h2 id="html">What about html, nothing, repeat?</h2>
       <p>
-        <code>@super-ts/dom</code> exporte toujours <code>html</code>, <code>nothing</code> et <code>repeat</code>, les briques
-        de lit-html sur lesquelles le compilateur s'appuie. Un composant écrit en <code>.ts</code> dont <code>render</code>
-        renvoie un <code>html`…`</code> fonctionne encore, mais son template n'est pas vérifié par le compilateur. Écris tes
-        composants en <code>.super</code>.
+        <code>@super-ts/dom</code> still exports <code>html</code>, <code>nothing</code> and <code>repeat</code>, the lit-html
+        building blocks the compiler relies on. A component written in <code>.ts</code> whose <code>render</code>
+        returns an <code>html`…`</code> still works, but its template is not checked by the compiler. Write your
+        components in <code>.super</code>.
       </p>
     </article>
     <script src="assets/search-index.js"></script>

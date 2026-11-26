@@ -1,22 +1,22 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Contrats · Super</title>
+    <title>Contracts · Super</title>
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
     <link rel="stylesheet" href="assets/site.css" />
   </head>
   <body>
     <article>
-      <h1>Contrats</h1>
+      <h1>Contracts</h1>
       <p class="lead">
-        Un contrat décrit un store vu de l'extérieur : ce qu'on peut lire, ce qu'on peut lui demander, ce qu'il annonce.
-        C'est la seule chose qu'un composant connaît d'un store.
+        A contract describes a store from the outside: what you can read, what you can ask of it, what it announces.
+        It is the only thing a component knows about a store.
       </p>
 
-      <h2 id="declarer-un-contrat">Déclarer un contrat</h2>
+      <h2 id="declaring-a-contract">Declaring a contract</h2>
       <script type="text/x-code" data-title="src/@core/counter/contract.ts" data-source="examples/demo/src/@core/counter/contract.ts">
         import { type Outcome, SuperContract } from '@super-ts/core';
         import { COUNTERS, MIN_COUNT } from '../../domain/counter';
@@ -50,29 +50,29 @@
           // …
         }
       </script>
-      <p>Un contrat tient en trois morceaux :</p>
+      <p>A contract comes in three pieces:</p>
       <ol>
-        <li><strong>Un type</strong> (<code>CounterTypes</code>) qui décrit son état, ses commandes et ses événements, pour le compilateur.</li>
-        <li><strong>Une classe</strong> qui étend <code>SuperContract&lt;CounterTypes&gt;</code> et se nomme dans son constructeur : <code>super({ name: 'counter' })</code>. Ce nom est la clé du contrat dans toute l'app : un composant déclare <code>@contract counter;</code>, un store déclare <code>super({ contract: 'counter', … })</code>.</li>
-        <li><strong>Des méthodes</strong>, facultatives : chacune est un sélecteur, une lecture autorisée de l'état (voir <a href="selectors.html">Sélecteurs</a>).</li>
+        <li><strong>A type</strong> (<code>CounterTypes</code>) that describes its state, its commands and its events, for the compiler.</li>
+        <li><strong>A class</strong> that extends <code>SuperContract&lt;CounterTypes&gt;</code> and names itself in its constructor: <code>super({ name: 'counter' })</code>. This name is the contract's key throughout the app: a component declares <code>@contract counter;</code>, a store declares <code>super({ contract: 'counter', … })</code>.</li>
+        <li><strong>Methods</strong>, optional: each one is a selector, a permitted read of the state (see <a href="selectors.html">Selectors</a>).</li>
       </ol>
       <p>
-        Un contrat vit dans <code>src/@core/&lt;nom&gt;/contract.ts</code>, un dossier par contrat, à côté de son store. Le
-        plugin Vite lit ces fichiers et génère <code>src/@core/contracts.d.ts</code>, le dictionnaire nom → classe qui
-        type <code>@contract counter;</code>, <code>@on('counter', …)</code> et <code>StoreOfContract&lt;'counter'&gt;</code>. Ce fichier se committe,
-        mais ne s'écrit jamais à la main.
+        A contract lives in <code>src/@core/&lt;name&gt;/contract.ts</code>, one folder per contract, next to its store. The
+        Vite plugin reads these files and generates <code>src/@core/contracts.d.ts</code>, the name → class dictionary that
+        types <code>@contract counter;</code>, <code>@on('counter', …)</code> and <code>StoreOfContract&lt;'counter'&gt;</code>. This file is committed,
+        but never written by hand.
       </p>
 
-      <h2 id="les-trois-cles">Les trois clés : state, commands, events</h2>
+      <h2 id="the-three-keys">The three keys: state, commands, events</h2>
       <table>
-        <thead><tr><th>Clé</th><th>Requise</th><th>Ce qu'elle décrit</th><th>Si on l'omet</th></tr></thead>
+        <thead><tr><th>Key</th><th>Required</th><th>What it describes</th><th>If omitted</th></tr></thead>
         <tbody>
-          <tr><td><code>state</code></td><td>oui</td><td>L'interface de l'état que le store garde en mémoire. Un objet.</td><td>Ne compile pas.</td></tr>
-          <tr><td><code>commands</code></td><td>non</td><td>Ce qu'on peut demander au store : <code>nom(body): void</code>.</td><td>Le store n'accepte aucune commande.</td></tr>
-          <tr><td><code>events</code></td><td>non</td><td>Ce que le store annonce : <code>nom: payload</code>.</td><td>Le store n'émet rien.</td></tr>
+          <tr><td><code>state</code></td><td>yes</td><td>The interface of the state the store keeps in memory. An object.</td><td>Does not compile.</td></tr>
+          <tr><td><code>commands</code></td><td>no</td><td>What you can ask of the store: <code>name(body): void</code>.</td><td>The store accepts no commands.</td></tr>
+          <tr><td><code>events</code></td><td>no</td><td>What the store announces: <code>name: payload</code>.</td><td>The store emits nothing.</td></tr>
         </tbody>
       </table>
-      <p>Ce contrat minimal est valide :</p>
+      <p>This minimal contract is valid:</p>
       <script type="text/x-code">
         export class ClockContract extends SuperContract<{ state: { now: number } }> {
           constructor() {
@@ -81,105 +81,105 @@
         }
       </script>
 
-      <h3 id="state">state : l'interface de l'état</h3>
+      <h3 id="state">state: the interface of the state</h3>
       <p>
-        <code>state</code> est le type de ce que le store garde en mémoire. Il fixe la forme de l'<code>initialState</code>
-        passé au constructeur du store, ce que le store lit avec <code>this.get()</code> et modifie avec
-        <code>this.set()</code>, et le premier paramètre des sélecteurs. Les composants ne voient jamais cette interface : ils
-        lisent à travers les sélecteurs.
+        <code>state</code> is the type of what the store keeps in memory. It sets the shape of the <code>initialState</code>
+        passed to the store's constructor, what the store reads with <code>this.get()</code> and changes with
+        <code>this.set()</code>, and the first parameter of the selectors. Components never see this interface: they
+        read through the selectors.
       </p>
 
-      <h3 id="commands">commands : les demandes</h3>
+      <h3 id="commands">commands: the requests</h3>
       <p>
-        Une commande est une demande adressée au store. Elle prend <strong>au plus un paramètre</strong>, le
-        <strong>body</strong> (un objet, plus lisible et extensible que plusieurs arguments), et <strong>rien ne revient à
-        celui qui l'envoie</strong>. En pratique, une commande modifie souvent l'état, mais pas forcément. La règle qui
-        compte est dans l'autre sens : seul le store modifie son état.
+        A command is a request addressed to the store. It takes <strong>at most one parameter</strong>, the
+        <strong>body</strong> (an object, more readable and extensible than several arguments), and <strong>nothing comes back to
+        whoever sends it</strong>. In practice, a command often changes the state, but not necessarily. The rule that
+        matters goes the other way: only the store changes its state.
       </p>
       <script type="text/x-code">
         commands: {
-          load(): void;                                                    // sans body : send('load')
+          load(): void;                                                    // no body: send('load')
           increment(input: { id: string }): Outcome<{ count: number }, 'unknown' | 'storage'>;
         }
       </script>
-      <p>Une commande déclare l'un ou l'autre :</p>
+      <p>A command declares one or the other:</p>
       <ul>
-        <li><strong><code>void</code></strong> : elle n'a pas d'issue particulière à publier (en dehors d'un échec inattendu).</li>
-        <li><strong><code>Outcome&lt;Résultat, Raisons&gt;</code></strong> : ce que produit son succès (publié dans <code>increment:done</code>), et la liste fermée de ses raisons d'échec (publiées dans <code>increment:failed</code>). Voir <a href="commands-and-events.html#declarer-l-issue">Déclarer l'issue</a>.</li>
+        <li><strong><code>void</code></strong>: it has no particular outcome to publish (apart from an unexpected failure).</li>
+        <li><strong><code>Outcome&lt;Result, Reasons&gt;</code></strong>: what its success produces (published in <code>increment:done</code>), and the closed list of its failure reasons (published in <code>increment:failed</code>). See <a href="commands-and-events.html#declaring-the-outcome">Declaring the outcome</a>.</li>
       </ul>
       <div class="callout warn">
-        <strong>Rien ne revient à l'appelant</strong>
-        <p>Une réponse directe, ou plusieurs paramètres, ne compilent pas :</p>
+        <strong>Nothing comes back to the caller</strong>
+        <p>A direct response, or several parameters, do not compile:</p>
         <script type="text/x-code">
-          // @ts-expect-error une commande ne renvoie pas de donnée
+          // @ts-expect-error a command does not return data
           class Async extends SuperContract<{ state: {}; commands: { add(): Promise<number> } }> {}
-          // @ts-expect-error deux paramètres : une commande n'a qu'un body
+          // @ts-expect-error two parameters: a command only has one body
           class Bad extends SuperContract<{ state: {}; commands: { add(a: number, b: number): void } }> {}
         </script>
         <p>
-          C'est un choix de conception : le composant envoie et laisse filer, et Super publie l'issue à tous ceux qui
-          l'écoutent. <code>void</code> suffit même si la méthode du store est <code>async</code>.
+          This is a design choice: the component sends and moves on, and Super publishes the outcome to everyone who
+          listens to it. <code>void</code> is enough even if the store's method is <code>async</code>.
         </p>
       </div>
 
-      <h3 id="events">events : les annonces</h3>
-      <p class="example-link">Dans l'<a href="examples.html#boutique">exemple Boutique</a> : <a href="../examples/demo/src/@core/cart/contract.ts"><code>cart/contract.ts</code></a>.</p>
+      <h3 id="events">events: the announcements</h3>
+      <p class="example-link">In the <a href="examples.html#shop">Shop example</a>: <a href="../examples/demo/src/@core/cart/contract.ts"><code>cart/contract.ts</code></a>.</p>
       <p>
-        Chaque commande a déjà ses événements, publiés par Super : <code>increment:done</code> et
-        <code>increment:failed</code>. La clé <code>events</code> sert aux autres faits que le store annonce, ceux qui ne
-        sont pas l'issue d'une seule commande. Un événement associe un nom à son payload. <strong>Seul le store
-        émet</strong> (avec <code>this.emit</code>) ; <strong>tout le monde peut écouter</strong> : composants, autres
+        Each command already has its events, published by Super: <code>increment:done</code> and
+        <code>increment:failed</code>. The <code>events</code> key is for the other facts the store announces, those that are
+        not the outcome of a single command. An event pairs a name with its payload. <strong>Only the store
+        emits</strong> (with <code>this.emit</code>); <strong>anyone can listen</strong>: components, other
         stores, tests.
       </p>
       <script type="text/x-code" data-title="src/@core/cart/contract.ts" data-source="examples/demo/src/@core/cart/contract.ts">
-        // Un événement écrit à la main : un fait qui n'est pas l'issue d'une seule commande.
-        // Le panier devient vide après `clear`, ou après le `remove` du dernier article.
+        // A hand-written event: a fact that is not the outcome of a single command.
+        // The cart becomes empty after `clear`, or after the `remove` of the last item.
         events: {
-          emptied: void;          // this.emit('emptied'), sans payload
+          emptied: void;          // this.emit('emptied'), no payload
         };
       </script>
-      <p>Un événement avec payload s'écrit <code>synced: { at: number }</code> et s'émet par <code>this.emit('synced', { at: Date.now() })</code>.</p>
+      <p>An event with a payload is written <code>synced: { at: number }</code> and emitted with <code>this.emit('synced', { at: Date.now() })</code>.</p>
 
-      <h2 id="ce-qu-un-contrat-n-est-pas">Ce qu'un contrat n'est pas</h2>
+      <h2 id="what-a-contract-is-not">What a contract is not</h2>
       <ul>
-        <li><strong>Pas une implémentation.</strong> Il ne dit pas comment les commandes sont traitées : c'est le rôle du <a href="stores.html">store</a>.</li>
-        <li><strong>Pas une instance.</strong> Un contrat ne porte aucun état. Il peut exister plusieurs stores pour le même contrat (un par test, par exemple).</li>
-        <li><strong>Pas les dépendances du store.</strong> Le <code>CounterRepository</code> n'apparaît pas dans le contrat : c'est un détail d'implémentation, déclaré par le constructeur du store.</li>
+        <li><strong>Not an implementation.</strong> It does not say how commands are handled: that is the <a href="stores.html">store</a>'s role.</li>
+        <li><strong>Not an instance.</strong> A contract holds no state. There can be several stores for the same contract (one per test, for example).</li>
+        <li><strong>Not the store's dependencies.</strong> The <code>CounterRepository</code> does not appear in the contract: it is an implementation detail, declared by the store's constructor.</li>
       </ul>
       <p>
-        À l'exécution, Super ne lit d'un contrat que son nom et ses méthodes (les sélecteurs). Les types
-        <code>state</code>, <code>commands</code> et <code>events</code> n'existent que pour le compilateur.
+        At runtime, Super only reads a contract's name and methods (the selectors). The types
+        <code>state</code>, <code>commands</code> and <code>events</code> exist only for the compiler.
       </p>
 
-      <h2 id="qui-utilise-le-contrat">Qui utilise le contrat</h2>
+      <h2 id="who-uses-the-contract">Who uses the contract</h2>
       <table>
-        <thead><tr><th>Qui</th><th>Pour quoi</th></tr></thead>
+        <thead><tr><th>Who</th><th>What for</th></tr></thead>
         <tbody>
-          <tr><td>Le store</td><td><code>class CounterStore extends SuperStore&lt;CounterContract&gt; implements Commands&lt;CounterStore&gt;</code> : le compilateur exige une méthode par commande et vérifie les événements émis.</td></tr>
-          <tr><td>Les composants</td><td><code>@contract counter;</code> pour lire par les sélecteurs et envoyer, <code>@on('counter', …)</code> pour écouter (voir <a href="components.html#declarations-de-preparation">les déclarations</a>).</td></tr>
-          <tr><td><code>createApp</code></td><td>Retrouve le bon store pour un composant : le nom du contrat sert de clé.</td></tr>
-          <tr><td>Le plugin Vite</td><td>Lit les contrats de <code>src/@core/</code>, génère <code>contracts.d.ts</code>, refuse deux contrats du même nom.</td></tr>
-          <tr><td>Les tests</td><td><code>fakeStore('counter', …)</code> pour un composant ; <code>store.selectors.count('cafes')</code> sur le handle d'un vrai store.</td></tr>
+          <tr><td>The store</td><td><code>class CounterStore extends SuperStore&lt;CounterContract&gt; implements Commands&lt;CounterStore&gt;</code>: the compiler requires one method per command and checks the emitted events.</td></tr>
+          <tr><td>Components</td><td><code>@contract counter;</code> to read through the selectors and send, <code>@on('counter', …)</code> to listen (see <a href="components.html#preparing-stores-reads-state-form-references-listeners">the declarations</a>).</td></tr>
+          <tr><td><code>createApp</code></td><td>Finds the right store for a component: the contract's name serves as the key.</td></tr>
+          <tr><td>The Vite plugin</td><td>Reads the contracts in <code>src/@core/</code>, generates <code>contracts.d.ts</code>, rejects two contracts with the same name.</td></tr>
+          <tr><td>Tests</td><td><code>fakeStore('counter', …)</code> for a component; <code>store.selectors.count('coffees')</code> on a real store's handle.</td></tr>
         </tbody>
       </table>
 
-      <h2 id="pieges">Pièges</h2>
+      <h2 id="pitfalls">Pitfalls</h2>
       <div class="callout">
-        <strong>Une clé mal orthographiée est refusée</strong>
-        <code>command</code> au lieu de <code>commands</code> (ou <code>event</code> au lieu de <code>events</code>) ne
-        compile pas : l'erreur apparaît sur <code>super({ name })</code>, avec la clé en cause et les clés attendues
-        (« clé inconnue dans les types du contrat : command (attendu : state, commands, events) »).
+        <strong>A misspelt key is rejected</strong>
+        <code>command</code> instead of <code>commands</code> (or <code>event</code> instead of <code>events</code>) does not
+        compile: the error appears on <code>super({ name })</code>, with the offending key and the expected keys
+        ("unknown key in the contract types: command (expected: state, commands, events)").
       </div>
       <div class="callout warn">
-        <strong>Le nom s'écrit en toutes lettres</strong>
-        Le plugin lit <code>super({ name: 'counter' })</code> dans le source : le nom doit être une chaîne littérale. Deux
-        contrats du même nom sont refusés, et <code>'router'</code> est réservé au router de l'app.
+        <strong>The name is written out in full</strong>
+        The plugin reads <code>super({ name: 'counter' })</code> in the source: the name must be a string literal. Two
+        contracts with the same name are rejected, and <code>'router'</code> is reserved for the app's router.
       </div>
       <div class="callout warn">
-        <strong>L'état des sélecteurs s'annote à la main</strong>
-        TypeScript n'infère pas les paramètres d'une méthode : écris <code>count(s: CounterState, id: string)</code>. Ce
-        premier paramètre est vérifié à la déclaration du store (<code>SuperStore&lt;CounterContract&gt;</code>) : un type
-        qui n'accepte pas l'état du contrat ne compile pas.
+        <strong>The selectors' state is annotated by hand</strong>
+        TypeScript does not infer a method's parameters: write <code>count(s: CounterState, id: string)</code>. This
+        first parameter is checked at the store's declaration (<code>SuperStore&lt;CounterContract&gt;</code>): a type
+        that does not accept the contract's state does not compile.
       </div>
     </article>
     <script src="assets/search-index.js"></script>

@@ -1,33 +1,33 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Ports et adapters · Super</title>
+    <title>Ports and adapters · Super</title>
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
     <link rel="stylesheet" href="assets/site.css" />
   </head>
   <body>
     <article>
-      <h1>Ports et adapters</h1>
+      <h1>Ports and adapters</h1>
       <p class="lead">
-        Les sources de données externes (localStorage, API HTTP, IndexedDB) ne sont pas un concept Super : ce sont de
-        simples dépendances de tes stores. L'<a href="examples.html">app d'exemples</a> les organise en ports et adapters, un choix de projet : un <code>localStorage</code> pour les compteurs, un serveur simulé pour le formulaire, une vraie API HTTP (dummyjson.com) pour la table branchée du kit.
+        External data sources (localStorage, HTTP API, IndexedDB) are not a Super concept: they are
+        plain dependencies of your stores. The <a href="examples.html">examples app</a> organises them into ports and adapters, a project choice: <code>localStorage</code> for the counters, a simulated server for the form, a real HTTP API (dummyjson.com) for the kit's wired table.
       </p>
 
-      <h2 id="le-principe">Le principe</h2>
+      <h2 id="the-principle">The principle</h2>
       <ul>
-        <li>Un <strong>port</strong> est une interface : ce dont le store a besoin, exprimé dans ses termes (« charger tous les compteurs », « enregistrer un compteur »).</li>
-        <li>Un <strong>adapter</strong> est une implémentation de ce port pour une technologie donnée.</li>
-        <li>Le <strong>store</strong> dépend du port, jamais d'un adapter.</li>
-        <li>La <strong>racine de composition</strong> choisit l'adapter.</li>
+        <li>A <strong>port</strong> is an interface: what the store needs, expressed in its own terms ("load all counters", "save a counter").</li>
+        <li>An <strong>adapter</strong> is an implementation of that port for a given technology.</li>
+        <li>The <strong>store</strong> depends on the port, never on an adapter.</li>
+        <li>The <strong>composition root</strong> chooses the adapter.</li>
       </ul>
       <p>
-        Résultat : on change de stockage sans toucher au store, et on teste le store avec un adapter en mémoire.
+        The result: you change storage without touching the store, and you test the store with an in-memory adapter.
       </p>
 
-      <h2 id="le-port">Le port</h2>
+      <h2 id="the-port">The port</h2>
       <script type="text/x-code" data-title="src/ports/counter-repository.ts" data-source="examples/demo/src/ports/counter-repository.ts">
         export interface CounterRepository {
           loadAll(): Promise<Record<string, number>>;
@@ -35,7 +35,7 @@
         }
       </script>
 
-      <h2 id="les-adapters">Les adapters</h2>
+      <h2 id="the-adapters">The adapters</h2>
       <script type="text/x-code" data-title="src/adapters/local-storage-counter-repository.ts" data-source="examples/demo/src/adapters/local-storage-counter-repository.ts">
         export function createLocalStorageCounterRepository({
           storage = window.localStorage,
@@ -44,7 +44,7 @@
           function read(): Record<string, number> {
             const raw = storage.getItem(key);
             if (raw === null) return {};
-            // … parse et valide le JSON, lève une erreur s'il est invalide
+            // … parses and validates the JSON, throws an error if it is invalid
           }
 
           return {
@@ -73,25 +73,25 @@
         }
       </script>
       <p>
-        L'adapter en mémoire expose <code>stored</code>, pratique pour vérifier ce qui a été enregistré dans un test.
+        The in-memory adapter exposes <code>stored</code>, handy for checking what was saved in a test.
       </p>
       <p>
-        Un adapter HTTP a la même forme, avec des <code>fetch</code>. Celui du catalogue de produits traduit la page
-        ou la recherche demandée par le store dans les paramètres de l'API publique de test dummyjson.com, et sa réponse dans les types
-        du domaine :
+        An HTTP adapter has the same shape, with <code>fetch</code> calls. The one for the product catalogue translates the page
+        or search requested by the store into the parameters of the public test API dummyjson.com, and its response into the domain
+        types:
       </p>
-      <script type="text/x-code" data-title="src/ports/product-catalog.ts (extrait)" data-source="examples/demo/src/ports/product-catalog.ts">
+      <script type="text/x-code" data-title="src/ports/product-catalog.ts (excerpt)" data-source="examples/demo/src/ports/product-catalog.ts">
         export interface ProductCatalog {
           list(query: ProductQuery): Promise<ProductPage>;
-          /** Les produits dont le nom ou la description contient `text`, au plus `limit`. */
+          /** The products whose name or description contains `text`, at most `limit`. */
           search(text: string, limit: number): Promise<Product[]>;
         }
       </script>
-      <script type="text/x-code" data-title="src/adapters/dummyjson-product-catalog.ts (extrait)" data-source="examples/demo/src/adapters/dummyjson-product-catalog.ts">
+      <script type="text/x-code" data-title="src/adapters/dummyjson-product-catalog.ts (excerpt)" data-source="examples/demo/src/adapters/dummyjson-product-catalog.ts">
         export function createDummyJsonProductCatalog(fetchImpl: typeof fetch = fetch): ProductCatalog {
           const get = async (url: string): Promise<Raw> => {
             const response = await fetchImpl(url);
-            if (!response.ok) throw new Error(`dummyjson : ${response.status}`);
+            if (!response.ok) throw new Error(`dummyjson: ${response.status}`);
             return (await response.json()) as Raw;
           };
           return {
@@ -113,14 +113,14 @@
         }
       </script>
       <p>
-        <code>fetch</code> est lui-même un paramètre : le test de l'adapter lui en donne un faux, et vérifie l'URL
-        construite sans réseau. Les tests du store et de l'écran prennent l'autre adapter du port,
-        <code>createInMemoryProductCatalog</code>, qui trie, pagine et cherche en mémoire comme le ferait le serveur.
+        <code>fetch</code> is itself a parameter: the adapter's test gives it a fake one, and checks the URL
+        built without a network. The store and screen tests take the port's other adapter,
+        <code>createInMemoryProductCatalog</code>, which sorts, paginates and searches in memory as the server would.
       </p>
 
-      <h2 id="les-brancher">Les brancher</h2>
+      <h2 id="wiring-them">Wiring them</h2>
       <script type="text/x-code">
-        // Le store déclare sa dépendance par les paramètres de son constructeur.
+        // The store declares its dependency through its constructor's parameters.
         type Deps = { counterRepository: CounterRepository };
 
         export class CounterStore extends SuperStore<CounterContract> implements Commands<CounterStore> {
@@ -133,29 +133,29 @@
           // …
         }
 
-        // main.ts choisit l'adapter.
+        // main.ts chooses the adapter.
         CounterStore.create({ counterRepository: createLocalStorageCounterRepository() });
 
-        // Un test en choisit un autre.
-        CounterStore.create({ counterRepository: createInMemoryCounterRepository({ cafes: 1 }) });
+        // A test chooses another one.
+        CounterStore.create({ counterRepository: createInMemoryCounterRepository({ coffees: 1 }) });
       </script>
 
-      <h2 id="ou-les-ranger">Où les ranger</h2>
+      <h2 id="where-to-put-them">Where to put them</h2>
       <p>
-        <code>ports/</code> et <code>adapters/</code> sont des dossiers user-land : Super ne les connaît pas. Tu peux les
-        appeler autrement, ou mettre le port à côté du store, dans son dossier de <code>@core/</code>. Une règle de bon sens :
-        un composant n'importe jamais un adapter. Le plugin ne l'interdit pas (les adapters sont en user-land), mais un
-        composant qui appellerait un adapter contournerait le store, et perdrait l'état partagé et les événements.
+        <code>ports/</code> and <code>adapters/</code> are user-land folders: Super does not know about them. You can
+        name them differently, or put the port next to the store, in its <code>@core/</code> folder. A common-sense rule:
+        a component never imports an adapter. The plugin does not forbid it (adapters are in user-land), but a
+        component that called an adapter would bypass the store, and lose the shared state and the events.
       </p>
 
-      <h2 id="erreurs-des-adapters">Les erreurs des adapters</h2>
+      <h2 id="adapter-errors">Adapter errors</h2>
       <p>
-        Un adapter peut échouer (quota dépassé, réseau coupé). C'est au store de décider comment le publier :
-        <code>loadErrorMessage</code> dans l'état pour un chargement (l'erreur doit rester visible), une raison d'échec pour
-        une écriture. Voir <a href="stores.html#les-erreurs">Stores : les erreurs</a>.
+        An adapter can fail (quota exceeded, network down). It is up to the store to decide how to publish it:
+        <code>loadErrorMessage</code> in the state for a load (the error must stay visible), a failure reason for
+        a write. See <a href="stores.html#errors">Stores: errors</a>.
       </p>
       <script type="text/x-code">
-        await this.#repository.save(id, next).catch(() => this.fail('storage')); // increment:failed, raison 'storage'
+        await this.#repository.save(id, next).catch(() => this.fail('storage')); // increment:failed, reason 'storage'
       </script>
     </article>
     <script src="assets/search-index.js"></script>

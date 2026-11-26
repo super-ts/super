@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -12,24 +12,24 @@
     <article>
       <h1>Stores</h1>
       <p class="lead">
-        Un store implémente un contrat. Il garde l'état, traite les commandes, attend ce qu'il doit attendre (un adapter,
-        le réseau), puis met à jour son état et annonce ce qui s'est passé.
+        A store implements a contract. It holds the state, handles the commands, waits for what it has to wait for (an
+        adapter, the network), then updates its state and announces what happened.
       </p>
 
-      <h2 id="definir-un-store">Définir un store</h2>
+      <h2 id="defining-a-store">Defining a store</h2>
       <script type="text/x-code" data-title="src/@core/counter/store.ts" data-source="examples/demo/src/@core/counter/store.ts">
         import { type Commands, SuperStore } from '@super-ts/core';
         import { MIN_COUNT } from '../../domain/counter';
         import type { CounterRepository } from '../../ports/counter-repository';
         import type { CounterContract } from './contract';
 
-        /** Les dépendances sont ce que tu veux : Super ne les inspecte jamais. */
+        /** Dependencies are whatever you want: Super never inspects them. */
         type Deps = { counterRepository: CounterRepository };
 
         const message = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
-        // Pas de drapeau « en cours » ni d'événement à émettre : Super suit chaque commande et publie son
-        // issue. Le handler fait son travail, échoue avec `this.fail(raison)`, ou retourne son résultat.
+        // No "pending" flag and no event to emit: Super tracks each command and publishes its
+        // outcome. The handler does its work, fails with `this.fail(reason)`, or returns its result.
         export class CounterStore extends SuperStore<CounterContract> implements Commands<CounterStore> {
           #repository: CounterRepository;
 
@@ -38,7 +38,7 @@
             this.#repository = counterRepository;
           }
 
-          // L'erreur de chargement reste dans l'état : elle doit rester visible, même pour un écran monté plus tard.
+          // The load error stays in the state: it must remain visible, even for a screen mounted later.
           async load() {
             this.set({ loadErrorMessage: null });
             try {
@@ -61,7 +61,7 @@
             return this.#write(id, MIN_COUNT);
           }
 
-          /** Le code commun aux trois écritures : une méthode privée, pas une commande. */
+          /** The code shared by the three writes: a private method, not a command. */
           async #write(id: string, next: number) {
             if (!this.selectors.find(id)) this.fail('unknown');
             await this.#repository.save(id, next).catch(() => this.fail('storage'));
@@ -71,158 +71,159 @@
         }
       </script>
       <p>
-        Un store vit dans <code>src/@core/&lt;nom&gt;/store.ts</code>, à côté de son contrat. Il étend
-        <code>SuperStore&lt;CounterContract&gt;</code> : la classe du contrat ne s'importe que comme type, le lien à
-        l'exécution passe par le nom donné à <code>super({ contract: 'counter' })</code>.
+        A store lives in <code>src/@core/&lt;name&gt;/store.ts</code>, next to its contract. It extends
+        <code>SuperStore&lt;CounterContract&gt;</code>: the contract class is only imported as a type, the runtime link
+        goes through the name given to <code>super({ contract: 'counter' })</code>.
       </p>
 
-      <h2 id="le-constructeur">Le constructeur : contrat, état initial, dépendances</h2>
-      <p>Le constructeur reçoit les dépendances et appelle <code>super</code> avec deux choses :</p>
+      <h2 id="the-constructor">The constructor: contract, initial state, dependencies</h2>
+      <p>The constructor receives the dependencies and calls <code>super</code> with two things:</p>
       <ul>
-        <li><strong><code>contract</code></strong> : le nom du contrat implémenté, celui de son <code>super({ name })</code>. Un nom inconnu, ou celui d'un autre contrat, ne compile pas.</li>
-        <li><strong><code>initialState</code></strong> : l'état de départ, conforme au <code>state</code> du contrat. Il est copié à chaque <code>create()</code> : deux instances ne partagent jamais leur état.</li>
+        <li><strong><code>contract</code></strong>: the name of the implemented contract, the one in its <code>super({ name })</code>. An unknown name, or another contract's name, does not compile.</li>
+        <li><strong><code>initialState</code></strong>: the starting state, matching the contract's <code>state</code>. It is copied on every <code>create()</code>: two instances never share their state.</li>
       </ul>
       <p>
-        Le constructeur range ses dépendances dans des champs <code>#privés</code> et peut écouter les stores reçus (voir
-        <a href="#un-store-qui-depend-d-un-autre">plus bas</a>). Il ne lit ni ne modifie l'état : <code>this.get()</code>,
-        <code>this.set()</code> ou <code>this.send()</code> y lèvent une erreur. L'état n'existe qu'une fois le store créé.
+        The constructor stores its dependencies in <code>#private</code> fields and can listen to the stores it receives
+        (see <a href="#a-store-that-depends-on-another-store">below</a>). It neither reads nor changes the state:
+        <code>this.get()</code>, <code>this.set()</code> or <code>this.send()</code> throw an error there. The state only
+        exists once the store is created.
       </p>
 
-      <h2 id="les-commandes">Les commandes : une méthode par commande</h2>
+      <h2 id="commands">Commands: one method per command</h2>
       <p>
-        Chaque commande du contrat est une <strong>méthode publique</strong> du store, du même nom.
-        <code>implements Commands&lt;CounterStore&gt;</code> fait vérifier le tout par le compilateur :
+        Each command of the contract is a <strong>public method</strong> of the store, with the same name.
+        <code>implements Commands&lt;CounterStore&gt;</code> has the compiler check it all:
       </p>
       <ul>
-        <li><strong>Une méthode pour chaque commande</strong> : en oublier une ne compile pas.</li>
-        <li><strong>Les paramètres du contrat, exactement</strong> : <code>increment({ id }: { id: string })</code>. Annote-les à la main, TypeScript n'infère pas les paramètres d'une méthode de classe. Un paramètre plus étroit (<code>{ id: 'cafes' }</code>) ne compile pas.</li>
-        <li><strong>Synchrone ou asynchrone</strong> : une méthode peut être <code>async</code>. C'est dans le store, et seulement là, qu'on attend un adapter.</li>
-        <li><strong>Elle retourne le résultat déclaré</strong> par l'<code>Outcome</code> de sa commande (rien pour une commande <code>void</code>), ou échoue avec <code>this.fail(raison)</code>. Super publie l'issue (<code>increment:done</code>, <code>increment:failed</code>) et suit la commande en cours : pas de drapeau à gérer. Voir <a href="commands-and-events.html#declarer-l-issue">Déclarer l'issue</a>.</li>
-        <li><strong>Aucune autre méthode publique</strong> : le code partagé entre commandes s'écrit en méthode <code>#privée</code>, comme <code>#write</code>. Une méthode publique hors contrat ne compile pas.</li>
+        <li><strong>One method for each command</strong>: forgetting one does not compile.</li>
+        <li><strong>Exactly the contract's parameters</strong>: <code>increment({ id }: { id: string })</code>. Annotate them by hand, TypeScript does not infer the parameters of a class method. A narrower parameter (<code>{ id: 'coffees' }</code>) does not compile.</li>
+        <li><strong>Synchronous or asynchronous</strong>: a method can be <code>async</code>. The store, and only the store, is where you wait for an adapter.</li>
+        <li><strong>It returns the result declared</strong> by its command's <code>Outcome</code> (nothing for a <code>void</code> command), or fails with <code>this.fail(reason)</code>. Super publishes the outcome (<code>increment:done</code>, <code>increment:failed</code>) and tracks the pending command: no flag to manage. See <a href="commands-and-events.html#declaring-the-outcome">Declaring the outcome</a>.</li>
+        <li><strong>No other public method</strong>: code shared between commands is written as a <code>#private</code> method, like <code>#write</code>. A public method outside the contract does not compile.</li>
       </ul>
       <p>
-        Sans <code>implements Commands&lt;Self&gt;</code>, rien de cela n'est vérifié : Super prendrait toute méthode publique
-        pour une commande. Garde-le sur chaque store.
+        Without <code>implements Commands&lt;Self&gt;</code>, none of this is checked: Super would take any public method
+        for a command. Keep it on every store.
       </p>
 
-      <h3 id="les-outils">Les outils</h3>
-      <p>Le store hérite d'outils <code>protected</code>, utilisables dans ses méthodes. Ces noms sont réservés.</p>
+      <h3 id="the-tools">The tools</h3>
+      <p>The store inherits <code>protected</code> tools, usable in its methods. These names are reserved.</p>
       <table>
-        <thead><tr><th>Outil</th><th>Rôle</th></tr></thead>
+        <thead><tr><th>Tool</th><th>Role</th></tr></thead>
         <tbody>
-          <tr><td><code>this.get()</code></td><td>L'état courant, gelé en profondeur : une mutation en place (<code>this.get().items.push(x)</code>) lève une erreur. On le remplace avec <code>set</code>.</td></tr>
-          <tr><td><code>this.selectors</code></td><td>Les sélecteurs du contrat, état fourni : <code>this.selectors.count(id)</code>. Chaque appel relit l'état courant. Plus <code>this.selectors.pending(…)</code> pour les commandes en cours.</td></tr>
-          <tr><td><code>this.set(patch)</code></td><td>Fusionne le patch dans l'état (un niveau). Les champs que le patch ne touche pas gardent leur référence : c'est ce qui permet à Super de savoir ce qui a changé. Accepte un objet ou une fonction <code>(état) => patch</code>. L'état est mis à jour tout de suite ; les abonnés sont prévenus une seule fois à la fin de la tâche, même après plusieurs <code>set</code>.</td></tr>
-          <tr><td><code>this.emit(nom, payload?)</code></td><td>Annonce un événement déclaré dans <code>events</code> (pas l'issue d'une commande : Super la publie). Le payload est typé ; un événement <code>void</code> s'émet sans argument.</td></tr>
-          <tr><td><code>this.send(nom, body?)</code></td><td>Envoie une commande de ce même store, suivie par Super comme une autre (en cours, <code>:done</code>, <code>:failed</code>). Pour partager du code sans ce suivi, appelle une méthode <code>#privée</code>.</td></tr>
-          <tr><td><code>this.fail(raison)</code></td><td>Fait échouer la commande en cours avec une raison déclarée. Ne revient pas. Le compilateur accepte les raisons de toutes les commandes du contrat, pas seulement celles de la commande en cours.</td></tr>
-          <tr><td><code>this.signal</code></td><td><code>AbortSignal</code> avorté par <code>dispose()</code>. Inutile pour les stores reçus en dépendance (voir plus bas) ; il sert aux écouteurs posés hors de Super, comme un <code>window.addEventListener('online', …, { signal: this.signal })</code>.</td></tr>
+          <tr><td><code>this.get()</code></td><td>The current state, deeply frozen: an in-place mutation (<code>this.get().items.push(x)</code>) throws an error. You replace it with <code>set</code>.</td></tr>
+          <tr><td><code>this.selectors</code></td><td>The contract's selectors, with the state supplied: <code>this.selectors.count(id)</code>. Each call rereads the current state. Plus <code>this.selectors.pending(…)</code> for pending commands.</td></tr>
+          <tr><td><code>this.set(patch)</code></td><td>Merges the patch into the state (one level). Fields the patch does not touch keep their reference: that is how Super knows what changed. Accepts an object or a function <code>(state) => patch</code>. The state is updated right away; subscribers are notified only once at the end of the task, even after several <code>set</code> calls.</td></tr>
+          <tr><td><code>this.emit(name, payload?)</code></td><td>Announces an event declared in <code>events</code> (not a command's outcome: Super publishes that). The payload is typed; a <code>void</code> event is emitted without an argument.</td></tr>
+          <tr><td><code>this.send(name, body?)</code></td><td>Sends a command of this same store, tracked by Super like any other (pending, <code>:done</code>, <code>:failed</code>). To share code without this tracking, call a <code>#private</code> method.</td></tr>
+          <tr><td><code>this.fail(reason)</code></td><td>Fails the pending command with a declared reason. Does not return. The compiler accepts the reasons of every command in the contract, not only those of the pending command.</td></tr>
+          <tr><td><code>this.signal</code></td><td><code>AbortSignal</code> aborted by <code>dispose()</code>. Not needed for stores received as dependencies (see below); it is for listeners added outside Super, such as <code>window.addEventListener('online', …, { signal: this.signal })</code>.</td></tr>
         </tbody>
       </table>
       <script type="text/x-code">
-        this.set({ loadErrorMessage: null });                            // objet partiel
-        this.set((s) => ({ counts: { ...s.counts, [id]: next } }));      // fonction de l'état courant
+        this.set({ loadErrorMessage: null });                            // partial object
+        this.set((s) => ({ counts: { ...s.counts, [id]: next } }));      // function of the current state
       </script>
 
-      <h3 id="les-dependances">Les dépendances</h3>
+      <h3 id="dependencies">Dependencies</h3>
       <p>
-        Les dépendances sont <strong>les paramètres du constructeur</strong>. <code>create(…)</code> prend exactement ces
-        arguments, avec leurs types.
+        Dependencies are <strong>the constructor's parameters</strong>. <code>create(…)</code> takes exactly these
+        arguments, with their types.
       </p>
       <script type="text/x-code">
         CounterStore.create({ counterRepository: createLocalStorageCounterRepository() }); // ok
-        // @ts-expect-error dépendance manquante
+        // @ts-expect-error missing dependency
         CounterStore.create();
       </script>
-      <p>Un store sans dépendance a un constructeur sans paramètre et se crée avec <code>create()</code>, comme <code>CartStore.create()</code>.</p>
+      <p>A store without dependencies has a constructor without parameters and is created with <code>create()</code>, like <code>CartStore.create()</code>.</p>
 
-      <h2 id="creer-une-instance">Créer une instance : le handle</h2>
+      <h2 id="creating-an-instance">Creating an instance: the handle</h2>
       <p>
-        Déclarer la classe ne crée rien. C'est <code>CounterStore.create(deps)</code> qui fabrique une instance, en général
-        dans <code>main.ts</code> ou dans un test. Il renvoie un <strong>handle</strong>, jamais l'instance : les méthodes du
-        store ne s'appellent pas directement, elles se déclenchent par <code>send</code>.
+        Declaring the class creates nothing. <code>CounterStore.create(deps)</code> is what builds an instance, usually
+        in <code>main.ts</code> or in a test. It returns a <strong>handle</strong>, never the instance: the store's methods
+        are not called directly, they are triggered by <code>send</code>.
       </p>
       <script type="text/x-code">
         const counter = CounterStore.create({ counterRepository });
 
         counter.state();                                   // Readonly<CounterState>
-        counter.selectors.count('cafes');                  // les sélecteurs du contrat
-        await counter.send('increment', { id: 'cafes' });  // Promise<void> : résolue si la commande réussit
+        counter.selectors.count('coffees');                  // the contract's selectors
+        await counter.send('increment', { id: 'coffees' });  // Promise<void>: resolved if the command succeeds
         const off = counter.on('increment:done', ({ input, result }) => {});
-        counter.pending('increment');                      // une commande est-elle en cours ?
+        counter.pending('increment');                      // is a command pending?
         const unsubscribe = counter.subscribe((state) => {});
-        counter.dispose();                                 // les send suivants sont rejetés
+        counter.dispose();                                 // later sends are rejected
       </script>
       <table>
-        <thead><tr><th>Membre</th><th>Rôle</th></tr></thead>
+        <thead><tr><th>Member</th><th>Role</th></tr></thead>
         <tbody>
-          <tr><td><code>state()</code></td><td>L'état courant, figé.</td></tr>
-          <tr><td><code>selectors</code></td><td>Les sélecteurs du contrat, lus sur l'état courant, plus <code>pending(…)</code>.</td></tr>
-          <tr><td><code>send(nom, body?)</code></td><td>Envoie une commande. La promesse ne porte aucune donnée : elle se résout si la commande réussit, et se rejette si elle échoue (avec une <code>CommandFailure</code> qui porte la raison pour un échec déclaré), si la commande est inconnue ou si le store est disposé.</td></tr>
-          <tr><td><code>on(nom, écouteur, { signal }?)</code></td><td>Écoute un événement déclaré, ou le cycle de vie d'une commande (<code>increment:done</code>, <code>increment:failed</code>). Retourne la fonction de désabonnement.</td></tr>
-          <tr><td><code>pending(commande?, body?)</code></td><td>Une commande est-elle en cours ? Toutes, une commande, ou une commande pour un body.</td></tr>
-          <tr><td><code>subscribe(écouteur, { signal }?)</code></td><td>Écoute chaque changement d'état (regroupés par tâche).</td></tr>
-          <tr><td><code>dispose()</code></td><td>Retire les écouteurs internes ; les <code>send</code> suivants sont rejetés.</td></tr>
-          <tr><td><code>contract</code></td><td>Le contrat lu par Super (son nom), utile au fournisseur de <code>createApp</code>.</td></tr>
+          <tr><td><code>state()</code></td><td>The current state, frozen.</td></tr>
+          <tr><td><code>selectors</code></td><td>The contract's selectors, read on the current state, plus <code>pending(…)</code>.</td></tr>
+          <tr><td><code>send(name, body?)</code></td><td>Sends a command. The promise carries no data: it resolves if the command succeeds, and rejects if it fails (with a <code>CommandFailure</code> carrying the reason for a declared failure), if the command is unknown or if the store is disposed.</td></tr>
+          <tr><td><code>on(name, listener, { signal }?)</code></td><td>Listens to a declared event, or to a command's lifecycle (<code>increment:done</code>, <code>increment:failed</code>). Returns the unsubscribe function.</td></tr>
+          <tr><td><code>pending(command?, body?)</code></td><td>Is a command pending? Any command, one command, or one command for a body.</td></tr>
+          <tr><td><code>subscribe(listener, { signal }?)</code></td><td>Listens to every state change (batched per task).</td></tr>
+          <tr><td><code>dispose()</code></td><td>Removes the internal listeners; later <code>send</code> calls are rejected.</td></tr>
+          <tr><td><code>contract</code></td><td>The contract read by Super (its name), useful to the <code>createApp</code> provider.</td></tr>
         </tbody>
       </table>
       <div class="callout">
-        <strong>Le handle complet n'est pas pour les composants</strong>
-        Les composants reçoivent une vue réduite par <code>@contract counter;</code> : <code>selectors</code>,
-        <code>send()</code> (qui renvoie <code>void</code>) et <code>on()</code>, jamais l'état brut ; ils écoutent ses
-        événements par une méthode <code>@on('counter', 'increment:done')</code>. Le handle complet sert
-        aux tests, à la racine de composition et aux autres stores. Son type se déduit du nom du contrat :
+        <strong>The full handle is not for components</strong>
+        Components receive a reduced view through <code>@contract counter;</code>: <code>selectors</code>,
+        <code>send()</code> (which returns <code>void</code>) and <code>on()</code>, never the raw state; they listen to
+        its events through an <code>@on('counter', 'increment:done')</code> method. The full handle is for
+        tests, the composition root and other stores. Its type is inferred from the contract's name:
         <code>StoreOfContract&lt;'counter'&gt;</code>.
       </div>
 
-      <h3 id="subscribe">subscribe : être prévenu de chaque changement d'état</h3>
-      <p class="example-link">Dans l'<a href="examples.html#boutique">exemple Boutique</a> : <a href="../examples/demo/src/main.ts"><code>main.ts</code></a>, <a href="../examples/demo/src/adapters/saved-cart.ts"><code>adapters/saved-cart.ts</code></a>. Le panier est enregistré dans le <code>localStorage</code> à chaque changement, et survit au rechargement de la page.</p>
+      <h3 id="subscribe">subscribe: being notified of every state change</h3>
+      <p class="example-link">In the <a href="examples.html#shop">Shop example</a>: <a href="../examples/demo/src/main.ts"><code>main.ts</code></a>, <a href="../examples/demo/src/adapters/saved-cart.ts"><code>adapters/saved-cart.ts</code></a>. The cart is saved to <code>localStorage</code> on every change, and survives a page reload.</p>
       <p>
-        <code>subscribe</code> appelle ta fonction après chaque changement d'état, avec le nouvel état (plusieurs
-        <code>set</code> dans la même tâche ne donnent qu'un appel). Il renvoie une fonction qui arrête l'écoute.
+        <code>subscribe</code> calls your function after every state change, with the new state (several
+        <code>set</code> calls in the same task give only one call). It returns a function that stops listening.
       </p>
-      <script type="text/x-code" data-title="src/main.ts (extrait)" data-source="examples/demo/src/main.ts">
+      <script type="text/x-code" data-title="src/main.ts (excerpt)" data-source="examples/demo/src/main.ts">
         const savedCart = createSavedCart(); // adapters/saved-cart.ts
-        const cart = CartStore.create({ quantities: savedCart.load() }); // le panier d'avant le rechargement
+        const cart = CartStore.create({ quantities: savedCart.load() }); // the cart from before the reload
 
-        // subscribe : le panier est enregistré à chaque changement, et survit au rechargement de la page.
-        // Le store ne sait rien du stockage : c'est la racine de composition qui le branche.
+        // subscribe: the cart is saved on every change, and survives a page reload.
+        // The store knows nothing about storage: the composition root wires it in.
         cart.subscribe((state) => savedCart.save(state.quantities));
       </script>
       <p>
-        C'est l'usage type de <code>subscribe</code> : synchroniser l'état avec un système extérieur (un stockage, un outil
-        d'analytics, un autre onglet), hors de tout composant, sans que le store le sache. <code>CartStore</code> reçoit
-        seulement ses quantités de départ (<code>{ quantities }</code>) et ignore où elles sont gardées ; changer de
-        stockage ne touche que <code>main.ts</code> et l'adapter.
+        This is the typical use of <code>subscribe</code>: syncing the state with an external system (a storage, an
+        analytics tool, another tab), outside any component, without the store knowing. <code>CartStore</code> only
+        receives its starting quantities (<code>{ quantities }</code>) and does not know where they are kept; changing
+        storage only touches <code>main.ts</code> and the adapter.
       </p>
       <p>
-        Le compteur fait autrement, et à raison : son store parle à un port, <code>CounterRepository</code> (voir
-        <a href="#les-dependances">Les dépendances</a>), parce que la persistance fait partie de son métier. Le
-        chargement est asynchrone, une écriture peut échouer, et l'écran doit l'afficher : ces cas passent par les
-        commandes et l'état du store. Quand le stockage n'est qu'un reflet de l'état, sans erreur à remonter ni donnée à
-        attendre, <code>subscribe</code> suffit.
+        The counter does it differently, and rightly so: its store talks to a port, <code>CounterRepository</code> (see
+        <a href="#dependencies">Dependencies</a>), because persistence is part of its job. Loading is
+        asynchronous, a write can fail, and the screen must show it: these cases go through the store's
+        commands and state. When storage is only a reflection of the state, with no error to report and no data to
+        wait for, <code>subscribe</code> is enough.
       </p>
       <p>
-        Dans un composant, tu n'en as pas besoin : <code>@selector</code> fait la même chose en plus fin (seulement
-        quand la valeur lue change) et se désabonne tout seul au démontage. <code>subscribe</code> sert au code hors
-        composants : <code>main.ts</code>, un outil de journalisation pendant le développement, un test qui compte les
-        changements.
+        In a component, you do not need it: <code>@selector</code> does the same thing more finely (only
+        when the value read changes) and unsubscribes by itself on unmount. <code>subscribe</code> is for code outside
+        components: <code>main.ts</code>, a logging tool during development, a test that counts
+        changes.
       </p>
 
-      <h3 id="dispose">dispose : mettre fin à la vie du store</h3>
-      <p class="example-link">Dans l'<a href="examples.html#widget">exemple Widget</a> : <a href="../examples/demo/src/widgets/timer-widget.ts"><code>timer-widget.ts</code></a>. Fermer le minuteur libère son application et son store.</p>
+      <h3 id="dispose">dispose: ending the store's life</h3>
+      <p class="example-link">In the <a href="examples.html#widget">Widget example</a>: <a href="../examples/demo/src/widgets/timer-widget.ts"><code>timer-widget.ts</code></a>. Closing the timer releases its application and its store.</p>
       <p>
-        <code>dispose</code> retire les écouteurs internes du store et avorte son <code>signal</code> : s'il écoutait un
-        autre store, cette écoute s'arrête. Les commandes envoyées ensuite sont rejetées.
+        <code>dispose</code> removes the store's internal listeners and aborts its <code>signal</code>: if it was listening
+        to another store, that listening stops. Commands sent afterwards are rejected.
       </p>
       <script type="text/x-code">
         counter.dispose();
-        await counter.send('increment', { id: 'cafes' }); // rejeté : « store "counter" disposé : commande "increment" refusée »
+        await counter.send('increment', { id: 'coffees' }); // rejected: "[super] store "counter" disposed: command "increment" rejected"
       </script>
       <p>
-        Dans une app classique, les stores vivent aussi longtemps que la page : tu n'appelles jamais <code>dispose</code>.
-        Il sert aux stores qui vivent moins longtemps : un widget créé avec sa propre application puis retiré de la page,
-        un store créé pour une session et libéré à sa fin, ou un test qui vérifie qu'un store libéré refuse les commandes.
+        In a typical app, stores live as long as the page: you never call <code>dispose</code>.
+        It is for stores that live shorter lives: a widget created with its own application then removed from the page,
+        a store created for a session and released at its end, or a test that checks that a released store refuses commands.
       </p>
       <script type="text/x-code" data-title="src/widgets/timer-widget.ts" data-source="examples/demo/src/widgets/timer-widget.ts">
         export function mountTimerWidget(root: HTMLElement): () => void {
@@ -230,19 +231,19 @@
           const app = createApp({ root, stores: [timer] });
           app.mount(TimerWidget.create());
           return () => {
-            app.dispose();   // retire l'application et vide la racine
-            timer.dispose(); // libère le store
+            app.dispose();   // removes the application and empties the root
+            timer.dispose(); // releases the store
           };
         }
       </script>
 
-      <h2 id="un-store-qui-depend-d-un-autre">Un store qui dépend d'un autre store</h2>
-      <p class="example-link">Dans l'<a href="examples.html#boutique">exemple Boutique</a> : <a href="../examples/demo/src/@core/checkout/store.ts"><code>checkout/store.ts</code></a>, <a href="../examples/demo/src/@core/checkout/store.test.ts"><code>checkout/store.test.ts</code></a>. Le store de commande reçoit le panier, le lit, lui envoie <code>clear</code> et écoute ses événements.</p>
+      <h2 id="a-store-that-depends-on-another-store">A store that depends on another store</h2>
+      <p class="example-link">In the <a href="examples.html#shop">Shop example</a>: <a href="../examples/demo/src/@core/checkout/store.ts"><code>checkout/store.ts</code></a>, <a href="../examples/demo/src/@core/checkout/store.test.ts"><code>checkout/store.test.ts</code></a>. The checkout store receives the cart, reads it, sends it <code>clear</code> and listens to its events.</p>
       <p>
-        Un store peut recevoir un autre store en dépendance, écouter ses événements ou lui envoyer des commandes. Le type
-        de la dépendance se déduit du nom du contrat : <code>StoreOfContract&lt;'cart'&gt;</code>. Rien à nettoyer : Super
-        lie les <code>on</code> et <code>subscribe</code> des stores reçus en dépendance à la durée de vie du store qui les
-        reçoit. L'écoute s'arrête d'elle-même à son <code>dispose()</code>.
+        A store can receive another store as a dependency, listen to its events or send it commands. The type
+        of the dependency is inferred from the contract's name: <code>StoreOfContract&lt;'cart'&gt;</code>. Nothing to clean
+        up: Super ties the <code>on</code> and <code>subscribe</code> of stores received as dependencies to the lifetime of
+        the store receiving them. Listening stops by itself on its <code>dispose()</code>.
       </p>
       <script type="text/x-code" data-title="src/@core/checkout/store.ts" data-source="examples/demo/src/@core/checkout/store.ts">
         import { type Commands, type StoreOfContract, SuperStore } from '@super-ts/core';
@@ -259,7 +260,7 @@
             super({ contract: 'checkout', initialState: { lastOrder: null } });
             this.#cart = cart;
             this.#orderClient = orderClient;
-            // Un nouvel achat commence : la confirmation de la commande précédente n'a plus lieu d'être.
+            // A new purchase starts: the confirmation of the previous order is no longer relevant.
             cart.on('add:done', () => this.set({ lastOrder: null }));
           }
           // …
@@ -270,18 +271,18 @@
         const checkout = CheckoutStore.create({ cart, orderClient: createFakeOrderClient() });
       </script>
       <p>
-        L'écoute se pose dans le constructeur, mais son écouteur ne s'exécute qu'après <code>create</code> : il peut alors
-        appeler <code>this.set</code>.
+        The listener is added in the constructor, but it only runs after <code>create</code>: it can then
+        call <code>this.set</code>.
       </p>
 
-      <h3 id="envoyer-une-commande-a-un-autre-store">Envoyer une commande à un autre store</h3>
+      <h3 id="sending-a-command-to-another-store">Sending a command to another store</h3>
       <p>
-        Un store peut aussi envoyer des commandes au store qu'il reçoit, et attendre la fin du traitement : on est dans un
-        store, c'est le seul endroit où l'on attend.
+        A store can also send commands to the store it receives, and wait for the processing to finish: we are in a
+        store, the only place where you wait.
       </p>
       <script type="text/x-code" data-title="src/@core/checkout/store.ts" data-source="examples/demo/src/@core/checkout/store.ts">
         async placeOrder({ address }: { address: string }) {
-          const cart = this.#cart.selectors; // l'état du panier, lu par ses sélecteurs
+          const cart = this.#cart.selectors; // the cart state, read through its selectors
           if (cart.isEmpty()) return this.fail('empty-cart');
 
           const lines = cart.lines().map((line) => ({ sku: line.product.sku, quantity: line.quantity }));
@@ -289,42 +290,42 @@
           const result = await this.#orderClient.place({ address, lines, total }).catch(() => this.fail('network'));
           if (!result.ok) return this.fail(result.reason);
 
-          await this.#cart.send('clear'); // une commande envoyée à l'autre store, attendue jusqu'à la fin
+          await this.#cart.send('clear'); // a command sent to the other store, awaited until it finishes
           const order = { orderId: result.orderId, total };
           this.set({ lastOrder: order });
           return order;
         }
       </script>
       <ul>
-        <li><strong>Pas de donnée en retour</strong> : la promesse de <code>send</code> dit seulement « c'est fini » (et se rejette si la commande échoue). Pour connaître le résultat, lis l'autre store ensuite, ou écoute ses événements.</li>
-        <li><strong>Lire l'autre store</strong> : <code>this.#cart.selectors</code> passe par ses sélecteurs. <code>this.selectors</code> ne couvre que le store lui-même.</li>
-        <li><strong>Un seul sens</strong> : le panier est créé avant et passé à la création. Deux stores ne peuvent pas dépendre l'un de l'autre ; si le panier doit réagir au checkout, il écoute un événement du checkout au lieu de le recevoir en dépendance.</li>
+        <li><strong>No data in return</strong>: the promise from <code>send</code> only says "it is done" (and rejects if the command fails). To know the result, read the other store afterwards, or listen to its events.</li>
+        <li><strong>Reading the other store</strong>: <code>this.#cart.selectors</code> goes through its selectors. <code>this.selectors</code> only covers the store itself.</li>
+        <li><strong>One direction only</strong>: the cart is created first and passed at creation. Two stores cannot depend on each other; if the cart must react to the checkout, it listens to a checkout event instead of receiving it as a dependency.</li>
       </ul>
 
       <div class="callout">
-        <strong>Au premier niveau des dépendances</strong>
-        Super reconnaît les stores passés directement dans l'objet de dépendances, premier argument du constructeur
-        (<code>{ cart }</code>). Un store rangé plus profond (<code>{ stores: { cart } }</code>) n'est pas lié : garde les
-        stores au premier niveau.
+        <strong>At the top level of the dependencies</strong>
+        Super recognises the stores passed directly in the dependency object, the constructor's first argument
+        (<code>{ cart }</code>). A store nested deeper (<code>{ stores: { cart } }</code>) is not tied: keep
+        stores at the top level.
       </div>
 
-      <h2 id="les-erreurs">Les erreurs</h2>
+      <h2 id="errors">Errors</h2>
       <p>
-        Un composant envoie ses commandes sans attendre : c'est donc le store qui décide comment une erreur se publie.
+        A component sends its commands without waiting: so the store decides how an error is published.
       </p>
       <ul>
-        <li><strong>Un refus prévu</strong> (compteur inconnu, déjà à 0, stockage plein) : <code>this.fail(raison)</code>, avec une raison déclarée dans l'<code>Outcome</code>. Le composant écoute <code>:failed</code> et affiche le message de son choix.</li>
-        <li><strong>Une erreur qui doit rester visible</strong>, même pour un écran monté plus tard : dans l'état, comme <code>loadErrorMessage</code>.</li>
-        <li><strong>Une exception inattendue</strong> : rien à faire. La commande échoue avec la raison <code>'error'</code>, <code>pending</code> redevient faux, et l'exception part dans la console.</li>
+        <li><strong>An expected refusal</strong> (unknown counter, already at 0, storage full): <code>this.fail(reason)</code>, with a reason declared in the <code>Outcome</code>. The component listens to <code>:failed</code> and shows the message of its choice.</li>
+        <li><strong>An error that must stay visible</strong>, even for a screen mounted later: in the state, like <code>loadErrorMessage</code>.</li>
+        <li><strong>An unexpected exception</strong>: nothing to do. The command fails with the reason <code>'error'</code>, <code>pending</code> becomes false again, and the exception goes to the console.</li>
       </ul>
       <table>
-        <thead><tr><th>Situation</th><th>Effet</th></tr></thead>
+        <thead><tr><th>Situation</th><th>Effect</th></tr></thead>
         <tbody>
-          <tr><td>Commande absente du store</td><td><code>send</code> se rejette : « commande inconnue "x" sur le store "counter" ».</td></tr>
-          <tr><td>Store disposé</td><td><code>send</code> se rejette : « store "counter" disposé : commande "x" refusée ».</td></tr>
-          <tr><td>Méthode qui appelle <code>this.fail('storage')</code></td><td><code>:failed</code> avec <code>reason: 'storage'</code> ; la promesse de <code>send</code> se rejette avec une <code>CommandFailure</code>.</td></tr>
-          <tr><td>Méthode qui lève une exception</td><td><code>:failed</code> avec <code>reason: 'error'</code> et l'exception ; la promesse de <code>send</code> se rejette avec elle.</td></tr>
-          <tr><td><code>this.get()</code>, <code>this.set()</code> ou <code>this.send()</code> dans le constructeur</td><td>Erreur à <code>create</code> : l'état n'existe qu'une fois le store créé.</td></tr>
+          <tr><td>Command missing from the store</td><td><code>send</code> rejects: "[super] unknown command "x" on the store "counter"".</td></tr>
+          <tr><td>Store disposed</td><td><code>send</code> rejects: "[super] store "counter" disposed: command "x" rejected".</td></tr>
+          <tr><td>Method that calls <code>this.fail('storage')</code></td><td><code>:failed</code> with <code>reason: 'storage'</code>; the promise from <code>send</code> rejects with a <code>CommandFailure</code>.</td></tr>
+          <tr><td>Method that throws an exception</td><td><code>:failed</code> with <code>reason: 'error'</code> and the exception; the promise from <code>send</code> rejects with it.</td></tr>
+          <tr><td><code>this.get()</code>, <code>this.set()</code> or <code>this.send()</code> in the constructor</td><td>Error on <code>create</code>: the state only exists once the store is created.</td></tr>
         </tbody>
       </table>
     </article>

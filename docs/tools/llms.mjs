@@ -1,13 +1,13 @@
-// Génère les fichiers pour les LLM à partir des pages HTML de la doc (convention https://llmstxt.org) :
-//   docs/llms.txt        l'index : une ligne par page, dans l'ordre du sommaire
-//   docs/llms-full.txt   toutes les pages en markdown, code compris
-//   docs/llms-small.txt  la même chose sans ce qui est marqué data-llm="skip" ni les renvois vers l'app d'exemples
-// Appelé par build-docs-index.mjs : la doc HTML reste la seule source.
+// Generates the LLM files from the HTML pages of the docs (https://llmstxt.org convention):
+//   docs/llms.txt        the index: one line per page, in table of contents order
+//   docs/llms-full.txt   all the pages in markdown, code included
+//   docs/llms-small.txt  the same without what is marked data-llm="skip" or the references to the examples app
+// Called by build-docs-index.mjs: the HTML docs remain the only source.
 //
-// Marquer un contenu comme secondaire (absent de llms-small.txt) :
-//   <h2 data-llm="skip"> ou <h3 data-llm="skip">  retire la section jusqu'au titre suivant de même niveau ou plus haut
-//   <p|div|table|ul|ol|script data-llm="skip">     retire l'élément
-//   <article data-llm="skip">                       retire la page (elle reste listée dans llms.txt)
+// Marking content as secondary (left out of llms-small.txt):
+//   <h2 data-llm="skip"> or <h3 data-llm="skip">  removes the section up to the next heading of the same level or higher
+//   <p|div|table|ul|ol|script data-llm="skip">     removes the element
+//   <article data-llm="skip">                       removes the page (it stays listed in llms.txt)
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -20,7 +20,7 @@ const decode = (text) =>
     .replace(/&nbsp;/g, ' ')
     .replace(/&amp;/g, '&');
 
-/** Même règle que docs/assets/site.js : le code des pages est indenté avec le HTML. */
+/** Same rule as docs/assets/site.js: the page code is indented with the HTML. */
 function dedent(source) {
   const lines = source.replace(/\t/g, '  ').split('\n');
   while (lines.length && !lines[0].trim()) lines.shift();
@@ -29,42 +29,42 @@ function dedent(source) {
   return lines.map((line) => line.slice(indent)).join('\n');
 }
 
-/** Le sommaire de docs/assets/site.js : l'ordre des pages et leurs groupes. */
+/** The table of contents of docs/assets/site.js: the page order and their groups. */
 export function readNav(docs) {
   const source = readFileSync(join(docs, 'assets/site.js'), 'utf8');
   const literal = source.match(/const NAV = (\[[\s\S]*?\n\]);/)?.[1];
-  if (!literal) throw new Error('Sommaire introuvable dans docs/assets/site.js (const NAV = [...]).');
+  if (!literal) throw new Error('Table of contents not found in docs/assets/site.js (const NAV = [...]).');
   return new Function(`return ${literal}`)();
 }
 
 const attr = (attrs, name) => attrs.match(new RegExp(`${name}="([^"]*)"`))?.[1];
 const skipped = (attrs) => /\bdata-llm="skip"/.test(attrs);
 
-/** Retire le contenu secondaire pour llms-small.txt. */
+/** Removes secondary content for llms-small.txt. */
 function stripForSmall(html) {
   let out = html;
-  // Sections marquées : du titre jusqu'au prochain titre de niveau égal ou supérieur.
+  // Marked sections: from the heading to the next heading of equal or higher level.
   out = out.replace(/<h2[^>]*data-llm="skip"[^>]*>[\s\S]*?(?=<h2[\s>]|$)/g, '');
   out = out.replace(/<h3[^>]*data-llm="skip"[^>]*>[\s\S]*?(?=<h[23][\s>]|$)/g, '');
-  // Éléments marqués (aucun de ces éléments ne s'imbrique dans un élément de même nom dans la doc).
+  // Marked elements (none of these elements is nested in an element of the same name in the docs).
   out = out.replace(/<(p|div|table|ul|ol|script)\b([^>]*)>[\s\S]*?<\/\1>/g, (whole, _tag, attrs) =>
     skipped(attrs) ? '' : whole,
   );
-  // Renvois vers l'app d'exemples et cartes de navigation : utiles dans le navigateur, du bruit pour un LLM.
+  // References to the examples app and navigation cards: useful in the browser, noise for an LLM.
   out = out.replace(/<p class="example-link">[\s\S]*?<\/p>/g, '');
   out = out.replace(/<div class="cards">[\s\S]*?<\/div>/g, '');
   return out;
 }
 
 /**
- * Convertit le HTML d'un article en markdown. Seules les balises connues sont acceptées :
- * une balise nouvelle dans la doc fait échouer la génération au lieu d'être perdue en silence.
+ * Converts the HTML of an article to markdown. Only known tags are accepted:
+ * a new tag in the docs makes the generation fail instead of being silently lost.
  */
 function toMarkdown(html, { page, headingOffset = 0 }) {
   const blocks = [];
   const block = (markdown) => `\u0001${blocks.push(markdown) - 1}\u0001`;
 
-  // Liens : les ancres locales deviennent page#ancre, pour rester justes une fois les pages concaténées.
+  // Links: local anchors become page#anchor, to stay correct once the pages are concatenated.
   const href = (url) => (url.startsWith('#') ? `${page}${url}` : url);
 
   function inline(fragment) {
@@ -82,7 +82,7 @@ function toMarkdown(html, { page, headingOffset = 0 }) {
       .replace(/<\/?(span|small)\b[^>]*>/g, '')
       .replace(/<br\s*\/?>/g, '\n');
     const unknown = text.match(/<\/?[a-z][a-z0-9]*\b[^>]*>/i);
-    if (unknown) throw new Error(`${page} : balise non gérée par docs/tools/llms.mjs : ${unknown[0]}`);
+    if (unknown) throw new Error(`${page}: tag not handled by docs/tools/llms.mjs: ${unknown[0]}`);
     return decode(text)
       .replace(/[ \t\r\n]+/g, ' ')
       .trim()
@@ -91,7 +91,7 @@ function toMarkdown(html, { page, headingOffset = 0 }) {
 
   let out = html;
 
-  // 1. Le code, avant tout : ses génériques (`<{ … }>`) et ses templates ressemblent à du HTML.
+  // 1. The code, first of all: its generics (`<{ … }>`) and its templates look like HTML.
   out = out.replace(/<script type="text\/x-code"([^>]*)>([\s\S]*?)<\/script>/g, (_, attrs, source) => {
     const code = dedent(source);
     const lang = attr(attrs, 'data-lang') ?? 'ts';
@@ -100,7 +100,7 @@ function toMarkdown(html, { page, headingOffset = 0 }) {
     return block(`${fence}${lang}${title ? ` title="${title}"` : ''}\n${code}\n${fence}`);
   });
 
-  // 2. Les blocs.
+  // 2. The blocks.
   out = out.replace(/<table>([\s\S]*?)<\/table>/g, (_, table) => {
     const rows = [...table.matchAll(/<tr>([\s\S]*?)<\/tr>/g)].map(([, row]) =>
       [...row.matchAll(/<t[hd][^>]*>([\s\S]*?)<\/t[hd]>/g)].map(([, cell]) => inline(cell).replace(/\|/g, '\\|')),
@@ -121,14 +121,14 @@ function toMarkdown(html, { page, headingOffset = 0 }) {
   out = out.replace(/<div class="cards">([\s\S]*?)<\/div>/g, (_, cards) =>
     block(
       [...cards.matchAll(/<a class="card" href="([^"]+)"><strong>([\s\S]*?)<\/strong><span>([\s\S]*?)<\/span><\/a>/g)]
-        .map(([, url, title, text]) => `- [${inline(title)}](${href(url)}) : ${inline(text)}`)
+        .map(([, url, title, text]) => `- [${inline(title)}](${href(url)}): ${inline(text)}`)
         .join('\n'),
     ),
   );
 
   out = out.replace(/<p\b[^>]*>([\s\S]*?)<\/p>/g, (_, content) => block(inline(content)));
 
-  // Un encadré peut contenir des paragraphes et du code : il est converti après eux, en citation.
+  // A callout can contain paragraphs and code: it is converted after them, as a quote.
   out = out.replace(/<div class="callout[^"]*">([\s\S]*?)<\/div>/g, (_, content) => {
     const title = content.match(/^\s*<strong>([\s\S]*?)<\/strong>/);
     const rest = title ? content.slice(title[0].length) : content;
@@ -144,14 +144,14 @@ function toMarkdown(html, { page, headingOffset = 0 }) {
     block(`${'#'.repeat(Number(level) + headingOffset)} ${inline(content)}`),
   );
 
-  // 3. Ce qui reste entre les blocs doit être vide : sinon c'est une structure que ce script ne connaît pas.
+  // 3. What remains between the blocks must be empty: otherwise it is a structure this script does not know.
   const parts = out.split(/\u0001(\d+)\u0001/);
   const markdown = [];
   parts.forEach((part, i) => {
     if (i % 2 === 1) markdown.push(blocks[Number(part)]);
     else if (part.trim()) {
       const text = inline(part);
-      if (text) throw new Error(`${page} : texte hors bloc, non géré par docs/tools/llms.mjs : « ${text.slice(0, 80)} »`);
+      if (text) throw new Error(`${page}: text outside a block, not handled by docs/tools/llms.mjs: "${text.slice(0, 80)}"`);
     }
   });
   return markdown.join('\n\n');
@@ -162,16 +162,16 @@ function readPages(docs, nav) {
     group.items.map(([file, label]) => {
       const html = readFileSync(join(docs, file), 'utf8');
       const match = html.match(/<article([^>]*)>([\s\S]*?)<\/article>/);
-      if (!match) throw new Error(`${file} : pas d'<article>.`);
+      if (!match) throw new Error(`${file}: no <article>.`);
       const lead = match[2].match(/<p class="lead">([\s\S]*?)<\/p>/)?.[1];
       return { file, label, group: group.title, skip: skipped(match[1]), article: match[2], lead };
     }),
   );
 }
 
-const kilobytes = (text) => `${Math.round(Buffer.byteLength(text) / 1024)} Ko`;
+const kilobytes = (text) => `${Math.round(Buffer.byteLength(text) / 1024)} KB`;
 
-/** Renvoie le contenu des trois fichiers, indexé par nom de fichier relatif à docs/. */
+/** Returns the content of the three files, keyed by file name relative to docs/. */
 export function buildLlmsFiles(docs) {
   const nav = readNav(docs);
   const pages = readPages(docs, nav);
@@ -184,16 +184,16 @@ export function buildLlmsFiles(docs) {
   };
 
   const intro = (title, note) =>
-    `<!-- Généré par docs/tools/build-docs-index.mjs à partir des pages HTML de docs/ : ne pas modifier à la main. -->\n\n` +
-    `> ${title}. ${note} Les liens sont relatifs au dossier docs/ du dépôt.\n\n`;
+    `<!-- Generated by docs/tools/build-docs-index.mjs from the HTML pages of docs/: do not edit by hand. -->\n\n` +
+    `> ${title}. ${note} Links are relative to the docs/ folder of the repository.\n\n`;
 
   const full =
-    intro('Super, documentation complète', 'Toutes les pages, dans l\'ordre du sommaire, séparées par ---.') +
+    intro('Super, full documentation', 'All the pages, in table of contents order, separated by ---.') +
     document(false);
   const small =
     intro(
-      'Super, documentation courte',
-      'Les mêmes pages, sans les renvois vers l\'app d\'exemples ni les passages marqués comme secondaires.',
+      'Super, short documentation',
+      'The same pages, without the references to the examples app or the passages marked as secondary.',
     ) + document(true);
 
   const home = pages[0];
@@ -204,18 +204,18 @@ export function buildLlmsFiles(docs) {
         .filter((page) => page.group === group.title)
         .map((page) => {
           const description = page.lead ? toMarkdown(`<p>${page.lead}</p>`, { page: page.file }) : '';
-          return `- [${page.label}](${page.file})${description ? ` : ${description}` : ''}`;
+          return `- [${page.label}](${page.file})${description ? `: ${description}` : ''}`;
         })
         .join('\n')}`,
   );
   const index = [
     '# Super',
     `> ${summary}`,
-    "Statut : draft exploratoire. L'API peut encore bouger et les paquets (`@super-ts/core`, `@super-ts/dom`, `@super-ts/testing`, `@super-ts/vite`) ne sont pas publiés sur npm : ils vivent dans le dépôt, sous `packages/`. Les liens sont relatifs au dossier `docs/` du dépôt.",
-    '## Documentation en un fichier',
+    "Status: exploratory draft. The API may still change and the packages (`@super-ts/core`, `@super-ts/dom`, `@super-ts/testing`, `@super-ts/vite`) are not published on npm: they live in the repository, under `packages/`. Links are relative to the `docs/` folder of the repository.",
+    '## Documentation in one file',
     [
-      `- [Documentation complète](llms-full.txt) : toutes les pages en markdown, code compris (${kilobytes(full)}).`,
-      `- [Documentation courte](llms-small.txt) : la même, sans les renvois vers l'app d'exemples ni les passages secondaires, pour les petites fenêtres de contexte (${kilobytes(small)}).`,
+      `- [Full documentation](llms-full.txt): all the pages in markdown, code included (${kilobytes(full)}).`,
+      `- [Short documentation](llms-small.txt): the same, without the references to the examples app or the secondary passages, for small context windows (${kilobytes(small)}).`,
     ].join('\n'),
     ...groups,
   ].join('\n\n');

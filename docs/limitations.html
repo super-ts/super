@@ -1,118 +1,118 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Limites · Super</title>
+    <title>Limitations · Super</title>
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
     <link rel="stylesheet" href="assets/site.css" />
   </head>
   <body>
     <article>
-      <h1>Limites</h1>
-      <p class="lead">Super est un draft. Voici ce qu'il fait mal ou vérifie mal aujourd'hui. Ce qu'il ne fait pas encore est dans <a href="roadmap.html">Chantiers et questions ouvertes</a>.</p>
+      <h1>Limitations</h1>
+      <p class="lead">Super is a draft. Here is what it does badly or checks badly today. What it does not do yet is in <a href="roadmap.html">Roadmap and open questions</a>.</p>
 
-      <h2 id="limites-connues">Limites connues</h2>
-      <h3 id="typage">Typage</h3>
+      <h2 id="known-limitations">Known limitations</h2>
+      <h3 id="typing">Typing</h3>
       <ul>
-        <li>Les paramètres d'une méthode de store s'annotent à la main : TypeScript n'infère pas les paramètres d'une méthode de classe. <code>implements Commands&lt;…&gt;</code> vérifie seulement qu'ils sont égaux à ceux du contrat.</li>
-        <li><code>this.fail</code> accepte toutes les raisons déclarées par le contrat, pas seulement celles de la commande en cours.</li>
+        <li>The parameters of a store method are annotated by hand: TypeScript does not infer the parameters of a class method. <code>implements Commands&lt;…&gt;</code> only checks that they are equal to those of the contract.</li>
+        <li><code>this.fail</code> accepts every reason declared by the contract, not only those of the current command.</li>
       </ul>
-      <h3 id="plugin">Plugin d'architecture</h3>
+      <h3 id="architecture-plugin">Architecture plugin</h3>
       <ul>
-        <li>Il lit le code comme du texte : il voit les imports nommés (y compris renommés), pas un <code>import * as dom from '@super-ts/dom'</code> hors des dossiers imposés.</li>
-        <li>Il reconnaît un contrat à sa déclaration <code>export class X extends SuperContract</code>, suivie de <code>super({ name: '…' })</code> avec un nom écrit en toutes lettres.</li>
-        <li>Rien n'empêche un composant d'importer un store exporté par un module user-land.</li>
+        <li>It reads the code as text: it sees named imports (including renamed ones), not an <code>import * as dom from '@super-ts/dom'</code> outside the required folders.</li>
+        <li>It recognises a contract by its declaration <code>export class X extends SuperContract</code>, followed by <code>super({ name: '…' })</code> with a name written out literally.</li>
+        <li>Nothing stops a component from importing a store exported by a user-land module.</li>
       </ul>
-      <h3 id="composants-limites">Composants</h3>
+      <h3 id="components-limitations">Components</h3>
       <ul>
-        <li>Un composant ne rattrape pas l'erreur de son propre constructeur : seul le <code>renderError</code> d'un ancêtre le peut.</li>
-        <li><code>@selector</code> n'accepte que la valeur d'un sélecteur, telle quelle : une condition ou un calcul va dans <code>render</code>, ou dans un nouveau sélecteur du contrat.</li>
-        <li id="noms-natifs">
-          Une prop ou un champ ne peut pas porter le nom d'une propriété des éléments HTML (<code>id</code>, <code>title</code>,
-          <code>hidden</code>, <code>slot</code>…) : c'est une erreur de type. Un paramètre de route <code>id</code> se lit donc dans
-          un champ nommé autrement (<code>counterId = this.router.current.params.id;</code>), et une prop <code>title</code> devient
-          <code>heading</code>. C'est aussi pour ça que le contenu écrit entre les balises remplit une prop
-          <code>content</code> et non <code>children</code>, propriété native des éléments.
+        <li>A component does not catch the error of its own constructor: only the <code>renderError</code> of an ancestor can.</li>
+        <li><code>@selector</code> only accepts the value of a selector, as is: a condition or a computation goes in <code>render</code>, or in a new selector of the contract.</li>
+        <li id="native-names">
+          A prop or a field cannot carry the name of a property of HTML elements (<code>id</code>, <code>title</code>,
+          <code>hidden</code>, <code>slot</code>…): it is a type error. A route parameter <code>id</code> is therefore read into
+          a field with another name (<code>counterId = this.router.current.params.id;</code>), and a <code>title</code> prop becomes
+          <code>heading</code>. This is also why the content written between the tags fills a
+          <code>content</code> prop and not <code>children</code>, a native property of elements.
         </li>
-        <li><code>page</code> est un nom réservé dans un composant : c'est <code>this.page</code>, qui porte le titre de la page.</li>
-        <li id="titre-suivi">Un titre suivi (<code>@title = () =&gt; …</code>) n'est recalculé qu'au rendu du composant qui le pose. Ce qu'il lit est suivi comme les lectures de <code>render</code> : une valeur lue par le titre seul re-rend donc tout le composant quand elle change, et une valeur que Super ne suit pas (un champ ordinaire, l'heure) ne le met à jour qu'au prochain rendu.</li>
-        <li>Un composant enfant s'écrit par sa classe (<code>&lt;CounterScreen /&gt;</code>) : une balise <code>&lt;counter-screen&gt;</code> écrite par son tag n'est pas supportée.</li>
-        <li>Le remplacement à chaud recharge la page quand un composant change de champs, ou a des membres <code>#privés</code>, méthodes comprises (voir <a href="architecture.html#remplacement-a-chaud">Remplacement à chaud</a>).</li>
+        <li><code>page</code> is a reserved name in a component: it is <code>this.page</code>, which carries the page title.</li>
+        <li id="tracked-title">A tracked title (<code>@title = () =&gt; …</code>) is only recomputed when the component that sets it renders. What it reads is tracked like the reads of <code>render</code>: a value read by the title alone therefore re-renders the whole component when it changes, and a value Super does not track (an ordinary field, the time) only updates it on the next render.</li>
+        <li>A child component is written by its class (<code>&lt;CounterScreen /&gt;</code>): a <code>&lt;counter-screen&gt;</code> tag written by its tag name is not supported.</li>
+        <li>Hot replacement reloads the page when a component changes its fields, or has <code>#private</code> members, methods included (see <a href="architecture.html#hot-replacement">Hot replacement</a>).</li>
       </ul>
-      <h3 id="fichiers-super-limites">Fichiers .super</h3>
-      <p>La syntaxe est en version 0 (<code>packages/lang/SPEC.md</code>). Ses limites assumées :</p>
+      <h3 id="super-files-limitations">.super files</h3>
+      <p>The syntax is at version 0 (<code>packages/lang/SPEC.md</code>). Its deliberate limitations:</p>
       <ul>
-        <li>Pas de directive sur un composant (<code>{form.field('x')}</code> dans sa balise) : un composant reçoit des props, des <code>on:</code>, des enfants et des emplacements nommés.</li>
-        <li>Sur une balise native, <code>on:</code> n'accepte que les événements de cette balise : écouter sur un <code>&lt;div&gt;</code> un événement personnalisé remonté d'un enfant n'est pas permis.</li>
-        <li>Une signature d'appel générique dans un type littéral (<code>{ &lt;T&gt;(x: T): T }</code>) est prise pour un élément : sors-la dans un <code>type</code> ou une <code>interface</code> d'un fichier <code>.ts</code>.</li>
-        <li id="declarations-hors-ts">
-          <code>@prop</code>, <code>@emit</code> et les déclarations de préparation (<code>@contract</code>, <code>@selector</code>,
-          <code>@state</code>, <code>@form</code>, <code>@ref</code>, <code>@on</code>) sont du TS valide (des champs et des
-          méthodes décorés), mais <code>@tag = …</code> et
-          <code>@title = …</code> ne le sont pas : seuls nos outils les connaissent (le formateur des <code>.super</code>, la
-          grammaire Tree-sitter, le serveur de langage). Un éditeur sans eux les affiche en erreur.
+        <li>No directive on a component (<code>{form.field('x')}</code> in its tag): a component receives props, <code>on:</code>, children and named slots.</li>
+        <li>On a native tag, <code>on:</code> only accepts the events of that tag: listening on a <code>&lt;div&gt;</code> for a custom event bubbled up from a child is not allowed.</li>
+        <li>A generic call signature in a type literal (<code>{ &lt;T&gt;(x: T): T }</code>) is taken for an element: move it into a <code>type</code> or an <code>interface</code> in a <code>.ts</code> file.</li>
+        <li id="declarations-outside-ts">
+          <code>@prop</code>, <code>@emit</code> and the preparation declarations (<code>@contract</code>, <code>@selector</code>,
+          <code>@state</code>, <code>@form</code>, <code>@ref</code>, <code>@on</code>) are valid TS (decorated fields and
+          methods), but <code>@tag = …</code> and
+          <code>@title = …</code> are not: only our tools know them (the <code>.super</code> formatter, the
+          Tree-sitter grammar, the language server). An editor without them shows them as errors.
         </li>
-        <li id="on-nom-ecrit">
-          Le nom d'événement de <code>@on</code> est une chaîne écrite telle quelle : pas de gabarit
-          (<code>@on('counter', `${change}:done`)</code>) ni de boucle sur une liste d'événements. Écouter plusieurs
-          événements demande une méthode par événement, qui peuvent appeler une même méthode privée (l'écran du compteur a
-          <code>onIncremented</code>, <code>onDecremented</code>, <code>onReset</code>… qui appellent <code>#done</code>).
+        <li id="on-literal-name">
+          The event name of <code>@on</code> is a string written as is: no template literal
+          (<code>@on('counter', `${change}:done`)</code>) and no loop over a list of events. Listening to several
+          events takes one method per event, which can call the same private method (the counter screen has
+          <code>onIncremented</code>, <code>onDecremented</code>, <code>onReset</code>… which call <code>#done</code>).
         </li>
-        <li id="pas-de-type-sur-les-declarations">
-          Pas de type sur <code>@contract</code>, <code>@selector</code>, <code>@state</code> ni <code>@form</code> : il vient
-          de la valeur. Pour l'élargir, on écrit <code>as</code> dans la valeur
-          (<code>@state local = { message: null as string | null };</code>). <code>@ref</code> est l'inverse : un type, sans valeur.
+        <li id="no-type-on-declarations">
+          No type on <code>@contract</code>, <code>@selector</code>, <code>@state</code> or <code>@form</code>: it comes
+          from the value. To widen it, write <code>as</code> in the value
+          (<code>@state local = { message: null as string | null };</code>). <code>@ref</code> is the opposite: a type, without a value.
         </li>
-        <li id="anciennes-formes">
-          L'ancienne forme (<code>cart = this.contract('cart');</code>, <code>this.selector(…)</code>, <code>this.state(…)</code>,
-          <code>this.form(…)</code>, <code>this.ref&lt;T&gt;()</code>, <code>.on(…)</code> dans le constructeur) est refusée dans
-          un <code>.super</code>. Un composant écrit en <code>.ts</code> garde ces méthodes, qui restent la seule écriture possible hors
-          des <code>.super</code>.
+        <li id="old-forms">
+          The old form (<code>cart = this.contract('cart');</code>, <code>this.selector(…)</code>, <code>this.state(…)</code>,
+          <code>this.form(…)</code>, <code>this.ref&lt;T&gt;()</code>, <code>.on(…)</code> in the constructor) is rejected in
+          a <code>.super</code> file. A component written in <code>.ts</code> keeps these methods, which remain the only possible way to write it outside
+          <code>.super</code> files.
         </li>
       </ul>
-      <p>Et côté outillage (voir <a href="tooling.html">Outillage</a>) :</p>
+      <p>And on the tooling side (see <a href="tooling.html">Tooling</a>):</p>
       <ul>
-        <li>Biome ne lit pas les <code>.super</code> : leur TS est formaté par Biome à travers le formateur des <code>.super</code>, mais l'ordre de leurs imports n'est pas contrôlé.</li>
+        <li>Biome does not read <code>.super</code> files: their TS is formatted by Biome through the <code>.super</code> formatter, but the order of their imports is not checked.</li>
         <li>
-          Dans Zed, l'extension des <code>.super</code> (<code>editors/zed</code>) s'installe en extension de développement,
-          et sa grammaire (<code>editors/tree-sitter-super</code>) est compilée depuis un dépôt git local, désigné par un
-          chemin absolu dans <code>extension.toml</code> tant que la grammaire n'est pas publiée.
+          In Zed, the <code>.super</code> extension (<code>editors/zed</code>) is installed as a dev extension,
+          and its grammar (<code>editors/tree-sitter-super</code>) is compiled from a local git repository, referenced by an
+          absolute path in <code>extension.toml</code> until the grammar is published.
         </li>
-        <li>Le serveur de langage tourne sur TypeScript 6, parce que Volar ne supporte pas encore TypeScript 7. La vérification en ligne de commande (<code>npm run typecheck</code>), elle, utilise le TypeScript 7 du dépôt.</li>
+        <li>The language server runs on TypeScript 6, because Volar does not support TypeScript 7 yet. The command-line check (<code>npm run typecheck</code>) uses the repository's TypeScript 7.</li>
       </ul>
-      <h3 id="rendu">Rendu</h3>
+      <h3 id="rendering">Rendering</h3>
       <ul>
-        <li>Le suivi des sélecteurs s'arrête au premier niveau de l'état : un sélecteur qui lit une liste est recalculé dès qu'un élément change. Un sélecteur qui construit de gros objets par élément paie alors un parcours complet de son résultat.</li>
-        <li>Le cache des sélecteurs garde un résultat par jeu d'arguments primitifs (un <code>sku</code>, un <code>id</code>) pendant toute la vie du store.</li>
-        <li>Le gel de l'état ne descend que dans les tableaux et les objets simples : le contenu d'une <code>Map</code>, d'un <code>Set</code> ou d'une instance reste modifiable, et une telle mutation échappe au suivi.</li>
-        <li>Les erreurs du code que Super ne voit pas passer (<code>setTimeout</code>, écouteur posé à la main sur <code>window</code>) partent seulement dans la console.</li>
+        <li>Selector tracking stops at the first level of the state: a selector that reads a list is recomputed as soon as one item changes. A selector that builds large objects per item then pays for a full walk of its result.</li>
+        <li>The selector cache keeps one result per set of primitive arguments (a <code>sku</code>, an <code>id</code>) for the whole life of the store.</li>
+        <li>Freezing the state only goes down into arrays and plain objects: the content of a <code>Map</code>, a <code>Set</code> or an instance stays mutable, and such a mutation escapes tracking.</li>
+        <li>Errors from code Super does not see (<code>setTimeout</code>, a listener set by hand on <code>window</code>) only go to the console.</li>
       </ul>
-      <h3 id="router-limites">Router</h3>
+      <h3 id="router-limitations">Router</h3>
       <ul>
-        <li>Les guards sont synchrones, et il n'y a pas de guard de sortie (« modifications non enregistrées »).</li>
-        <li>Pas de chemin de base (application servie sous <code>/app/</code>).</li>
-        <li>Les types décrits se limitent à <code>String</code>, <code>Number</code>, <code>Boolean</code>, <code>{ oneOf }</code> et leurs listes : pas de date, d'objet, ni de conversion sur mesure.</li>
-        <li>Une liste <code>{ oneOf }</code> qui oublie une valeur de l'union compile : seule une valeur en trop est refusée. La valeur oubliée n'est jamais valide dans l'URL.</li>
-        <li>Pas de raccourci pour changer une seule clé de query : une navigation redonne toute la query (<code>{ ...valeursActuelles, sort: 'value' }</code>).</li>
-        <li>Un seul router typé par app : le plugin refuse deux déclarations <code>defineRouter</code>.</li>
+        <li>Guards are synchronous, and there is no exit guard ("unsaved changes").</li>
+        <li>No base path (application served under <code>/app/</code>).</li>
+        <li>The described types are limited to <code>String</code>, <code>Number</code>, <code>Boolean</code>, <code>{ oneOf }</code> and their lists: no date, no object, no custom conversion.</li>
+        <li>A <code>{ oneOf }</code> list that leaves out a value of the union compiles: only an extra value is rejected. The value left out is never valid in the URL.</li>
+        <li>No shortcut to change a single query key: a navigation gives the whole query again (<code>{ ...currentValues, sort: 'value' }</code>).</li>
+        <li>Only one typed router per app: the plugin rejects two <code>defineRouter</code> declarations.</li>
       </ul>
-      <h3 id="kit-limites">Kit d'interface</h3>
+      <h3 id="ui-kit-limitations">UI kit</h3>
       <ul>
-        <li>Pas de composant de mise en page (<code>Stack</code>, <code>Grid</code>, <code>Card</code>) : l'agencement reste le CSS de l'app.</li>
-        <li><code>fieldOf</code> s'écrit dans le rendu du composant qui possède le formulaire : un champ du kit placé dans un sous-composant ne suivrait plus le formulaire.</li>
-        <li>Les éléments flottants (menu, popover, info-bulle, liste du combobox) n'utilisent pas l'API <code>popover</code> du navigateur : un ancêtre en <code>overflow: hidden</code> peut les couper.</li>
-        <li>Quelques textes en français n'ont pas encore de prop pour les changer (« Vérification… », la pagination de la table). Voir <a href="ui.html#limites">Limites du kit</a>.</li>
+        <li>No layout component (<code>Stack</code>, <code>Grid</code>, <code>Card</code>): layout stays in the app's CSS.</li>
+        <li><code>fieldOf</code> is written in the render of the component that owns the form: a kit field placed in a child component would no longer follow the form.</li>
+        <li>Floating elements (menu, popover, tooltip, combobox list) do not use the browser's <code>popover</code> API: an ancestor with <code>overflow: hidden</code> can clip them.</li>
+        <li>A few built-in texts do not have a prop to change them yet ("Checking…", the table pagination). See <a href="ui.html#limitations">Kit limitations</a>.</li>
       </ul>
       <h3 id="distribution">Distribution</h3>
       <ul>
-        <li>Les paquets ne sont pas publiés : ils sont résolus par alias depuis <code>packages/*/src</code>.</li>
+        <li>The packages are not published: they are resolved by alias from <code>packages/*/src</code>.</li>
       </ul>
 
       <p>
-        Ce qui manque encore, les suites mises de côté et les questions en discussion sont dans
-        <a href="roadmap.html">Chantiers et questions ouvertes</a>.
+        What is still missing, the follow-ups set aside and the questions under discussion are in
+        <a href="roadmap.html">Roadmap and open questions</a>.
       </p>
     </article>
     <script src="assets/search-index.js"></script>

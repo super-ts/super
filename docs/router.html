@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -12,12 +12,12 @@
     <article>
       <h1>Router</h1>
       <p class="lead">
-        Le router est intégré à <code>@super-ts/dom</code>. Les routes sont nommées et typées : un lien sans son paramètre,
-        une valeur du mauvais type ou une description de query fausse ne compilent pas. Et le router est un store comme un autre.
+        The router is built into <code>@super-ts/dom</code>. Routes are named and typed: a link without its parameter,
+        a value of the wrong type or a wrong query description does not compile. And the router is a store like any other.
       </p>
 
-      <h2 id="declarer-les-routes">Déclarer les routes</h2>
-      <p>Tout se déclare dans un fichier user-land, <code>src/routes.ts</code>, qui n'exporte qu'une chose : <code>Router</code>.</p>
+      <h2 id="declaring-the-routes">Declaring the routes</h2>
+      <p>Everything is declared in a user-land file, <code>src/routes.ts</code>, which exports only one thing: <code>Router</code>.</p>
       <script type="text/x-code" data-title="src/routes.ts" data-source="examples/demo/src/routes.ts">
         import { defineRouter, query, redirect } from '@super-ts/dom';
         import { CheckoutScreen } from '@components/checkout';
@@ -40,19 +40,19 @@
         import { WidgetScreen } from '@components/widget';
         import { PRODUCT_SORTS, type ProductSort } from './domain/catalog';
 
-        // La query de la liste des compteurs : son type, puis sa description pour lire l'URL. Une valeur
-        // inconnue (`?sort=nimporte`) est remplacée par la valeur par défaut.
+        // The query of the counter list: its type, then its description for reading the URL. An unknown
+        // value (`?sort=whatever`) is replaced by the default value.
         type CountersQuery = { sort: 'original' | 'label' };
-        // Le tri et la page de la table branchée du kit : ils vivent dans l'URL.
+        // The sort and page of the kit's connected table: they live in the URL.
         type KitTableQuery = { sort?: ProductSort; order: 'asc' | 'desc'; page: number; size: 5 | 10 | 20 | 50 };
 
-        // Le router de l'app : typé par ces routes (`this.router` dans un composant) et source des liens hors composants (`Router.href`).
-        // `Router.href('counter')` sans `id`, ou `navigate({ to: 'compteur' })`, ne compilent pas.
-        // Chaque écran lit sa route par `this.router.current`, typé par sa route (`/counters/:id` -> `params.id`).
-        // `'*'` est l'écran affiché quand aucun chemin ne correspond, `'!'` celui d'un écran qui plante.
+        // The app's router: typed by these routes (`this.router` in a component) and the source of links outside components (`Router.href`).
+        // `Router.href('counter')` without `id`, or `navigate({ to: 'counterz' })`, do not compile.
+        // Each screen reads its route through `this.router.current`, typed by its route (`/counters/:id` -> `params.id`).
+        // `'*'` is the screen shown when no path matches, `'!'` the one for a screen that crashes.
         export const Router = defineRouter({
           examples: '/',
-          // `?sort=label` trie la liste : changer de tri ne remonte pas l'écran.
+          // `?sort=label` sorts the list: changing the sort does not remount the screen.
           counters: {
             path: '/counters',
             query: query<CountersQuery>({ sort: { oneOf: ['original', 'label'], default: 'original' } }),
@@ -81,8 +81,8 @@
           },
           'kit-theme': '/kit/theme',
         })
-          // Un guard lit les stores par leur contrat : on ne commande pas un panier vide.
-          // Les guards viennent avant .screens(), qui doit rester le dernier appel.
+          // A guard reads stores through their contract: you cannot order an empty cart.
+          // Guards come before .screens(), which must remain the last call.
           .guards(({ read }) => ({
             checkout: () => !read('cart').isEmpty() || { to: 'shop' },
           }))
@@ -91,7 +91,7 @@
             counters: CounterListScreen,
             counter: CounterScreen,
             profile: ProfileScreen,
-            form: redirect({ to: 'profile' }), // un raccourci : /form mène au formulaire
+            form: redirect({ to: 'profile' }), // a shortcut: /form leads to the form
             shop: ShopScreen,
             checkout: CheckoutScreen,
             errors: ErrorsScreen,
@@ -109,28 +109,28 @@
           }));
       </script>
       <p>
-        L'objet <code>Router</code> a deux usages. Le plugin Vite le repère (<code>export const Router = defineRouter(…)</code>)
-        et inscrit le router sous le nom <code>'router'</code> dans le dictionnaire des contrats qu'il génère
-        (<code>src/@core/contracts.d.ts</code>) : un composant le lit et le pilote par <code>this.router</code>,
-        typé par les routes de l'app, sans importer <code>routes.ts</code>. Le plugin y relie aussi chaque écran à sa route
-        (voir <a href="#l-ecran-et-sa-route">L'écran et sa route</a>). Et <code>Router.href</code> construit un lien
-        dans le code qui n'est pas un composant (un test, un module user-land). Il n'y a rien d'autre à exporter, ni de
-        déclaration à écrire à la main : un seul router est typé par app.
+        The <code>Router</code> object has two uses. The Vite plugin spots it (<code>export const Router = defineRouter(…)</code>)
+        and registers the router under the name <code>'router'</code> in the contract dictionary it generates
+        (<code>src/@core/contracts.d.ts</code>): a component reads and drives it through <code>this.router</code>,
+        typed by the app's routes, without importing <code>routes.ts</code>. The plugin also links each screen to its route
+        there (see <a href="#the-screen-and-its-route">The screen and its route</a>). And <code>Router.href</code> builds a link
+        in code that is not a component (a test, a user-land module). There is nothing else to export, and no
+        declaration to write by hand: one router is typed per app.
       </p>
 
       <h3 id="definerouter">defineRouter</h3>
-      <p>Une route se déclare de deux façons :</p>
+      <p>A route is declared in two ways:</p>
       <ul>
         <li>
-          <strong>Une chaîne</strong>, quand les valeurs sont du texte. Un segment <code>:nom</code> est un paramètre :
-          <code>'/counters/:id'</code> donne <code>{ id: string }</code>. Après <code>?</code>, les clés de query lues par
-          la route, <code>[]</code> marquant une liste : <code>'/counters?sort&amp;tag[]'</code> donne
-          <code>{ sort?: string; tag: string[] }</code>. Voir <a href="#query">Query</a>.
+          <strong>A string</strong>, when the values are text. A <code>:name</code> segment is a parameter:
+          <code>'/counters/:id'</code> gives <code>{ id: string }</code>. After <code>?</code> come the query keys read by
+          the route, <code>[]</code> marking a list: <code>'/counters?sort&amp;tag[]'</code> gives
+          <code>{ sort?: string; tag: string[] }</code>. See <a href="#query">Query</a>.
         </li>
         <li>
-          <strong>Un objet</strong> <code>{ path, params?, query? }</code>, quand les valeurs ont un type : un nombre, un
-          booléen, une liste fermée de valeurs. Le type est écrit par l'app, la description dit comment le lire dans l'URL.
-          Voir <a href="#decrire-les-valeurs">Décrire les valeurs</a>.
+          <strong>An object</strong> <code>{ path, params?, query? }</code>, when the values have a type: a number, a
+          boolean, a closed list of values. The app writes the type, the description says how to read it from the URL.
+          See <a href="#describing-the-values">Describing the values</a>.
         </li>
       </ul>
       <script type="text/x-code">
@@ -138,21 +138,21 @@
 
         export const Router = defineRouter({
           home: '/',
-          counters: '/counters?sort&tag[]',                                                  // des chaînes
-          counter: { path: '/counters/:id', params: params<CounterParams>({ id: Number }) }, // un nombre
+          counters: '/counters?sort&tag[]',                                                  // strings
+          counter: { path: '/counters/:id', params: params<CounterParams>({ id: Number }) }, // a number
         })
       </script>
       <ul>
-        <li>Chaque chemin doit commencer par <code>/</code>, sinon une erreur est levée.</li>
-        <li><code>'*'</code> et <code>'!'</code> sont réservés aux écrans « introuvable » et « erreur » : ce ne sont pas des noms de route possibles (erreur de compilation, et erreur à l'exécution).</li>
+        <li>Each path must start with <code>/</code>, otherwise an error is thrown.</li>
+        <li><code>'*'</code> and <code>'!'</code> are reserved for the "not found" and "error" screens: they cannot be route names (compile error, and runtime error).</li>
       </ul>
 
-      <h3 id="decrire-les-valeurs">Décrire les valeurs</h3>
+      <h3 id="describing-the-values">Describing the values</h3>
       <p>
-        Dans la forme objet, l'app écrit le type de ses paramètres et de sa query, puis le décrit avec
-        <code>params&lt;T&gt;({…})</code> et <code>query&lt;T&gt;({…})</code>, importés de <code>@super-ts/dom</code>. Le
-        compilateur vérifie que la description correspond au type, clé par clé. À l'exécution, elle sert à lire et convertir
-        les valeurs de l'URL.
+        In the object form, the app writes the type of its parameters and query, then describes it with
+        <code>params&lt;T&gt;({…})</code> and <code>query&lt;T&gt;({…})</code>, imported from <code>@super-ts/dom</code>. The
+        compiler checks that the description matches the type, key by key. At runtime, it is used to read and convert
+        the values from the URL.
       </p>
       <script type="text/x-code">
         import { defineRouter, params, query } from '@super-ts/dom';
@@ -165,64 +165,64 @@
           counters: {
             path: '/counters',
             query: query<CountersQuery>({
-              sort: { oneOf: ['label', 'value'], default: 'label' },   // obligatoire : une valeur par défaut
+              sort: { oneOf: ['label', 'value'], default: 'label' },   // required: a default value
               page: { type: Number, default: 1 },
-              tag: [String],                                          // une liste : [] si absente
-              search: String,                                         // facultative : pas de défaut
+              tag: [String],                                          // a list: [] if absent
+              search: String,                                         // optional: no default
               archived: Boolean,
             }),
           },
         })
       </script>
       <table>
-        <thead><tr><th>Description</th><th>Type</th><th>Valeurs acceptées dans l'URL</th></tr></thead>
+        <thead><tr><th>Description</th><th>Type</th><th>Values accepted in the URL</th></tr></thead>
         <tbody>
-          <tr><td><code>String</code></td><td><code>string</code></td><td>Toutes, décodées.</td></tr>
-          <tr><td><code>Number</code></td><td><code>number</code></td><td>Un nombre décimal : <code>42</code>, <code>-3</code>, <code>1.5</code>, <code>1e3</code>. <code>abc</code> est invalide.</td></tr>
-          <tr><td><code>Boolean</code></td><td><code>boolean</code></td><td><code>true</code> ou <code>false</code>, rien d'autre.</td></tr>
-          <tr><td><code>{ oneOf: ['label', 'value'] }</code></td><td><code>'label' | 'value'</code></td><td>Une des valeurs listées.</td></tr>
-          <tr><td><code>[String]</code>, <code>[Number]</code>, <code>[{ oneOf: […] }]</code></td><td>une liste</td><td>Chaque occurrence de la clé (<code>?tag=a&amp;tag=b</code>). Query seulement.</td></tr>
+          <tr><td><code>String</code></td><td><code>string</code></td><td>All, decoded.</td></tr>
+          <tr><td><code>Number</code></td><td><code>number</code></td><td>A decimal number: <code>42</code>, <code>-3</code>, <code>1.5</code>, <code>1e3</code>. <code>abc</code> is invalid.</td></tr>
+          <tr><td><code>Boolean</code></td><td><code>boolean</code></td><td><code>true</code> or <code>false</code>, nothing else.</td></tr>
+          <tr><td><code>{ oneOf: ['label', 'value'] }</code></td><td><code>'label' | 'value'</code></td><td>One of the listed values.</td></tr>
+          <tr><td><code>[String]</code>, <code>[Number]</code>, <code>[{ oneOf: […] }]</code></td><td>a list</td><td>Each occurrence of the key (<code>?tag=a&amp;tag=b</code>). Query only.</td></tr>
         </tbody>
       </table>
       <ul>
-        <li><strong><code>String</code>, <code>Number</code> et <code>Boolean</code></strong> sont les constructeurs natifs de JavaScript : ils nomment le type et font la conversion.</li>
-        <li><strong>Une clé de query obligatoire a une valeur par défaut</strong>, prise quand la clé est absente ou invalide : <code>{ type: Number, default: 1 }</code>, <code>{ oneOf: [...], default: 'label' }</code>.</li>
-        <li><strong>Une clé facultative n'en a pas</strong> (<code>search?: string</code> se décrit <code>String</code>) : elle vaut <code>undefined</code> quand elle manque.</li>
-        <li><strong>Un paramètre de chemin n'a jamais de défaut</strong> : il est toujours présent dans l'URL qui correspond à la route.</li>
-        <li><strong><code>params</code> décrit exactement les paramètres du chemin</strong>, ni plus ni moins. Sans <code>params</code>, les paramètres du chemin sont des chaînes.</li>
-        <li><strong>Une liste <code>oneOf</code> doit couvrir toute l'union</strong> : le compilateur refuse une valeur hors de l'union, mais pas une valeur oubliée. Avec <code>{ oneOf: ['label'] }</code> pour <code>'label' | 'value'</code>, <code>?sort=value</code> serait toujours lu comme invalide. Voir <a href="guarantees.html#ce-qui-n-est-pas-verifie">ce qui n'est pas vérifié</a>.</li>
-        <li><strong>Dans la forme objet, la query ne s'écrit pas dans le chemin</strong> : <code>{ path: '/counters?sort' }</code> est refusé, elle se décrit par <code>query</code>.</li>
+        <li><strong><code>String</code>, <code>Number</code> and <code>Boolean</code></strong> are JavaScript's native constructors: they name the type and do the conversion.</li>
+        <li><strong>A required query key has a default value</strong>, used when the key is absent or invalid: <code>{ type: Number, default: 1 }</code>, <code>{ oneOf: [...], default: 'label' }</code>.</li>
+        <li><strong>An optional key has none</strong> (<code>search?: string</code> is described <code>String</code>): it is <code>undefined</code> when missing.</li>
+        <li><strong>A path parameter never has a default</strong>: it is always present in the URL that matches the route.</li>
+        <li><strong><code>params</code> describes exactly the path parameters</strong>, no more, no less. Without <code>params</code>, path parameters are strings.</li>
+        <li><strong>A <code>oneOf</code> list must cover the whole union</strong>: the compiler rejects a value outside the union, but not a forgotten value. With <code>{ oneOf: ['label'] }</code> for <code>'label' | 'value'</code>, <code>?sort=value</code> would always be read as invalid. See <a href="guarantees.html#what-is-not-checked">what is not checked</a>.</li>
+        <li><strong>In the object form, the query is not written in the path</strong>: <code>{ path: '/counters?sort' }</code> is rejected, it is described through <code>query</code>.</li>
       </ul>
       <script type="text/x-code">
-        // @ts-expect-error une clé obligatoire exige sa valeur par défaut
+        // @ts-expect-error a required key needs its default value
         query<{ page: number }>({ page: Number });
-        // @ts-expect-error une clé facultative n'a pas de défaut
+        // @ts-expect-error an optional key has no default
         query<{ page?: number }>({ page: { type: Number, default: 1 } });
-        // @ts-expect-error mauvais type
+        // @ts-expect-error wrong type
         query<{ page?: number }>({ page: String });
-        // @ts-expect-error valeur hors de l'union
+        // @ts-expect-error value outside the union
         query<{ sort?: 'a' | 'b' }>({ sort: { oneOf: ['a', 'c'] } });
-        // @ts-expect-error une liste se décrit entre crochets
+        // @ts-expect-error a list is described in square brackets
         query<{ tag: string[] }>({ tag: String });
-        // @ts-expect-error un paramètre de chemin est toujours présent : pas de défaut
+        // @ts-expect-error a path parameter is always present: no default
         params<{ id: number }>({ id: { type: Number, default: 1 } });
-        // @ts-expect-error `slug` n'est pas un paramètre du chemin
+        // @ts-expect-error `slug` is not a path parameter
         defineRouter({ counter: { path: '/counters/:id', params: params<{ slug: string }>({ slug: String }) } });
       </script>
       <p>
-        Ces erreurs sont aussi vérifiées à l'exécution, avec un message explicite : « route "counter" : params doit décrire
-        exactement les paramètres du chemin (id) ».
+        These errors are also checked at runtime, with an explicit message: "route "counter": params must describe
+        exactly the path parameters (id)".
       </p>
 
       <h3 id="screens">.screens</h3>
       <p>
-        Associe un écran à chaque route. Un écran est une classe de composant (<code>SuperElement</code>) <strong>sans
-        props obligatoire</strong> : il ne reçoit pas les valeurs de sa route en props, il les lit par
-        <code>this.router.current</code> (voir <a href="#lire-les-parametres">Lire la route dans l'écran</a>). Le
-        compilateur exige un écran par route. Deux clés facultatives s'ajoutent : <code>'*'</code>, l'écran affiché quand
-        aucun chemin ne correspond, et <code>'!'</code>, l'écran affiché quand un écran plante sans être rattrapé (il est le
-        seul à recevoir des props, <code>{ error, path }</code>, voir <a href="errors.html#l-ecran-d-erreur">Gérer les
-        erreurs</a>). À la place d'un écran, une route peut recevoir une <a href="#redirections">redirection</a>.
+        Associates a screen with each route. A screen is a component class (<code>SuperElement</code>) <strong>without
+        required props</strong>: it does not receive its route's values as props, it reads them through
+        <code>this.router.current</code> (see <a href="#reading-the-route-in-the-screen">Reading the route in the screen</a>). The
+        compiler requires one screen per route. Two optional keys can be added: <code>'*'</code>, the screen shown when
+        no path matches, and <code>'!'</code>, the screen shown when a screen crashes without being caught (it is the
+        only one to receive props, <code>{ error, path }</code>, see <a href="errors.html#the-error-screen">Handling
+        errors</a>). Instead of a screen, a route can receive a <a href="#redirects">redirect</a>.
       </p>
       <script type="text/x-code">
         class HomeScreen extends SuperElement { /* … */ }
@@ -232,43 +232,43 @@
         const declared = defineRouter({ home: '/', counter: '/counters/:id' });
 
         declared.screens(() => ({ home: HomeScreen, counter: CounterScreen }));   // ✓
-        // @ts-expect-error écran manquant pour `counter`
+        // @ts-expect-error missing screen for `counter`
         declared.screens(() => ({ home: HomeScreen }));
-        // @ts-expect-error l'écran attend une prop que le router ne fournit pas
+        // @ts-expect-error the screen expects a prop the router does not provide
         declared.screens(() => ({ home: HomeScreen, counter: NeedsCounter }));
       </script>
 
-      <h3 id="lire-les-parametres">Lire la route dans l'écran</h3>
+      <h3 id="reading-the-route-in-the-screen">Reading the route in the screen</h3>
       <p>
-        L'écran lit sa route par <code>this.router.current</code> : <code>current.params.id()</code> pour un paramètre du
-        chemin, <code>current.query.sort()</code> pour une clé de query. Sur <code>/counters/cafes</code>, la route
-        <code>/counters/:id</code> donne <code>current.params.id() === 'cafes'</code>. Les valeurs sont décodées
-        (<code>/counters/caf%C3%A9</code> donne <code>'café'</code>), et converties si la route les décrit.
+        The screen reads its route through <code>this.router.current</code>: <code>current.params.id()</code> for a path
+        parameter, <code>current.query.sort()</code> for a query key. On <code>/counters/coffees</code>, the route
+        <code>/counters/:id</code> gives <code>current.params.id() === 'coffees'</code>. Values are decoded
+        (<code>/counters/caf%C3%A9</code> gives <code>'café'</code>), and converted if the route describes them.
       </p>
-      <script type="text/x-code" data-title="src/@components/counter/index.super (extrait)" data-source="examples/demo/src/@components/counter/index.super">
-        /** Écran de la route `/counters/:id` : il lit `id` dans sa route. */
+      <script type="text/x-code" data-title="src/@components/counter/index.super (excerpt)" data-source="examples/demo/src/@components/counter/index.super">
+        /** Screen of the `/counters/:id` route: it reads `id` from its route. */
         export class CounterScreen extends SuperElement {
           @tag = 'counter-screen';
-          // Suivi : renommer le compteur change aussi le titre de l'onglet.
-          @title = () => this.label.value ?? 'Compteur introuvable';
+          // Tracked: renaming the counter also changes the tab title.
+          @title = () => this.label.value ?? 'Counter not found';
 
-          // Le paramètre de la route, lu à l'appel : `this.counterId()`.
+          // The route parameter, read on call: `this.counterId()`.
           counterId = this.router.current.params.id;
 
-          // Ne lit que ce qui concerne le compteur affiché : les autres compteurs ne re-rendent pas l'écran.
+          // Reads only what concerns the displayed counter: the other counters do not re-render the screen.
           @contract counter;
           @selector label = () => this.counter.selectors.label(this.counterId());
           @selector count = () => this.counter.selectors.count(this.counterId());
           // …
 
           #back() {
-            <a class="back-link" href={this.router.href('counters')}>← Tous les compteurs</a>
+            <a class="back-link" href={this.router.href('counters')}>← All counters</a>
           }
 
           render() {
             const label = this.label.value;
             if (label === null) {
-              <main class="screen">{this.#back()}<h1>Compteur introuvable</h1><p>Aucun compteur « {this.counterId()} ».</p></main>
+              <main class="screen">{this.#back()}<h1>Counter not found</h1><p>No counter "{this.counterId()}".</p></main>
               return;
             }
             // …
@@ -276,31 +276,31 @@
         }
       </script>
       <ul>
-        <li><strong>Le champ ne s'appelle pas <code>id</code></strong> : <code>id</code> est une propriété native des éléments HTML, et un champ ou une prop ne peut pas en reprendre le nom. Le paramètre <code>id</code> se garde donc dans <code>counterId</code> (<code>counterId = this.router.current.params.id;</code>). Il en va de même pour <code>title</code>, <code>hidden</code> ou <code>slot</code>.</li>
-        <li><strong>Chaque valeur est une fonction</strong>, qui lit la route active à l'appel. Elle se garde dans un champ (<code>counterId</code> ci-dessus), se déstructure (<code>const { id } = this.router.current.params</code>), ou se donne telle quelle à un <code>@selector</code>, comme un sélecteur sans paramètre : <code>@selector sort = this.router.current.query.sort;</code>, puis <code>this.sort.value</code>.</li>
-        <li><strong>Lue pendant <code>render</code></strong>, directement ou par un <code>@selector</code>, elle abonne le composant au router : il se re-rend quand la valeur change.</li>
-        <li><strong>Valeur de route ou sélection</strong> : gardée telle quelle (<code>counterId = this.router.current.params.id</code>), la valeur se lit en l'appelant, <code>this.counterId()</code>, comme un sélecteur ; donnée à un <code>@selector</code> (<code>@selector counterId = this.router.current.params.id;</code>), elle devient une sélection, qui se lit par <code>this.counterId.value</code> et <code>this.counterId.isValid()</code>. Dans la fonction d'un autre <code>@selector</code>, on appelle la valeur de route (<code>this.counter.selectors.count(this.counterId())</code>) : une sélection lue là ne l'abonnerait pas au router.</li>
-        <li><strong>Elle est typée par la route de l'écran</strong> : <code>params.id</code> existe sur l'écran de <code>/counters/:id</code>, <code>params.nope</code> ne compile pas. Voir <a href="#l-ecran-et-sa-route">L'écran et sa route</a>.</li>
-        <li><strong><code>current.name()</code> et <code>current.path()</code></strong> donnent le nom de la route active et le chemin tel que navigué.</li>
-        <li><strong>En test</strong>, on monte l'écran seul avec un router en mode <code>memory</code> placé sur le bon chemin : voir <a href="#tester-avec-le-router">Tester avec le router</a>.</li>
+        <li><strong>The field is not called <code>id</code></strong>: <code>id</code> is a native property of HTML elements, and a field or prop cannot reuse its name. The <code>id</code> parameter is therefore kept in <code>counterId</code> (<code>counterId = this.router.current.params.id;</code>). The same goes for <code>title</code>, <code>hidden</code> or <code>slot</code>.</li>
+        <li><strong>Each value is a function</strong>, which reads the active route when called. It can be kept in a field (<code>counterId</code> above), destructured (<code>const { id } = this.router.current.params</code>), or given as is to a <code>@selector</code>, like a selector without parameters: <code>@selector sort = this.router.current.query.sort;</code>, then <code>this.sort.value</code>.</li>
+        <li><strong>Read during <code>render</code></strong>, directly or through a <code>@selector</code>, it subscribes the component to the router: it re-renders when the value changes.</li>
+        <li><strong>Route value or selection</strong>: kept as is (<code>counterId = this.router.current.params.id</code>), the value is read by calling it, <code>this.counterId()</code>, like a selector; given to a <code>@selector</code> (<code>@selector counterId = this.router.current.params.id;</code>), it becomes a selection, read through <code>this.counterId.value</code> and <code>this.counterId.isValid()</code>. Inside another <code>@selector</code>'s function, you call the route value (<code>this.counter.selectors.count(this.counterId())</code>): a selection read there would not subscribe it to the router.</li>
+        <li><strong>It is typed by the screen's route</strong>: <code>params.id</code> exists on the screen of <code>/counters/:id</code>, <code>params.nope</code> does not compile. See <a href="#the-screen-and-its-route">The screen and its route</a>.</li>
+        <li><strong><code>current.name()</code> and <code>current.path()</code></strong> give the name of the active route and the path as navigated.</li>
+        <li><strong>In tests</strong>, you mount the screen alone with a router in <code>memory</code> mode set to the right path: see <a href="#testing-with-the-router">Testing with the router</a>.</li>
       </ul>
 
-      <h3 id="valeurs-invalides">Une valeur invalide dans l'URL</h3>
+      <h3 id="an-invalid-value-in-the-url">An invalid value in the URL</h3>
       <p>
-        L'URL vient de l'extérieur : <code>/counters/abc</code> pour un <code>id</code> décrit <code>Number</code>,
-        <code>?page=abc</code>, <code>?sort=nimporte</code>. Le router ne rejette pas la navigation pour autant :
+        The URL comes from outside: <code>/counters/abc</code> for an <code>id</code> described <code>Number</code>,
+        <code>?page=abc</code>, <code>?sort=whatever</code>. The router does not reject the navigation for all that:
       </p>
       <ul>
-        <li><strong>Une clé de query invalide est traitée comme absente</strong> : elle prend sa valeur par défaut, ou <code>undefined</code>. Dans une liste, seuls les éléments invalides sont retirés (<code>?tag=1&amp;tag=x</code> donne <code>[1]</code> pour <code>[Number]</code>).</li>
-        <li><strong>Un paramètre de chemin invalide ne mène pas à l'écran <code>'*'</code></strong> : l'écran de la route est affiché, et la valeur vaut <code>undefined</code>. C'est à l'écran de décider quoi montrer.</li>
+        <li><strong>An invalid query key is treated as absent</strong>: it takes its default value, or <code>undefined</code>. In a list, only the invalid items are removed (<code>?tag=1&amp;tag=x</code> gives <code>[1]</code> for <code>[Number]</code>).</li>
+        <li><strong>An invalid path parameter does not lead to the <code>'*'</code> screen</strong>: the route's screen is shown, and the value is <code>undefined</code>. It is up to the screen to decide what to show.</li>
       </ul>
       <p>
-        <code>isValid()</code> dit si l'URL contenait une valeur conforme. Il existe sur chaque valeur
-        (<code>current.params.id.isValid()</code>) et sur la sélection qu'en fait <code>@selector</code>
-        (<code>this.counterId.isValid()</code>). Après ce test, la valeur est du type décrit : <code>number</code>, et non
-        plus <code>number | undefined</code>.
+        <code>isValid()</code> says whether the URL contained a conforming value. It exists on each value
+        (<code>current.params.id.isValid()</code>) and on the selection <code>@selector</code> makes of it
+        (<code>this.counterId.isValid()</code>). After this check, the value has the described type: <code>number</code>, and no
+        longer <code>number | undefined</code>.
       </p>
-      <script type="text/x-code" data-title="Avec counter: { path: '/counters/:id', params: params<{ id: number }>({ id: Number }) }">
+      <script type="text/x-code" data-title="With counter: { path: '/counters/:id', params: params<{ id: number }>({ id: Number }) }">
         class CounterScreen extends SuperElement {
           @tag = 'counter-screen';
 
@@ -308,7 +308,7 @@
 
           render() {
             if (!this.counterId.isValid()) {
-              <p>Ce compteur n’existe pas.</p>
+              <p>This counter does not exist.</p>
               return;
             }
             const id = this.counterId.value;                          // number
@@ -317,26 +317,26 @@
         }
       </script>
       <ul>
-        <li><strong>Une clé absente est valide</strong> : elle prend son défaut (ou <code>undefined</code>), comme prévu par la description. <code>isValid()</code> n'est faux que si l'URL portait une valeur non conforme, ou si la route active ne déclare pas cette clé.</li>
-        <li><strong>Pour une liste</strong>, <code>isValid()</code> est faux dès qu'un élément a été retiré.</li>
-        <li><strong>Le composant se re-rend</strong> si la valeur change, ou si seule sa validité change (de <code>?page=1</code> à <code>?page=abc</code>, la valeur reste <code>1</code> mais devient invalide).</li>
-        <li><strong>Un paramètre <code>string</code> est toujours valide</strong>, comme toute valeur d'une route déclarée par une chaîne.</li>
+        <li><strong>An absent key is valid</strong>: it takes its default (or <code>undefined</code>), as the description provides. <code>isValid()</code> is false only if the URL carried a non-conforming value, or if the active route does not declare that key.</li>
+        <li><strong>For a list</strong>, <code>isValid()</code> is false as soon as an item has been removed.</li>
+        <li><strong>The component re-renders</strong> if the value changes, or if only its validity changes (from <code>?page=1</code> to <code>?page=abc</code>, the value stays <code>1</code> but becomes invalid).</li>
+        <li><strong>A <code>string</code> parameter is always valid</strong>, like any value of a route declared by a string.</li>
       </ul>
       <p>
-        Pour rediriger plutôt qu'afficher un message, deux endroits conviennent : le <a href="#guards">guard</a> de la
-        route (<code>({ params }) =&gt; params.id.isValid() || { to: 'counters' }</code>), et l'écran n'est jamais rendu ; ou
-        <code>mounted()</code>, avec <code>this.router.send('navigate', …)</code>, et l'écran se rend une fois avant de
-        partir. Naviguer depuis <code>render</code> n'est pas dans l'esprit du framework : <code>render</code> décrit
-        l'écran, il ne déclenche rien.
+        To redirect rather than show a message, two places fit: the route's <a href="#guards">guard</a>
+        (<code>({ params }) =&gt; params.id.isValid() || { to: 'counters' }</code>), and the screen is never rendered; or
+        <code>mounted()</code>, with <code>this.router.send('navigate', …)</code>, and the screen renders once before
+        leaving. Navigating from <code>render</code> is not in the spirit of the framework: <code>render</code> describes
+        the screen, it does not trigger anything.
       </p>
 
-      <h3 id="l-ecran-et-sa-route">L'écran et sa route</h3>
+      <h3 id="the-screen-and-its-route">The screen and its route</h3>
       <p>
-        Dans un écran, <code>this.router.current</code> est typé par <strong>sa propre route</strong>, sans rien écrire à
-        la main. Le plugin Vite lit <code>.screens(…)</code> dans <code>routes.ts</code>, retrouve le tag de chaque écran,
-        et génère le lien dans <code>src/@core/contracts.d.ts</code> :
+        In a screen, <code>this.router.current</code> is typed by <strong>its own route</strong>, without writing anything by
+        hand. The Vite plugin reads <code>.screens(…)</code> in <code>routes.ts</code>, finds each screen's tag,
+        and generates the link in <code>src/@core/contracts.d.ts</code>:
       </p>
-      <script type="text/x-code" data-title="src/@core/contracts.d.ts (extrait, généré)" data-source="examples/demo/src/@core/contracts.d.ts">
+      <script type="text/x-code" data-title="src/@core/contracts.d.ts (excerpt, generated)" data-source="examples/demo/src/@core/contracts.d.ts">
         declare module '@super-ts/dom' {
           interface ScreenRoutes {
             'counter-list-screen': 'counters';
@@ -346,184 +346,184 @@
         }
       </script>
       <ul>
-        <li><strong>Le compilateur <code>.super</code></strong> ajoute la route au type de chaque composant, d'après son tag : <code>CounterScreen</code> voit <code>params.id</code>, et <code>current.name()</code> y vaut <code>'counter' | null</code>.</li>
-        <li><strong>Un écran utilisé sur deux routes</strong> voit leur union : chaque clé de l'une ou l'autre, <code>undefined</code> là où une route ne l'a pas.</li>
-        <li><strong>Un composant qui n'est pas un écran</strong> voit l'union de toutes les routes de l'app, de la même façon : <code>current.params.id()</code> vaut <code>number | undefined</code> si seule la route <code>counter</code> a un <code>id</code> numérique. Une clé qu'aucune route ne déclare ne compile pas.</li>
-        <li><strong>Un composant écrit en <code>.ts</code></strong>, qui garde <code>static tag</code> et le générique, déclare sa route lui-même : <code>SuperElement&lt;{ route: 'counter' }&gt;</code>, ou <code>SuperElement&lt;{ props: P; route: 'counter' }&gt;</code>.</li>
-        <li>Les écrans <code>'*'</code> et <code>'!'</code> n'ont pas de route propre : ils voient toutes les routes.</li>
+        <li><strong>The <code>.super</code> compiler</strong> adds the route to each component's type, based on its tag: <code>CounterScreen</code> sees <code>params.id</code>, and <code>current.name()</code> there is <code>'counter' | null</code>.</li>
+        <li><strong>A screen used on two routes</strong> sees their union: every key of either one, <code>undefined</code> where a route does not have it.</li>
+        <li><strong>A component that is not a screen</strong> sees the union of all the app's routes, in the same way: <code>current.params.id()</code> is <code>number | undefined</code> if only the <code>counter</code> route has a numeric <code>id</code>. A key no route declares does not compile.</li>
+        <li><strong>A component written in <code>.ts</code></strong>, which keeps <code>static tag</code> and the generic, declares its route itself: <code>SuperElement&lt;{ route: 'counter' }&gt;</code>, or <code>SuperElement&lt;{ props: P; route: 'counter' }&gt;</code>.</li>
+        <li>The <code>'*'</code> and <code>'!'</code> screens have no route of their own: they see all routes.</li>
       </ul>
 
-      <h3 id="hors-de-l-ecran">Hors de l'écran : current et at</h3>
+      <h3 id="outside-the-screen-current-and-at">Outside the screen: current and at</h3>
       <p>
-        Un en-tête ou un fil d'Ariane lit la route active de la même façon, par <code>this.router.current</code>, typé par
-        l'union de toutes les routes : <code>@selector route = this.router.current.name;</code> pour savoir où l'on est.
+        A header or a breadcrumb reads the active route in the same way, through <code>this.router.current</code>, typed by
+        the union of all routes: <code>@selector route = this.router.current.name;</code> to know where you are.
       </p>
       <p>
-        Un composant qui n'est affiché que sur une route précise, sans en être l'écran (un enfant de l'écran, par exemple),
-        lit cette route par <code>this.router.at('counter')</code> : ses <code>params</code> et sa <code>query</code>,
-        typés par elle seule, au lieu de l'union.
+        A component shown only on a specific route, without being its screen (a child of the screen, for example),
+        reads that route through <code>this.router.at('counter')</code>: its <code>params</code> and its <code>query</code>,
+        typed by that route alone, instead of the union.
       </p>
       <script type="text/x-code">
-        /** Affiché dans l'écran du compteur : sa route est toujours `counter`. */
+        /** Shown in the counter screen: its route is always `counter`. */
         class CounterHistory extends SuperElement {
           @tag = 'counter-history';
 
           route = this.router.at('counter');
 
           render() {
-            const id = this.route.params.id();   // typé par la route `counter`
+            const id = this.route.params.id();   // typed by the `counter` route
             // …
           }
         }
       </script>
       <p>
-        <code>at</code> se déclare n'importe où, mais lire une de ses valeurs alors que la route active est une autre lève
-        une erreur : « this.router.at('counter') lu alors que la route active est 'counters' ». Un composant affiché sur
-        plusieurs routes lit donc <code>current</code>, et vérifie <code>current.name()</code>.
+        <code>at</code> can be declared anywhere, but reading one of its values while another route is active throws
+        an error: "this.router.at('counter') read while the active route is 'counters'". A component shown on
+        several routes therefore reads <code>current</code>, and checks <code>current.name()</code>.
       </p>
 
-      <h3 id="ecran-et-props-en-plus">Un écran qui a besoin d'autres props</h3>
+      <h3 id="a-screen-that-needs-other-props">A screen that needs other props</h3>
       <p>
-        Le router n'a rien à donner à un écran : <code>.screens()</code> refuse un composant qui a une prop obligatoire. Une
-        prop facultative compile, mais vaut toujours <code>undefined</code> quand l'écran est affiché par sa route.
+        The router has nothing to give a screen: <code>.screens()</code> rejects a component with a required prop. An
+        optional prop compiles, but is always <code>undefined</code> when the screen is shown by its route.
       </p>
       <p>
-        On sépare alors l'écran, qui lit la route, du composant qu'il affiche, dont les props sont libres et qui se
-        réutilise ailleurs :
+        So you separate the screen, which reads the route, from the component it shows, whose props are free and which can
+        be reused elsewhere:
       </p>
       <script type="text/x-code">
-        // Composant réutilisable : ses props ne dépendent d'aucune route.
+        // Reusable component: its props do not depend on any route.
         export class CounterList extends SuperElement {
           @tag = 'counter-list';
           @prop sort: 'original' | 'label';
-          @prop heading: string;   // pas `title` : c'est une propriété des éléments HTML
+          @prop heading: string;   // not `title`: it is a property of HTML elements
           @prop compact: boolean = false;
           render() { /* … */ }
         }
 
-        // Écran de la route `counters` : il lit sa query et complète le reste.
+        // Screen of the `counters` route: it reads its query and fills in the rest.
         export class CounterListScreen extends SuperElement {
           @tag = 'counter-list-screen';
           @selector sort = this.router.current.query.sort;
           render() {
-            <CounterList sort={this.sort.value} heading="Mes compteurs" />
+            <CounterList sort={this.sort.value} heading="My counters" />
           }
         }
 
-        // Ailleurs, dans le render d'un autre composant, le même composant avec d'autres props.
-        <CounterList sort="label" heading="Favoris" compact={true} />
+        // Elsewhere, in another component's render, the same component with other props.
+        <CounterList sort="label" heading="Favourites" compact={true} />
       </script>
-      <p>Ce que l'écran ajoute vient d'une constante (l'intitulé ci-dessus), d'un store déclaré par <code>@contract</code> (préférences, utilisateur), ou de la route elle-même : si la valeur doit pouvoir figurer dans l'URL, déclare-la dans la query.</p>
+      <p>What the screen adds comes from a constant (the heading above), a store declared by <code>@contract</code> (preferences, user), or the route itself: if the value must be able to appear in the URL, declare it in the query.</p>
       <div class="callout">
-        <strong>Pourquoi les chemins et les écrans sont déclarés à part</strong>
-        Les écrans lisent le router par <code>this.router</code>, typé d'après <code>Router</code>, et
-        <code>Router</code> contient les écrans. Le compilateur ne peut typer <code>Router</code> sans lire les écrans que
-        parce que les routes sont posées à part, dans <code>defineRouter(...)</code>, et que <code>.screens(...)</code> est le
-        <strong>dernier appel</strong> de la déclaration : le type du router ne dépend pas des écrans. C'est pourquoi les
-        guards, qui ne dépendent que des routes, viennent avant. Une forme fusionnée, du genre
-        <code>defineRouter(() => ({ screens: { home: { path, component } } }))</code>, ne peut pas être typée : le type du
-        router dépendrait des écrans, qui dépendent du router, et tout retomberait en <code>any</code>.
+        <strong>Why paths and screens are declared separately</strong>
+        Screens read the router through <code>this.router</code>, typed from <code>Router</code>, and
+        <code>Router</code> contains the screens. The compiler can type <code>Router</code> without reading the screens only
+        because the routes are set apart, in <code>defineRouter(...)</code>, and <code>.screens(...)</code> is the
+        <strong>last call</strong> of the declaration: the router's type does not depend on the screens. That is why
+        guards, which depend only on the routes, come before. A merged form, such as
+        <code>defineRouter(() => ({ screens: { home: { path, component } } }))</code>, cannot be typed: the router's
+        type would depend on the screens, which depend on the router, and everything would fall back to <code>any</code>.
       </div>
       <div class="callout">
-        <strong>Pourquoi les écrans sont donnés par une fonction</strong>
-        <code>routes.ts</code> importe les écrans ; si un module chargé par un écran importe à son tour <code>routes.ts</code>
-        (pour <code>Router.href</code>, hors composant), les deux modules s'importent mutuellement. Si un écran est chargé en
-        premier (dans un test, par exemple), <code>routes.ts</code> s'évalue avant que l'écran soit initialisé. Avec la
-        fonction, les écrans ne sont lus qu'à la création du router, par <code>createRouter</code>, une fois tout chargé.
+        <strong>Why screens are given by a function</strong>
+        <code>routes.ts</code> imports the screens; if a module loaded by a screen in turn imports <code>routes.ts</code>
+        (for <code>Router.href</code>, outside a component), the two modules import each other. If a screen is loaded
+        first (in a test, for example), <code>routes.ts</code> is evaluated before the screen is initialised. With the
+        function, screens are read only when the router is created, by <code>createRouter</code>, once everything is loaded.
       </div>
 
       <h2 id="query">Query</h2>
       <p>
-        Une route ne lit que les clés de query qu'elle déclare. Dans une chaîne, elles suivent <code>?</code>, séparées par
-        <code>&amp;</code>, et une clé suivie de <code>[]</code> est une liste ; les valeurs sont des chaînes. Avec
-        <code>query&lt;T&gt;({…})</code>, elles sont typées et converties (voir <a href="#decrire-les-valeurs">Décrire les
-        valeurs</a>). L'écran les lit par <code>this.router.current.query</code> :
+        A route reads only the query keys it declares. In a string, they follow <code>?</code>, separated by
+        <code>&amp;</code>, and a key followed by <code>[]</code> is a list; the values are strings. With
+        <code>query&lt;T&gt;({…})</code>, they are typed and converted (see <a href="#describing-the-values">Describing the
+        values</a>). The screen reads them through <code>this.router.current.query</code>:
       </p>
-      <script type="text/x-code" data-title="src/@components/counter-list/index.super (extrait)" data-source="examples/demo/src/@components/counter-list/index.super">
-        /** Écran de la route `counters` : la liste des compteurs, triée par nom si `?sort=label`. */
+      <script type="text/x-code" data-title="src/@components/counter-list/index.super (excerpt)" data-source="examples/demo/src/@components/counter-list/index.super">
+        /** Screen of the `counters` route: the counter list, sorted by name if `?sort=label`. */
         export class CounterListScreen extends SuperElement {
           @tag = 'counter-list-screen';
-          @title = 'Mes compteurs';
+          @title = 'My counters';
 
           // …
-          // La query de la route, typée par sa description : 'original' | 'label'.
+          // The route query, typed by its description: 'original' | 'label'.
           @selector sort = this.router.current.query.sort;
 
           render() {
             const byLabel = this.sort.value === 'label';
             // …
-            <nav class="counter-sort" aria-label="Tri">
-              <a href={this.router.href('counters')} aria-current={byLabel ? null : 'page'}>Ordre d’origine</a>
-              <a href={this.router.href('counters', { query: { sort: 'label' } })} aria-current={byLabel ? 'page' : null}>Par nom</a>
+            <nav class="counter-sort" aria-label="Sort">
+              <a href={this.router.href('counters')} aria-current={byLabel ? null : 'page'}>Original order</a>
+              <a href={this.router.href('counters', { query: { sort: 'label' } })} aria-current={byLabel ? 'page' : null}>By name</a>
             </nav>
             // …
           }
         }
       </script>
       <ul>
-        <li><strong>Une clé simple peut manquer</strong> : elle vaut sa valeur par défaut, ou <code>undefined</code>. Répétée dans l'URL, seule la première valeur compte.</li>
-        <li><strong>Une liste vaut toujours un tableau</strong> : <code>?tag=a&amp;tag=b</code> donne <code>['a', 'b']</code>, et <code>[]</code> si la clé est absente.</li>
-        <li><strong>Une valeur invalide est traitée comme absente</strong> (<code>?sort=nimporte</code> donne le défaut <code>'original'</code>) : voir <a href="#valeurs-invalides">Une valeur invalide dans l'URL</a>.</li>
-        <li><strong>Les clés non déclarées sont ignorées</strong> : sur <code>/counters?sort=label&amp;utm_source=mail</code>, <code>current.query</code> n'a pas de <code>utm_source</code>. L'URL n'est pas réécrite pour autant : <code>current.path()</code> vaut toujours <code>'/counters?sort=label&amp;utm_source=mail'</code>, et la barre d'adresse la garde.</li>
-        <li><strong>Paramètres et query se lisent séparément</strong> : un paramètre et une clé de query peuvent porter le même nom (<code>'/items/:id?id'</code>). Une clé vide ou en double lève une erreur.</li>
-        <li><strong>Changer seulement la query ne remonte pas l'écran</strong> : son état local est conservé, et il se re-rend s'il lit une valeur qui a changé. Voir <a href="#afficher-l-ecran">RouterOutlet</a>.</li>
+        <li><strong>A simple key can be missing</strong>: it takes its default value, or <code>undefined</code>. Repeated in the URL, only the first value counts.</li>
+        <li><strong>A list is always an array</strong>: <code>?tag=a&amp;tag=b</code> gives <code>['a', 'b']</code>, and <code>[]</code> if the key is absent.</li>
+        <li><strong>An invalid value is treated as absent</strong> (<code>?sort=whatever</code> gives the default <code>'original'</code>): see <a href="#an-invalid-value-in-the-url">An invalid value in the URL</a>.</li>
+        <li><strong>Undeclared keys are ignored</strong>: on <code>/counters?sort=label&amp;utm_source=mail</code>, <code>current.query</code> has no <code>utm_source</code>. The URL is not rewritten for all that: <code>current.path()</code> is still <code>'/counters?sort=label&amp;utm_source=mail'</code>, and the address bar keeps it.</li>
+        <li><strong>Parameters and query are read separately</strong>: a parameter and a query key can have the same name (<code>'/items/:id?id'</code>). An empty or duplicate key throws an error.</li>
+        <li><strong>Changing only the query does not remount the screen</strong>: its local state is kept, and it re-renders if it reads a value that changed. See <a href="#showing-the-screen-routeroutlet">RouterOutlet</a>.</li>
       </ul>
-      <p>Pour construire un lien ou naviguer, paramètres et query se donnent séparément, avec leurs valeurs typées :</p>
+      <p>To build a link or navigate, parameters and query are given separately, with their typed values:</p>
       <script type="text/x-code">
         this.router.href('counters', { query: { sort: 'label', tag: ['a', 'b'] } })   // '/counters?sort=label&tag=a&tag=b'
-        this.router.href('counter', { params: { id: 42 }, query: { tab: 'historique' } })   // '/counters/42?tab=historique'
+        this.router.href('counter', { params: { id: 42 }, query: { tab: 'history' } })   // '/counters/42?tab=history'
         this.router.send('navigate', { to: 'counters', query: { tag: ['a'] } });
 
-        this.router.href('counters', { query: { page: '2' } })   // ✗ ne compile pas : `page` n'est pas déclaré
-        this.router.href('counters', { query: { sort: 'nope' } }) // ✗ ne compile pas : valeur hors de l'union
+        this.router.href('counters', { query: { page: '2' } })   // ✗ does not compile: `page` is not declared
+        this.router.href('counters', { query: { sort: 'nope' } }) // ✗ does not compile: value outside the union
       </script>
       <ul>
-        <li><strong>Les valeurs s'écrivent dans l'URL par <code>String(valeur)</code></strong> : <code>2</code> donne <code>page=2</code>, <code>false</code> donne <code>archived=false</code>. Une liste répète la clé.</li>
-        <li><strong>Une clé à <code>undefined</code> ou une liste vide sont omises</strong>.</li>
-        <li><strong>La query est facultative</strong>, même pour une clé obligatoire : absente de l'URL, elle reprend son défaut à la lecture.</li>
+        <li><strong>Values are written into the URL with <code>String(value)</code></strong>: <code>2</code> gives <code>page=2</code>, <code>false</code> gives <code>archived=false</code>. A list repeats the key.</li>
+        <li><strong>A key set to <code>undefined</code> or an empty list is omitted</strong>.</li>
+        <li><strong>The query is optional</strong>, even for a required key: absent from the URL, it falls back to its default when read.</li>
       </ul>
       <p>
-        Une navigation donne <strong>toute la query</strong> : les clés qu'elle ne donne pas disparaissent de l'URL. Pour
-        changer une seule clé, on redonne les autres :
+        A navigation gives <strong>the whole query</strong>: the keys it does not give disappear from the URL. To
+        change a single key, you give the others again:
       </p>
       <script type="text/x-code">
         const { sort, tag } = this.router.current.query;
-        this.router.send('navigate', { to: 'counters', query: { sort: sort(), tag: [...tag(), 'nouveau'] } });
+        this.router.send('navigate', { to: 'counters', query: { sort: sort(), tag: [...tag(), 'new'] } });
       </script>
 
-      <h2 id="redirections">Redirections</h2>
+      <h2 id="redirects">Redirects</h2>
       <p>
-        Une route peut renvoyer vers une autre, en déclarant <code>redirect(…)</code> à la place de son écran. C'est utile
-        pour une page prévue mais pas encore construite, un ancien chemin qu'on garde pour les liens existants, ou un
-        chemin qui n'a pas d'écran propre (dans l'<a href="examples.html">app d'exemples</a>, <code>/form</code> renvoie vers <code>/profile</code> : voir <a href="../examples/demo/src/routes.ts"><code>routes.ts</code></a>).
+        A route can send to another one, by declaring <code>redirect(…)</code> in place of its screen. This is useful
+        for a page that is planned but not yet built, an old path kept for existing links, or a
+        path that has no screen of its own (in the <a href="examples.html">examples app</a>, <code>/form</code> redirects to <code>/profile</code>: see <a href="../examples/demo/src/routes.ts"><code>routes.ts</code></a>).
       </p>
       <script type="text/x-code">
         export const Router = defineRouter({
           home: '/',
-          stats: '/stats',                // page prévue, pas encore construite
+          stats: '/stats',                // planned page, not yet built
           item: '/items/:id',
-          legacy: '/old/items/:id',       // ancien chemin
+          legacy: '/old/items/:id',       // old path
         }).screens(() => ({
           home: HomeScreen,
-          stats: redirect({ to: 'home' }),                          // temporaire : remplacé par StatsScreen le jour venu
+          stats: redirect({ to: 'home' }),                          // temporary: replaced by StatsScreen when the time comes
           item: ItemScreen,
           legacy: redirect({ to: 'item', params: { id: 'archive' } }),
         }));
       </script>
       <ul>
-        <li><strong>Les liens restent justes</strong> : <code>this.router.href('stats')</code> donne <code>/stats</code> dès aujourd'hui. Le jour où la page existe, on remplace <code>redirect(…)</code> par l'écran, sans toucher aux liens.</li>
-        <li><strong>La cible est typée</strong> comme un <code>navigate</code> (<code>{ to, params, query }</code>) : une route inconnue ou un paramètre manquant ne compilent pas.</li>
-        <li><strong>L'historique reste propre</strong> : le chemin redirigé n'y entre jamais. Une navigation vers <code>/stats</code> ajoute <code>/</code> à l'historique, et un chemin initial redirigé remplace l'entrée courante. Le bouton retour ne ramène pas sur une page qui renvoie aussitôt ailleurs.</li>
-        <li><strong>Les redirections s'enchaînent</strong> (une redirection vers une route elle-même redirigée), jusqu'à 10 de suite. Au-delà, une boucle est supposée et une erreur est levée : « trop de redirections à partir de "/a" ».</li>
+        <li><strong>Links stay correct</strong>: <code>this.router.href('stats')</code> gives <code>/stats</code> today. The day the page exists, you replace <code>redirect(…)</code> with the screen, without touching the links.</li>
+        <li><strong>The target is typed</strong> like a <code>navigate</code> (<code>{ to, params, query }</code>): an unknown route or a missing parameter does not compile.</li>
+        <li><strong>History stays clean</strong>: the redirected path never enters it. A navigation to <code>/stats</code> adds <code>/</code> to the history, and a redirected initial path replaces the current entry. The back button does not bring you back to a page that immediately sends you elsewhere.</li>
+        <li><strong>Redirects chain</strong> (a redirect to a route that is itself redirected), up to 10 in a row. Beyond that, a loop is assumed and an error is thrown: "too many redirects starting from "/a"".</li>
       </ul>
 
       <h2 id="guards">Guards</h2>
       <p>
-        Un guard décide, avant d'afficher une route, si on y va ou si on est redirigé ailleurs, selon l'état de l'app ou
-        l'URL : « est-on connecté ? », « cet identifiant est-il valide ? ». Il se déclare un par route, <strong>avant les
-        écrans</strong> :
+        A guard decides, before showing a route, whether you go there or are redirected elsewhere, based on the app's state or
+        the URL: "are we logged in?", "is this identifier valid?". It is declared one per route, <strong>before the
+        screens</strong>:
       </p>
-      <script type="text/x-code" data-title="src/routes.ts (illustration : une app avec des guards)">
+      <script type="text/x-code" data-title="src/routes.ts (illustration: an app with guards)">
         import { defineRouter, params } from '@super-ts/dom';
 
         export const Router = defineRouter({
@@ -540,39 +540,39 @@
           .screens(() => ({ home: HomeScreen, account: AccountScreen, login: LoginScreen, counters: CounterListScreen, counter: CounterScreen }));
       </script>
       <ul>
-        <li><strong>Un guard renvoie <code>true</code></strong> pour laisser passer, ou <strong>une cible</strong> (<code>{ to, params, query }</code>) pour rediriger. La cible est typée comme un <code>navigate</code>.</li>
-        <li><strong>Il reçoit sa route comme <code>this.router.at(…)</code> la donne</strong> : <code>{ params, query }</code>, typés par la route, chaque valeur à appeler (<code>params.id()</code>) et munie de <code>isValid()</code>.</li>
-        <li><strong>Il lit les stores par le nom de leur contrat</strong>, avec <code>read('session')</code>, comme un composant avec <code>@contract session;</code> : il reçoit les sélecteurs du contrat (et <code>pending</code>), lus au moment de la navigation. Un nom de contrat inconnu ne compile pas. Les stores viennent de l'application qui reçoit le router : <code>routes.ts</code> ne connaît aucune instance.</li>
-        <li><strong>Il ne fait que lire</strong> : il ne peut pas envoyer de commande. Décider d'une navigation ne déclenche pas d'effet de bord.</li>
-        <li><strong>Il se déclare avant <code>.screens(…)</code></strong>, qui doit rester le dernier appel. Après les écrans, <code>guards</code> n'existe pas : ça ne compile pas. Placé après, il obligerait le compilateur à lire les écrans pour typer le router, et les écrans lisent le router : tout retomberait en <code>any</code>.</li>
-        <li><strong>Il est synchrone</strong>. Une vérification asynchrone (« la session est-elle encore valide ? ») se fait dans le store ; le guard lit son résultat.</li>
-        <li>Les routes sans guard passent toujours.</li>
+        <li><strong>A guard returns <code>true</code></strong> to let through, or <strong>a target</strong> (<code>{ to, params, query }</code>) to redirect. The target is typed like a <code>navigate</code>.</li>
+        <li><strong>It receives its route as <code>this.router.at(…)</code> gives it</strong>: <code>{ params, query }</code>, typed by the route, each value to be called (<code>params.id()</code>) and equipped with <code>isValid()</code>.</li>
+        <li><strong>It reads stores by their contract name</strong>, with <code>read('session')</code>, like a component with <code>@contract session;</code>: it receives the contract's selectors (and <code>pending</code>), read at navigation time. An unknown contract name does not compile. The stores come from the application that receives the router: <code>routes.ts</code> knows no instance.</li>
+        <li><strong>It only reads</strong>: it cannot send a command. Deciding on a navigation does not trigger a side effect.</li>
+        <li><strong>It is declared before <code>.screens(…)</code></strong>, which must remain the last call. After the screens, <code>guards</code> does not exist: it does not compile. Placed after, it would force the compiler to read the screens to type the router, and the screens read the router: everything would fall back to <code>any</code>.</li>
+        <li><strong>It is synchronous</strong>. An asynchronous check ("is the session still valid?") is done in the store; the guard reads its result.</li>
+        <li>Routes without a guard always pass.</li>
       </ul>
 
       <p>
-        L'app d'exemples protège la commande de la boutique : <code>/shop/checkout</code> renvoie vers <code>/shop</code>
-        tant que le panier est vide. Voir <a href="../examples/demo/src/routes.ts"><code>routes.ts</code></a> et l'<a href="examples.html#boutique">exemple Boutique</a>.
+        The examples app protects the shop's checkout: <code>/shop/checkout</code> redirects to <code>/shop</code>
+        as long as the cart is empty. See <a href="../examples/demo/src/routes.ts"><code>routes.ts</code></a> and the <a href="examples.html#shop">Shop example</a>.
       </p>
-      <script type="text/x-code" data-title="src/routes.ts (extrait)" data-source="examples/demo/src/routes.ts">
+      <script type="text/x-code" data-title="src/routes.ts (excerpt)" data-source="examples/demo/src/routes.ts">
         .guards(({ read }) => ({
           checkout: () => !read('cart').isEmpty() || { to: 'shop' },
         }))
         .screens(() => ({ /* … */ checkout: CheckoutScreen }));
       </script>
 
-      <h3 id="quand-les-guards-s-appliquent">Quand les guards s'appliquent</h3>
+      <h3 id="when-guards-apply">When guards apply</h3>
       <ul>
-        <li>À toutes les navigations : <code>navigate</code>, <code>visit</code>, les liens interceptés, le bouton retour du navigateur.</li>
-        <li>Au chemin courant, au moment où le router rejoint l'application (<code>createApp</code> ou <code>mount</code>) : c'est elle qui fournit les stores. Avant ce moment, ils ne sont pas évalués.</li>
-        <li>Une redirection décidée par un guard suit les mêmes règles qu'une <a href="#redirections">redirection déclarée</a> : le chemin refusé n'entre pas dans l'historique.</li>
-        <li>Un guard qui redirige vers la page courante annule simplement la navigation.</li>
+        <li>On every navigation: <code>navigate</code>, <code>visit</code>, intercepted links, the browser's back button.</li>
+        <li>On the current path, when the router joins the application (<code>createApp</code> or <code>mount</code>): the application provides the stores. Before that, they are not evaluated.</li>
+        <li>A redirect decided by a guard follows the same rules as a <a href="#redirects">declared redirect</a>: the refused path does not enter the history.</li>
+        <li>A guard that redirects to the current page simply cancels the navigation.</li>
       </ul>
       <div class="callout warn">
-        <strong>Un store lu par un guard doit être fourni</strong>
-        Si un guard lit un contrat que l'application ne fournit pas, une erreur est levée : « guard du router : aucun store
-        fourni pour le contrat "session" ». En test, passe le store (vrai ou faux) à <code>mount(…, { stores, router })</code>.
+        <strong>A store read by a guard must be provided</strong>
+        If a guard reads a contract the application does not provide, an error is thrown: "router guard: no store
+        provided for the contract "session"". In tests, pass the store (real or fake) to <code>mount(…, { stores, router })</code>.
       </div>
-      <script type="text/x-code" data-title="Tester un guard">
+      <script type="text/x-code" data-title="Testing a guard">
         const session = fakeStore('session', { state: { user: null } });
         const router = createRouter(Router, { mode: 'memory' });
         await mount(RouterOutlet, { stores: [session], router });
@@ -585,50 +585,50 @@
         expect(router.state().name).toBe('account');
       </script>
 
-      <h2 id="liens">Liens : this.router.href</h2>
+      <h2 id="links-this-router-href">Links: this.router.href</h2>
       <script type="text/x-code">
-        // href="/counters/cafes"
+        // href="/counters/coffees"
         <a href={this.router.href('counter', { params: { id: c.id } })}>{c.label}</a>
         // href="/"
-        <a href={this.router.href('examples')}>Exemples</a>
+        <a href={this.router.href('examples')}>Examples</a>
       </script>
       <ul>
-        <li><code>this.router.href(nom, { params, query })</code> construit le chemin et encode les valeurs (<code>'a b'</code> devient <code>'a%20b'</code>). <code>params</code> est obligatoire si le chemin a des paramètres, <code>query</code> toujours facultative.</li>
-        <li><strong>Il n'abonne pas le composant</strong> : il ne lit pas la route active, et un changement de route ne re-rend pas un composant qui ne fait que construire des liens.</li>
-        <li>Les valeurs sont typées par la route : <code>{ params: { id: '42' } }</code> ne compile pas si <code>id</code> est décrit <code>Number</code>. La query suit les règles de <a href="#query">Query</a>.</li>
-        <li><code>this.router.href('counter')</code> sans <code>id</code>, ou <code>this.router.href('compteur', …)</code>, ne compilent pas. Une route sans paramètre ni query refuse toute valeur.</li>
-        <li><strong>Hors composant</strong> (un test, un module user-land), <code>Router.href</code>, importé de <code>routes.ts</code>, fait la même chose : <code>Router.href('counter', { params: { id: 'cafes' } })</code>.</li>
+        <li><code>this.router.href(name, { params, query })</code> builds the path and encodes the values (<code>'a b'</code> becomes <code>'a%20b'</code>). <code>params</code> is required if the path has parameters, <code>query</code> always optional.</li>
+        <li><strong>It does not subscribe the component</strong>: it does not read the active route, and a route change does not re-render a component that only builds links.</li>
+        <li>Values are typed by the route: <code>{ params: { id: '42' } }</code> does not compile if <code>id</code> is described <code>Number</code>. The query follows the rules of <a href="#query">Query</a>.</li>
+        <li><code>this.router.href('counter')</code> without <code>id</code>, or <code>this.router.href('counterz', …)</code>, do not compile. A route without parameters or query rejects any value.</li>
+        <li><strong>Outside a component</strong> (a test, a user-land module), <code>Router.href</code>, imported from <code>routes.ts</code>, does the same: <code>Router.href('counter', { params: { id: 'coffees' } })</code>.</li>
       </ul>
 
-      <h3 id="interception-des-liens">L'interception des liens</h3>
+      <h3 id="link-interception">Link interception</h3>
       <p>
-        L'application intercepte les clics sur les liens internes (<code>href</code> commençant par <code>/</code>) et les
-        transforme en navigation, sans rechargement. Le navigateur garde la main dans ces cas :
+        The application intercepts clicks on internal links (<code>href</code> starting with <code>/</code>) and
+        turns them into navigation, without a reload. The browser keeps control in these cases:
       </p>
       <ul>
-        <li>lien externe (<code>https://…</code>, <code>//…</code>) ou relatif (<code>../x</code>) ;</li>
-        <li>attribut <code>target</code> autre que <code>_self</code> (<code>target="_blank"</code>) ;</li>
-        <li>attribut <code>download</code> ou <code>data-native</code> ;</li>
-        <li>clic avec Cmd, Ctrl, Shift ou Alt, ou autre bouton que le gauche ;</li>
-        <li>événement déjà annulé par un autre écouteur.</li>
+        <li>external link (<code>https://…</code>, <code>//…</code>) or relative link (<code>../x</code>);</li>
+        <li><code>target</code> attribute other than <code>_self</code> (<code>target="_blank"</code>);</li>
+        <li><code>download</code> or <code>data-native</code> attribute;</li>
+        <li>click with Cmd, Ctrl, Shift or Alt, or a button other than the left one;</li>
+        <li>event already cancelled by another listener.</li>
       </ul>
       <script type="text/x-code">
-        // Le navigateur charge vraiment l'URL.
-        <a href="/export.csv" data-native>Télécharger</a>
+        // The browser really loads the URL.
+        <a href="/export.csv" data-native>Download</a>
       </script>
 
-      <h2 id="afficher-l-ecran">Afficher l'écran : RouterOutlet</h2>
+      <h2 id="showing-the-screen-routeroutlet">Showing the screen: RouterOutlet</h2>
       <p>
-        <code>RouterOutlet</code> affiche l'écran de la route active, qui lit ses valeurs par <code>this.router.current</code>.
-        C'est un composant comme un autre : on l'écrit <code>&lt;RouterOutlet /&gt;</code> dans une mise en page commune,
-        après l'avoir importé de <code>@super-ts/dom</code>.
+        <code>RouterOutlet</code> shows the screen of the active route, which reads its values through <code>this.router.current</code>.
+        It is a component like any other: you write <code>&lt;RouterOutlet /&gt;</code> in a shared layout,
+        after importing it from <code>@super-ts/dom</code>.
       </p>
       <script type="text/x-code" data-title="src/@components/app-shell/index.super" data-source="examples/demo/src/@components/app-shell/index.super">
         import { RouterOutlet, SuperElement } from '@super-ts/dom';
         import { RouteLink } from '@super-ts/ui';
         import './index.css';
 
-        /** Mise en page commune : la navigation entre les exemples, puis l'écran de la route active. */
+        /** Shared layout: the navigation between the examples, then the screen of the active route. */
         export class AppShell extends SuperElement {
           @tag = 'app-shell';
 
@@ -639,24 +639,24 @@
           }
 
           render() {
-            // Chaque lien se marque lui-même `aria-current="page"` sur la page affichée ; `activeFor`
-            // étend une section à ses autres routes (la liste des compteurs et un compteur).
+            // Each link marks itself `aria-current="page"` on the displayed page; `activeFor`
+            // extends a section to its other routes (the counter list and a single counter).
             <header class="app-header">
-              <nav aria-label="Exemples">
+              <nav aria-label="Examples">
                 <RouteLink to={{ to: 'examples' }}>
-                  Exemples
+                  Examples
                 </RouteLink>
                 <RouteLink to={{ to: 'counters' }} activeFor={['counter']}>
-                  Compteurs
+                  Counters
                 </RouteLink>
                 <RouteLink to={{ to: 'profile' }}>
-                  Formulaire
+                  Form
                 </RouteLink>
                 <RouteLink to={{ to: 'shop' }} activeFor={['checkout']}>
-                  Boutique
+                  Shop
                 </RouteLink>
                 <RouteLink to={{ to: 'errors' }}>
-                  Erreurs
+                  Errors
                 </RouteLink>
                 <RouteLink to={{ to: 'widget' }}>
                   Widget
@@ -674,93 +674,93 @@
         }
       </script>
       <p>
-        Les liens de la coquille sont des <code>RouteLink</code>, du <a href="ui.html#routelink">kit d'interface</a> : la
-        cible s'écrit comme pour <code>navigate</code>, et chaque lien pose lui-même <code>aria-current="page"</code> quand
-        il mène à la page affichée. <code>activeFor</code> garde « Compteurs » actif sur un compteur, et « Boutique » sur
-        la commande.
+        The shell's links are <code>RouteLink</code>s, from the <a href="ui.html#routelink">UI kit</a>: the
+        target is written as for <code>navigate</code>, and each link sets <code>aria-current="page"</code> itself when
+        it leads to the displayed page. <code>activeFor</code> keeps "Counters" active on a counter, and "Shop" on
+        the checkout.
       </p>
       <p>
-        Sans le kit, la coquille lirait le nom de la route active par <code>this.router.current.name</code> (elle se
-        re-rendrait quand la route change) et construirait ses liens par <code>this.router.href</code> (qui, lui,
-        n'abonne pas). <code>aria-current</code> vaudrait <code>'page'</code> sur le lien de la route active et
-        <code>null</code> sur les autres : un attribut calculé à <code>null</code> est retiré (voir
-        <a href="templates.html#attributs">Attributs</a>).
+        Without the kit, the shell would read the name of the active route through <code>this.router.current.name</code> (it would
+        re-render when the route changes) and build its links through <code>this.router.href</code> (which does
+        not subscribe). <code>aria-current</code> would be <code>'page'</code> on the link of the active route and
+        <code>null</code> on the others: a computed attribute set to <code>null</code> is removed (see
+        <a href="templates.html#attributes">Attributes</a>).
       </p>
       <script type="text/x-code">
         @selector route = this.router.current.name;
 
         render() {
           const name = this.route.value;
-          const current = (active: boolean) => (active ? 'page' : null);   // `null` retire l'attribut
-          <nav aria-label="Exemples">
-            <a href={this.router.href('counters')} aria-current={current(name === 'counters' || name === 'counter')}>Compteurs</a>
+          const current = (active: boolean) => (active ? 'page' : null);   // `null` removes the attribute
+          <nav aria-label="Examples">
+            <a href={this.router.href('counters')} aria-current={current(name === 'counters' || name === 'counter')}>Counters</a>
             // …
           </nav>
         }
       </script>
       <p>
-        Chaque changement de chemin monte une <strong>nouvelle instance</strong> de l'écran : passer de
-        <code>/counters/cafes</code> à <code>/counters/pompes</code> construit un nouvel écran, et son état local repart
-        de zéro. Un changement de query ou de hash seul (<code>/counters</code> vers <code>/counters?sort=label</code>)
-        garde l'écran monté : un filtre ou une page de plus ne fait pas perdre l'état local, et l'écran se re-rend s'il lit
-        une valeur qui a changé.
+        Each path change mounts a <strong>new instance</strong> of the screen: going from
+        <code>/counters/coffees</code> to <code>/counters/pushups</code> builds a new screen, and its local state starts
+        from scratch. A change of query or hash alone (<code>/counters</code> to <code>/counters?sort=label</code>)
+        keeps the screen mounted: a filter or one more page does not lose the local state, and the screen re-renders if it reads
+        a value that changed.
       </p>
       <p>
-        Les rendus en attente passent <strong>parents d'abord</strong>. Quand l'outlet remplace un écran, l'ancien ne se
-        re-rend donc pas avec une route qui n'est plus la sienne : il est retiré avant.
+        Pending renders run <strong>parents first</strong>. When the outlet replaces a screen, the old one therefore does not
+        re-render with a route that is no longer its own: it is removed before.
       </p>
 
-      <h2 id="creer-le-router">Créer le router</h2>
-      <script type="text/x-code" data-title="src/main.ts (extrait)" data-source="examples/demo/src/main.ts">
+      <h2 id="creating-the-router">Creating the router</h2>
+      <script type="text/x-code" data-title="src/main.ts (excerpt)" data-source="examples/demo/src/main.ts">
         import { createApp, createRouter } from '@super-ts/dom';
         import { AppShell } from '@components/app-shell';
         import { Router } from './routes';
 
-        // Le titre de l'onglet : celui que pose l'écran affiché (`@title`), suivi du nom de l'app.
-        const router = createRouter(Router, { title: { default: 'Super · exemples', suffix: ' · Super' } });
+        // The tab title: the one set by the displayed screen (`@title`), followed by the app name.
+        const router = createRouter(Router, { title: { default: 'Super · examples', suffix: ' · Super' } });
         createApp({ root, stores: [counter, profile, cart, checkout, errorLog, catalog], router }).mount(AppShell.create());
       </script>
       <table>
-        <thead><tr><th>Option</th><th>Rôle</th></tr></thead>
+        <thead><tr><th>Option</th><th>Role</th></tr></thead>
         <tbody>
-          <tr><td><code>mode</code></td><td><code>'browser'</code> (défaut) synchronise l'URL avec l'historique du navigateur. <code>'memory'</code> garde l'historique en mémoire, pour les tests.</td></tr>
-          <tr><td><code>initialPath</code></td><td>Chemin de départ en mode <code>memory</code> (défaut <code>'/'</code>).</td></tr>
-          <tr><td><code>title</code></td><td><code>{ default, suffix }</code> : le titre de la page quand aucun composant n'en pose, et le texte ajouté au titre posé. Voir <a href="#titre-de-la-page">Le titre de la page</a>.</td></tr>
+          <tr><td><code>mode</code></td><td><code>'browser'</code> (default) syncs the URL with the browser's history. <code>'memory'</code> keeps the history in memory, for tests.</td></tr>
+          <tr><td><code>initialPath</code></td><td>Starting path in <code>memory</code> mode (default <code>'/'</code>).</td></tr>
+          <tr><td><code>title</code></td><td><code>{ default, suffix }</code>: the page title when no component sets one, and the text appended to the set title. See <a href="#the-page-title">The page title</a>.</td></tr>
         </tbody>
       </table>
       <p>
-        <code>createRouter</code> n'accepte qu'un router dont les écrans sont déclarés : lui passer
-        <code>defineRouter({ … })</code> sans <code>.screens(...)</code> ne compile pas. Il renvoie le handle du router, à
-        passer à <code>createApp({ router })</code>, ou à <code>mount(…, { router })</code> en test. Ce handle se lit comme
-        celui d'un store : <code>router.state()</code> donne <a href="#l-etat-du-router">l'état complet</a>, et
-        <code>router.send('navigate', …)</code> navigue.
+        <code>createRouter</code> only accepts a router whose screens are declared: passing it
+        <code>defineRouter({ … })</code> without <code>.screens(...)</code> does not compile. It returns the router handle, to
+        pass to <code>createApp({ router })</code>, or to <code>mount(…, { router })</code> in tests. This handle reads like
+        a store's: <code>router.state()</code> gives <a href="#the-active-route-and-the-router-state">the full state</a>, and
+        <code>router.send('navigate', …)</code> navigates.
       </p>
 
-      <h2 id="titre-de-la-page">Le titre de la page</h2>
+      <h2 id="the-page-title">The page title</h2>
       <p>
-        Le titre de l'onglet suit l'écran affiché. Le router en fixe le cadre, par l'option <code>title</code> de
-        <code>createRouter</code> (et non de <code>defineRouter</code>, dont les clés sont des routes) ; l'écran pose son
-        propre titre par <code>@title</code>.
+        The tab title follows the displayed screen. The router sets the frame, through the <code>title</code> option of
+        <code>createRouter</code> (and not of <code>defineRouter</code>, whose keys are routes); the screen sets its
+        own title through <code>@title</code>.
       </p>
-      <script type="text/x-code" data-title="src/main.ts (extrait)" data-source="examples/demo/src/main.ts">
-        // Le titre de l'onglet : celui que pose l'écran affiché (`@title`), suivi du nom de l'app.
-        const router = createRouter(Router, { title: { default: 'Super · exemples', suffix: ' · Super' } });
+      <script type="text/x-code" data-title="src/main.ts (excerpt)" data-source="examples/demo/src/main.ts">
+        // The tab title: the one set by the displayed screen (`@title`), followed by the app name.
+        const router = createRouter(Router, { title: { default: 'Super · examples', suffix: ' · Super' } });
       </script>
       <ul>
-        <li><strong><code>default</code></strong> est le titre quand aucun composant n'en pose (la page d'accueil des exemples, par exemple). Sans <code>default</code>, c'est le titre d'origine du document qui revient.</li>
-        <li><strong><code>suffix</code></strong> est ajouté au titre posé : l'écran de la boutique pose « Boutique », l'onglet affiche « Boutique · Super ».</li>
+        <li><strong><code>default</code></strong> is the title when no component sets one (the examples home page, for example). Without <code>default</code>, the document's original title comes back.</li>
+        <li><strong><code>suffix</code></strong> is appended to the set title: the shop screen sets "Shop", the tab shows "Shop · Super".</li>
       </ul>
       <p>
-        Dans l'écran, <code>@title</code> reçoit une chaîne (un titre fixe) ou une fonction (un titre <strong>suivi</strong>),
-        recalculée après chaque rendu avec les mêmes lectures que <code>render</code> :
+        In the screen, <code>@title</code> receives a string (a fixed title) or a function (a <strong>tracked</strong> title),
+        recomputed after each render with the same reads as <code>render</code>:
       </p>
-      <script type="text/x-code" data-title="src/@components/shop/index.super (extrait)" data-source="examples/demo/src/@components/shop/index.super">
+      <script type="text/x-code" data-title="src/@components/shop/index.super (excerpt)" data-source="examples/demo/src/@components/shop/index.super">
         export class ShopScreen extends SuperElement {
           @tag = 'shop-screen';
-          // Suivi : le titre de l'onglet change avec le panier, comme le rendu.
+          // Tracked: the tab title changes with the cart, like the render.
           @title = () => {
             const count = this.cart.selectors.count();
-            return count > 0 ? `Boutique (${count} au panier)` : 'Boutique';
+            return count > 0 ? `Shop (${count} in cart)` : 'Shop';
           };
 
           @contract cart;
@@ -768,20 +768,20 @@
         }
       </script>
       <ul>
-        <li><strong>Le titre est posé au montage et retiré au démontage</strong> : en changeant de route, l'ancien écran rend la main et le nouveau pose le sien.</li>
-        <li><strong>Tout composant peut poser un titre</strong>, pas seulement un écran : les titres forment une pile, le dernier composant monté qui en pose un l'emporte, et à son démontage le titre précédent revient. Dans la démo, <code>KitPage</code> donne leur titre à toutes les pages du kit (<code>@title = () =&gt; this.heading;</code>).</li>
-        <li><strong>Ailleurs que dans la déclaration</strong> (<code>mounted</code>, un gestionnaire), <code>this.page.title = …</code> fait la même chose.</li>
+        <li><strong>The title is set on mount and removed on unmount</strong>: when the route changes, the old screen hands over and the new one sets its own.</li>
+        <li><strong>Any component can set a title</strong>, not only a screen: titles form a stack, the last mounted component that sets one wins, and on its unmount the previous title comes back. In the demo, <code>KitPage</code> gives all the kit pages their title (<code>@title = () =&gt; this.heading;</code>).</li>
+        <li><strong>Outside the declaration</strong> (<code>mounted</code>, a handler), <code>this.page.title = …</code> does the same.</li>
       </ul>
-      <p>Le détail (pile, titre impératif, règles) est dans <a href="components.html#titre-de-la-page">Composants : le titre de la page</a>.</p>
+      <p>The details (stack, imperative title, rules) are in <a href="components.html#the-page-title">Components: the page title</a>.</p>
 
-      <h2 id="le-router-est-un-store">Le router dans un composant</h2>
+      <h2 id="the-router-in-a-component">The router in a component</h2>
       <p>
-        Un composant lit et pilote le router par <code>this.router</code>, sans rien déclarer : la route active
-        (<code>current</code>), une route précise (<code>at</code>), la navigation (<code>send</code>) et les liens
-        (<code>href</code>) ; ses événements s'écoutent par une méthode <code>@on('router', 'navigated')</code>. Rien à importer de <code>routes.ts</code> : la vue est typée par
-        les routes de l'app. Elle se lit partout, <code>render</code> compris, et un composant qui ne la lit pas se monte
-        sans router. <code>@contract router</code> est refusé : le router se lit par <code>this.router</code>. Voir
-        <a href="components.html#declarations-de-preparation">Composants : les déclarations de préparation</a>.
+        A component reads and drives the router through <code>this.router</code>, without declaring anything: the active route
+        (<code>current</code>), a specific route (<code>at</code>), navigation (<code>send</code>) and links
+        (<code>href</code>); its events are listened to through a <code>@on('router', 'navigated')</code> method. Nothing to import from <code>routes.ts</code>: the view is typed by
+        the app's routes. It can be read anywhere, <code>render</code> included, and a component that does not read it mounts
+        without a router. <code>@contract router</code> is rejected: the router is read through <code>this.router</code>. See
+        <a href="components.html#preparing-stores-reads-state-form-references-listeners">Components: the setup declarations</a>.
       </p>
       <script type="text/x-code">
         @selector route = this.router.current.name;   // 'examples' | 'counters' | … | null
@@ -790,73 +790,73 @@
         @on('router', 'navigated')
         onNavigated({ from, to }) { /* … */ }
 
-        this.router.send('navigate', { to: 'counter', params: { id: 'cafes' } });   // typé par les routes
+        this.router.send('navigate', { to: 'counter', params: { id: 'coffees' } });   // typed by the routes
         this.router.send('navigate', { to: 'counters', query: { sort: 'label' } });
         this.router.send('navigate', { to: 'examples' });
-        this.router.send('visit', '/counters/cafes');                              // chemin brut
+        this.router.send('visit', '/counters/coffees');                              // raw path
         this.router.send('back');
-        this.router.href('counter', { params: { id: 'cafes' } });                  // un lien, sans abonnement
+        this.router.href('counter', { params: { id: 'coffees' } });                  // a link, without subscription
       </script>
 
-      <h3 id="l-etat-du-router">La route active et l'état du router</h3>
-      <p>Un composant lit la route active par <code>this.router.current</code>. Chaque valeur s'appelle, ou se donne à un <code>@selector</code> :</p>
+      <h3 id="the-active-route-and-the-router-state">The active route and the router state</h3>
+      <p>A component reads the active route through <code>this.router.current</code>. Each value is called, or given to a <code>@selector</code>:</p>
       <table>
-        <thead><tr><th>Valeur</th><th>Contenu</th></tr></thead>
+        <thead><tr><th>Value</th><th>Content</th></tr></thead>
         <tbody>
-          <tr><td><code>current.name()</code></td><td>Le nom de la route active (<code>'examples' | 'counters' | 'counter' | …</code>, <code>'form'</code> étant redirigée), ou <code>null</code> si aucune ne correspond.</td></tr>
-          <tr><td><code>current.path()</code></td><td>Le chemin courant, tel que navigué (query et hash compris).</td></tr>
-          <tr><td><code>current.params.&lt;clé&gt;()</code></td><td>Un paramètre du chemin, décodé et converti : <code>'café'</code> pour <code>/counters/caf%C3%A9</code>. <code>undefined</code> s'il est invalide, ou si la route active ne l'a pas.</td></tr>
-          <tr><td><code>current.query.&lt;clé&gt;()</code></td><td>Une clé de query déclarée par la route active, convertie : sa valeur, son défaut, <code>undefined</code>, ou <code>[]</code> pour une liste.</td></tr>
-          <tr><td><code>….isValid()</code></td><td>Sur un paramètre ou une clé de query : l'URL ne portait pas de valeur non conforme, et la route active déclare cette clé.</td></tr>
+          <tr><td><code>current.name()</code></td><td>The name of the active route (<code>'examples' | 'counters' | 'counter' | …</code>, <code>'form'</code> being redirected), or <code>null</code> if none matches.</td></tr>
+          <tr><td><code>current.path()</code></td><td>The current path, as navigated (query and hash included).</td></tr>
+          <tr><td><code>current.params.&lt;key&gt;()</code></td><td>A path parameter, decoded and converted: <code>'café'</code> for <code>/counters/caf%C3%A9</code>. <code>undefined</code> if it is invalid, or if the active route does not have it.</td></tr>
+          <tr><td><code>current.query.&lt;key&gt;()</code></td><td>A query key declared by the active route, converted: its value, its default, <code>undefined</code>, or <code>[]</code> for a list.</td></tr>
+          <tr><td><code>….isValid()</code></td><td>On a parameter or a query key: the URL did not carry a non-conforming value, and the active route declares that key.</td></tr>
         </tbody>
       </table>
       <p>
-        Le handle renvoyé par <code>createRouter</code> (dans <code>main.ts</code> ou un test) donne l'état complet par
-        <code>router.state()</code> : <code>path</code>, <code>name</code>, <code>params</code> et <code>query</code>
-        (convertis), <code>invalid</code> (les clés dont l'URL portait une valeur invalide :
-        <code>{ params: ['id'], query: [] }</code>), et deux champs que seul <code>RouterOutlet</code> utilise :
-        <code>screen</code>, l'écran à afficher (l'écran <code>'*'</code> si aucune route ne correspond ; jamais une
-        redirection, elles sont suivies avant), et <code>errorScreen</code>, l'écran <code>'!'</code>. Un composant n'a pas
-        accès à ces deux-là.
+        The handle returned by <code>createRouter</code> (in <code>main.ts</code> or a test) gives the full state through
+        <code>router.state()</code>: <code>path</code>, <code>name</code>, <code>params</code> and <code>query</code>
+        (converted), <code>invalid</code> (the keys for which the URL carried an invalid value:
+        <code>{ params: ['id'], query: [] }</code>), and two fields only <code>RouterOutlet</code> uses:
+        <code>screen</code>, the screen to show (the <code>'*'</code> screen if no route matches; never a
+        redirect, those are followed before), and <code>errorScreen</code>, the <code>'!'</code> screen. A component has no
+        access to those two.
       </p>
 
-      <h3 id="les-commandes-du-router">Les commandes du router</h3>
+      <h3 id="router-commands">Router commands</h3>
       <table>
-        <thead><tr><th>Commande</th><th>Effet</th></tr></thead>
+        <thead><tr><th>Command</th><th>Effect</th></tr></thead>
         <tbody>
-          <tr><td><code>navigate({ to, params, query })</code></td><td>Navigation typée par nom de route. <code>params</code> porte les paramètres du chemin, obligatoire si le chemin en a ; <code>query</code>, facultative, la query déclarée.</td></tr>
-          <tr><td><code>visit(chemin)</code></td><td>Navigation par chemin brut (c'est ce qu'utilisent les liens interceptés).</td></tr>
-          <tr><td><code>back()</code></td><td>Revient à l'entrée précédente de l'historique.</td></tr>
+          <tr><td><code>navigate({ to, params, query })</code></td><td>Navigation typed by route name. <code>params</code> carries the path parameters, required if the path has any; <code>query</code>, optional, the declared query.</td></tr>
+          <tr><td><code>visit(path)</code></td><td>Navigation by raw path (this is what intercepted links use).</td></tr>
+          <tr><td><code>back()</code></td><td>Goes back to the previous history entry.</td></tr>
         </tbody>
       </table>
       <p>
-        Chaque navigation émet <code>navigated { from, to }</code>. Naviguer vers le chemin courant (recliquer sur le lien de
-        la page affichée) n'ajoute rien à l'historique et ne remonte pas l'écran, mais émet quand même
-        <code>navigated</code>, avec <code>from === to</code> : c'est ce qui permet de quitter l'écran <code>'!'</code> en
-        recliquant sur le lien de la page en erreur.
+        Each navigation emits <code>navigated { from, to }</code>. Navigating to the current path (clicking again on the link of
+        the displayed page) adds nothing to the history and does not remount the screen, but still emits
+        <code>navigated</code>, with <code>from === to</code>: this is what lets you leave the <code>'!'</code> screen by
+        clicking again on the link of the page in error.
       </p>
 
-      <h3 id="resolution-des-chemins">Résolution des chemins</h3>
+      <h3 id="path-resolution">Path resolution</h3>
       <ul>
-        <li>Le slash final est ignoré : <code>/counters/cafes/</code> correspond à <code>counter</code>.</li>
-        <li>La query et le hash sont ignorés pour trouver la route, mais conservés dans <code>path</code>. Les clés de query déclarées sont lues dans <code>query</code>.</li>
-        <li>Seule la forme du chemin compte pour trouver la route : <code>/counters/abc</code> correspond à <code>counter</code> même si <code>id</code> est décrit <code>Number</code>, avec un <code>id</code> invalide.</li>
-        <li>Un chemin sans correspondance donne une route <code>null</code> et l'écran <code>'*'</code> (rien n'est affiché s'il n'est pas déclaré).</li>
-        <li>Les redirections déclarées et celles des guards sont suivies avant d'afficher : <code>path</code> et la route active sont ceux de la destination finale.</li>
+        <li>The trailing slash is ignored: <code>/counters/coffees/</code> matches <code>counter</code>.</li>
+        <li>The query and hash are ignored to find the route, but kept in <code>path</code>. Declared query keys are read into <code>query</code>.</li>
+        <li>Only the shape of the path counts to find the route: <code>/counters/abc</code> matches <code>counter</code> even if <code>id</code> is described <code>Number</code>, with an invalid <code>id</code>.</li>
+        <li>A path with no match gives a <code>null</code> route and the <code>'*'</code> screen (nothing is shown if it is not declared).</li>
+        <li>Declared redirects and those from guards are followed before showing: <code>path</code> and the active route are those of the final destination.</li>
       </ul>
 
-      <h2 id="tester-avec-le-router">Tester avec le router</h2>
+      <h2 id="testing-with-the-router">Testing with the router</h2>
       <p>
-        Un composant qui lit <code>this.router</code> a besoin d'un router. En test, crée-le en mode <code>memory</code>,
-        sur le chemin voulu : l'écran y lit sa route, sans props.
+        A component that reads <code>this.router</code> needs a router. In tests, create it in <code>memory</code> mode,
+        on the desired path: the screen reads its route there, without props.
       </p>
       <script type="text/x-code" data-title="src/@components/counter/index.test.ts (illustration)">
         import { Router } from '../../routes';
 
-        const router = createRouter(Router, { mode: 'memory', initialPath: '/counters/cafes' });
+        const router = createRouter(Router, { mode: 'memory', initialPath: '/counters/coffees' });
         const { container } = await mount(CounterScreen, { stores: [counter], router });
 
-        await userEvent.click(within(container).getByRole('link', { name: '← Tous les compteurs' }));
+        await userEvent.click(within(container).getByRole('link', { name: '← All counters' }));
         expect(router.state().name).toBe('counters');
       </script>
     </article>

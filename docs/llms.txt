@@ -1,54 +1,54 @@
 # Super
 
-> Un framework front minimaliste, typé de bout en bout, qui encadre trois choses : les stores, les composants et le routing. Tout le reste appartient à ton projet.
+> A minimalist front-end framework, typed end to end, that governs three things: stores, components and routing. Everything else belongs to your project.
 
-Statut : draft exploratoire. L'API peut encore bouger et les paquets (`@super-ts/core`, `@super-ts/dom`, `@super-ts/testing`, `@super-ts/vite`) ne sont pas publiés sur npm : ils vivent dans le dépôt, sous `packages/`. Les liens sont relatifs au dossier `docs/` du dépôt.
+Status: exploratory draft. The API may still change and the packages (`@super-ts/core`, `@super-ts/dom`, `@super-ts/testing`, `@super-ts/vite`) are not published on npm: they live in the repository, under `packages/`. Links are relative to the `docs/` folder of the repository.
 
-## Documentation en un fichier
+## Documentation in one file
 
-- [Documentation complète](llms-full.txt) : toutes les pages en markdown, code compris (440 Ko).
-- [Documentation courte](llms-small.txt) : la même, sans les renvois vers l'app d'exemples ni les passages secondaires, pour les petites fenêtres de contexte (374 Ko).
+- [Full documentation](llms-full.txt): all the pages in markdown, code included (418 KB).
+- [Short documentation](llms-small.txt): the same, without the references to the examples app or the secondary passages, for small context windows (356 KB).
 
-## Commencer
+## Start here
 
-- [Introduction](index.html) : Un framework front minimaliste, typé de bout en bout, qui encadre trois choses : les stores, les composants et le routing. Tout le reste appartient à ton projet.
-- [Démarrer](getting-started.html) : Installer le dépôt, lancer l'exemple, puis écrire une fonctionnalité complète de bout en bout.
-- [Exemples](examples.html) : Les exemples de Super vivent dans une seule app, [`examples/demo`](../examples/demo/). Sa page d'accueil mène à chacun : compteurs, formulaire, boutique, erreurs, widget, composition, kit d'interface. Cette page dit quel fichier montre quel concept.
-- [Architecture](architecture.html) : Super impose deux dossiers et quatre règles. Tout le reste de ton `src` est du user-land : Super ne le regarde pas.
+- [Introduction](index.html): A minimalist front-end framework, typed end to end, that governs three things: stores, components and routing. Everything else belongs to your project.
+- [Getting started](getting-started.html): Install the repository, run the example, then write a complete feature end to end.
+- [Examples](examples.html): Super's examples live in a single app, [`examples/demo`](../examples/demo/). Its home page leads to each one: counters, form, shop, errors, widget, composition, UI kit. This page says which file shows which concept.
+- [Architecture](architecture.html): Super imposes two folders and four rules. Everything else in your `src` is user-land: Super does not look at it.
 
-## Les stores
+## Stores
 
-- [Contrats](contracts.html) : Un contrat décrit un store vu de l'extérieur : ce qu'on peut lire, ce qu'on peut lui demander, ce qu'il annonce. C'est la seule chose qu'un composant connaît d'un store.
-- [Sélecteurs](selectors.html) : Les sélecteurs sont les lectures autorisées de l'état. Ce sont les méthodes du contrat, utilisées telles quelles par les composants, le store et les tests. Tu les écris avec l'état en premier paramètre, et Super le fournit à l'appel : tu écris `count(s, id)` dans le contrat, puis `selectors.count(id)` partout ailleurs.
-- [Stores](stores.html) : Un store implémente un contrat. Il garde l'état, traite les commandes, attend ce qu'il doit attendre (un adapter, le réseau), puis met à jour son état et annonce ce qui s'est passé.
-- [Commandes et événements](commands-and-events.html) : La vue envoie et laisse filer. Le store fait le travail, attend ce qu'il doit attendre, puis réussit ou échoue. Super suit chaque commande de bout en bout : il sait quand elle est en cours, et publie son issue.
+- [Contracts](contracts.html): A contract describes a store from the outside: what you can read, what you can ask of it, what it announces. It is the only thing a component knows about a store.
+- [Selectors](selectors.html): Selectors are the permitted reads of the state. They are the contract's methods, used as they are by components, the store and tests. You write them with the state as the first parameter, and Super supplies it at call time: you write `count(s, id)` in the contract, then `selectors.count(id)` everywhere else.
+- [Stores](stores.html): A store implements a contract. It holds the state, handles the commands, waits for what it has to wait for (an adapter, the network), then updates its state and announces what happened.
+- [Commands and events](commands-and-events.html): The view sends and lets go. The store does the work, waits for what it has to wait for, then succeeds or fails. Super tracks each command from end to end: it knows when it is pending, and publishes its outcome.
 
-## Les composants
+## Components
 
-- [Composants : setup et render](components.html) : Un composant est un custom element typé, écrit comme une classe qui étend `SuperElement`. Ses déclarations et ses champs préparent l'instance une fois ; `render()` affiche à chaque rendu.
-- [Lire un store](reading-a-store.html) : `@contract nom;` donne au composant la vue du store fourni par l'application. `@selector` choisit ce qu'il en lit : le composant ne se re-rend que si cette valeur change.
-- [État local](local-state.html) : L'état local appartient à une instance de composant : privé, créé avec elle, perdu avec elle. Il sert aux données d'interface ; les données de l'app vivent dans un store.
-- [Parents et enfants](parents-and-children.html) : Props vers le bas, événements vers le haut. Un parent ne pilote jamais un enfant en appelant ses méthodes : il lui passe des props, et l'enfant répond par des événements.
-- [Templates : les fichiers .super](templates.html) : Un composant s'écrit dans un fichier `.super` : du TypeScript dont les méthodes contiennent des éléments HTML écrits comme des instructions. Le contrôle de flux est celui de TypeScript (`if`, `for`, `switch`), et tout le template est vérifié par le compilateur : props, événements, attributs, références.
-- [Formulaires](forms.html) : `@form` relie des champs à des valeurs typées, applique tes règles, vérifie au besoin côté serveur pendant la saisie, et soumet par une commande de store. « En cours » et les erreurs du serveur viennent du cycle de vie de cette commande.
-- [Kit d'interface](ui.html) : `@super-ts/ui` rassemble les composants qu'une app finit toujours par écrire : champs reliés à un formulaire, bouton qui envoie une commande, lien de navigation, messages, fenêtres, menus, table. Ils ont une apparence sobre réglée par des variables CSS, sont accessibles au clavier et aux lecteurs d'écran, et se branchent directement sur les contrats, les formulaires et le router de Super.
+- [Components](components.html): A component is a typed custom element, written as a class that extends `SuperElement`. Its declarations and fields prepare the instance once; `render()` displays on every render.
+- [Reading a store](reading-a-store.html): `@contract name;` gives the component the view of the store provided by the application. `@selector` chooses what it reads from it: the component only re-renders if that value changes.
+- [Local state](local-state.html): Local state belongs to a component instance: private, created with it, lost with it. It is for interface data; the app's data lives in a store.
+- [Parents and children](parents-and-children.html): Props go down, events go up. A parent never drives a child by calling its methods: it passes it props, and the child answers with events.
+- [Templates](templates.html): A component is written in a `.super` file: TypeScript whose methods contain HTML elements written as statements. Control flow is TypeScript's (`if`, `for`, `switch`), and the whole template is checked by the compiler: props, events, attributes, references.
+- [Forms](forms.html): `@form` binds fields to typed values, applies your rules, checks with the server while the user types when needed, and submits through a store command. "Pending" and server errors come from that command's lifecycle.
+- [UI kit](ui.html): `@super-ts/ui` gathers the components an app always ends up writing: fields linked to a form, a button that sends a command, a navigation link, messages, windows, menus, a table. They have a plain look controlled by CSS variables, are accessible to the keyboard and to screen readers, and plug straight into Super's contracts, forms and router.
 
-## L'application
+## The application
 
-- [Router](router.html) : Le router est intégré à `@super-ts/dom`. Les routes sont nommées et typées : un lien sans son paramètre, une valeur du mauvais type ou une description de query fausse ne compilent pas. Et le router est un store comme un autre.
-- [Gérer les erreurs](errors.html) : Quand un composant plante, Super peut afficher un rendu de repli à la place de la partie cassée, et signaler l'erreur à un endroit unique. Trois niveaux, du plus local au plus global : le `renderError` d'un composant, l'écran `'!'` du router, et `onError` dans l'application.
-- [Brancher l'application](application.html) : La racine de composition, `main.ts`, est le seul endroit qui choisit les adapters, crée les stores et le router, et les fournit aux composants.
-- [Ports et adapters](ports-adapters.html) : Les sources de données externes (localStorage, API HTTP, IndexedDB) ne sont pas un concept Super : ce sont de simples dépendances de tes stores. L'[app d'exemples](examples.html) les organise en ports et adapters, un choix de projet : un `localStorage` pour les compteurs, un serveur simulé pour le formulaire, une vraie API HTTP (dummyjson.com) pour la table branchée du kit.
+- [Router](router.html): The router is built into `@super-ts/dom`. Routes are named and typed: a link without its parameter, a value of the wrong type or a wrong query description does not compile. And the router is a store like any other.
+- [Errors](errors.html): When a component crashes, Super can show a fallback render in place of the broken part, and report the error in a single place. Three levels, from the most local to the most global: a component's `renderError`, the router's `'!'` screen, and `onError` in the application.
+- [Application](application.html): The composition root, `main.ts`, is the only place that chooses the adapters, creates the stores and the router, and provides them to the components.
+- [Ports and adapters](ports-adapters.html): External data sources (localStorage, HTTP API, IndexedDB) are not a Super concept: they are plain dependencies of your stores. The [examples app](examples.html) organises them into ports and adapters, a project choice: `localStorage` for the counters, a simulated server for the form, a real HTTP API (dummyjson.com) for the kit's wired table.
 
-## Qualité
+## Quality
 
-- [Tester](testing.html) : Chaque brique se teste à son niveau : le store sans DOM, l'adapter seul, le composant avec un faux store, l'app entière avec un router en mémoire. Et les garanties de typage ont leurs propres tests.
-- [Outillage des .super](tooling.html) : Un fichier `.super` n'est pas du TypeScript que `tsc` ou ton éditeur savent lire seuls. Trois outils s'en chargent : la vérification en ligne de commande, le plugin Vite qui le compile, et un serveur de langage pour l'éditeur. Tous partent du même principe : un **TS virtuel**.
-- [Ce que le compilateur vérifie](guarantees.html) : La plupart des erreurs d'usage de Super sont détectées avant l'exécution : par TypeScript, ou par le plugin Vite. Cette page liste ce qui est vérifié, où, et ce qui ne l'est pas.
+- [Testing](testing.html): Each building block is tested at its own level: the store without a DOM, the adapter on its own, the component with a fake store, the whole app with an in-memory router. And the typing guarantees have their own tests.
+- [Tooling](tooling.html): A `.super` file is not TypeScript that `tsc` or your editor can read on their own. Three tools handle it: the command-line check, the Vite plugin that compiles it, and a language server for the editor. All of them rest on the same principle: a **virtual TypeScript**.
+- [Guarantees](guarantees.html): Most misuses of Super are caught before run time: by TypeScript, or by the Vite plugin. This page lists what is checked, where, and what is not.
 
-## Référence
+## Reference
 
-- [API](api.html) : Tout ce que les paquets de Super exportent, paquet par paquet. Chaque entrée renvoie vers la page qui l'explique.
-- [Questions fréquentes](faq.html) : Les questions qu'on se pose en découvrant Super, avec une réponse courte et un lien vers le détail.
-- [Limites](limitations.html) : Super est un draft. Voici ce qu'il fait mal ou vérifie mal aujourd'hui. Ce qu'il ne fait pas encore est dans [Chantiers et questions ouvertes](roadmap.html).
-- [Chantiers et questions ouvertes](roadmap.html) : Ce qui manque à Super pour une vraie app, les suites mises de côté, et les questions encore en discussion. Rien de tout cela n'est décidé : c'est la liste d'où partira le prochain chantier. Ce que Super ne fait pas bien aujourd'hui est dans [Limites](limitations.html).
+- [API](api.html): Everything Super's packages export, package by package. Each entry links to the page that explains it.
+- [FAQ](faq.html): The questions people ask when discovering Super, with a short answer and a link to the details.
+- [Limitations](limitations.html): Super is a draft. Here is what it does badly or checks badly today. What it does not do yet is in [Roadmap and open questions](roadmap.html).
+- [Roadmap](roadmap.html): What Super lacks for a real app, the follow-ups put aside, and the questions still under discussion. None of this is decided: it is the list the next piece of work will start from. What Super does not do well today is in [Limitations](limitations.html).

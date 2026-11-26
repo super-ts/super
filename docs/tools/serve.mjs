@@ -1,5 +1,5 @@
-// Sert le dépôt entier en local, pour que la doc puisse relier ses extraits aux fichiers de examples/.
-// Usage : npm run docs (port 5174, ou PORT=…)
+// Serves the whole repository locally, so the docs can link their excerpts to the files in examples/.
+// Usage: npm run docs (port 5174, or PORT=…)
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
@@ -17,10 +17,10 @@ createServer((request, response) => {
   let file = join(ROOT, path);
   if (existsSync(file) && statSync(file).isDirectory()) file = join(file, 'index.html');
   if (!file.startsWith(ROOT) || !existsSync(file) || path.includes('node_modules')) {
-    response.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' }).end('Introuvable');
+    response.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' }).end('Not found');
     return;
   }
-  // Les sources (.ts, .json…) s'affichent en texte brut dans le navigateur.
+  // Sources (.ts, .json…) are shown as plain text in the browser.
   response.writeHead(200, { 'content-type': TYPES[extname(file)] ?? 'text/plain; charset=utf-8' });
   createReadStream(file).pipe(response);
-}).listen(PORT, () => console.log(`Documentation sur http://localhost:${PORT}/docs/`));
+}).listen(PORT, () => console.log(`Documentation at http://localhost:${PORT}/docs/`));

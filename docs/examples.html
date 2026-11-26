@@ -1,230 +1,230 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Exemples · Super</title>
+    <title>Examples · Super</title>
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
     <link rel="stylesheet" href="assets/site.css" />
   </head>
   <body>
     <article data-llm="skip">
-      <h1>Exemples</h1>
+      <h1>Examples</h1>
       <p class="lead">
-        Les exemples de Super vivent dans une seule app, <a href="../examples/demo/"><code>examples/demo</code></a>. Sa page
-        d'accueil mène à chacun : compteurs, formulaire, boutique, erreurs, widget, composition, kit d'interface. Cette page dit quel fichier montre quel concept.
+        Super's examples live in a single app, <a href="../examples/demo/"><code>examples/demo</code></a>. Its home
+        page leads to each one: counters, form, shop, errors, widget, composition, UI kit. This page says which file shows which concept.
       </p>
 
-      <h2 id="lancer-l-app">Lancer l'app</h2>
+      <h2 id="running-the-app">Running the app</h2>
       <script type="text/x-code" data-lang="bash">
         npm install
-        npm run dev    # http://localhost:5173 : la liste des exemples
+        npm run dev    # http://localhost:5173: the list of examples
       </script>
       <p>
-        Pour suivre les liens « Voir le fichier » de cette doc vers le code, ouvre la doc avec <code>npm run docs</code>
-        (elle sert alors tout le dépôt), ou ouvre directement <code>docs/index.html</code> dans un navigateur.
+        To follow the "See the file" links from these docs to the code, open the docs with <code>npm run docs</code>
+        (it then serves the whole repository), or open <code>docs/index.html</code> directly in a browser.
       </p>
 
-      <h2 id="ce-qui-est-commun">Ce qui est commun aux exemples</h2>
+      <h2 id="what-the-examples-share">What the examples share</h2>
       <p>
-        L'app suit l'organisation de Super : un dossier par contrat sous <code>src/@core/</code> (<code>contract.ts</code>,
-        <code>store.ts</code>, <code>store.test.ts</code>), un dossier par écran sous <code>src/@components/</code>
-        (<code>index.super</code>, sa feuille <code>index.css</code>, son test <code>index.test.ts</code>, et ses sous-composants
-        à plat à côté), les composants réutilisables dans <code>@components/shared/</code>, et le métier dans
-        <code>src/domain/</code>. Le reste (<code>ports/</code>, <code>adapters/</code>, <code>routes.ts</code>,
-        <code>main.ts</code>, <code>widgets/</code>) est du user-land. Les composants sont des fichiers
-        <code>.super</code> (voir <a href="templates.html#fichiers-super">Templates</a>) ; tout le reste, tests compris,
-        est en <code>.ts</code>.
+        The app follows Super's layout: one folder per contract under <code>src/@core/</code> (<code>contract.ts</code>,
+        <code>store.ts</code>, <code>store.test.ts</code>), one folder per screen under <code>src/@components/</code>
+        (<code>index.super</code>, its stylesheet <code>index.css</code>, its test <code>index.test.ts</code>, and its sub-components
+        flat beside it), reusable components in <code>@components/shared/</code>, and the domain in
+        <code>src/domain/</code>. The rest (<code>ports/</code>, <code>adapters/</code>, <code>routes.ts</code>,
+        <code>main.ts</code>, <code>widgets/</code>) is user-land. Components are
+        <code>.super</code> files (see <a href="templates.html#super-files">Templates</a>); everything else, tests included,
+        is in <code>.ts</code>.
       </p>
       <table>
-        <thead><tr><th>Fichier</th><th>Ce qu'il montre</th><th>Voir</th></tr></thead>
+        <thead><tr><th>File</th><th>What it shows</th><th>See</th></tr></thead>
         <tbody>
-          <tr><td><a href="../examples/demo/src/main.ts"><code>src/main.ts</code></a></td><td>La racine de composition : les adapters choisis (dont celui du catalogue, sur dummyjson.com), les stores créés par <code>XStore.create(deps)</code>, le router (avec le titre de l'onglet par défaut et son suffixe, <code>createRouter(Router, { title: { default, suffix } })</code>), <code>createApp</code> et <code>onError</code>. Elle charge aussi <code>styles.css</code> puis <code>kit-theme.css</code>.</td><td><a href="application.html">Brancher l'application</a></td></tr>
-          <tr><td><a href="../examples/demo/src/routes.ts"><code>src/routes.ts</code></a></td><td>Le router : routes nommées, un écran par route, des queries décrites et typées (<code>query&lt;CountersQuery&gt;({ sort: … })</code> pour la liste des compteurs, <code>query&lt;KitTableQuery&gt;({ sort, order, page })</code> pour la table branchée du kit), une redirection (<code>/form</code>), un guard, les écrans <code>'*'</code> et <code>'!'</code>.</td><td><a href="router.html">Router</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@core/contracts.d.ts"><code>src/@core/contracts.d.ts</code></a></td><td>Le dictionnaire nom → contrat (et <code>'router'</code>), généré par le plugin Vite : il type <code>@contract</code> et <code>@on</code> (<code>this.contract('…')</code> dans un <code>.ts</code>), <code>fakeStore('…')</code> et <code>StoreOfContract&lt;'…'&gt;</code>. Committé, jamais écrit à la main.</td><td><a href="architecture.html#le-plugin-vite">Le plugin Vite</a></td></tr>
-          <tr><td><a href="../examples/demo/src/domain/shop.ts"><code>src/domain/</code></a></td><td>Les types et règles métier (<code>Product</code>, <code>CartLine</code>, le catalogue des compteurs…), sans Super ni DOM, importés par les contrats, les stores et les écrans.</td><td><a href="architecture.html#le-user-land">Le user-land</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/app-shell/index.super"><code>@components/app-shell/index.super</code></a></td><td>La coquille : navigation par des <code>RouteLink</code> du kit, qui posent <code>aria-current</code> eux-mêmes (<code>activeFor</code> pour une section), <code>&lt;RouterOutlet /&gt;</code>, un <code>mounted()</code> qui charge les compteurs.</td><td><a href="ui.html#routelink">RouteLink</a>, <a href="application.html#charger-les-donnees-au-demarrage">Charger les données au démarrage</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/examples/index.super"><code>@components/examples/index.super</code></a></td><td>Un écran sans store ni état : seulement des liens construits par <code>this.router.href(…)</code>.</td><td><a href="router.html#liens">Liens</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/not-found/index.super"><code>@components/not-found/index.super</code></a></td><td>L'écran <code>'*'</code>, qui lit le chemin par <code>this.router.current.path</code> et envoie <code>navigate</code> au router.</td><td><a href="router.html#le-router-est-un-store">Le router dans un composant</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/error/index.super"><code>@components/error/index.super</code></a></td><td>L'écran <code>'!'</code>, qui reçoit l'erreur et le chemin en props.</td><td><a href="errors.html#l-ecran-d-erreur">L'écran '!'</a></td></tr>
-          <tr><td><a href="../examples/demo/src/styles.css"><code>src/styles.css</code></a> et les <code>.css</code> des composants</td><td>Les styles globaux (dont <code>color-scheme: light dark</code> : l'app suit le thème du système), puis une feuille par composant (<code>index.css</code> de chaque écran) imbriquée sous son tag.</td><td><a href="templates.html#styles-d-un-composant">Styles d'un composant</a></td></tr>
-          <tr><td><a href="../examples/demo/src/app.test.ts"><code>src/app.test.ts</code></a></td><td>L'app entière testée : vrais stores, adapters, router en mémoire.</td><td><a href="testing.html#tester-l-app-entiere">Tester l'app entière</a></td></tr>
-          <tr><td><a href="../examples/demo/tsconfig.json"><code>tsconfig.json</code></a></td><td>Les alias <code>@core/</code> et <code>@components/</code> pour TypeScript.</td><td><a href="architecture.html#importer-depuis-core-et-components">Importer depuis @core</a></td></tr>
+          <tr><td><a href="../examples/demo/src/main.ts"><code>src/main.ts</code></a></td><td>The composition root: the chosen adapters (including the catalogue one, on dummyjson.com), the stores created by <code>XStore.create(deps)</code>, the router (with the default tab title and its suffix, <code>createRouter(Router, { title: { default, suffix } })</code>), <code>createApp</code> and <code>onError</code>. It also loads <code>styles.css</code> then <code>kit-theme.css</code>.</td><td><a href="application.html">Application</a></td></tr>
+          <tr><td><a href="../examples/demo/src/routes.ts"><code>src/routes.ts</code></a></td><td>The router: named routes, one screen per route, described and typed queries (<code>query&lt;CountersQuery&gt;({ sort: … })</code> for the counter list, <code>query&lt;KitTableQuery&gt;({ sort, order, page })</code> for the kit's connected table), a redirect (<code>/form</code>), a guard, the <code>'*'</code> and <code>'!'</code> screens.</td><td><a href="router.html">Router</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@core/contracts.d.ts"><code>src/@core/contracts.d.ts</code></a></td><td>The name → contract dictionary (and <code>'router'</code>), generated by the Vite plugin: it types <code>@contract</code> and <code>@on</code> (<code>this.contract('…')</code> in a <code>.ts</code>), <code>fakeStore('…')</code> and <code>StoreOfContract&lt;'…'&gt;</code>. Committed, never written by hand.</td><td><a href="architecture.html#the-vite-plugin">The Vite plugin</a></td></tr>
+          <tr><td><a href="../examples/demo/src/domain/shop.ts"><code>src/domain/</code></a></td><td>The domain types and rules (<code>Product</code>, <code>CartLine</code>, the counter catalogue…), without Super or the DOM, imported by contracts, stores and screens.</td><td><a href="architecture.html#user-land">User-land</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/app-shell/index.super"><code>@components/app-shell/index.super</code></a></td><td>The shell: navigation through the kit's <code>RouteLink</code>s, which set <code>aria-current</code> themselves (<code>activeFor</code> for a section), <code>&lt;RouterOutlet /&gt;</code>, a <code>mounted()</code> that loads the counters.</td><td><a href="ui.html#routelink">RouteLink</a>, <a href="application.html#loading-data-at-startup">Loading data at startup</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/examples/index.super"><code>@components/examples/index.super</code></a></td><td>A screen with no store or state: only links built by <code>this.router.href(…)</code>.</td><td><a href="router.html#links-this-router-href">Links</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/not-found/index.super"><code>@components/not-found/index.super</code></a></td><td>The <code>'*'</code> screen, which reads the path through <code>this.router.current.path</code> and sends <code>navigate</code> to the router.</td><td><a href="router.html#the-router-in-a-component">The router in a component</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/error/index.super"><code>@components/error/index.super</code></a></td><td>The <code>'!'</code> screen, which receives the error and the path as props.</td><td><a href="errors.html#the-error-screen">The '!' screen</a></td></tr>
+          <tr><td><a href="../examples/demo/src/styles.css"><code>src/styles.css</code></a> and the components' <code>.css</code></td><td>The global styles (including <code>color-scheme: light dark</code>: the app follows the system theme), then one stylesheet per component (each screen's <code>index.css</code>) nested under its tag.</td><td><a href="templates.html#component-styles">Component styles</a></td></tr>
+          <tr><td><a href="../examples/demo/src/app.test.ts"><code>src/app.test.ts</code></a></td><td>The whole app tested: real stores, adapters, in-memory router.</td><td><a href="testing.html#testing-the-whole-app">Testing the whole app</a></td></tr>
+          <tr><td><a href="../examples/demo/tsconfig.json"><code>tsconfig.json</code></a></td><td>The <code>@core/</code> and <code>@components/</code> aliases for TypeScript.</td><td><a href="architecture.html#importing-from-core-and-components">Importing from @core</a></td></tr>
         </tbody>
       </table>
 
-      <h2 id="compteurs">Exemple : les compteurs</h2>
+      <h2 id="counters">Example: the counters</h2>
       <p>
-        <code>/counters</code> liste des compteurs (cafés, pompes, livres lus) ; <code>/counters/:id</code> affiche un compteur
-        avec des boutons + et −. Les valeurs sont enregistrées dans le <code>localStorage</code>.
+        <code>/counters</code> lists counters (coffees, push-ups, books read); <code>/counters/:id</code> shows one counter
+        with + and − buttons. The values are saved in <code>localStorage</code>.
       </p>
       <table>
-        <thead><tr><th>Fichier</th><th>Ce qu'il montre</th><th>Voir</th></tr></thead>
+        <thead><tr><th>File</th><th>What it shows</th><th>See</th></tr></thead>
         <tbody>
-          <tr><td><a href="../examples/demo/src/@core/counter/contract.ts"><code>@core/counter/contract.ts</code></a></td><td>Un contrat : <code>CounterContract extends SuperContract</code>, état, commandes avec <code>Outcome</code> et raisons d'échec, sélecteurs écrits en méthodes (catalogue compris).</td><td><a href="contracts.html">Contrats</a>, <a href="selectors.html">Sélecteurs</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@core/counter/store.ts"><code>@core/counter/store.ts</code></a></td><td>Un store : <code>CounterStore extends SuperStore implements Commands</code>, une dépendance vers un port, <code>this.selectors</code>, <code>this.fail(raison)</code>, résultat retourné, erreur de chargement gardée dans l'état.</td><td><a href="stores.html">Stores</a>, <a href="commands-and-events.html">Commandes et événements</a></td></tr>
-          <tr><td><a href="../examples/demo/src/domain/counter.ts"><code>domain/counter.ts</code></a></td><td>Le métier des compteurs : catalogue, minimum, noms des changements et des raisons d'échec.</td><td><a href="architecture.html#le-user-land">Le user-land</a></td></tr>
-          <tr><td><a href="../examples/demo/src/ports/counter-repository.ts"><code>ports/counter-repository.ts</code></a></td><td>Un port, en user-land.</td><td><a href="ports-adapters.html">Ports et adapters</a></td></tr>
-          <tr><td><a href="../examples/demo/src/adapters/local-storage-counter-repository.ts"><code>adapters/local-storage-counter-repository.ts</code></a></td><td>Un adapter <code>localStorage</code>, avec validation des données lues.</td><td><a href="ports-adapters.html#les-adapters">Les adapters</a></td></tr>
-          <tr><td><a href="../examples/demo/src/adapters/in-memory-counter-repository.ts"><code>adapters/in-memory-counter-repository.ts</code></a></td><td>Un adapter en mémoire, pour les tests.</td><td><a href="testing.html#tester-un-store">Tester un store</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/counter-list/index.super"><code>@components/counter-list/index.super</code></a></td><td><code>CounterListScreen</code> : des <code>@selector</code> sur les sélecteurs, <code>pending('load')</code>, une erreur de chargement avec bouton « Réessayer », une boucle <code>for</code> avec <code>key</code>, un tri lu dans la query par <code>this.router.current.query.sort</code> (<code>?sort=label</code>), qui ne remonte pas l'écran.</td><td><a href="reading-a-store.html">Lire un store</a>, <a href="router.html#query">Query</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/counter-list/counter-list-item.super"><code>@components/counter-list/counter-list-item.super</code></a></td><td>Un composant par ligne, qui lit la valeur de son compteur : seule la ligne qui change se re-rend. Sa prop s'appelle <code>counterId</code> (<code>@prop counterId: string;</code>) : <code>id</code> est une propriété des éléments HTML.</td><td><a href="reading-a-store.html">Lire un store</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/counter/index.super"><code>@components/counter/index.super</code></a></td><td><code>CounterScreen</code>, un écran complet : le paramètre <code>id</code> lu par <code>this.router.current.params.id</code> dans le champ <code>counterId</code>, un titre d'onglet suivi (<code>@title = () =&gt; this.label.value ?? 'Compteur introuvable';</code>, qui change quand le compteur est renommé), <code>@contract</code>, <code>@selector</code> qui dépend de la route, <code>pending()</code>, une méthode <code>@on</code> par événement <code>:done</code> et <code>:failed</code>, état local (<code>@state</code>), message par raison d'échec.</td><td><a href="components.html">Composants</a>, <a href="local-state.html">État local</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/counter/counter-controls.super"><code>@components/counter/counter-controls.super</code></a></td><td>Un sous-composant de présentation : props déclarées par <code>@prop</code>, événements par <code>@emit</code> et émis par <code>this.emit</code>, sans store.</td><td><a href="parents-and-children.html">Parents et enfants</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@core/counter/store.test.ts"><code>@core/counter/store.test.ts</code></a></td><td>Un store testé sans DOM : <code>record</code>, <code>store.selectors</code>, raisons d'échec.</td><td><a href="testing.html#tester-un-store">Tester un store</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/counter/index.test.ts"><code>@components/counter/index.test.ts</code></a></td><td>Un écran testé avec <code>fakeStore('counter', …)</code>, qui émet les issues.</td><td><a href="testing.html#faux-store">Faux store</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/counter/counter-controls.test.ts"><code>@components/counter/counter-controls.test.ts</code></a></td><td>Un composant de présentation testé seul.</td><td><a href="testing.html#tester-un-composant">Tester un composant</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/counter-list/index.test.ts"><code>@components/counter-list/index.test.ts</code></a></td><td>La liste montée par <code>RouterOutlet</code> avec un faux store : tri par query sans remonter l'écran.</td><td><a href="router.html#query">Query</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@core/counter/contract.ts"><code>@core/counter/contract.ts</code></a></td><td>A contract: <code>CounterContract extends SuperContract</code>, state, commands with <code>Outcome</code> and failure reasons, selectors written as methods (catalogue included).</td><td><a href="contracts.html">Contracts</a>, <a href="selectors.html">Selectors</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@core/counter/store.ts"><code>@core/counter/store.ts</code></a></td><td>A store: <code>CounterStore extends SuperStore implements Commands</code>, a dependency on a port, <code>this.selectors</code>, <code>this.fail(reason)</code>, returned result, loading error kept in the state.</td><td><a href="stores.html">Stores</a>, <a href="commands-and-events.html">Commands and events</a></td></tr>
+          <tr><td><a href="../examples/demo/src/domain/counter.ts"><code>domain/counter.ts</code></a></td><td>The counter domain: catalogue, minimum, names of the changes and of the failure reasons.</td><td><a href="architecture.html#user-land">User-land</a></td></tr>
+          <tr><td><a href="../examples/demo/src/ports/counter-repository.ts"><code>ports/counter-repository.ts</code></a></td><td>A port, in user-land.</td><td><a href="ports-adapters.html">Ports and adapters</a></td></tr>
+          <tr><td><a href="../examples/demo/src/adapters/local-storage-counter-repository.ts"><code>adapters/local-storage-counter-repository.ts</code></a></td><td>A <code>localStorage</code> adapter, with validation of the data read.</td><td><a href="ports-adapters.html#the-adapters">Adapters</a></td></tr>
+          <tr><td><a href="../examples/demo/src/adapters/in-memory-counter-repository.ts"><code>adapters/in-memory-counter-repository.ts</code></a></td><td>An in-memory adapter, for tests.</td><td><a href="testing.html#testing-a-store">Testing a store</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/counter-list/index.super"><code>@components/counter-list/index.super</code></a></td><td><code>CounterListScreen</code>: <code>@selector</code>s on the selectors, <code>pending('load')</code>, a loading error with a "Retry" button, a <code>for</code> loop with <code>key</code>, a sort order read from the query through <code>this.router.current.query.sort</code> (<code>?sort=label</code>), which does not remount the screen.</td><td><a href="reading-a-store.html">Reading a store</a>, <a href="router.html#query">Query</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/counter-list/counter-list-item.super"><code>@components/counter-list/counter-list-item.super</code></a></td><td>One component per row, which reads its counter's value: only the row that changes re-renders. Its prop is called <code>counterId</code> (<code>@prop counterId: string;</code>): <code>id</code> is a property of HTML elements.</td><td><a href="reading-a-store.html">Reading a store</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/counter/index.super"><code>@components/counter/index.super</code></a></td><td><code>CounterScreen</code>, a complete screen: the <code>id</code> param read through <code>this.router.current.params.id</code> in the <code>counterId</code> field, a tracked tab title (<code>@title = () =&gt; this.label.value ?? 'Counter not found';</code>, which changes when the counter is renamed), <code>@contract</code>, <code>@selector</code> depending on the route, <code>pending()</code>, one <code>@on</code> method per <code>:done</code> and <code>:failed</code> event, local state (<code>@state</code>), a message per failure reason.</td><td><a href="components.html">Components</a>, <a href="local-state.html">Local state</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/counter/counter-controls.super"><code>@components/counter/counter-controls.super</code></a></td><td>A presentational sub-component: props declared with <code>@prop</code>, events with <code>@emit</code> and emitted with <code>this.emit</code>, no store.</td><td><a href="parents-and-children.html">Parents and children</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@core/counter/store.test.ts"><code>@core/counter/store.test.ts</code></a></td><td>A store tested without the DOM: <code>record</code>, <code>store.selectors</code>, failure reasons.</td><td><a href="testing.html#testing-a-store">Testing a store</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/counter/index.test.ts"><code>@components/counter/index.test.ts</code></a></td><td>A screen tested with <code>fakeStore('counter', …)</code>, which emits the outcomes.</td><td><a href="testing.html#fake-store">Fake store</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/counter/counter-controls.test.ts"><code>@components/counter/counter-controls.test.ts</code></a></td><td>A presentational component tested on its own.</td><td><a href="testing.html#testing-a-component">Testing a component</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/counter-list/index.test.ts"><code>@components/counter-list/index.test.ts</code></a></td><td>The list mounted by <code>RouterOutlet</code> with a fake store: sorting by query without remounting the screen.</td><td><a href="router.html#query">Query</a></td></tr>
         </tbody>
       </table>
 
-      <h2 id="formulaire">Exemple : le formulaire de profil</h2>
+      <h2 id="form">Example: the profile form</h2>
       <p>
-        <code>/profile</code> est un formulaire avec chaque type de champ. Il est soumis à un serveur simulé par un adapter,
-        avec de la latence. Pour voir chaque cas : <code>taken@example.com</code> est une adresse déjà prise, une adresse
-        contenant <code>offline</code> provoque une panne réseau, une image de plus de 1 Mo est refusée.
+        <code>/profile</code> is a form with every kind of field. It is submitted to a server simulated by an adapter,
+        with latency. To see each case: <code>taken@example.com</code> is an address already taken, an address
+        containing <code>offline</code> causes a network failure, an image over 1 MB is rejected.
       </p>
       <table>
-        <thead><tr><th>Fichier</th><th>Ce qu'il montre</th><th>Voir</th></tr></thead>
+        <thead><tr><th>File</th><th>What it shows</th><th>See</th></tr></thead>
         <tbody>
-          <tr><td><a href="../examples/demo/src/@core/profile/contract.ts"><code>@core/profile/contract.ts</code></a></td><td>Un store sans état : deux commandes, la soumission (<code>save</code>) et la vérification (<code>checkEmail</code>), avec leurs raisons d'échec. Leur cycle de vie suffit au formulaire.</td><td><a href="forms.html#soumission">La soumission</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@core/profile/store.ts"><code>@core/profile/store.ts</code></a></td><td>Un store qui traduit les réponses du serveur en issue de commande (<code>return this.fail(…)</code>).</td><td><a href="commands-and-events.html#declarer-l-issue">Déclarer l'issue</a></td></tr>
-          <tr><td><a href="../examples/demo/src/domain/profile.ts"><code>domain/profile.ts</code></a></td><td>Ce que le serveur enregistre : <code>ProfileInput</code>, sans Super ni DOM.</td><td><a href="architecture.html#le-user-land">Le user-land</a></td></tr>
-          <tr><td><a href="../examples/demo/src/ports/profile-client.ts"><code>ports/profile-client.ts</code></a></td><td>Le port du serveur.</td><td><a href="ports-adapters.html">Ports et adapters</a></td></tr>
-          <tr><td><a href="../examples/demo/src/adapters/fake-profile-client.ts"><code>adapters/fake-profile-client.ts</code></a></td><td>Un adapter asynchrone qui simule un serveur : latence, refus, panne.</td><td><a href="ports-adapters.html#les-adapters">Les adapters</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/profile/index.super"><code>@components/profile/index.super</code></a></td><td><code>ProfileScreen</code> : un formulaire déclaré par <code>@form</code>, tous les types de champs, règles, <code>validate</code>, <code>checks</code>, liste dynamique, <code>failures</code>, <code>reset</code>.</td><td><a href="forms.html">Formulaires</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/profile/index.test.ts"><code>@components/profile/index.test.ts</code></a></td><td>Le formulaire testé au clavier : erreurs des règles, vérification, erreurs du serveur, liste, remise à zéro.</td><td><a href="forms.html#tester-un-formulaire">Tester un formulaire</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@core/profile/store.test.ts"><code>@core/profile/store.test.ts</code></a> et <a href="../examples/demo/src/adapters/fake-profile-client.test.ts"><code>adapters/fake-profile-client.test.ts</code></a></td><td>Le store et l'adapter testés seuls.</td><td><a href="testing.html">Tester</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@core/profile/contract.ts"><code>@core/profile/contract.ts</code></a></td><td>A store without state: two commands, submission (<code>save</code>) and checking (<code>checkEmail</code>), with their failure reasons. Their lifecycle is enough for the form.</td><td><a href="forms.html#submission">Submission</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@core/profile/store.ts"><code>@core/profile/store.ts</code></a></td><td>A store that translates the server's responses into a command outcome (<code>return this.fail(…)</code>).</td><td><a href="commands-and-events.html#declaring-the-outcome">Declaring the outcome</a></td></tr>
+          <tr><td><a href="../examples/demo/src/domain/profile.ts"><code>domain/profile.ts</code></a></td><td>What the server saves: <code>ProfileInput</code>, without Super or the DOM.</td><td><a href="architecture.html#user-land">User-land</a></td></tr>
+          <tr><td><a href="../examples/demo/src/ports/profile-client.ts"><code>ports/profile-client.ts</code></a></td><td>The server port.</td><td><a href="ports-adapters.html">Ports and adapters</a></td></tr>
+          <tr><td><a href="../examples/demo/src/adapters/fake-profile-client.ts"><code>adapters/fake-profile-client.ts</code></a></td><td>An asynchronous adapter that simulates a server: latency, rejection, failure.</td><td><a href="ports-adapters.html#the-adapters">Adapters</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/profile/index.super"><code>@components/profile/index.super</code></a></td><td><code>ProfileScreen</code>: a form declared with <code>@form</code>, every kind of field, rules, <code>validate</code>, <code>checks</code>, dynamic list, <code>failures</code>, <code>reset</code>.</td><td><a href="forms.html">Forms</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/profile/index.test.ts"><code>@components/profile/index.test.ts</code></a></td><td>The form tested with the keyboard: rule errors, checking, server errors, list, reset.</td><td><a href="forms.html#testing-a-form">Testing a form</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@core/profile/store.test.ts"><code>@core/profile/store.test.ts</code></a> and <a href="../examples/demo/src/adapters/fake-profile-client.test.ts"><code>adapters/fake-profile-client.test.ts</code></a></td><td>The store and the adapter tested on their own.</td><td><a href="testing.html">Testing</a></td></tr>
         </tbody>
       </table>
 
-      <h2 id="boutique">Exemple : la boutique</h2>
+      <h2 id="shop">Example: the shop</h2>
       <p>
-        <code>/shop</code> affiche un catalogue et un panier ; <code>/shop/checkout</code> passe la commande auprès d'un
-        serveur simulé. Une adresse contenant <code>refus</code> fait refuser le paiement, <code>offline</code> simule une panne.
+        <code>/shop</code> shows a catalogue and a cart; <code>/shop/checkout</code> places the order with a
+        simulated server. An address containing <code>refuse</code> makes the payment be refused, <code>offline</code> simulates a failure.
       </p>
       <table>
-        <thead><tr><th>Fichier</th><th>Ce qu'il montre</th><th>Voir</th></tr></thead>
+        <thead><tr><th>File</th><th>What it shows</th><th>See</th></tr></thead>
         <tbody>
-          <tr><td><a href="../examples/demo/src/domain/shop.ts"><code>domain/shop.ts</code></a></td><td>Le métier de la boutique : <code>Product</code>, <code>CartLine</code>, <code>Order</code>, le catalogue et le calcul des lignes.</td><td><a href="architecture.html#le-user-land">Le user-land</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@core/cart/contract.ts"><code>@core/cart/contract.ts</code></a></td><td>Un événement écrit à la main (<code>emptied</code>), des sélecteurs qui calculent lignes et total à partir du métier.</td><td><a href="commands-and-events.html#evenements-ecrits-a-la-main">Événements écrits à la main</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@core/cart/store.ts"><code>@core/cart/store.ts</code></a></td><td>Un store sans dépendance qui émet son événement au bon moment (<code>this.emit('emptied')</code>).</td><td><a href="stores.html">Stores</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@core/checkout/contract.ts"><code>@core/checkout/contract.ts</code></a></td><td>Une commande dont l'issue porte un résultat (<code>Outcome&lt;Order, …&gt;</code>) et trois raisons d'échec.</td><td><a href="contracts.html">Contrats</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@core/checkout/store.ts"><code>@core/checkout/store.ts</code></a></td><td>Un store qui dépend d'un autre, typé par <code>StoreOfContract&lt;'cart'&gt;</code> : il lit le panier par ses sélecteurs, lui envoie <code>clear</code>, écoute ses événements.</td><td><a href="stores.html#un-store-qui-depend-d-un-autre">Un store qui dépend d'un autre</a></td></tr>
-          <tr><td><a href="../examples/demo/src/ports/order-client.ts"><code>ports/order-client.ts</code></a></td><td>Le port du serveur de commandes.</td><td><a href="ports-adapters.html">Ports et adapters</a></td></tr>
-          <tr><td><a href="../examples/demo/src/adapters/fake-order-client.ts"><code>adapters/fake-order-client.ts</code></a></td><td>Un serveur simulé : latence, paiement refusé, panne.</td><td><a href="ports-adapters.html#les-adapters">Les adapters</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/shared/confirm-dialog.super"><code>@components/shared/confirm-dialog.super</code></a></td><td>Un composant réutilisable : un dialogue rendu ou non par son parent, qui répond par un événement.</td><td><a href="parents-and-children.html#un-dialogue">Un dialogue</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/shop/index.super"><code>@components/shop/index.super</code></a></td><td><code>ShopScreen</code> : le catalogue et le panier, l'écoute de <code>emptied</code>, le dialogue de confirmation écouté par un champ fléché, et un titre d'onglet suivi qui compte les articles du panier (<code>@title = () =&gt; …</code> : « Boutique (3 au panier) »).</td><td><a href="parents-and-children.html">Parents et enfants</a>, <a href="router.html#titre-de-la-page">Le titre de la page</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/checkout/index.super"><code>@components/checkout/index.super</code></a></td><td><code>CheckoutScreen</code> : un écran protégé par un guard, un petit formulaire soumis à un store qui dépend d'un autre.</td><td><a href="router.html#guards">Guards</a></td></tr>
-          <tr><td><a href="../examples/demo/src/routes.ts"><code>routes.ts</code></a></td><td>Le guard de la commande, <code>read('cart').isEmpty()</code>, déclaré avant les écrans.</td><td><a href="router.html#guards">Guards</a></td></tr>
-          <tr><td><a href="../examples/demo/src/adapters/saved-cart.ts"><code>adapters/saved-cart.ts</code></a></td><td>Le panier enregistré dans le <code>localStorage</code> : <code>load()</code> relit les quantités (en ignorant des données invalides), <code>save(quantities)</code> les écrit.</td><td><a href="ports-adapters.html#les-adapters">Les adapters</a></td></tr>
-          <tr><td><a href="../examples/demo/src/main.ts"><code>main.ts</code></a></td><td><code>subscribe</code> : le panier est créé avec les quantités enregistrées (<code>CartStore.create({ quantities: savedCart.load() })</code>), puis enregistré à chaque changement (<code>cart.subscribe((state) =&gt; savedCart.save(state.quantities))</code>) : il survit au rechargement de la page. Le store ne sait rien du stockage, c'est la racine de composition qui le branche.</td><td><a href="stores.html#subscribe">subscribe</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@core/checkout/store.test.ts"><code>@core/checkout/store.test.ts</code></a></td><td>Le store de commande testé avec un vrai panier, y compris après son <code>dispose()</code>.</td><td><a href="testing.html#tester-un-store">Tester un store</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/shop/index.test.ts"><code>@components/shop/index.test.ts</code></a></td><td>La boutique testée : lignes et total, dialogue de confirmation (annuler, confirmer).</td><td><a href="testing.html">Tester</a></td></tr>
+          <tr><td><a href="../examples/demo/src/domain/shop.ts"><code>domain/shop.ts</code></a></td><td>The shop domain: <code>Product</code>, <code>CartLine</code>, <code>Order</code>, the catalogue and the line calculation.</td><td><a href="architecture.html#user-land">User-land</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@core/cart/contract.ts"><code>@core/cart/contract.ts</code></a></td><td>A hand-written event (<code>emptied</code>), selectors that compute lines and total from the domain.</td><td><a href="commands-and-events.html#hand-written-events">Hand-written events</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@core/cart/store.ts"><code>@core/cart/store.ts</code></a></td><td>A store without dependencies that emits its event at the right moment (<code>this.emit('emptied')</code>).</td><td><a href="stores.html">Stores</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@core/checkout/contract.ts"><code>@core/checkout/contract.ts</code></a></td><td>A command whose outcome carries a result (<code>Outcome&lt;Order, …&gt;</code>) and three failure reasons.</td><td><a href="contracts.html">Contracts</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@core/checkout/store.ts"><code>@core/checkout/store.ts</code></a></td><td>A store that depends on another, typed by <code>StoreOfContract&lt;'cart'&gt;</code>: it reads the cart through its selectors, sends it <code>clear</code>, listens to its events.</td><td><a href="stores.html#a-store-that-depends-on-another-store">A store that depends on another</a></td></tr>
+          <tr><td><a href="../examples/demo/src/ports/order-client.ts"><code>ports/order-client.ts</code></a></td><td>The order server port.</td><td><a href="ports-adapters.html">Ports and adapters</a></td></tr>
+          <tr><td><a href="../examples/demo/src/adapters/fake-order-client.ts"><code>adapters/fake-order-client.ts</code></a></td><td>A simulated server: latency, refused payment, failure.</td><td><a href="ports-adapters.html#the-adapters">Adapters</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/shared/confirm-dialog.super"><code>@components/shared/confirm-dialog.super</code></a></td><td>A reusable component: a dialog rendered or not by its parent, which answers with an event.</td><td><a href="parents-and-children.html#a-dialog">A dialog</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/shop/index.super"><code>@components/shop/index.super</code></a></td><td><code>ShopScreen</code>: the catalogue and the cart, listening to <code>emptied</code>, the confirmation dialog listened to through an arrow field, and a tracked tab title that counts the items in the cart (<code>@title = () =&gt; …</code>: "Shop (3 in cart)").</td><td><a href="parents-and-children.html">Parents and children</a>, <a href="router.html#the-page-title">The page title</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/checkout/index.super"><code>@components/checkout/index.super</code></a></td><td><code>CheckoutScreen</code>: a screen protected by a guard, a small form submitted to a store that depends on another.</td><td><a href="router.html#guards">Guards</a></td></tr>
+          <tr><td><a href="../examples/demo/src/routes.ts"><code>routes.ts</code></a></td><td>The checkout guard, <code>read('cart').isEmpty()</code>, declared before the screens.</td><td><a href="router.html#guards">Guards</a></td></tr>
+          <tr><td><a href="../examples/demo/src/adapters/saved-cart.ts"><code>adapters/saved-cart.ts</code></a></td><td>The cart saved in <code>localStorage</code>: <code>load()</code> reads the quantities back (ignoring invalid data), <code>save(quantities)</code> writes them.</td><td><a href="ports-adapters.html#the-adapters">Adapters</a></td></tr>
+          <tr><td><a href="../examples/demo/src/main.ts"><code>main.ts</code></a></td><td><code>subscribe</code>: the cart is created with the saved quantities (<code>CartStore.create({ quantities: savedCart.load() })</code>), then saved on every change (<code>cart.subscribe((state) =&gt; savedCart.save(state.quantities))</code>): it survives a page reload. The store knows nothing about storage, the composition root wires it in.</td><td><a href="stores.html#subscribe">subscribe</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@core/checkout/store.test.ts"><code>@core/checkout/store.test.ts</code></a></td><td>The checkout store tested with a real cart, including after its <code>dispose()</code>.</td><td><a href="testing.html#testing-a-store">Testing a store</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/shop/index.test.ts"><code>@components/shop/index.test.ts</code></a></td><td>The shop tested: lines and total, confirmation dialog (cancel, confirm).</td><td><a href="testing.html">Testing</a></td></tr>
         </tbody>
       </table>
 
-      <h2 id="erreurs">Exemple : les erreurs</h2>
+      <h2 id="errors">Example: the errors</h2>
       <p>
-        <code>/errors</code> propose un bouton par cas. Chacun provoque une vraie erreur ; le journal en bas de l'écran montre
-        ce que reçoit <code>onError</code> : le composant, la phase, et ce qui l'a rattrapée.
+        <code>/errors</code> offers one button per case. Each one causes a real error; the log at the bottom of the screen shows
+        what <code>onError</code> receives: the component, the phase, and what caught it.
       </p>
       <table>
-        <thead><tr><th>Fichier</th><th>Ce qu'il montre</th><th>Voir</th></tr></thead>
+        <thead><tr><th>File</th><th>What it shows</th><th>See</th></tr></thead>
         <tbody>
-          <tr><td><a href="../examples/demo/src/@components/errors/index.super"><code>@components/errors/index.super</code></a></td><td><code>ErrorsScreen</code> : un bouton par cas, un clic qui plante (phase <code>event</code>), et le journal lu dans le store <code>error-log</code>.</td><td><a href="errors.html#qui-rattrape-quoi">Qui rattrape quoi</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/errors/fragile-card.super"><code>@components/errors/fragile-card.super</code></a></td><td>Un <code>renderError</code> qui remplace le rendu de son propre composant.</td><td><a href="errors.html">Gérer les erreurs</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/errors/guarded-panel.super"><code>@components/errors/guarded-panel.super</code></a></td><td>Un parent dont le <code>renderError</code> rattrape l'erreur de constructeur de son enfant, <a href="../examples/demo/src/@components/errors/broken-child.super"><code>broken-child.super</code></a>.</td><td><a href="errors.html#qui-rattrape-quoi">Qui rattrape quoi</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/errors/double-failure.super"><code>@components/errors/double-failure.super</code></a></td><td>Un <code>renderError</code> qui plante à son tour : l'erreur remonte jusqu'à l'écran <code>'!'</code>.</td><td><a href="errors.html#l-ecran-d-erreur">L'écran '!'</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@core/error-log/store.ts"><code>@core/error-log/store.ts</code></a></td><td>Le journal des erreurs, alimenté par <code>onError</code>.</td><td><a href="errors.html#onerror">onError</a></td></tr>
-          <tr><td><a href="../examples/demo/src/main.ts"><code>main.ts</code></a></td><td><code>onError</code> qui écrit dans la console et dans le journal.</td><td><a href="errors.html#onerror">onError</a></td></tr>
-          <tr><td><a href="../examples/demo/src/app.test.ts"><code>app.test.ts</code></a></td><td>Chaque cas testé dans l'app entière, jusqu'à l'écran <code>'!'</code>.</td><td><a href="errors.html#tester-les-erreurs">Tester les erreurs</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/errors/index.super"><code>@components/errors/index.super</code></a></td><td><code>ErrorsScreen</code>: one button per case, a click that crashes (phase <code>event</code>), and the log read from the <code>error-log</code> store.</td><td><a href="errors.html#who-catches-what">What catches what</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/errors/fragile-card.super"><code>@components/errors/fragile-card.super</code></a></td><td>A <code>renderError</code> that replaces the render of its own component.</td><td><a href="errors.html">Handling errors</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/errors/guarded-panel.super"><code>@components/errors/guarded-panel.super</code></a></td><td>A parent whose <code>renderError</code> catches the constructor error of its child, <a href="../examples/demo/src/@components/errors/broken-child.super"><code>broken-child.super</code></a>.</td><td><a href="errors.html#who-catches-what">What catches what</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/errors/double-failure.super"><code>@components/errors/double-failure.super</code></a></td><td>A <code>renderError</code> that crashes in turn: the error goes up to the <code>'!'</code> screen.</td><td><a href="errors.html#the-error-screen">The '!' screen</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@core/error-log/store.ts"><code>@core/error-log/store.ts</code></a></td><td>The error log, fed by <code>onError</code>.</td><td><a href="errors.html#onerror">onError</a></td></tr>
+          <tr><td><a href="../examples/demo/src/main.ts"><code>main.ts</code></a></td><td><code>onError</code>, which writes to the console and to the log.</td><td><a href="errors.html#onerror">onError</a></td></tr>
+          <tr><td><a href="../examples/demo/src/app.test.ts"><code>app.test.ts</code></a></td><td>Each case tested in the whole app, up to the <code>'!'</code> screen.</td><td><a href="errors.html#testing-errors">Testing errors</a></td></tr>
         </tbody>
       </table>
 
-      <h2 id="widget">Exemple : le widget</h2>
+      <h2 id="widget">Example: the widget</h2>
       <p>
-        <code>/widget</code> ouvre et ferme un minuteur qui vit dans une seconde application, avec son propre store. La barre
-        d'espace le démarre ou le met en pause.
+        <code>/widget</code> opens and closes a timer that lives in a second application, with its own store. The space
+        bar starts or pauses it.
       </p>
       <table>
-        <thead><tr><th>Fichier</th><th>Ce qu'il montre</th><th>Voir</th></tr></thead>
+        <thead><tr><th>File</th><th>What it shows</th><th>See</th></tr></thead>
         <tbody>
-          <tr><td><a href="../examples/demo/src/widgets/timer-widget.ts"><code>widgets/timer-widget.ts</code></a></td><td>Une seconde <code>createApp</code> sur son propre élément, puis <code>dispose()</code> de l'application et du store.</td><td><a href="application.html#applications-imbriquees">Plusieurs applications</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@core/timer/store.ts"><code>@core/timer/store.ts</code></a></td><td>Le store du minuteur, fourni seulement à la seconde application.</td><td><a href="stores.html">Stores</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/widget/timer-widget.super"><code>@components/widget/timer-widget.super</code></a></td><td>Un <code>mounted()</code> qui démarre un intervalle, un <code>unmounted()</code> qui l'arrête.</td><td><a href="components.html#cycle-de-vie">Cycle de vie</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/widget/timer-shortcuts.super"><code>@components/widget/timer-shortcuts.super</code></a></td><td>Un raccourci clavier posé sur <code>window</code> au montage, retiré par <code>this.signal</code> au démontage.</td><td><a href="components.html#cycle-de-vie">Cycle de vie</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/widget/index.super"><code>@components/widget/index.super</code></a></td><td><code>WidgetScreen</code> : un <code>@ref</code> vers l'élément du widget, qu'il ouvre et ferme, et libère dans <code>unmounted()</code> si on quitte la page.</td><td><a href="application.html#applications-imbriquees">Plusieurs applications</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/widget/index.test.ts"><code>@components/widget/index.test.ts</code></a></td><td>Le widget testé : minuteur, raccourci clavier, libération.</td><td><a href="testing.html">Tester</a></td></tr>
+          <tr><td><a href="../examples/demo/src/widgets/timer-widget.ts"><code>widgets/timer-widget.ts</code></a></td><td>A second <code>createApp</code> on its own element, then <code>dispose()</code> of the application and the store.</td><td><a href="application.html#multiple-applications">Multiple applications</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@core/timer/store.ts"><code>@core/timer/store.ts</code></a></td><td>The timer store, provided only to the second application.</td><td><a href="stores.html">Stores</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/widget/timer-widget.super"><code>@components/widget/timer-widget.super</code></a></td><td>A <code>mounted()</code> that starts an interval, an <code>unmounted()</code> that stops it.</td><td><a href="components.html#lifecycle">Lifecycle</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/widget/timer-shortcuts.super"><code>@components/widget/timer-shortcuts.super</code></a></td><td>A keyboard shortcut set on <code>window</code> on mount, removed through <code>this.signal</code> on unmount.</td><td><a href="components.html#lifecycle">Lifecycle</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/widget/index.super"><code>@components/widget/index.super</code></a></td><td><code>WidgetScreen</code>: a <code>@ref</code> to the widget element, which it opens and closes, and releases in <code>unmounted()</code> if you leave the page.</td><td><a href="application.html#multiple-applications">Multiple applications</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/widget/index.test.ts"><code>@components/widget/index.test.ts</code></a></td><td>The widget tested: timer, keyboard shortcut, release.</td><td><a href="testing.html">Testing</a></td></tr>
         </tbody>
       </table>
 
-      <h2 id="composition">Exemple : la composition</h2>
+      <h2 id="composition">Example: composition</h2>
       <p>
-        <code>/composition</code> montre des composants qui reçoivent du contenu de leur parent, et les deux façons de remplir
-        un emplacement nommé : un emplacement <code>&lt;:actions&gt;</code> écrit entre les balises, ou une méthode
-        <code>#actions(note)</code> qui émet des éléments.
+        <code>/composition</code> shows components that receive content from their parent, and the two ways to fill
+        a named slot: a <code>&lt;:actions&gt;</code> slot written between the tags, or a method
+        <code>#actions(note)</code> that emits elements.
       </p>
       <table>
-        <thead><tr><th>Fichier</th><th>Ce qu'il montre</th><th>Voir</th></tr></thead>
+        <thead><tr><th>File</th><th>What it shows</th><th>See</th></tr></thead>
         <tbody>
-          <tr><td><a href="../examples/demo/src/@components/composition/card.super"><code>@components/composition/card.super</code></a></td><td><code>Card</code> : <code>@prop heading: string;</code> (pas <code>title</code>, déjà une propriété des éléments HTML), <code>@prop content: Children;</code> (le contenu écrit entre ses balises) et <code>@prop actions?: Children;</code>, placées par <code>{this.content}</code> et <code>{this.actions}</code>.</td><td><a href="templates.html#content">Des enfants</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/composition/tabs.super"><code>@components/composition/tabs.super</code></a></td><td><code>Tabs</code> : une liste d'emplacements (<code>panels: Children[]</code>), et l'onglet ouvert en état local.</td><td><a href="templates.html#emplacements">Emplacements nommés</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/composition/index.super"><code>@components/composition/index.super</code></a></td><td><code>CompositionScreen</code> : une carte à enfants, une carte remplie par <code>&lt;:actions&gt;</code>, des cartes en boucle remplies par <code>#actions(note)</code>, des onglets remplis par des méthodes. Les boutons du contenu modifient l'état de l'écran.</td><td><a href="parents-and-children.html#composer">Composer</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/composition/index.test.ts"><code>@components/composition/index.test.ts</code></a></td><td>L'écran testé : enfants, emplacement, méthode dans une boucle, onglets.</td><td><a href="testing.html">Tester</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/composition/card.super"><code>@components/composition/card.super</code></a></td><td><code>Card</code>: <code>@prop heading: string;</code> (not <code>title</code>, already a property of HTML elements), <code>@prop content: Children;</code> (the content written between its tags) and <code>@prop actions?: Children;</code>, placed with <code>{this.content}</code> and <code>{this.actions}</code>.</td><td><a href="templates.html#content">Children</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/composition/tabs.super"><code>@components/composition/tabs.super</code></a></td><td><code>Tabs</code>: a list of slots (<code>panels: Children[]</code>), and the open tab in local state.</td><td><a href="templates.html#named-slots">Named slots</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/composition/index.super"><code>@components/composition/index.super</code></a></td><td><code>CompositionScreen</code>: a card with children, a card filled by <code>&lt;:actions&gt;</code>, cards in a loop filled by <code>#actions(note)</code>, tabs filled by methods. The buttons in the content change the screen's state.</td><td><a href="parents-and-children.html#composing">Composing</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/composition/index.test.ts"><code>@components/composition/index.test.ts</code></a></td><td>The screen tested: children, slot, method in a loop, tabs.</td><td><a href="testing.html">Testing</a></td></tr>
         </tbody>
       </table>
 
-      <h2 id="kit">Exemple : le kit d'interface</h2>
+      <h2 id="kit">Example: the UI kit</h2>
       <p>
-        <code>/kit</code> est le sommaire du kit : une page par famille de composants de <code>@super-ts/ui</code>, branchée
-        sur les stores de la démo. Chaque page partage la même mise en page (<code>KitPage</code> : un lien « ← Le kit »,
-        un titre, une présentation, le contenu), et a sa propre route :
+        <code>/kit</code> is the kit's table of contents: one page per family of <code>@super-ts/ui</code> components, wired
+        to the demo's stores. Each page shares the same layout (<code>KitPage</code>: a "← The kit" link,
+        a title, an introduction, the content), and has its own route:
       </p>
       <table>
-        <thead><tr><th>Page</th><th>Route</th><th>Ce qu'elle montre</th></tr></thead>
+        <thead><tr><th>Page</th><th>Route</th><th>What it shows</th></tr></thead>
         <tbody>
-          <tr><td>Formulaires et commandes</td><td><code>/kit/forms</code></td><td>Le formulaire est soumis au store du profil (<code>taken@example.com</code> est une adresse déjà prise), et le bouton de commande remet vraiment le compteur des cafés à zéro.</td></tr>
-          <tr><td>Fenêtres</td><td><code>/kit/windows</code></td><td>Un dialogue, une modale et une confirmation, rendus selon l'état local.</td></tr>
-          <tr><td>Primitives</td><td><code>/kit/primitives</code></td><td>Un menu, un popover, une info-bulle, des onglets, un contenu repliable, un combobox à valeurs en dur, et un combobox qui cherche ses suggestions dans l'API dummyjson.com.</td></tr>
-          <tr><td>Affichage</td><td><code>/kit/display</code></td><td>Les variantes de bouton, les badges, les spinners, un squelette, un état vide et un panneau d'erreur.</td></tr>
-          <tr><td>Table</td><td><code>/kit/table</code></td><td>Une table statique sur les compteurs, et une table branchée sur l'API publique de test dummyjson.com, dont le tri et la page vivent dans l'URL.</td></tr>
-          <tr><td>Thème</td><td><code>/kit/theme</code></td><td>Les manières de surcharger le style du kit, chacune à côté de son effet : toute l'app, une zone, le thème sombre forcé dans une zone, une instance, une règle ordinaire, une table dense.</td></tr>
+          <tr><td>Forms and commands</td><td><code>/kit/forms</code></td><td>The form is submitted to the profile store (<code>taken@example.com</code> is an address already taken), and the command button really resets the coffee counter to zero.</td></tr>
+          <tr><td>Windows</td><td><code>/kit/windows</code></td><td>A dialog, a modal and a confirmation, rendered according to local state.</td></tr>
+          <tr><td>Primitives</td><td><code>/kit/primitives</code></td><td>A menu, a popover, a tooltip, tabs, a collapsible content, a combobox with hard-coded values, and a combobox that looks up its suggestions in the dummyjson.com API.</td></tr>
+          <tr><td>Display</td><td><code>/kit/display</code></td><td>The button variants, badges, spinners, a skeleton, an empty state and an error panel.</td></tr>
+          <tr><td>Table</td><td><code>/kit/table</code></td><td>A static table on the counters, and a table connected to the public dummyjson.com test API, whose sort order and page live in the URL.</td></tr>
+          <tr><td>Theme</td><td><code>/kit/theme</code></td><td>The ways to override the kit's style, each next to its effect: the whole app, a zone, the dark theme forced in a zone, an instance, an ordinary rule, a dense table.</td></tr>
         </tbody>
       </table>
       <p>
-        La table branchée suit les ports et adapters de la démo : le store du catalogue ne connaît que le port
-        <code>ProductCatalog</code> ; <code>main.ts</code> lui donne l'adapter sur dummyjson.com, les tests un adapter en
-        mémoire qui trie, pagine et cherche comme le serveur. Le store ignore une réponse dépassée par une demande plus récente :
-        trier deux fois de suite ne peut pas afficher la page du premier tri.
+        The connected table follows the demo's ports and adapters: the catalogue store only knows the
+        <code>ProductCatalog</code> port; <code>main.ts</code> gives it the dummyjson.com adapter, the tests an in-memory
+        adapter that sorts, paginates and searches like the server. The store ignores a response overtaken by a more recent request:
+        sorting twice in a row cannot display the page of the first sort.
       </p>
       <p>
-        La page « Thème » affiche le code qu'elle applique : chaque fichier CSS y est importé deux fois, une fois pour
-        être appliqué, une fois en texte par le suffixe Vite <code>?raw</code> (<code>import ZONE_CSS from
-        './theme-zone.css?raw'</code>), affiché dans un <code>&lt;pre&gt;</code>. Le code montré ne peut donc pas
-        s'écarter du code appliqué.
+        The "Theme" page displays the code it applies: each CSS file is imported twice, once to
+        be applied, once as text through the Vite suffix <code>?raw</code> (<code>import ZONE_CSS from
+        './theme-zone.css?raw'</code>), displayed in a <code>&lt;pre&gt;</code>. The code shown therefore cannot
+        drift from the code applied.
       </p>
       <table>
-        <thead><tr><th>Fichier</th><th>Ce qu'il montre</th><th>Voir</th></tr></thead>
+        <thead><tr><th>File</th><th>What it shows</th><th>See</th></tr></thead>
         <tbody>
-          <tr><td><a href="../examples/demo/src/@components/kit/index.super"><code>@components/kit/index.super</code></a></td><td><code>KitScreen</code> : le sommaire, des <code>RouteLink</code> vers les six pages.</td><td><a href="ui.html#routelink">RouteLink</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/kit/kit-page.super"><code>@components/kit/kit-page.super</code></a></td><td><code>KitPage</code> : la mise en page commune, qui reçoit son titre par la prop <code>heading</code> et le contenu de la page en enfants. Ce n'est pas un écran, mais il donne leur titre d'onglet à toutes les pages du kit (<code>@title = () =&gt; this.heading;</code>).</td><td><a href="parents-and-children.html#composer">Composer</a>, <a href="router.html#titre-de-la-page">Le titre de la page</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/kit/kit.css"><code>@components/kit/kit.css</code></a></td><td>La mise en page des pages, écrite par l'app : le kit n'en fournit pas.</td><td><a href="ui.html#ce-que-le-kit-apporte">Ce que le kit apporte</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/kit/forms.super"><code>@components/kit/forms.super</code></a></td><td><code>Field</code>, <code>Select</code>, <code>RadioGroup</code> et <code>Checkbox</code> reliés à un <code>@form</code> par <code>fieldOf</code> ; un <code>CommandButton</code> préparé par <code>commandOf</code> ; des <code>Toasts</code> alimentés par les issues des commandes, écoutées par <code>@on</code>.</td><td><a href="ui.html#champs">Les champs</a>, <a href="ui.html#commandbutton">CommandButton</a>, <a href="ui.html#toasts">Toasts</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/kit/windows.super"><code>@components/kit/windows.super</code></a></td><td><code>Dialog</code>, <code>Modal</code> et <code>ConfirmDialog</code> rendus selon l'état local.</td><td><a href="ui.html#fenetres">Les fenêtres</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/kit/primitives.super"><code>@components/kit/primitives.super</code></a></td><td><code>Menu</code>, <code>Popover</code>, <code>Tooltip</code>, des <code>Tabs</code> dont les panneaux sont des méthodes, <code>Disclosure</code>, un <code>Combobox</code> à valeurs en dur et un autre branché sur la recherche du catalogue.</td><td><a href="ui.html#primitives">Les primitives</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/kit/display.super"><code>@components/kit/display.super</code></a></td><td>Les variantes de <code>Button</code>, <code>Badge</code>, <code>Spinner</code>, <code>Skeleton</code>, <code>EmptyState</code>, <code>ErrorPanel</code>.</td><td><a href="ui.html#affichage">L'affichage</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/kit/table.super"><code>@components/kit/table.super</code></a></td><td>Une <code>Table</code> statique ; une <code>Table</code> branchée dont le tri et la page sont lus dans la query (<code>@selector sort = this.router.current.query.sort;</code>…), changés par <code>navigate</code> sur <code>on:sort</code> et <code>on:page</code>, et chargés sur <code>on:request</code> par <code>this.catalog.send('load', …)</code> ; le chargement par <code>pending('load')</code>, un message d'erreur et un bouton « Réessayer ».</td><td><a href="ui.html#table-branchee">La table branchée</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/kit/theme.super"><code>@components/kit/theme.super</code></a></td><td>Chaque surcharge appliquée et affichée par <code>?raw</code>, avec ses fichiers <code>theme-zone.css</code>, <code>theme-dark.css</code>, <code>theme-instance.css</code>, <code>theme-rule.css</code> et <code>theme-compact.css</code>.</td><td><a href="ui.html#surcharger">Surcharger le thème</a>, <a href="ui.html#clair-sombre">Clair et sombre</a></td></tr>
-          <tr><td><a href="../examples/demo/src/kit-theme.css"><code>src/kit-theme.css</code></a></td><td>Le thème du kit pour toute la démo : quelques variables <code>--super-*</code> sur <code>:root</code>, chargées par <code>main.ts</code>.</td><td><a href="ui.html#surcharger">Surcharger le thème</a></td></tr>
-          <tr><td><a href="../examples/demo/src/domain/catalog.ts"><code>src/domain/catalog.ts</code></a></td><td><code>Product</code>, les colonnes triables (<code>PRODUCT_SORTS</code>), la page demandée (<code>ProductQuery</code>) et la page reçue (<code>ProductPage</code>).</td><td><a href="architecture.html#le-user-land">Le user-land</a></td></tr>
-          <tr><td><a href="../examples/demo/src/ports/product-catalog.ts"><code>src/ports/product-catalog.ts</code></a></td><td>Le port <code>ProductCatalog</code> : <code>list(query)</code> renvoie une page de produits triée côté serveur.</td><td><a href="ports-adapters.html">Ports et adapters</a></td></tr>
-          <tr><td><a href="../examples/demo/src/adapters/dummyjson-product-catalog.ts"><code>src/adapters/dummyjson-product-catalog.ts</code></a></td><td>L'adapter sur l'API publique de test dummyjson.com : pagination (<code>limit</code>, <code>skip</code>) et tri (<code>sortBy</code>, <code>order</code>) faits par le serveur. Son test lui donne un faux <code>fetch</code>.</td><td><a href="ports-adapters.html">Ports et adapters</a></td></tr>
-          <tr><td><a href="../examples/demo/src/adapters/in-memory-product-catalog.ts"><code>src/adapters/in-memory-product-catalog.ts</code></a></td><td>L'adapter en mémoire des tests : il trie et pagine comme le serveur, et garde les demandes reçues (<code>queries</code>).</td><td><a href="testing.html">Tester</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@core/catalog/store.ts"><code>@core/catalog/store.ts</code></a></td><td><code>CatalogStore</code> et son contrat (<code>contract.ts</code>) : la commande <code>load</code>, qui échoue en <code>'network'</code> avec un message, et ignore une réponse dépassée par une demande plus récente. Son test le vérifie.</td><td><a href="stores.html">Stores</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/app-shell/index.super"><code>@components/app-shell/index.super</code></a></td><td>La navigation par <code>RouteLink</code>.</td><td><a href="ui.html#routelink">RouteLink</a></td></tr>
-          <tr><td><a href="../examples/demo/src/@components/kit/index.test.ts"><code>@components/kit/index.test.ts</code></a></td><td>Chaque page testée au clavier et à la souris : le sommaire, validation et soumission, modale fermée par Échap, menu, choix dans le combobox, tri de la table statique, table branchée pilotée par l'URL (sur l'adapter en mémoire), CSS affiché par la page « Thème ».</td><td><a href="ui.html#tester">Tester un écran qui utilise le kit</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/kit/index.super"><code>@components/kit/index.super</code></a></td><td><code>KitScreen</code>: the table of contents, <code>RouteLink</code>s to the six pages.</td><td><a href="ui.html#routelink">RouteLink</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/kit/kit-page.super"><code>@components/kit/kit-page.super</code></a></td><td><code>KitPage</code>: the shared layout, which receives its title through the <code>heading</code> prop and the page content as children. It is not a screen, but it gives every kit page its tab title (<code>@title = () =&gt; this.heading;</code>).</td><td><a href="parents-and-children.html#composing">Composing</a>, <a href="router.html#the-page-title">The page title</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/kit/kit.css"><code>@components/kit/kit.css</code></a></td><td>The page layout, written by the app: the kit does not provide one.</td><td><a href="ui.html#what-the-kit-provides">What the kit provides</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/kit/forms.super"><code>@components/kit/forms.super</code></a></td><td><code>Field</code>, <code>Select</code>, <code>RadioGroup</code> and <code>Checkbox</code> linked to a <code>@form</code> through <code>fieldOf</code>; a <code>CommandButton</code> prepared by <code>commandOf</code>; <code>Toasts</code> fed by the commands' outcomes, listened to with <code>@on</code>.</td><td><a href="ui.html#fields">Fields</a>, <a href="ui.html#commandbutton">CommandButton</a>, <a href="ui.html#toasts">Toasts</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/kit/windows.super"><code>@components/kit/windows.super</code></a></td><td><code>Dialog</code>, <code>Modal</code> and <code>ConfirmDialog</code> rendered according to local state.</td><td><a href="ui.html#windows">Windows</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/kit/primitives.super"><code>@components/kit/primitives.super</code></a></td><td><code>Menu</code>, <code>Popover</code>, <code>Tooltip</code>, <code>Tabs</code> whose panels are methods, <code>Disclosure</code>, a <code>Combobox</code> with hard-coded values and another wired to the catalogue search.</td><td><a href="ui.html#primitives">Primitives</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/kit/display.super"><code>@components/kit/display.super</code></a></td><td>The variants of <code>Button</code>, <code>Badge</code>, <code>Spinner</code>, <code>Skeleton</code>, <code>EmptyState</code>, <code>ErrorPanel</code>.</td><td><a href="ui.html#display">Display</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/kit/table.super"><code>@components/kit/table.super</code></a></td><td>A static <code>Table</code>; a connected <code>Table</code> whose sort order and page are read from the query (<code>@selector sort = this.router.current.query.sort;</code>…), changed by <code>navigate</code> on <code>on:sort</code> and <code>on:page</code>, and loaded on <code>on:request</code> by <code>this.catalog.send('load', …)</code>; loading through <code>pending('load')</code>, an error message and a "Retry" button.</td><td><a href="ui.html#connected-table">The connected table</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/kit/theme.super"><code>@components/kit/theme.super</code></a></td><td>Each override applied and displayed through <code>?raw</code>, with its files <code>theme-zone.css</code>, <code>theme-dark.css</code>, <code>theme-instance.css</code>, <code>theme-rule.css</code> and <code>theme-compact.css</code>.</td><td><a href="ui.html#overriding">Overriding the theme</a>, <a href="ui.html#light-dark">Light and dark</a></td></tr>
+          <tr><td><a href="../examples/demo/src/kit-theme.css"><code>src/kit-theme.css</code></a></td><td>The kit theme for the whole demo: a few <code>--super-*</code> variables on <code>:root</code>, loaded by <code>main.ts</code>.</td><td><a href="ui.html#overriding">Overriding the theme</a></td></tr>
+          <tr><td><a href="../examples/demo/src/domain/catalog.ts"><code>src/domain/catalog.ts</code></a></td><td><code>Product</code>, the sortable columns (<code>PRODUCT_SORTS</code>), the requested page (<code>ProductQuery</code>) and the received page (<code>ProductPage</code>).</td><td><a href="architecture.html#user-land">User-land</a></td></tr>
+          <tr><td><a href="../examples/demo/src/ports/product-catalog.ts"><code>src/ports/product-catalog.ts</code></a></td><td>The <code>ProductCatalog</code> port: <code>list(query)</code> returns a page of products sorted on the server side.</td><td><a href="ports-adapters.html">Ports and adapters</a></td></tr>
+          <tr><td><a href="../examples/demo/src/adapters/dummyjson-product-catalog.ts"><code>src/adapters/dummyjson-product-catalog.ts</code></a></td><td>The adapter for the public dummyjson.com test API: pagination (<code>limit</code>, <code>skip</code>) and sorting (<code>sortBy</code>, <code>order</code>) done by the server. Its test gives it a fake <code>fetch</code>.</td><td><a href="ports-adapters.html">Ports and adapters</a></td></tr>
+          <tr><td><a href="../examples/demo/src/adapters/in-memory-product-catalog.ts"><code>src/adapters/in-memory-product-catalog.ts</code></a></td><td>The in-memory adapter for tests: it sorts and paginates like the server, and keeps the requests received (<code>queries</code>).</td><td><a href="testing.html">Testing</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@core/catalog/store.ts"><code>@core/catalog/store.ts</code></a></td><td><code>CatalogStore</code> and its contract (<code>contract.ts</code>): the <code>load</code> command, which fails with <code>'network'</code> and a message, and ignores a response overtaken by a more recent request. Its test checks this.</td><td><a href="stores.html">Stores</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/app-shell/index.super"><code>@components/app-shell/index.super</code></a></td><td>Navigation through <code>RouteLink</code>.</td><td><a href="ui.html#routelink">RouteLink</a></td></tr>
+          <tr><td><a href="../examples/demo/src/@components/kit/index.test.ts"><code>@components/kit/index.test.ts</code></a></td><td>Each page tested with the keyboard and the mouse: the table of contents, validation and submission, modal closed with Escape, menu, choice in the combobox, sorting the static table, connected table driven by the URL (on the in-memory adapter), CSS displayed by the "Theme" page.</td><td><a href="ui.html#testing">Testing a screen that uses the kit</a></td></tr>
         </tbody>
       </table>
     </article>

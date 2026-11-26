@@ -55,7 +55,7 @@ body {
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
-/* En-tête */
+/* Header */
 .site-header {
   position: sticky;
   top: 0;
@@ -85,7 +85,7 @@ a:hover { text-decoration: underline; }
 }
 .menu-button { display: none; }
 
-/* Recherche */
+/* Search */
 .search { position: relative; width: min(26rem, 50vw); }
 .search input {
   width: 100%;
@@ -128,7 +128,7 @@ a:hover { text-decoration: underline; }
 .search-results mark { background: none; color: var(--accent); font-weight: 600; }
 .search-empty { padding: 0.75rem; color: var(--text-soft); font-size: 0.9rem; }
 
-/* Mise en page */
+/* Layout */
 .layout {
   display: grid;
   grid-template-columns: var(--sidebar-w) minmax(0, 1fr) var(--toc-w);
@@ -173,7 +173,7 @@ a:hover { text-decoration: underline; }
 main { min-width: 0; padding: 2rem 3rem 4rem; }
 article { max-width: 48rem; }
 
-/* Contenu */
+/* Content */
 article h1 { font-size: 2.2rem; line-height: 1.2; margin: 0 0 0.5rem; }
 article h2 { font-size: 1.5rem; margin: 2.75rem 0 0.75rem; padding-top: 1.25rem; border-top: 1px solid var(--border); }
 article h3 { font-size: 1.15rem; margin: 2rem 0 0.5rem; }
