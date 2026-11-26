@@ -1,0 +1,17 @@
+import { SuperElement } from '@super-ts/dom';
+
+/** Affiché par le router quand aucune route ne correspond. */
+export class NotFoundScreen extends SuperElement {
+  @tag = 'not-found-screen';
+  @title = 'Page introuvable';
+
+  @selector path = this.router.current.path;
+
+  render() {
+    <main class="screen">
+      <h1>Page introuvable</h1>
+      <p>Rien à l’adresse <code>{this.path.value}</code>.</p>
+      <button type="button" on:click={() => this.router.send('navigate', { to: 'examples' })}>Retour aux exemples</button>
+    </main>
+  }
+}

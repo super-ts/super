@@ -1,0 +1,5 @@
+/* Une table plus dense : l'espacement du kit vient d'une seule variable. */
+.kit-compact {
+  --super-space: 0.25rem;
+  font-size: 0.9rem;
+}

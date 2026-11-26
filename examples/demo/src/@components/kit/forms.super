@@ -1,0 +1,127 @@
+import { SuperElement } from '@super-ts/dom';
+import { Button, Checkbox, CommandButton, commandOf, createToasts, Field, fieldOf, RadioGroup, Select, Toasts } from '@super-ts/ui';
+import { KitPage } from './kit-page';
+
+const COUNTRIES = [
+  { value: 'FR', label: 'France' },
+  { value: 'BE', label: 'Belgique' },
+  { value: 'CH', label: 'Suisse' },
+];
+const COMMAND_CODE = `<CommandButton
+  command={commandOf(this.counter, 'reset', { id: 'cafes' })}
+  pendingLabel="Remise à zéro…"
+>
+  Remettre les cafés à zéro
+</CommandButton>
+
+// L'issue arrive comme pour tout envoi :
+@on('counter', 'reset:done')
+onReset() {
+  this.notices.show('Cafés remis à zéro.');
+}`;
+
+const PLANS = [
+  { value: 'free', label: 'Gratuite' },
+  { value: 'pro', label: 'Pro' },
+  { value: 'team', label: 'Équipe' },
+];
+
+// Ce que le profil attend en plus de ce petit formulaire.
+const PROFILE_DEFAULTS = {
+  password: 'motdepasse',
+  age: null,
+  website: '',
+  bio: '',
+  languages: ['fr'],
+  interests: [],
+  birthdate: '',
+  meetingTime: '',
+  color: '#4f46e5',
+  volume: 50,
+  avatar: null,
+  phones: [],
+};
+
+/** Écran de la route `/kit/forms` : les champs reliés à un formulaire, un bouton de commande, les messages. */
+export class KitFormsScreen extends SuperElement {
+  @tag = 'kit-forms-screen';
+
+  @contract counter;
+  @contract profile;
+  notices = createToasts();
+  @selector cafes = () => this.counter.selectors.count('cafes');
+
+  @form edit = {
+    initial: { name: '', email: '', country: 'FR', newsletter: false, plan: 'free' as 'free' | 'pro' | 'team' },
+    rules: {
+      name: (v) => v.trim() !== '' || 'Nom obligatoire',
+      email: (v) => /.+@.+\..+/.test(v) || 'Adresse invalide',
+    },
+    checks: {
+      email: {
+        command: 'checkEmail',
+        toInput: (email) => ({ email }),
+        accept: ({ available }) => available || 'Adresse déjà utilisée',
+        delay: 400,
+      },
+    },
+    submit: { to: this.profile, command: 'save', toInput: (values) => ({ ...PROFILE_DEFAULTS, ...values }) },
+    failures: {
+      fields: { 'email-taken': { email: 'Adresse déjà utilisée' } },
+      form: { network: 'Connexion impossible, réessaie.', 'avatar-too-large': 'Image trop lourde.' },
+    },
+  };
+
+  // Les issues des commandes deviennent des messages.
+  @on('profile', 'save:done')
+  onSaved() {
+    this.notices.show('Profil enregistré.', { tone: 'success' });
+  }
+
+  @on('counter', 'reset:done')
+  onReset() {
+    this.notices.show('Cafés remis à zéro.');
+  }
+
+  render() {
+    const { edit } = this;
+    <KitPage
+      heading="Formulaires et commandes"
+      intro="Les champs se relient au formulaire par fieldOf, le bouton à une commande par commandOf : les noms sont vérifiés par le compilateur."
+    >
+      <section class="kit-section">
+        <h2>Champs</h2>
+        <form class="kit-form" {edit.bind()}>
+          <Field field={fieldOf(edit, 'name')} label="Nom" hint="Tel qu’il sera affiché." />
+          <Field field={fieldOf(edit, 'email')} label="E-mail" type="email" hint="Essaie taken@example.com." />
+          <Select field={fieldOf(edit, 'country')} label="Pays" options={COUNTRIES} />
+          <RadioGroup field={fieldOf(edit, 'plan')} label="Offre" options={PLANS} />
+          <Checkbox field={fieldOf(edit, 'newsletter')} label="Recevoir la newsletter" />
+          <p role="alert" class="super-field-error">{edit.formError()}</p>
+          <Button type="submit" disabled={edit.submitting()}>
+            Enregistrer
+          </Button>
+        </form>
+      </section>
+      <section class="kit-example">
+        <h2>Bouton de commande</h2>
+        <p>
+          CommandButton envoie au clic la commande préparée par commandOf : ici reset sur le contrat counter, avec l’entrée
+          <code>{"{ id: 'cafes' }"}</code>. Tant que la commande est en cours, le bouton est désactivé (aria-busy) et affiche pendingLabel.
+          Le résultat revient par le store : le compteur ci-dessous se met à jour, et reset:done déclenche un message.
+        </p>
+        <pre class="kit-code"><code>{COMMAND_CODE}</code></pre>
+        <p>Cafés : <strong>{this.cafes.value}</strong></p>
+        <div class="kit-row">
+          <CommandButton command={commandOf(this.counter, 'increment', { id: 'cafes' })} variant="secondary">
+            +1 café
+          </CommandButton>
+          <CommandButton command={commandOf(this.counter, 'reset', { id: 'cafes' })} pendingLabel="Remise à zéro…">
+            Remettre les cafés à zéro
+          </CommandButton>
+        </div>
+      </section>
+      <Toasts of={this.notices} />
+    </KitPage>
+  }
+}

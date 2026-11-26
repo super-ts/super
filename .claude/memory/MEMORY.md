@@ -1,0 +1,12 @@
+- [Super internals stay in packages](super-internals-stay-in-packages.md) — no framework plumbing or framework tests in user-land
+- [Migration vers l'API à classes](class-api-migration.md) — décisions, essais et état du chantier SuperContract/SuperStore/SuperElement
+- [Ce que Super ne fait pas encore](framework-gap-analysis.md) — comparaison aux autres frameworks, pistes et priorités (2026-11-25)
+- [Fichiers .super (templates typés)](super-template-language.md) — syntaxe à la Ripple, état du jalon A, blocage Volar/TS 7
+- [À faire plus tard](todo-later.md) — chantiers mis de côté par l'utilisateur (publication grammaire + extension Zed, params de route réactifs…)
+- [Design de this.router.current](router-current-design.md) — décisions actées pour params/query typés et réactifs (2026-11-26)
+- [Kit d'interface @super-ts/ui](ui-kit-design.md) — décisions actées et questions ouvertes (2026-11-26)
+- [Événements de store dans les composants](component-store-events.md) — this.<store>.on, cycle de vie, trou : pas de désabonnement
+- [Props et émissions sans générique](props-emits-without-generic.md) — réflexion ouverte sur this.prop(12) et this.emitter({…})
+- [Scope npm @super-ts](npm-scope-super-ts.md) — org npm "super-ts" (super était pris) ; dépôt renommé en @super-ts/… le 2026-11-26
+- [Couche données serveur](server-data-layer-design.md) — esquisse @read/@write façon TanStack Query, questions ouvertes, à rouvrir (2026-11-26)
+- [Plan de publication](publication-plan.md) — npm @super-ts/*, extension Zed, grammaire, travail local ; décisions ouvertes (version, dépôt, licence, id)

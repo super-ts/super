@@ -1,0 +1,13 @@
+import { type Children, SuperElement } from '@super-ts/dom';
+
+/** Un composant à enfants et à emplacement nommé, pour la complétion de `<:`. */
+export class Panel extends SuperElement {
+  @tag = 'srv-panel';
+  @prop heading: string;
+  @prop content: Children;
+  @prop footer?: Children;
+
+  render() {
+    <section>{this.content} <footer>{this.footer}</footer></section>
+  }
+}

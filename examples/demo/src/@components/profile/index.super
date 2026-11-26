@@ -1,0 +1,212 @@
+import { SuperElement } from '@super-ts/dom';
+import './index.css';
+
+const COUNTRIES = [
+  { code: 'FR', label: 'France' },
+  { code: 'BE', label: 'Belgique' },
+  { code: 'CH', label: 'Suisse' },
+  { code: 'CA', label: 'Canada' },
+];
+const LANGUAGES = [
+  { code: 'fr', label: 'Français' },
+  { code: 'en', label: 'Anglais' },
+  { code: 'es', label: 'Espagnol' },
+];
+const INTERESTS = [
+  { value: 'sport', label: 'Sport' },
+  { value: 'lecture', label: 'Lecture' },
+  { value: 'musique', label: 'Musique' },
+];
+
+/** Écran de la route `/profile` : un formulaire avec chaque type de champ, soumis à un serveur simulé. */
+export class ProfileScreen extends SuperElement {
+  @tag = 'profile-screen';
+  @title = 'Profil';
+
+  // Le store ne sert qu'à envoyer les commandes et suivre leur issue : on n'en lit rien.
+  @contract profile;
+  @state local = { saved: null as string | null };
+
+  @form edit = {
+    // Les valeurs initiales donnent le type de chaque champ.
+    initial: {
+      name: '',
+      email: '',
+      password: '',
+      confirm: '',
+      age: null as number | null,
+      website: '',
+      bio: '',
+      country: 'FR',
+      languages: [] as string[],
+      plan: 'free' as 'free' | 'pro' | 'team',
+      newsletter: false,
+      interests: [] as string[],
+      birthdate: '',
+      meetingTime: '',
+      color: '#4f46e5',
+      volume: 50,
+      avatar: null as File | null,
+      phones: [{ label: 'mobile', number: '' }],
+    },
+
+    // Une règle par champ : `true`, ou le message d'erreur.
+    rules: {
+      name: (v) => v.trim() !== '' || 'Nom obligatoire',
+      email: (v) => /.+@.+\..+/.test(v) || 'Adresse invalide',
+      password: (v) => v.length >= 8 || '8 caractères minimum',
+      age: (v) => v === null || (v >= 13 && v <= 120) || 'Entre 13 et 120 ans',
+      website: (v) => v === '' || /^https?:\/\/.+/.test(v) || 'Adresse commençant par http:// ou https://',
+      bio: (v) => v.length <= 280 || '280 caractères maximum',
+      languages: (v) => v.length > 0 || 'Choisis au moins une langue',
+      avatar: (v) => v === null || v.type.startsWith('image/') || 'Choisis une image',
+      phones: { number: (v) => /^\+?[0-9 ]{6,}$/.test(v) || 'Numéro invalide' },
+    },
+
+    // Les règles qui croisent plusieurs champs.
+    validate: (v) => ({
+      ...(v.password === v.confirm ? {} : { confirm: 'Les mots de passe diffèrent' }),
+      ...(v.phones.length > 0 ? {} : { phones: 'Au moins un numéro' }),
+    }),
+
+    // La vérification asynchrone de l'adresse, pendant la saisie.
+    checks: {
+      email: {
+        command: 'checkEmail',
+        toInput: (email) => ({ email }),
+        accept: ({ available }) => available || 'Adresse déjà utilisée',
+        delay: 400,
+      },
+    },
+
+    // La soumission est une commande : `confirm` ne sert qu'à l'écran, on le retire.
+    submit: { to: this.profile, command: 'save', toInput: ({ confirm, ...values }) => values },
+
+    // Chaque raison d'échec de `save`, sur un champ ou sur le formulaire.
+    failures: {
+      fields: {
+        'email-taken': { email: 'Adresse déjà utilisée' },
+        'avatar-too-large': { avatar: 'Image trop lourde (1 Mo maximum)' },
+      },
+      form: { network: 'Connexion impossible, réessaie.' },
+    },
+  };
+
+  phones = this.edit.list('phones');
+
+  @on('profile', 'save:done')
+  onSaved({ result }) {
+    this.local.set({ saved: result.id });
+  }
+
+  render() {
+    const { edit, phones, local } = this;
+    <main class="screen">
+      <h1>Formulaire de profil</h1>
+      <p class="hint">
+        Le serveur est simulé. Essaie <code>taken@example.com</code> (adresse déjà prise), une adresse contenant <code>offline</code> (panne
+        réseau), ou une image de plus de 1 Mo.
+      </p>
+
+      <form {edit.bind()}>
+        <fieldset>
+          <legend>Identité</legend>
+          <label>Nom <input {edit.field('name')} /></label>
+          <p class="error">{edit.error('name')}</p>
+
+          <label>E-mail <input type="email" {edit.field('email')} /></label>
+          if (edit.checking('email')) {
+            <small class="checking">Vérification…</small>
+          }
+          <p class="error">{edit.error('email')}</p>
+
+          <label>Mot de passe <input type="password" {edit.field('password')} /></label>
+          <p class="error">{edit.error('password')}</p>
+          <label>Confirmation <input type="password" {edit.field('confirm')} /></label>
+          <p class="error">{edit.error('confirm')}</p>
+
+          <label>Âge <input type="number" {edit.field('age')} /></label>
+          <p class="error">{edit.error('age')}</p>
+
+          <label>Site web <input type="url" {edit.field('website')} /></label>
+          <p class="error">{edit.error('website')}</p>
+
+          <label>Présentation <textarea rows="3" {edit.field('bio')}></textarea></label>
+          <p class="error">{edit.error('bio')}</p>
+        </fieldset>
+
+        <fieldset>
+          <legend>Préférences</legend>
+          <label>
+            Pays
+            <select {edit.field('country')}>
+              for (const c of COUNTRIES; key c.code) {
+                <option value={c.code}>{c.label}</option>
+              }
+            </select>
+          </label>
+
+          <label>
+            Langues
+            <select multiple {edit.field('languages')}>
+              for (const l of LANGUAGES; key l.code) {
+                <option value={l.code}>{l.label}</option>
+              }
+            </select>
+          </label>
+          <p class="error">{edit.error('languages')}</p>
+
+          <fieldset class="inline">
+            <legend>Offre</legend>
+            <label><input type="radio" {edit.field('plan', 'free')} /> Gratuite</label>
+            <label><input type="radio" {edit.field('plan', 'pro')} /> Pro</label>
+            <label><input type="radio" {edit.field('plan', 'team')} /> Équipe</label>
+          </fieldset>
+
+          <label class="inline"><input type="checkbox" {edit.field('newsletter')} /> Recevoir la newsletter</label>
+
+          <fieldset class="inline">
+            <legend>Centres d'intérêt</legend>
+            for (const i of INTERESTS; key i.value) {
+              <label><input type="checkbox" {edit.field('interests', i.value)} /> {i.label}</label>
+            }
+          </fieldset>
+        </fieldset>
+
+        <fieldset>
+          <legend>Dates, couleur, volume, avatar</legend>
+          <label>Date de naissance <input type="date" {edit.field('birthdate')} /></label>
+          <label>Heure de rendez-vous <input type="time" {edit.field('meetingTime')} /></label>
+          <label>Couleur préférée <input type="color" {edit.field('color')} /></label>
+          <label>Volume ({edit.values().volume}) <input type="range" min="0" max="100" {edit.field('volume')} /></label>
+          <label>Avatar <input type="file" accept="image/*" {edit.field('avatar')} /></label>
+          <p class="error">{edit.error('avatar')}</p>
+        </fieldset>
+
+        <fieldset>
+          <legend>Téléphones</legend>
+          for (const item of phones.items(); key item.key) {
+            <div class="phone">
+              <select aria-label="Type de numéro" {item.field('label')}>
+                <option value="mobile">mobile</option><option value="travail">travail</option><option value="domicile">domicile</option>
+              </select>
+              <input type="tel" aria-label="Numéro" {item.field('number')} />
+              <button type="button" on:click={() => phones.remove(item)}>Retirer</button>
+              <p class="error">{item.error('number')}</p>
+            </div>
+          }
+          <p class="error">{edit.error('phones')}</p>
+          <button type="button" on:click={() => phones.add({ label: 'mobile', number: '' })}>Ajouter un numéro</button>
+        </fieldset>
+
+        <p role="alert" class="form-error">{edit.formError()}</p>
+        <p role="status" class="saved">{local.get().saved ? `Profil enregistré (n° ${local.get().saved}).` : ''}</p>
+
+        <div class="actions">
+          <button type="button" on:click={() => (edit.reset(), local.set({ saved: null }))}>Tout effacer</button>
+          <button type="submit" disabled={edit.submitting()}>{edit.submitting() ? 'Enregistrement…' : 'Enregistrer'}</button>
+        </div>
+      </form>
+    </main>
+  }
+}

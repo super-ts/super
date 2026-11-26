@@ -1,0 +1,107 @@
+import { SuperElement } from '@super-ts/dom';
+import type { CounterChange, CounterFailure } from '../../domain/counter';
+import { CounterControls } from './counter-controls';
+import './index.css';
+
+const DONE: Record<CounterChange, string> = {
+  increment: 'Incrémenté',
+  decrement: 'Décrémenté',
+  reset: 'Remis à zéro',
+};
+
+// L'écran choisit le texte de chaque raison d'échec (le compilateur signale une raison oubliée).
+const FAILED: Record<CounterFailure | 'error', string> = {
+  unknown: 'Ce compteur n’existe pas.',
+  'below-min': 'Le compteur est déjà à zéro.',
+  storage: 'Impossible d’enregistrer : le stockage est indisponible.',
+  error: 'Une erreur inattendue est survenue.',
+};
+
+/** Écran de la route `/counters/:id` : il lit `id` dans sa route. */
+export class CounterScreen extends SuperElement {
+  @tag = 'counter-screen';
+  // Suivi : renommer le compteur change aussi le titre de l'onglet.
+  @title = () => this.label.value ?? 'Compteur introuvable';
+
+  // Le paramètre de la route, lu à l'appel : `this.counterId()`.
+  counterId = this.router.current.params.id;
+
+  // Ne lit que ce qui concerne le compteur affiché : les autres compteurs ne re-rendent pas l'écran.
+  @contract counter;
+  @selector label = () => this.counter.selectors.label(this.counterId());
+  @selector count = () => this.counter.selectors.count(this.counterId());
+  @selector canDecrement = () => this.counter.selectors.canDecrement(this.counterId());
+  // Un chargement ou une écriture en cours : on attend avant d'en relancer une.
+  @selector busy = () => this.counter.selectors.pending();
+  @state local = { message: null as string | null };
+
+  // L'écran envoie une commande et laisse filer ; Super publie l'issue de chacune.
+  @on('counter', 'increment:done')
+  onIncremented({ input, result }) {
+    this.#done('increment', input.id, result.count);
+  }
+
+  @on('counter', 'decrement:done')
+  onDecremented({ input, result }) {
+    this.#done('decrement', input.id, result.count);
+  }
+
+  @on('counter', 'reset:done')
+  onReset({ input, result }) {
+    this.#done('reset', input.id, result.count);
+  }
+
+  @on('counter', 'increment:failed')
+  onIncrementFailed({ input, reason }) {
+    this.#failed(input.id, reason);
+  }
+
+  @on('counter', 'decrement:failed')
+  onDecrementFailed({ input, reason }) {
+    this.#failed(input.id, reason);
+  }
+
+  @on('counter', 'reset:failed')
+  onResetFailed({ input, reason }) {
+    this.#failed(input.id, reason);
+  }
+
+  // Seules les issues du compteur affiché deviennent un message.
+  #done(change: CounterChange, id: string, count: number) {
+    if (id === this.counterId()) this.local.set({ message: `${DONE[change]} : ${count}` });
+  }
+
+  #failed(id: string, reason: CounterFailure | 'error') {
+    if (id === this.counterId()) this.local.set({ message: FAILED[reason] });
+  }
+
+  run = (command: CounterChange) => this.counter.send(command, { id: this.counterId() });
+
+  #back() {
+    <a class="back-link" href={this.router.href('counters')}>← Tous les compteurs</a>
+  }
+
+  render() {
+    const label = this.label.value;
+    if (label === null) {
+      <main class="screen">{this.#back()}<h1>Compteur introuvable</h1><p>Aucun compteur « {this.counterId()} ».</p></main>
+      return;
+    }
+
+    const count = this.count.value;
+    const busy = this.busy.value;
+    <main class="screen counter-screen">
+      {this.#back()}
+      <h1>{label}</h1>
+      <CounterControls
+        count={count}
+        canDecrement={this.canDecrement.value && !busy}
+        canIncrement={!busy}
+        on:increment={() => this.run('increment')}
+        on:decrement={() => this.run('decrement')}
+      />
+      <button type="button" class="counter-reset" disabled={count === 0 || busy} on:click={() => this.run('reset')}>Remettre à zéro</button>
+      <p class="counter-message" role="status">{this.local.get().message}</p>
+    </main>
+  }
+}

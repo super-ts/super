@@ -1,0 +1,5 @@
+/* Au-delà des variables : une règle ordinaire passe devant le kit, sans !important. */
+.kit-caps .super-button {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}

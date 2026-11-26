@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Outillage des .super · Super</title>
+    <link rel="stylesheet" href="assets/site.css" />
+  </head>
+  <body>
+    <article>
+      <h1>Outillage des .super</h1>
+      <p class="lead">
+        Un fichier <code>.super</code> n'est pas du TypeScript que <code>tsc</code> ou ton éditeur savent lire seuls. Trois
+        outils s'en chargent : la vérification en ligne de commande, le plugin Vite qui le compile, et un serveur de langage
+        pour l'éditeur. Tous partent du même principe : un <strong>TS virtuel</strong>.
+      </p>
+
+      <h2 id="ts-virtuel">Le principe : un TS virtuel</h2>
+      <p>
+        Chaque <code>.super</code> est traduit en un TypeScript équivalent pour le compilateur : le code du fichier est
+        recopié tel quel, chaque élément devient une suite d'appels typés, et une table de correspondance relie chaque
+        position du TS virtuel à sa position dans le <code>.super</code>. Le compilateur vérifie ce TS virtuel, et les
+        erreurs sont rapportées à la bonne ligne et à la bonne colonne du <code>.super</code>.
+      </p>
+      <ul>
+        <li><strong>Les instructions sont recopiées telles quelles</strong> (<code>if</code>, <code>for</code>, <code>switch</code>, déclarations) : le rétrécissement de types de TypeScript s'applique au template.</li>
+        <li><strong>Un composant enfant devient l'appel de sa méthode <code>create</code></strong>, dont le typage vérifie déjà props et événements.</li>
+        <li><strong>Le TS virtuel est aussi écrit sur disque</strong>, dans <code>.super/virtual/</code> à côté du tsconfig (ignoré par git), avec, dans <code>.super/types/</code>, une déclaration (<code>.d.ts</code>) des exports du fichier et sa source map vers le <code>.super</code>.</li>
+        <li><strong>Les tsconfig déclarent ces dossiers</strong> (<code>rootDirs</code>, <code>paths</code>) : un <code>.ts</code> qui importe un composant <code>.super</code>, comme <code>routes.ts</code>, en voit les types par la déclaration. Le serveur TypeScript de l'éditeur suit sa source map : « aller à la définition » ouvre le <code>.super</code>, dans n'importe quel éditeur.</li>
+      </ul>
+
+      <h2 id="verifier-les-types">Vérifier les types : super-tsc</h2>
+      <script type="text/x-code" data-lang="bash">
+        npm run typecheck
+        # ou, pour un projet précis :
+        node packages/lang/src/cli.ts examples/demo/tsconfig.json
+      </script>
+      <p>
+        <code>super-tsc</code> écrit le TS virtuel de chaque <code>.super</code> couvert par le tsconfig (son
+        <code>include</code> et son <code>exclude</code>), lance le <code>tsc</code> du projet (TypeScript 7), puis
+        rapporte chaque erreur dans le <code>.super</code>. Les erreurs de syntaxe des <code>.super</code> (un texte
+        ambigu, une balise non fermée) sont rapportées aussi. Les <code>.ts</code> du projet sont vérifiés dans la même
+        passe.
+      </p>
+      <script type="text/x-code" data-lang="text">
+        src/@components/shop/index.super(29,48): error TS2339: Property 'prix' does not exist on type 'Product'.
+        src/@components/shop/index.super(42,10): error SUPER: Texte lu comme `for`, qui n’est pas valide (…). Si c’est du texte, entoure-le d’accolades : {'for (more info) see below'}
+      </script>
+      <p>Ce qui est vérifié est détaillé dans <a href="garanties.html">Ce que le compilateur vérifie</a>.</p>
+
+      <h2 id="vite">Compiler : le plugin Vite</h2>
+      <p>
+        <code>superPlugin</code> compile chaque <code>.super</code> en code lit-html, en dev comme au build et dans les tests
+        (Vitest passe par les mêmes plugins). Un import sans extension trouve un <code>.super</code> :
+        <code>@components/shop</code> donne <code>shop/index.super</code>. Les règles d'architecture du plugin
+        s'appliquent au code compilé, et le remplacement à chaud fonctionne comme pour un composant <code>.ts</code>.
+      </p>
+      <ul>
+        <li><strong>Une erreur de syntaxe</strong> d'un <code>.super</code> arrête le chargement du module, avec sa position : overlay en dev, échec du build ou du test.</li>
+        <li><strong>En dev</strong>, le plugin réécrit aussi le TS virtuel sur disque à chaque modification.</li>
+      </ul>
+
+      <h3 id="source-maps">Source maps</h3>
+      <p>
+        Le code compilé garde les numéros de ligne du <code>.super</code>, et le plugin fournit une source map jusqu'à la
+        colonne : une trace d'erreur dans le navigateur ou un point d'arrêt du débogueur pointent la source.
+      </p>
+
+      <h2 id="editeur">Dans l'éditeur : le serveur de langage</h2>
+      <p>
+        <code>packages/lang-server</code> est un serveur de langage (LSP) construit sur Volar. Il sert les <code>.super</code>,
+        et seulement eux.
+      </p>
+      <ul>
+        <li><strong>Les erreurs</strong> de TypeScript et de syntaxe, pendant la frappe, avec la correction rapide « Entourer d'accolades » pour un texte ambigu.</li>
+        <li id="reecrire-ancienne-forme">
+          <strong>La réécriture des anciennes formes</strong> : une ligne écrite avec une méthode (<code>cart = this.contract('cart');</code>,
+          <code>lines = this.selector(this.cart.selectors.lines);</code>, <code>local = this.state({ … });</code>,
+          <code>input = this.ref&lt;HTMLInputElement&gt;();</code>) est une erreur dans un <code>.super</code>, avec la correction
+          rapide « Écrire <code>@contract</code> » (ou <code>@selector</code>, <code>@state</code>…) qui la remplace par
+          <code>@contract cart;</code>. Un écouteur posé dans le constructeur n'a pas de correction automatique : il devient
+          à la main une méthode <code>@on('cart', 'événement')</code>.
+        </li>
+        <li><strong>La complétion</strong> dans les expressions, y compris pendant la frappe (<code>if (this.</code>, une clé de boucle, une déclaration pas encore terminée).</li>
+        <li><strong>La complétion dans les balises</strong> : après <code>&lt;</code>, les composants (ceux du projet pas encore importés ajoutent leur import) et les balises HTML ; après <code>&lt;/</code>, la balise à fermer ; dans une balise, ses attributs, <code>ref</code> et ses événements, ou les props (obligatoires d'abord) et les événements d'un composant.</li>
+        <li id="completion-declarations">
+          <strong>La complétion des déclarations</strong> : après <code>@</code> dans le corps d'un composant (hors de ses
+          méthodes), <code>tag</code>, <code>title</code>, <code>prop</code>, <code>emit</code>, puis <code>contract</code>,
+          <code>selector</code>, <code>state</code>, <code>ref</code>, <code>form</code> et <code>on</code>, avec un gabarit
+          (<code>@tag = 'mon-composant';</code>, <code>@prop nom: string;</code>, <code>@contract nom;</code>…). <code>@t</code>
+          propose <code>tag</code> et <code>title</code>, <code>@em</code> propose <code>emit</code> ; un <code>@tag</code> ou un
+          <code>@title</code> déjà écrit n'est plus proposé. Après <code>@contract </code>, les contrats de l'app que le composant
+          ne déclare pas encore sont proposés (<code>@contract cart;</code>, ou <code>errorLog = 'error-log';</code> pour un nom
+          qui n'est pas un identifiant) ; dans <code>@contract x = '…'</code>, les noms de contrats aussi ; dans <code>@on('…', '…')</code>, les contrats puis les événements du contrat choisi (<code>router</code> s'écrit à la main).
+        </li>
+        <li><strong>Le survol et l'aller à la définition</strong> ; le survol de <code>@tag</code>, <code>@title</code>, <code>@prop</code>, <code>@emit</code> et des déclarations de préparation (<code>@contract</code>, <code>@on</code>…) affiche leur documentation (forme, valeurs permises, exemple).</li>
+        <li><strong>Le formatage du fichier</strong> (voir <a href="#formater">Formater</a>).</li>
+        <li><strong>Le TS virtuel écrit sur disque à chaque frappe</strong> : un <code>.ts</code> ouvert à côté voit tout de suite une nouvelle prop.</li>
+      </ul>
+      <div class="callout">
+        <strong>TypeScript 6 dans l'éditeur, TypeScript 7 en ligne de commande</strong>
+        Volar ne sait pas encore piloter TypeScript 7. Le serveur de langage a donc son propre paquet
+        (<code>packages/lang-server</code>, avec ses dépendances) et tourne sur TypeScript 6, tandis que
+        <code>super-tsc</code> utilise le TypeScript 7 du projet. Les deux donnent les mêmes erreurs sur ce que fait la démo.
+      </div>
+
+      <h2 id="formater">Formater</h2>
+      <script type="text/x-code" data-lang="bash">
+        npm run format   # Biome pour les .ts, le formateur des .super pour les .super
+        npm run lint     # vérifie les deux (lancé aussi par npm run check)
+      </script>
+      <p>
+        Le TS d'un <code>.super</code> est formaté par Biome, avec la configuration du dépôt : chaque élément de premier
+        niveau y est remplacé par une instruction de substitution, que Biome place et indente comme les autres. Le formateur
+        des <code>.super</code> imprime ensuite les templates à ces emplacements :
+      </p>
+      <ul>
+        <li><strong>Une balise sur une ligne</strong> si elle tient dans la largeur (140 colonnes), sinon un attribut par ligne et les enfants indentés.</li>
+        <li><strong>Un composant qui reçoit des enfants, et un emplacement <code>&lt;:nom&gt;</code></strong>, toujours sur plusieurs lignes, même s'ils tiennent : ce qui va dans quel emplacement se lit d'un coup d'œil.</li>
+        <li><strong>Du texte suivi</strong> remplit les lignes, avec ses éléments en ligne (<code>&lt;code&gt;</code>, <code>&lt;strong&gt;</code>) ; une liste d'éléments sans texte garde un élément par ligne.</li>
+        <li><strong>Les instructions</strong> (<code>if</code>, <code>for</code>, <code>switch</code>, déclarations) et leurs blocs sont indentés, les lignes vides entre enfants sont gardées (une au plus).</li>
+        <li><strong>Les déclarations d'un composant</strong> (<code>@tag = …;</code>, <code>@title = …;</code>, <code>@prop</code>, <code>@emit</code>) sont gardées et indentées comme les autres membres de la classe, bien que <code>@tag</code> et <code>@title</code> ne soient pas du TS valide.</li>
+      </ul>
+      <p>
+        <strong>Le rendu ne change jamais</strong> : une ligne n'est coupée que là où il y a déjà un blanc, ou au bord d'un
+        élément, d'un bloc ou d'une instruction, où les blancs ne rendent rien (voir <a href="templates.html#espaces">les
+        espaces</a>). Les tests le vérifient sur chaque <code>.super</code> du dépôt. Un fichier qui a des erreurs de syntaxe
+        n'est pas formaté.
+      </p>
+      <p>Dans l'éditeur, le serveur de langage formate le fichier (formatage à l'enregistrement dans Zed, voir ci-dessous).</p>
+
+      <h2 id="zed">Zed</h2>
+      <p>
+        L'extension de <code>editors/zed</code> déclare le langage « Super » pour les fichiers <code>.super</code> et lance
+        le serveur : celui du paquet <code>super-language-server</code> s'il est installé dans le projet, sinon
+        <code>packages/lang-server</code>, avec le Node du PATH. Comme les <code>.super</code> ont leur propre langage,
+        vtsls, le serveur TypeScript habituel de Zed, ne les voit pas.
+      </p>
+      <ul>
+        <li><strong>Installer</strong> : Rust par rustup, puis <code>zed: install dev extension</code> sur le dossier <code>editors/zed</code> (voir son README). La compilation se suit dans <code>zed: open log</code>.</li>
+        <li><strong>Coloration</strong> : la grammaire Tree-sitter des <code>.super</code> (<code>editors/tree-sitter-super</code>), celle de TSX étendue aux instructions écrites entre les balises : <code>if</code>, <code>for … ; key</code>, <code>switch</code> et les déclarations y sont colorés comme du code, pas comme du texte. Elle connaît aussi <code>@tag = …;</code> et <code>@title = …;</code> dans le corps d'une classe (règle <code>super_declaration</code>), que TSX refuserait.</li>
+        <li><strong>Commentaires</strong> : entre des balises, <code>cmd+/</code> écrit <code>{/* … */}</code>.</li>
+        <li><strong>Formatage</strong> : par le serveur, à l'enregistrement ; jamais par Prettier.</li>
+        <li><strong>Aller à la définition depuis un <code>.ts</code></strong> : vtsls suit la source map de la déclaration du composant et ouvre le <code>.super</code> (voir <a href="#ts-virtuel">le principe</a>).</li>
+      </ul>
+      <p>Après une mise à jour du serveur, relance-le depuis un <code>.super</code> ouvert : <code>editor: restart language server</code>. Après une modification de l'extension elle-même : <em>Rebuild</em> dans le panneau des extensions. Après une mise à jour de la grammaire (comme l'ajout de <code>@tag</code> et <code>@title</code>), réinstalle l'extension : <code>zed: install dev extension</code> sur <code>editors/zed</code>.</p>
+      <p>Les limites de ce montage sont listées dans <a href="limites.html">Limites</a>.</p>
+
+      <h2 id="les-paquets">Les paquets</h2>
+      <table>
+        <thead><tr><th>Paquet</th><th>Contenu</th></tr></thead>
+        <tbody>
+          <tr><td><code>packages/lang</code></td><td>Parser, TS virtuel, compilateur, source maps, formateur, <code>super-tsc</code>, et la spécification (<code>SPEC.md</code>).</td></tr>
+          <tr><td><code>packages/lang-server</code></td><td>Serveur de langage.</td></tr>
+          <tr><td><code>packages/vite</code></td><td>Le plugin qui compile les <code>.super</code>.</td></tr>
+        </tbody>
+      </table>
+    </article>
+    <script src="assets/search-index.js"></script>
+    <script src="assets/site.js"></script>
+  </body>
+</html>

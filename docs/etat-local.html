@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>État local · Super</title>
+    <link rel="stylesheet" href="assets/site.css" />
+  </head>
+  <body>
+    <article>
+      <h1>État local</h1>
+      <p class="lead">
+        L'état local appartient à une instance de composant : privé, créé avec elle, perdu avec elle. Il sert aux
+        données d'interface ; les données de l'app vivent dans un store.
+      </p>
+
+      <h2 id="creer-un-etat-local">Créer un état local</h2>
+      <script type="text/x-code">
+        export class StatusLine extends SuperElement {
+          @tag = 'status-line';
+
+          @state local = { message: null as string | null };
+
+          render() {
+            <p role="status">{this.local.get().message}</p>
+          }
+        }
+      </script>
+      <table>
+        <thead><tr><th>Écriture</th><th>Rôle</th></tr></thead>
+        <tbody>
+          <tr><td><code>@state local = initial;</code></td><td>Déclare l'état dans le corps de la classe, qui se lit ensuite par <code>this.local</code> (voir <a href="composants.html#declarations-de-preparation">les déclarations</a>). La valeur initiale est copiée. Dans un composant écrit en <code>.ts</code>, l'équivalent est <code>local = this.state(initial)</code>, dans un champ ou le constructeur uniquement (pendant <code>render</code>, il lève une erreur).</td></tr>
+          <tr><td><code>get()</code></td><td>La valeur courante, figée. À appeler dans <code>render</code> pour refléter le dernier changement.</td></tr>
+          <tr><td><code>set(patch)</code></td><td>Fusionne le patch (un niveau), puis re-rend le composant. Accepte un objet partiel ou une fonction <code>(courant) => patch</code>.</td></tr>
+        </tbody>
+      </table>
+      <script type="text/x-code">
+        this.local.set({ message: 'Incrémenté : 3' });
+        this.local.set((current) => ({ clicks: current.clicks + 1 }));
+      </script>
+      <p>Plusieurs <code>set</code> d'affilée ne donnent qu'un seul rendu.</p>
+
+      <h2 id="le-type-et-null-as">Le type, et <code>null as string | null</code></h2>
+      <p>
+        <code>@state</code> ne porte pas de type : il vient de la valeur initiale (écrire <code>@state local: … = …</code> est
+        une erreur). <code>@state local = { message: null };</code> donnerait un champ de type
+        <code>null</code>, et <code>this.local.set({ message: 'ok' })</code> ne compilerait pas. On élargit donc avec
+        <code>as</code> les champs qui changeront de type :
+      </p>
+      <script type="text/x-code">
+        @state local = { message: null as string | null, open: false, selectedId: null as string | null };
+      </script>
+
+      <h2 id="local-ou-store">État local ou store ?</h2>
+      <table>
+        <thead><tr><th>Dans l'état local</th><th>Dans un store</th></tr></thead>
+        <tbody>
+          <tr><td>Un message de confirmation affiché sous des boutons</td><td>Les valeurs des compteurs</td></tr>
+          <tr><td>Un panneau ouvert ou fermé, un onglet actif</td><td>Un « chargement en cours » que plusieurs composants affichent</td></tr>
+          <tr><td>Une saisie en cours, avant validation</td><td>Les données validées et persistées</td></tr>
+          <tr><td>La question d'un dialogue ouvert</td><td>Une erreur de chargement à montrer sur plusieurs écrans</td></tr>
+        </tbody>
+      </table>
+      <p>Les questions à se poser :</p>
+      <ul>
+        <li><strong>Un autre composant en a-t-il besoin ?</strong> Si oui, store.</li>
+        <li><strong>Doit-elle survivre à la navigation ?</strong> Si oui, store. L'état local disparaît avec l'écran : en revenant sur « Cafés », le message de la visite précédente n'est plus là, et c'est ce qu'on veut.</li>
+        <li><strong>Est-ce une donnée de l'app ou un détail d'affichage ?</strong> Donnée de l'app : store.</li>
+      </ul>
+
+      <h2 id="un-evenement-transforme-en-etat-local">Un événement transformé en état local</h2>
+      <p>
+        L'issue d'une commande est ponctuelle : pour l'afficher, l'écran la recopie dans son état local. C'est le cas du
+        message « Incrémenté : 3 », dans une méthode <code>@on</code> de l'écran d'un compteur :
+      </p>
+      <script type="text/x-code" data-title="src/@components/counter/index.super (extrait)" data-source="examples/demo/src/@components/counter/index.super">
+        counterId = this.router.current.params.id;
+        @contract counter;
+        // …
+        @state local = { message: null as string | null };
+
+        // L'écran envoie une commande et laisse filer ; Super publie l'issue de chacune.
+        @on('counter', 'increment:done')
+        onIncremented({ input, result }) {
+          this.#done('increment', input.id, result.count);
+        }
+        // …
+
+        // Seules les issues du compteur affiché deviennent un message.
+        #done(change: CounterChange, id: string, count: number) {
+          if (id === this.counterId()) this.local.set({ message: `${DONE[change]} : ${count}` });
+        }
+      </script>
+      <p>La méthode lit le paramètre de la route (<code>this.counterId()</code>) quand l'événement arrive : elle voit ainsi la valeur à jour, et non celle du moment où le composant a été créé.</p>
+
+      <h2 id="caracteristiques">Ce qu'il faut savoir</h2>
+      <ul>
+        <li><strong>Privé</strong> : seul ce composant le lit et l'écrit. Ni le store, ni le parent, ni les autres composants n'y ont accès.</li>
+        <li><strong>Par instance</strong> : deux écrans montés en même temps ont chacun le leur.</li>
+        <li><strong>Lié à l'instance</strong> : il naît avec le composant et disparaît avec lui. Un élément déplacé par une boucle <code>for</code> avec <code>key</code> le garde ; un composant que le parent cesse de rendre puis rend de nouveau est une nouvelle instance, avec un état neuf.</li>
+        <li><strong>Réactif</strong> : <code>set</code> re-rend le composant, comme un changement de store.</li>
+        <li>C'est l'équivalent du <code>useState</code> de React, regroupé dans un seul objet.</li>
+      </ul>
+    </article>
+    <script src="assets/search-index.js"></script>
+    <script src="assets/site.js"></script>
+  </body>
+</html>

@@ -1,0 +1,7 @@
+composition-screen {
+  .hint { opacity: 0.7; margin: 0; width: min(32rem, 100%); }
+  h2 { font-size: 1.1rem; margin: 1rem 0 0; width: min(32rem, 100%); }
+  .empty { opacity: 0.7; }
+  button { padding: 0.4rem 0.9rem; font: inherit; border-radius: 0.4rem; cursor: pointer; }
+  .danger { background: #b91c1c; color: white; border-color: #b91c1c; }
+}

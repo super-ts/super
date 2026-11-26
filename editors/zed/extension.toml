@@ -1,0 +1,17 @@
+id = "super"
+name = "Super"
+version = "0.1.0"
+schema_version = 1
+authors = ["Super"]
+description = "Fichiers .super du framework Super : coloration, erreurs, complétion, formatage."
+
+[language_servers.super-language-server]
+name = "Super Language Server"
+languages = ["Super"]
+
+# La grammaire des .super : celle de TSX (fork de Zed) étendue aux instructions écrites entre les
+# balises (editors/tree-sitter-super). Zed la compile depuis ce dépôt git local, à cette révision :
+# après une modification de la grammaire, commiter là-bas puis mettre à jour `rev`.
+[grammars.super]
+repository = "file:///Users/dimitrilahaye/Documents/perso/super/editors/tree-sitter-super"
+rev = "797ec58f2ecd7fd1e3953160bb28fecd049daeb8"

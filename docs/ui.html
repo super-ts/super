@@ -1,0 +1,880 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kit d'interface · Super</title>
+    <link rel="stylesheet" href="assets/site.css" />
+  </head>
+  <body>
+    <article>
+      <h1>Kit d'interface</h1>
+      <p class="lead">
+        <code>@super-ts/ui</code> rassemble les composants qu'une app finit toujours par écrire : champs reliés à un
+        formulaire, bouton qui envoie une commande, lien de navigation, messages, fenêtres, menus, table. Ils ont une
+        apparence sobre réglée par des variables CSS, sont accessibles au clavier et aux lecteurs d'écran, et se branchent
+        directement sur les contrats, les formulaires et le router de Super.
+      </p>
+
+      <h2 id="ce-que-le-kit-apporte">Ce que le kit apporte</h2>
+      <p>Le kit se range en quatre familles :</p>
+      <ul>
+        <li><strong>Les composants propres à Super</strong>, qui connaissent ses concepts : <a href="#champs"><code>Field</code>, <code>Select</code>, <code>Checkbox</code>, <code>RadioGroup</code></a> reliés à un formulaire <code>@form</code>, <a href="#commandbutton"><code>CommandButton</code></a> relié à une commande, <a href="#routelink"><code>RouteLink</code></a> relié au router, <a href="#toasts"><code>Toasts</code></a> pour signaler les issues des commandes, <a href="#errorpanel"><code>ErrorPanel</code></a> pour un <code>renderError</code> ou l'écran <code>'!'</code>.</li>
+        <li><strong>Les primitives accessibles</strong>, longues à écrire correctement : <a href="#fenetres"><code>Dialog</code>, <code>Modal</code>, <code>ConfirmDialog</code></a>, <a href="#menu"><code>Menu</code></a>, <a href="#tabs"><code>Tabs</code></a>, <a href="#disclosure"><code>Disclosure</code></a>, <a href="#tooltip"><code>Tooltip</code></a>, <a href="#popover"><code>Popover</code></a>, <a href="#combobox"><code>Combobox</code></a>.</li>
+        <li><strong>L'affichage</strong> : <a href="#affichage"><code>Button</code>, <code>Badge</code>, <code>Spinner</code>, <code>Skeleton</code>, <code>EmptyState</code></a>.</li>
+        <li><strong>Les données</strong> : <a href="#table"><code>Table</code></a>, statique ou branchée sur un store.</li>
+      </ul>
+      <p>
+        Ce sont des composants Super comme les tiens (<code>SuperElement</code>, props, événements, emplacements), écrits
+        en <code>.ts</code> : une app les importe sans rien configurer de plus. Ils rendent dans le DOM normal, sans shadow
+        DOM : les styles de l'app les atteignent, et les tests les trouvent par leur rôle et leur libellé.
+      </p>
+      <p>
+        Le kit ne fournit <strong>aucun composant de mise en page</strong> : pas de <code>Stack</code>, de
+        <code>Grid</code> ni de <code>Card</code>. La mise en page reste le CSS de l'app, là où elle est le plus simple à
+        lire et à changer.
+      </p>
+
+      <h2 id="importer">Importer le kit</h2>
+      <script type="text/x-code" data-title="src/@components/kit/forms.super (extrait)" data-source="examples/demo/src/@components/kit/forms.super">
+        import { SuperElement } from '@super-ts/dom';
+        import { Button, Checkbox, CommandButton, commandOf, createToasts, Field, fieldOf, RadioGroup, Select, Toasts } from '@super-ts/ui';
+      </script>
+      <ul>
+        <li><strong>Importer le kit charge sa feuille de styles</strong> : il n'y a pas de CSS à ajouter à la main.</li>
+        <li><code>@super-ts/ui</code> dépend de <code>@super-ts/dom</code>, et de rien d'autre.</li>
+        <li>Dans ce dépôt, il est résolu par alias comme les autres paquets (<code>packages/ui/src</code>, déclaré dans <code>vite.config.ts</code> et dans les <code>paths</code> du <code>tsconfig.json</code>) : voir <a href="limites.html#distribution">Distribution</a>.</li>
+        <li>Un composant du kit s'écrit par sa classe, comme tout composant enfant : <code>&lt;Button&gt;</code>, pas <code>&lt;super-button&gt;</code>.</li>
+      </ul>
+
+      <h2 id="theme">Le thème et les styles</h2>
+      <h3 id="variables">Les variables --super-*</h3>
+      <p>
+        Toute l'apparence du kit passe par ces variables, déclarées sur <code>:root</code>. Chaque couleur a une valeur
+        claire et une valeur sombre (voir <a href="#clair-sombre">Clair et sombre</a>) :
+      </p>
+      <table>
+        <thead><tr><th>Variable</th><th>Défaut (clair, sombre)</th><th>Rôle</th></tr></thead>
+        <tbody>
+          <tr><td><code>--super-font</code></td><td><code>system-ui, …</code></td><td>La police de tous les composants.</td></tr>
+          <tr><td><code>--super-text</code></td><td><code>#1f2328</code>, <code>#e6edf3</code></td><td>Le texte courant.</td></tr>
+          <tr><td><code>--super-muted</code></td><td><code>#59636e</code>, <code>#9ea7b3</code></td><td>Le texte secondaire : aides des champs, légendes, messages vides.</td></tr>
+          <tr><td><code>--super-surface</code></td><td><code>#ffffff</code>, <code>#161b22</code></td><td>Le fond des fenêtres, menus, champs, toasts, boutons secondaires.</td></tr>
+          <tr><td><code>--super-subtle</code></td><td><code>#f4f5f7</code>, <code>#222933</code></td><td>Les fonds discrets : survol, en-têtes de table, squelettes.</td></tr>
+          <tr><td><code>--super-border</code></td><td><code>#d0d5dd</code>, <code>#3d444d</code></td><td>Les bordures.</td></tr>
+          <tr><td><code>--super-accent</code></td><td><code>#2f6fde</code>, <code>#5a9bff</code></td><td>La couleur d'action : bouton principal, liens, onglet actif, anneau de focus.</td></tr>
+          <tr><td><code>--super-accent-contrast</code></td><td><code>#ffffff</code>, <code>#0d1117</code></td><td>Le texte posé sur <code>--super-accent</code>.</td></tr>
+          <tr><td><code>--super-danger</code></td><td><code>#c0362c</code>, <code>#ff7b72</code></td><td>Les actions destructrices, les erreurs, le ton <code>danger</code>.</td></tr>
+          <tr><td><code>--super-danger-contrast</code></td><td><code>#ffffff</code>, <code>#0d1117</code></td><td>Le texte posé sur <code>--super-danger</code>.</td></tr>
+          <tr><td><code>--super-success</code></td><td><code>#1a7f37</code>, <code>#56d364</code></td><td>Le ton <code>success</code> (badges, toasts).</td></tr>
+          <tr><td><code>--super-warning</code></td><td><code>#9a6700</code>, <code>#e3b341</code></td><td>Le ton <code>warning</code>.</td></tr>
+          <tr><td><code>--super-info</code></td><td><code>#0969da</code>, <code>#79c0ff</code></td><td>Le ton <code>info</code>.</td></tr>
+          <tr><td><code>--super-radius</code></td><td><code>6px</code></td><td>L'arrondi des coins.</td></tr>
+          <tr><td><code>--super-space</code></td><td><code>0.5rem</code></td><td>L'unité d'espacement : marges internes et écarts en sont des multiples.</td></tr>
+          <tr><td><code>--super-shadow</code></td><td><code>0 8px 24px …</code></td><td>L'ombre des éléments flottants : fenêtres, menus, toasts.</td></tr>
+          <tr><td><code>--super-focus</code></td><td>un anneau de <code>--super-accent</code></td><td>L'anneau de focus au clavier (<code>box-shadow</code>).</td></tr>
+          <tr><td><code>--super-backdrop</code></td><td><code>rgb(0 0 0 / 0.55)</code></td><td>Le fond derrière une fenêtre modale.</td></tr>
+        </tbody>
+      </table>
+
+      <h3 id="couche-super-ui">Une couche CSS de spécificité nulle</h3>
+      <p>
+        Toutes les règles du kit sont dans la couche <code>@layer super-ui</code>, et leurs sélecteurs sont enveloppés
+        dans <code>:where(…)</code>, qui ramène leur spécificité à zéro. Une règle de l'app passe donc toujours devant,
+        sans <code>!important</code> ni sélecteur alourdi : une règle hors couche l'emporte sur toute règle d'une couche.
+      </p>
+
+      <h3 id="clair-sombre">Clair et sombre</h3>
+      <p>
+        Chaque couleur du kit est déclarée par <code>light-dark(clair, sombre)</code>. Le navigateur choisit la valeur
+        selon le <code>color-scheme</code> de l'élément, hérité de ses ancêtres :
+      </p>
+      <ul>
+        <li><strong>Sans <code>color-scheme</code></strong>, le kit reste clair, quel que soit le thème du système.</li>
+        <li><strong>Avec <code>color-scheme: light dark</code></strong> sur <code>:root</code>, l'app suit le thème du système, et le kit avec elle. C'est ce que fait l'app d'exemples dans son <code>src/styles.css</code>.</li>
+        <li><strong>Une zone peut forcer le sien</strong> : <code>color-scheme: dark</code> sur un élément passe en sombre tous les composants du kit qu'il contient, même dans une page claire.</li>
+      </ul>
+      <script type="text/x-code" data-lang="css" data-title="src/@components/kit/theme-dark.css" data-source="examples/demo/src/@components/kit/theme-dark.css">
+        /* Forcer le thème sombre dans une zone, quel que soit celui du système. */
+        .kit-dark-zone {
+          color-scheme: dark;
+          padding: 1rem;
+          border-radius: 0.75rem;
+          background: #0d1117;
+          color: #e6edf3;
+        }
+      </script>
+      <p>
+        <code>color-scheme</code> règle les couleurs du kit et celles du navigateur (barres de défilement, champs natifs),
+        pas le fond ni le texte de la zone elle-même : c'est à l'app de les poser, comme ici. Une surcharge de couleur
+        s'écrit de préférence elle aussi avec <code>light-dark(…)</code>, pour rester lisible dans les deux thèmes.
+      </p>
+      <p>
+        Pour les navigateurs qui ne connaissent pas encore <code>light-dark()</code>, rien à faire : le minifieur CSS
+        de Vite (Lightning CSS) la compile au build en une forme de repli qu'ils comprennent.
+      </p>
+
+      <h3 id="surcharger">Surcharger le thème</h3>
+      <p>
+        Les variables se règlent à la portée voulue, du plus large au plus précis. Les exemples qui suivent sont ceux de la
+        page « Thème » du kit dans l'app d'exemples (voir <a href="exemples.html#kit">Exemples</a>), qui affiche chacun à
+        côté de son effet. Pour toute l'app, quelques variables sur <code>:root</code>, dans une feuille chargée par
+        <code>main.ts</code> :
+      </p>
+      <script type="text/x-code" data-lang="css" data-title="src/kit-theme.css" data-source="examples/demo/src/kit-theme.css">
+        /* Le thème du kit pour toute la démo : quelques variables sur :root suffisent. */
+        :root {
+          --super-accent: light-dark(#4f46e5, #a5b4fc);
+          --super-radius: 8px;
+          --super-font: inherit;
+        }
+      </script>
+      <p>Pour une zone de l'app, les mêmes variables sur un élément qui l'entoure :</p>
+      <script type="text/x-code" data-lang="css" data-title="src/@components/kit/theme-zone.css" data-source="examples/demo/src/@components/kit/theme-zone.css">
+        /* Une zone : tous les composants du kit qu'elle contient. */
+        .kit-ocean {
+          --super-accent: light-dark(#0e7490, #67e8f9);
+          --super-radius: 999px;
+        }
+      </script>
+      <p>
+        Pour une seule instance, chaque composant accepte une prop <code>class</code>, ajoutée à l'élément racine qu'il
+        rend (le <code>&lt;button&gt;</code> d'un <code>Button</code>, le <code>&lt;dialog&gt;</code> d'un
+        <code>Dialog</code>, le <code>&lt;div&gt;</code> d'un champ) :
+      </p>
+      <script type="text/x-code" data-title="src/@components/kit/theme.super (extrait)" data-source="examples/demo/src/@components/kit/theme.super">
+        <Button class="kit-violet">
+          Avec class="kit-violet"
+        </Button>
+      </script>
+      <script type="text/x-code" data-lang="css" data-title="src/@components/kit/theme-instance.css" data-source="examples/demo/src/@components/kit/theme-instance.css">
+        /* Un seul composant : la classe passée en prop arrive sur son élément. */
+        .kit-violet {
+          --super-accent: light-dark(#7c3aed, #c4b5fd);
+        }
+      </script>
+      <p>
+        <code>--super-space</code> règle tous les espacements d'un coup : sur une table, il la rend plus dense
+        (<code>&lt;Table class="kit-compact" …&gt;</code>) :
+      </p>
+      <script type="text/x-code" data-lang="css" data-title="src/@components/kit/theme-compact.css" data-source="examples/demo/src/@components/kit/theme-compact.css">
+        /* Une table plus dense : l'espacement du kit vient d'une seule variable. */
+        .kit-compact {
+          --super-space: 0.25rem;
+          font-size: 0.9rem;
+        }
+      </script>
+      <p>Au-delà des variables, une règle ordinaire de l'app sur une classe du kit :</p>
+      <script type="text/x-code" data-lang="css" data-title="src/@components/kit/theme-rule.css" data-source="examples/demo/src/@components/kit/theme-rule.css">
+        /* Au-delà des variables : une règle ordinaire passe devant le kit, sans !important. */
+        .kit-caps .super-button {
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+        }
+      </script>
+      <p>
+        Les classes du kit commencent toutes par <code>super-</code> (<code>.super-button</code>, <code>.super-field</code>,
+        <code>.super-window</code>, <code>.super-table</code>…), et les variantes passent par des attributs :
+        <code>[data-variant="danger"]</code> pour un bouton, <code>[data-tone="success"]</code> pour un badge ou un toast.
+      </p>
+
+      <h2 id="champs">Les champs de formulaire</h2>
+      <p>
+        <code>Field</code>, <code>Select</code>, <code>Checkbox</code> et <code>RadioGroup</code> se relient à un champ de
+        <code>@form</code> (voir <a href="formulaires.html">Formulaires</a>) par <code>fieldOf(formulaire, 'nom')</code>.
+        Chacun s'occupe de ce qu'on répète d'un champ à l'autre :
+      </p>
+      <ul>
+        <li>le libellé, relié au contrôle (<code>&lt;label for&gt;</code>, ou la légende d'un <code>&lt;fieldset&gt;</code> pour <code>RadioGroup</code>) ;</li>
+        <li>l'aide (<code>hint</code>), affichée sous le champ ;</li>
+        <li>l'erreur de la règle ou du serveur, affichée sous le champ quand le formulaire la montre ;</li>
+        <li>« Vérification… » pendant une <a href="formulaires.html#verifications-asynchrones">vérification asynchrone</a> ;</li>
+        <li><code>aria-invalid</code> quand il y a une erreur, et <code>aria-describedby</code> vers l'aide et l'erreur.</li>
+      </ul>
+      <script type="text/x-code" data-title="src/@components/kit/forms.super (extrait)" data-source="examples/demo/src/@components/kit/forms.super">
+        export class KitFormsScreen extends SuperElement {
+          @tag = 'kit-forms-screen';
+
+          @contract counter;
+          @contract profile;
+          notices = createToasts();
+          @selector cafes = () => this.counter.selectors.count('cafes');
+
+          @form edit = {
+            initial: { name: '', email: '', country: 'FR', newsletter: false, plan: 'free' as 'free' | 'pro' | 'team' },
+            rules: {
+              name: (v) => v.trim() !== '' || 'Nom obligatoire',
+              email: (v) => /.+@.+\..+/.test(v) || 'Adresse invalide',
+            },
+            // … checks, submit, failures
+          };
+
+          render() {
+            const { edit } = this;
+            <KitPage heading="Formulaires et commandes" intro="…">
+              <section class="kit-section">
+                <h2>Champs</h2>
+                <form class="kit-form" {edit.bind()}>
+                  <Field field={fieldOf(edit, 'name')} label="Nom" hint="Tel qu’il sera affiché." />
+                  <Field field={fieldOf(edit, 'email')} label="E-mail" type="email" hint="Essaie taken@example.com." />
+                  <Select field={fieldOf(edit, 'country')} label="Pays" options={COUNTRIES} />
+                  <RadioGroup field={fieldOf(edit, 'plan')} label="Offre" options={PLANS} />
+                  <Checkbox field={fieldOf(edit, 'newsletter')} label="Recevoir la newsletter" />
+                  <p role="alert" class="super-field-error">{edit.formError()}</p>
+                  <Button type="submit" disabled={edit.submitting()}>
+                    Enregistrer
+                  </Button>
+                </form>
+              </section>
+              // …
+            </KitPage>
+          }
+        }
+      </script>
+      <p>
+        <code>fieldOf</code> est vérifié par le compilateur, comme <code>edit.field('…')</code> : un nom absent du
+        formulaire ne compile pas, et le type de la valeur doit convenir au composant. Un champ booléen ne peut pas aller
+        dans un <code>&lt;Field&gt;</code>, un champ texte ne peut pas aller dans une <code>&lt;Checkbox&gt;</code>.
+      </p>
+      <table>
+        <thead><tr><th>Composant</th><th>Valeur du champ</th><th>Props propres</th></tr></thead>
+        <tbody>
+          <tr><td><code>Field</code></td><td><code>string</code>, <code>number</code> ou <code>null</code></td><td><code>type</code> (<code>text</code> par défaut, <code>email</code>, <code>password</code>, <code>number</code>, <code>url</code>, <code>tel</code>, <code>search</code>, <code>date</code>, <code>time</code>, <code>datetime-local</code>, <code>color</code>, <code>range</code>), <code>multiline</code> et <code>rows</code> pour une zone de texte, <code>placeholder</code>, <code>autocomplete</code>.</td></tr>
+          <tr><td><code>Select</code></td><td><code>string</code>, ou une liste avec <code>multiple</code></td><td><code>options</code> (<code>{ value, label }[]</code>), <code>multiple</code>.</td></tr>
+          <tr><td><code>Checkbox</code></td><td><code>boolean</code>, ou une liste avec <code>value</code></td><td><code>value</code> : la case est alors l'une d'un groupe, dont le champ est une liste.</td></tr>
+          <tr><td><code>RadioGroup</code></td><td><code>string</code></td><td><code>options</code> : un bouton radio par option.</td></tr>
+        </tbody>
+      </table>
+      <p>Tous reçoivent <code>field</code>, <code>label</code>, et facultativement <code>hint</code> et <code>class</code>.</p>
+      <div class="callout warn">
+        <strong>fieldOf s'écrit dans le rendu du composant qui possède le formulaire</strong>
+        <p>
+          C'est ce composant qui se re-rend quand une valeur, une erreur ou une vérification change, et le champ du kit avec
+          lui. Le formulaire ne se passe donc pas à un sous-composant qui appellerait <code>fieldOf</code> de son côté :
+          les champs y resteraient figés. Le <code>render()</code> de l'écran, comme ci-dessus, ou une méthode de rendu de la même classe convient.
+        </p>
+      </div>
+
+      <h2 id="commandbutton">Envoyer une commande : CommandButton</h2>
+      <p>
+        <code>CommandButton</code> envoie une commande au clic, et reste désactivé tant qu'elle est en cours, avec
+        <code>aria-busy="true"</code>. La commande se prépare par <code>commandOf(vue, 'commande', entrée)</code> :
+        le contrat, le nom de la commande et son entrée sont vérifiés par le compilateur.
+      </p>
+      <script type="text/x-code" data-title="src/@components/kit/forms.super (extrait)" data-source="examples/demo/src/@components/kit/forms.super">
+        @contract counter;
+
+        // …
+        <CommandButton command={commandOf(this.counter, 'reset', { id: 'cafes' })} pendingLabel="Remise à zéro…">
+          Remettre les cafés à zéro
+        </CommandButton>
+      </script>
+      <ul>
+        <li><strong>« En cours »</strong> vient de <code>pending</code> sur cette commande et cette entrée (voir <a href="flux.html#en-cours">pending</a>) : un autre bouton qui remet un autre compteur à zéro n'est pas désactivé.</li>
+        <li><code>pendingLabel</code> remplace le contenu pendant l'envoi ; sans lui, le contenu reste affiché.</li>
+        <li><code>variant</code> (<code>primary</code> par défaut, <code>secondary</code>, <code>danger</code>) et <code>disabled</code> fonctionnent comme sur <code>Button</code>.</li>
+        <li><strong>L'issue revient comme pour tout envoi</strong> : par les sélecteurs, ou par <code>nom:done</code> et <code>nom:failed</code> écoutés par <code>@on</code> (voir <a href="flux.html#ecouter-l-issue">Écouter l'issue</a>). Le bouton n'affiche aucune issue lui-même.</li>
+        <li>Le bouton lit le contrat du composant qui l'a préparé, pendant son propre rendu : c'est lui, et lui seul, qui se re-rend quand la commande commence ou se termine (voir <a href="lire-un-store.html#sans-fonction-de-lecture">Lire un sélecteur directement dans render</a>).</li>
+      </ul>
+
+      <h3 id="commandof">Préparer une commande : commandOf</h3>
+      <p>
+        <code>commandOf</code> réunit la vue du contrat, le nom de la commande et son entrée. Chaque argument est typé
+        par le précédent, ce qui donne la vérification et la complétion dans l'éditeur au fil de la frappe :
+      </p>
+      <table>
+        <thead>
+          <tr><th>Argument</th><th>Son type vient de</th><th>L'éditeur propose</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>this.counter</code></td><td>la vue déclarée par <code>@contract counter;</code></td><td>les contrats du composant</td></tr>
+          <tr><td><code>'reset'</code></td><td>les commandes de ce contrat</td><td><code>load</code>, <code>increment</code>, <code>decrement</code>, <code>reset</code></td></tr>
+          <tr><td><code>{ id: 'cafes' }</code></td><td>l'entrée de cette commande</td><td><code>id</code></td></tr>
+        </tbody>
+      </table>
+      <script type="text/x-code" data-title="Ce que le compilateur refuse">
+        commandOf(this.counter, 'rest', { id: 'cafes' });     // commande inconnue
+        commandOf(this.counter, 'reset', { identifiant: 'x' }); // entrée qui n'est pas celle de reset
+        commandOf(this.counter, 'reset');                     // entrée manquante
+        commandOf(this.counter, 'load', { id: 'cafes' });     // load ne prend pas d'entrée
+      </script>
+      <ul>
+        <li><strong>Une commande sans entrée</strong> s'écrit sans troisième argument : <code>commandOf(this.counter, 'load')</code>.</li>
+        <li><strong><code>commandOf</code> n'envoie rien</strong> : il prépare. L'envoi a lieu au clic du bouton, par la vue du contrat, donc vers le store du composant qui l'a préparé.</li>
+        <li><strong>La même entrée sert à <code>pending</code></strong> : le bouton n'est désactivé que pour cette commande avec cette entrée.</li>
+        <li><code>fieldOf(this.edit, 'email')</code> suit le même principe pour les champs : le formulaire fixe les noms proposés, et le type de la valeur suit jusqu'au composant (voir <a href="#champs">les champs</a>).</li>
+      </ul>
+
+      <h2 id="routelink">Liens de navigation : RouteLink</h2>
+      <p>
+        <code>RouteLink</code> est un lien vers une route, qui se marque lui-même <code>aria-current="page"</code> quand il
+        mène à la page affichée. Sa cible <code>to</code> s'écrit et se vérifie comme celle de <code>navigate</code>.
+      </p>
+      <script type="text/x-code" data-title="src/@components/app-shell/index.super (extrait)" data-source="examples/demo/src/@components/app-shell/index.super">
+        <nav aria-label="Exemples">
+          <RouteLink to={{ to: 'examples' }}>
+            Exemples
+          </RouteLink>
+          <RouteLink to={{ to: 'counters' }} activeFor={['counter']}>
+            Compteurs
+          </RouteLink>
+          <RouteLink to={{ to: 'shop' }} activeFor={['checkout']}>
+            Boutique
+          </RouteLink>
+          // …
+        </nav>
+      </script>
+      <ul>
+        <li><strong>Actif</strong> : le chemin du lien est celui de la page affichée, sans tenir compte de la query ni d'une barre oblique finale. <code>/counters?sort=label</code> garde le lien « Compteurs » actif.</li>
+        <li><code>activeFor</code> ajoute des noms de route pour lesquels le lien est aussi actif : une section, sa liste et son détail.</li>
+        <li><code>exact</code> compare aussi la query : utile pour des liens qui ne diffèrent que par elle (un tri, un filtre).</li>
+        <li>Le clic est géré par le router, comme pour tout lien interne (voir <a href="router.html#interception-des-liens">L'interception des liens</a>).</li>
+        <li>Params et query se donnent comme pour <code>navigate</code> : <code>to={{ to: 'counter', params: { id } }}</code>.</li>
+      </ul>
+
+      <h2 id="toasts">Signaler une issue : Toasts</h2>
+      <p>
+        Une file de messages se crée par <code>createToasts()</code> dans le composant qui veut signaler quelque chose, et
+        s'affiche par <code>&lt;Toasts of={…} /&gt;</code>. Le composant y pousse les issues des commandes qu'il écoute :
+      </p>
+      <script type="text/x-code" data-title="src/@components/kit/primitives.super (extrait)" data-source="examples/demo/src/@components/kit/primitives.super">
+        export class KitPrimitivesScreen extends SuperElement {
+          @tag = 'kit-primitives-screen';
+
+          notices = createToasts();
+          // …
+
+          #action = ({ id }: { id: string }) => {
+            if (id === 'hello') this.notices.show('Bonjour !');
+            if (id === 'oops') this.notices.show('Quelque chose s’est mal passé.', { tone: 'error', duration: 0 });
+          };
+
+          render() {
+            <KitPage heading="Primitives" intro="…">
+              // …
+              <Menu label="Actions" items={ACTIONS} on:select={this.#action} />
+              // …
+              <Toasts of={this.notices} />
+            </KitPage>
+          }
+        }
+      </script>
+      <p>Les issues des commandes se changent en messages dans les méthodes qui les écoutent, déclarées par <code>@on</code> :</p>
+      <script type="text/x-code" data-title="src/@components/kit/forms.super (extrait)" data-source="examples/demo/src/@components/kit/forms.super">
+        // Les issues des commandes deviennent des messages.
+        @on('profile', 'save:done')
+        onSaved() {
+          this.notices.show('Profil enregistré.', { tone: 'success' });
+        }
+
+        @on('counter', 'reset:done')
+        onReset() {
+          this.notices.show('Cafés remis à zéro.');
+        }
+      </script>
+      <ul>
+        <li><code>show(message, { tone, duration })</code> : <code>tone</code> vaut <code>info</code> (défaut), <code>success</code> ou <code>error</code> ; <code>duration</code> est en millisecondes, <code>5000</code> par défaut, et <code>0</code> garde le message jusqu'à sa fermeture. <code>show</code> renvoie un identifiant, à passer à <code>dismiss(id)</code> pour le retirer plus tôt.</li>
+        <li>Chaque message a sa croix de fermeture.</li>
+        <li>Un message <code>error</code> est annoncé tout de suite par les lecteurs d'écran (<code>role="alert"</code>), les autres poliment (<code>role="status"</code>).</li>
+        <li>La zone est fixée en bas à droite de l'écran ; <code>.super-toasts</code> se replace par une règle de l'app.</li>
+      </ul>
+
+      <h2 id="errorpanel">Afficher une erreur : ErrorPanel</h2>
+      <p>
+        <code>ErrorPanel</code> présente une erreur : un titre, le message, et le détail technique (le chemin et la pile)
+        replié sous « Détails ». Il s'utilise dans un <code>renderError</code> (voir <a href="erreurs.html#render-error">Le
+        renderError d'un composant</a>), ou tel quel comme écran <code>'!'</code> du router, qui lui passe <code>error</code>
+        et <code>path</code> :
+      </p>
+      <script type="text/x-code">
+        .screens(() => ({
+          // …
+          '!': ErrorPanel,
+        }));
+
+        // Dans un composant : un bouton « Réessayer » qui émet retry
+        override renderError(error: Error) {
+          <ErrorPanel error={error} canRetry on:retry={() => this.counter.send('load')} />
+        }
+      </script>
+      <p>
+        Props : <code>error</code>, <code>path</code>, <code>title</code> (« Une erreur est survenue » par défaut),
+        <code>canRetry</code> qui affiche le bouton émettant <code>retry</code>, <code>retryLabel</code>. Le panneau a le
+        rôle <code>alert</code>.
+      </p>
+
+      <h2 id="fenetres">Les fenêtres : Dialog, Modal, ConfirmDialog</h2>
+      <p>
+        Comme tout composant Super, <strong>une fenêtre montée est ouverte</strong> : c'est le parent qui décide de la
+        rendre ou non, souvent selon son état local. La fenêtre ne se ferme pas d'elle-même : elle le demande au parent
+        par un événement, qui retire la fenêtre de son rendu (voir <a href="parents-enfants.html#un-dialogue">Un dialogue</a>).
+      </p>
+      <script type="text/x-code" data-title="src/@components/kit/windows.super (extrait)" data-source="examples/demo/src/@components/kit/windows.super">
+        @state local = { window: null as 'dialog' | 'modal' | 'confirm' | null };
+
+        #close = () => this.local.set({ window: null });
+
+        render() {
+          const open = this.local.get().window;
+          <KitPage heading="Fenêtres" intro="…">
+            // … les boutons qui ouvrent
+            if (open === 'dialog') {
+              <Dialog title="Renommer" on:close={this.#close}>
+                <p>Un dialogue a un contenu et des actions.</p>
+                <:actions>
+                  <Button variant="secondary" on:press={this.#close}>
+                    Annuler
+                  </Button>
+                  <Button on:press={this.#close}>
+                    Enregistrer
+                  </Button>
+                </:actions>
+              </Dialog>
+            }
+            if (open === 'modal') {
+              <Modal title="À propos" closeOn={{ backdrop: true }} on:close={this.#close}>
+                <p>Une modale n’a pas d’actions : Échap, la croix ou un clic sur le fond la ferment.</p>
+              </Modal>
+            }
+            if (open === 'confirm') {
+              <ConfirmDialog
+                question="Supprimer tous les compteurs ?"
+                confirmLabel="Supprimer"
+                danger
+                on:answered={({ confirmed }) => {
+                    this.#close();
+                    if (confirmed) this.notices.show('C’était pour de faux.', { tone: 'error' });
+                  }}
+              />
+            }
+            <Toasts of={this.notices} />
+          </KitPage>
+        }
+      </script>
+      <table>
+        <thead><tr><th>Fenêtre</th><th>Contenu</th><th>Événement</th></tr></thead>
+        <tbody>
+          <tr><td><code>Dialog</code></td><td><code>title</code>, les enfants, et des actions en pied dans l'emplacement <code>&lt;:actions&gt;</code>.</td><td><code>close</code> <code>{ reason }</code></td></tr>
+          <tr><td><code>Modal</code></td><td>La même mécanique, sans actions : <code>title</code> et les enfants.</td><td><code>close</code> <code>{ reason }</code></td></tr>
+          <tr><td><code>ConfirmDialog</code></td><td><code>question</code>, <code>title</code> (« Confirmation » par défaut), <code>confirmLabel</code>, <code>cancelLabel</code>, <code>danger</code> pour un bouton de confirmation rouge.</td><td><code>answered</code> <code>{ confirmed }</code> : <code>true</code> pour la confirmation, <code>false</code> pour l'annulation, Échap, la croix ou le fond.</td></tr>
+        </tbody>
+      </table>
+      <ul>
+        <li><code>reason</code> dit ce qui a demandé la fermeture : <code>'escape'</code>, <code>'backdrop'</code> (un clic sur le fond) ou <code>'button'</code> (la croix).</li>
+        <li><strong><code>closeOn</code> règle chaque moyen de fermer</strong> : <code>{ escape, backdrop, button }</code>. Par défaut, Échap et la croix, pas le clic sur le fond, qu'on fait trop souvent par mégarde. <code>{ button: false }</code> retire la croix.</li>
+        <li><strong>Un vrai <code>&lt;dialog&gt;</code> ouvert en modal</strong> : le reste de la page devient inerte (ni clic, ni focus, ni lecteur d'écran), et le fond est assombri par <code>--super-backdrop</code>.</li>
+        <li>À l'ouverture, le focus entre dans la fenêtre (sur l'élément <code>autofocus</code>, sinon le premier élément focusable) ; à la fermeture, il revient à l'élément qui l'avait. Le défilement de la page est bloqué tant que la fenêtre est ouverte.</li>
+        <li>Le titre nomme la fenêtre pour les lecteurs d'écran (<code>aria-labelledby</code>) ; <code>closeLabel</code> nomme la croix (« Fermer » par défaut).</li>
+      </ul>
+
+      <h2 id="primitives">Les primitives accessibles</h2>
+      <p>
+        Chacune suit le motif ARIA attendu (rôles, états, clavier). Celles qui gardent un état d'affichage (ouvert,
+        onglet choisi) le gardent elles-mêmes, et préviennent le parent par un événement.
+      </p>
+
+      <h3 id="menu">Menu</h3>
+      <script type="text/x-code" data-title="src/@components/kit/primitives.super (extrait)" data-source="examples/demo/src/@components/kit/primitives.super">
+        const ACTIONS = [
+          { id: 'hello', label: 'Dire bonjour' },
+          { id: 'archive', label: 'Archiver', disabled: true },
+          { id: 'oops', label: 'Signaler une erreur' },
+        ];
+
+        <Menu label="Actions" items={ACTIONS} on:select={this.#action} />
+      </script>
+      <ul>
+        <li>Un bouton ouvre la liste d'actions. Clavier : flèches haut et bas, Début, Fin, Entrée ou Espace pour choisir, Échap pour fermer et revenir au bouton. Les entrées désactivées sont sautées.</li>
+        <li>Un clic hors du menu le ferme.</li>
+        <li>Le choix est émis par <code>select</code> <code>{ id }</code>.</li>
+      </ul>
+
+      <h3 id="tabs">Tabs</h3>
+      <script type="text/x-code" data-title="src/@components/kit/primitives.super (extrait)" data-source="examples/demo/src/@components/kit/primitives.super">
+        const TABS = [
+          { id: 'profile', label: 'Profil' },
+          { id: 'security', label: 'Sécurité' },
+        ];
+
+        #profile() {
+          <p>Le panneau du profil.</p>
+        }
+
+        #security() {
+          <p>Le panneau de la sécurité. Les flèches gauche et droite passent d’un onglet à l’autre.</p>
+        }
+
+        // … dans render()
+        <section class="kit-section"><h2>Tabs</h2> <Tabs tabs={TABS} panels={[this.#profile(), this.#security()]} label="Compte" /></section>
+      </script>
+      <ul>
+        <li><code>panels</code> est une liste d'emplacements (<code>Children[]</code>), un par onglet et dans le même ordre, remplis par des méthodes de rendu (voir <a href="templates.html#emplacements">Emplacements nommés</a>).</li>
+        <li>Clavier : flèches gauche et droite, Début, Fin ; les onglets désactivés sont sautés.</li>
+        <li>Sans <code>selected</code>, les onglets gardent leur choix (le premier au départ). Avec <code>selected</code>, c'est le parent qui le tient, prévenu par <code>change</code> <code>{ id }</code> : utile pour mettre l'onglet dans la query de la route.</li>
+      </ul>
+
+      <h3 id="disclosure">Disclosure</h3>
+      <script type="text/x-code" data-title="src/@components/kit/primitives.super (extrait)" data-source="examples/demo/src/@components/kit/primitives.super">
+        <Disclosure summary="Pourquoi ce compteur ?">
+          <p>Un contenu repliable, sur les balises details et summary.</p>
+        </Disclosure>
+      </script>
+      <p>
+        Un contenu repliable, sur <code>&lt;details&gt;</code> et <code>&lt;summary&gt;</code> : le navigateur en fait déjà
+        un élément accessible. <code>open</code> l'ouvre au premier affichage ; <code>toggle</code> <code>{ open }</code>
+        prévient à chaque ouverture et fermeture.
+      </p>
+
+      <h3 id="tooltip">Tooltip</h3>
+      <script type="text/x-code" data-title="src/@components/kit/primitives.super (extrait)" data-source="examples/demo/src/@components/kit/primitives.super">
+        <Tooltip text="Une info-bulle, au survol et au focus">
+          <Button variant="ghost">
+            Survole-moi
+          </Button>
+        </Tooltip>
+      </script>
+      <p>
+        L'info-bulle s'affiche au survol et au focus, et Échap la masque. Le premier élément focusable du contenu est relié
+        à elle par <code>aria-describedby</code> : un lecteur d'écran lit le texte avec le bouton.
+      </p>
+
+      <h3 id="popover">Popover</h3>
+      <script type="text/x-code" data-title="src/@components/kit/primitives.super (extrait)" data-source="examples/demo/src/@components/kit/primitives.super">
+        <Popover label="Filtres">
+          <p>Un contenu flottant, non modal.</p>
+        </Popover>
+      </script>
+      <p>
+        Un contenu flottant derrière un bouton, <strong>non modal</strong> : le reste de la page reste utilisable. Échap
+        le ferme et rend le focus au bouton ; un clic hors du contenu le ferme aussi. <code>toggle</code>
+        <code>{ open }</code> prévient le parent ; <code>title</code> nomme le contenu (défaut : <code>label</code>).
+      </p>
+
+      <h3 id="combobox">Combobox</h3>
+      <p>Une saisie avec suggestions, en deux modes.</p>
+      <p><strong>À valeurs en dur</strong> : le combobox filtre lui-même ses options sur la saisie, sans tenir compte des accents ni de la casse (« peche » trouve « Pêche »).</p>
+      <script type="text/x-code" data-title="src/@components/kit/primitives.super (extrait)" data-source="examples/demo/src/@components/kit/primitives.super">
+        // Des valeurs écrites en dur : le combobox les filtre lui-même, sans accents ni casse.
+        const FRUITS = ['Abricot', 'Ananas', 'Banane', 'Cerise', 'Citron', 'Fraise', 'Framboise', 'Mangue', 'Myrtille', 'Pêche', 'Poire', 'Pomme'].map(
+          (fruit) => ({ value: fruit.toLowerCase(), label: fruit }),
+        );
+        // …
+        <Combobox label="Fruit" options={FRUITS} placeholder="Tape « peche »…" on:select={({ label }) => this.notices.show(`Fruit choisi : ${label}`)} />
+      </script>
+      <p>
+        <strong>Branché sur une API</strong> : le parent cherche, le combobox affiche. <code>filter={false}</code> lui
+        fait afficher les options telles quelles, <code>loading</code> affiche « Chargement… », et le parent réagit à
+        <code>search</code> <code>{ text }</code>, émis à chaque saisie. Dans la page « Primitives » du kit, les
+        suggestions viennent de l'API publique de test dummyjson.com, par le store du catalogue :
+      </p>
+      <script type="text/x-code" data-title="src/@components/kit/primitives.super (extrait)" data-source="examples/demo/src/@components/kit/primitives.super">
+        // Les suggestions viennent du store du catalogue, qui cherche dans l'API dummyjson.com.
+        @contract catalog;
+        @selector suggestions = this.catalog.selectors.suggestions;
+        @selector searching = () => this.catalog.selectors.pending('search');
+
+        // …
+        <Combobox
+          label="Produit"
+          options={this.suggestions.value.map((p) => ({ value: String(p.id), label: p.title }))}
+          filter={false}
+          loading={this.searching.value}
+          placeholder="Tape « apple »…"
+          on:search={({ text }) => this.catalog.send('search', { text })}
+          on:select={({ label }) => this.notices.show(`Produit choisi : ${label}`)}
+        />
+      </script>
+      <p>
+        Le combobox émet une recherche par frappe ; c'est au store de ne pas inonder le serveur. Celui du catalogue
+        attend la fin de la frappe, n'envoie que la dernière demande, et ignore une réponse dépassée :
+      </p>
+      <script type="text/x-code" data-title="src/@core/catalog/store.ts (extrait)" data-source="examples/demo/src/@core/catalog/store.ts">
+        /**
+         * Une recherche par frappe : on attend un court instant, et seule la dernière demande part au
+         * serveur. Une réponse dépassée par une frappe plus récente est ignorée.
+         */
+        async search({ text }: { text: string }) {
+          const request = ++this.#latestSearch;
+          if (text.trim() === '') return this.set({ suggestions: [] });
+          await wait(this.#searchDelay);
+          if (request !== this.#latestSearch) return;
+          const found = await this.#catalog.search(text.trim(), SUGGESTIONS).catch(() => this.fail('network'));
+          if (request === this.#latestSearch) this.set({ suggestions: found });
+        }
+      </script>
+      <ul>
+        <li>Le choix est émis par <code>select</code> <code>{ value, label }</code>, et le libellé choisi reste dans la saisie. <code>value</code> donne la valeur choisie au départ.</li>
+        <li>Clavier : flèches pour parcourir, Entrée pour choisir, Échap pour fermer la liste.</li>
+        <li>L'option parcourue est annoncée par <code>aria-activedescendant</code> : le focus reste dans la saisie.</li>
+        <li>Sans option à montrer, la liste affiche <code>emptyLabel</code> (« Aucun résultat » par défaut). Rien de tapé et rien à proposer : la liste reste fermée, le focus n'ouvre pas une liste vide.</li>
+      </ul>
+
+      <h2 id="affichage">L'affichage</h2>
+      <script type="text/x-code" data-title="src/@components/kit/display.super (extrait)" data-source="examples/demo/src/@components/kit/display.super">
+        <div class="kit-row">
+          <Badge>
+            Neutre
+          </Badge>
+          <Badge tone="success">
+            Actif
+          </Badge>
+          <Badge tone="warning">
+            En attente
+          </Badge>
+          <Spinner size="small" />
+          <Spinner />
+          <Spinner size="large" />
+        </div>
+        // …
+        <section class="kit-section"><h2>Skeleton</h2> <Skeleton lines={3} /></section>
+        // …
+        <EmptyState title="Aucun favori">
+          Ajoute un compteur en favori pour le retrouver ici.
+          <:action>
+            <Button variant="secondary">
+              Parcourir
+            </Button>
+          </:action>
+        </EmptyState>
+      </script>
+      <table>
+        <thead><tr><th>Composant</th><th>Props</th><th>Remarques</th></tr></thead>
+        <tbody>
+          <tr><td><code>Button</code></td><td><code>variant</code> (<code>primary</code> par défaut, <code>secondary</code>, <code>danger</code>, <code>ghost</code>), <code>type</code> (<code>button</code> par défaut, <code>submit</code>, <code>reset</code>), <code>disabled</code>, <code>label</code>.</td><td>Émet <code>press</code> au clic. <code>label</code> nomme un bouton dont le contenu n'est pas un texte (une icône). Avec <code>type="submit"</code>, il soumet le formulaire qui l'entoure.</td></tr>
+          <tr><td><code>Badge</code></td><td><code>tone</code> (<code>neutral</code> par défaut, <code>info</code>, <code>success</code>, <code>warning</code>, <code>danger</code>).</td><td>Une étiquette courte : un statut, un compte.</td></tr>
+          <tr><td><code>Spinner</code></td><td><code>size</code> (<code>small</code>, <code>medium</code> par défaut, <code>large</code>), <code>label</code>.</td><td>Rôle <code>status</code> : annoncé par les lecteurs d'écran avec <code>label</code> (« Chargement… » par défaut).</td></tr>
+          <tr><td><code>Skeleton</code></td><td><code>lines</code> (1 par défaut), <code>width</code>, <code>height</code>.</td><td>La silhouette d'un contenu qui charge. Décoratif : <code>aria-hidden</code>.</td></tr>
+          <tr><td><code>EmptyState</code></td><td><code>title</code>, les enfants (l'explication), l'emplacement <code>&lt;:action&gt;</code>.</td><td>Ce qu'on affiche quand il n'y a rien, et de quoi en sortir.</td></tr>
+        </tbody>
+      </table>
+      <p>Les animations du <code>Spinner</code> et du <code>Skeleton</code> s'arrêtent quand le système demande moins de mouvement (<code>prefers-reduced-motion</code>).</p>
+
+      <h2 id="table">La table</h2>
+      <p>
+        Les colonnes se déclarent par <code>columns&lt;Row&gt;([…])</code>, typées par le type des lignes : <code>value</code>
+        reçoit une ligne typée.
+      </p>
+      <script type="text/x-code" data-title="src/@components/kit/table.super (extrait)" data-source="examples/demo/src/@components/kit/table.super">
+        type CounterRow = { id: string; label: string; count: number };
+
+        const COUNTER_COLUMNS = columns<CounterRow>([
+          { key: 'label', label: 'Compteur', sortable: true },
+          { key: 'count', label: 'Valeur', sortable: true, align: 'end' },
+        ]);
+        const PRODUCT_COLUMNS = columns<Product>([
+          { key: 'title', label: 'Produit', sortable: true },
+          { key: 'brand', label: 'Marque', sortable: true, value: (p) => p.brand ?? 'Sans marque' },
+          { key: 'price', label: 'Prix', sortable: true, align: 'end', value: (p) => PRICE.format(p.price) },
+          { key: 'rating', label: 'Note', sortable: true, align: 'end' },
+        ]);
+      </script>
+      <table>
+        <thead><tr><th>Clé d'une colonne</th><th>Rôle</th></tr></thead>
+        <tbody>
+          <tr><td><code>key</code>, <code>label</code></td><td>Son identifiant (celui du tri) et son titre.</td></tr>
+          <tr><td><code>value</code></td><td>La valeur affichée et triée, calculée depuis la ligne. Par défaut, <code>row[key]</code>.</td></tr>
+          <tr><td><code>sortable</code></td><td>L'en-tête devient un bouton : un clic trie par ordre croissant, un second inverse.</td></tr>
+          <tr><td><code>align</code></td><td><code>'end'</code> aligne à droite, pour les nombres.</td></tr>
+        </tbody>
+      </table>
+      <p>La table a deux modes, selon qu'on lui donne <code>total</code> ou non.</p>
+
+      <h3 id="table-statique">Statique : toutes les lignes</h3>
+      <script type="text/x-code" data-title="src/@components/kit/table.super (extrait)" data-source="examples/demo/src/@components/kit/table.super">
+        const counters: CounterRow[] = this.counter.selectors
+          .catalog()
+          .map((c) => ({ id: c.id, label: c.label, count: this.counter.selectors.count(c.id) }));
+        // …
+        <Table columns={COUNTER_COLUMNS} rows={counters} rowKey={(row) => row.id} caption="Compteurs" pageSize={2} />
+      </script>
+      <p>
+        Sans <code>total</code>, <code>rows</code> contient toutes les lignes : la table les trie et les pagine elle-même,
+        et ne demande rien à personne. Sans <code>pageSize</code>, pas de pagination. Avec <code>pageSizes</code>
+        (<code>[10, 20, 50]</code>), un choix « Lignes par page » s'ajoute à la pagination, et ramène à la première page.
+      </p>
+
+      <h3 id="table-defilement">Une table plus large que l'écran</h3>
+      <p>
+        Par défaut, une table trop large pour la place disponible <strong>défile de gauche à droite dans sa propre
+        zone</strong> : elle garde sa largeur naturelle, cellules sur une ligne, et ni la page ni la pagination ne
+        bougent. Le titre (<code>caption</code>) reste au-dessus, visible pendant le défilement. La zone est atteignable
+        au clavier (<code>tabindex="0"</code>), pour défiler avec les flèches, et porte le nom de la table.
+      </p>
+      <p>
+        <code>scroll={false}</code> retire ce comportement : la table prend la largeur de son conteneur, ses cellules
+        reviennent à la ligne, et un éventuel débordement est laissé au CSS de l'app.
+      </p>
+
+      <h3 id="table-branchee">Branchée : une page à la fois</h3>
+      <p>
+        Avec <code>total</code> (le nombre de lignes côté serveur), <code>rows</code> est la page courante, déjà triée.
+        La table émet <code>request</code> <code>{ sort, page, pageSize }</code> au montage, puis à chaque changement de tri, de
+        page ou de taille de page, et le parent la relie à une commande qui charge la page demandée. Dans le cas le plus simple, la table
+        garde elle-même son tri et sa page, et le parent n'a qu'à transmettre la demande ; un nouveau tri ramène alors à
+        la première page.
+      </p>
+      <p>
+        Pour qu'un lien, un rechargement ou le bouton précédent du navigateur retrouvent la même page, <strong>le parent
+        peut piloter le tri, la page et leur taille</strong> par les props <code>sort</code>, <code>page</code> et <code>pageSize</code>, lus dans la query
+        de la route. C'est ce que fait la page « Table » du kit dans l'app d'exemples, branchée sur l'API publique de
+        test dummyjson.com (voir <a href="exemples.html#kit">Exemples</a>). La query est décrite dans la route, et
+        typée :
+      </p>
+      <script type="text/x-code" data-title="src/routes.ts (extrait)" data-source="examples/demo/src/routes.ts">
+        // Le tri et la page de la table branchée du kit : ils vivent dans l'URL.
+        type KitTableQuery = { sort?: ProductSort; order: 'asc' | 'desc'; page: number; size: 5 | 10 | 20 | 50 };
+
+        // …
+        'kit-table': {
+          path: '/kit/table',
+          query: query<KitTableQuery>({
+            sort: { oneOf: PRODUCT_SORTS },
+            order: { oneOf: ['asc', 'desc'], default: 'asc' },
+            page: { type: Number, default: 1 },
+            size: { oneOf: [5, 10, 20, 50], default: 10 },
+          }),
+        },
+      </script>
+      <p>
+        L'écran lit cette query par des sélecteurs, la passe à la table, change l'URL quand la table annonce un tri
+        (<code>sort</code>), une page (<code>page</code>) ou une taille de page (<code>pageSize</code>), et charge les
+        données quand elle les demande (<code>request</code>) :
+      </p>
+      <script type="text/x-code" data-title="src/@components/kit/table.super (extrait)" data-source="examples/demo/src/@components/kit/table.super">
+        export class KitTableScreen extends SuperElement {
+          @tag = 'kit-table-screen';
+
+          @contract counter;
+          @contract catalog;
+          @selector products = this.catalog.selectors.products;
+          @selector total = this.catalog.selectors.total;
+          @selector loading = () => this.catalog.selectors.pending('load');
+          @selector loadError = this.catalog.selectors.loadErrorMessage;
+
+          // La query de la route, typée par sa description dans routes.ts.
+          @selector sort = this.router.current.query.sort;
+          @selector order = this.router.current.query.order;
+          @selector pageNumber = this.router.current.query.page;
+          @selector size = this.router.current.query.size;
+
+          /** Change le tri, la page ou leur taille : c'est l'URL qui change, et la table suit. */
+          #go(next: { sort: ProductSort | undefined; order: SortOrder; page: number; size: PageSize }) {
+            const { sort, ...rest } = next;
+            this.router.send('navigate', { to: 'kit-table', query: sort ? { sort, ...rest } : rest });
+          }
+
+          #query(): ProductQuery {
+            return { page: this.pageNumber.value, pageSize: this.size.value, sort: this.sort.value ?? null, order: this.order.value };
+          }
+
+          #retry = () => this.catalog.send('load', this.#query());
+
+          render() {
+            // …
+            const sort = this.sort.value;
+            const order = this.order.value;
+            const size = this.size.value;
+            <KitPage heading="Table" intro="…">
+              // …
+              if (this.loadError.value) {
+                <div role="alert" class="kit-row">
+                  <p>{this.loadError.value}</p>
+                  <Button variant="secondary" on:press={this.#retry}>
+                    Réessayer
+                  </Button>
+                </div>
+              }
+              <Table
+                columns={PRODUCT_COLUMNS}
+                rows={this.products.value}
+                rowKey={(product) => product.id}
+                caption="Produits"
+                total={this.total.value}
+                pageSize={size}
+                pageSizes={PAGE_SIZES}
+                sort={sort ? { key: sort, direction: order } : null}
+                page={this.pageNumber.value}
+                loading={this.loading.value}
+                on:sort={({ key, direction }) => this.#go({ sort: isProductSort(key) ? key : undefined, order: direction, page: 1, size })}
+                on:page={({ page }) => this.#go({ sort, order, page, size })}
+                on:pageSize={({ pageSize }) => this.#go({ sort, order, page: 1, size: isPageSize(pageSize) ? pageSize : size })}
+                on:request={() => this.catalog.send('load', this.#query())}
+              />
+            </KitPage>
+          }
+        }
+      </script>
+      <ul>
+        <li><strong>L'URL est la seule source</strong> : trier ou paginer navigue (<code>/kit/table?sort=price&amp;order=desc&amp;page=3&amp;size=20</code>), la table suit ses props, puis émet <code>request</code>. L'écran y répond en relisant la query (<code>#query()</code>), sans se servir de l'argument de l'événement.</li>
+        <li><strong>Changer seulement la query ne remonte pas l'écran</strong> : la table reste montée, et redemande ses données quand ses props <code>sort</code>, <code>page</code> ou <code>pageSize</code> changent.</li>
+        <li><strong>Quand le parent pilote la page, c'est à lui de revenir à la première page sur un nouveau tri ou une nouvelle taille</strong> (<code>page: 1</code> dans <code>on:sort</code> et <code>on:pageSize</code> ci-dessus).</li>
+        <li><strong>La taille choisie dans la table cède à celle du parent</strong> : si le parent repasse une autre <code>pageSize</code> (un retour arrière dans l'historique), c'est elle qui s'affiche.</li>
+        <li><code>sort</code> vaut <code>{ key, direction: 'asc' | 'desc' }</code>, ou <code>null</code> pour aucun tri. La clé reçue par <code>on:sort</code> est une chaîne : <code>isProductSort</code> la ramène au type du domaine.</li>
+        <li>Une valeur inconnue dans l'URL (<code>?sort=nimporte&amp;page=abc&amp;size=7</code>) est remplacée par la valeur par défaut de la query : pas de tri, page 1, 10 lignes.</li>
+        <li><code>request</code> est émis après le rendu, jamais deux fois de suite pour la même demande.</li>
+        <li><code>loading</code> (ici <code>pending('load')</code>) pose <code>aria-busy</code> sur la table, et affiche « Chargement… » tant qu'aucune ligne n'est arrivée.</li>
+        <li><strong>L'échec reste à l'écran</strong> : la table n'affiche pas d'erreur. Le store garde un message (<code>loadErrorMessage</code>), et l'écran l'affiche avec un bouton qui relance la même demande.</li>
+        <li><strong>Les réponses peuvent arriver dans le désordre</strong> : un tri puis un autre envoient deux <code>load</code>. Le store du catalogue ignore une réponse dépassée par une demande plus récente (voir <a href="exemples.html#kit">Exemples</a>).</li>
+      </ul>
+      <p>
+        Dans les deux modes, les en-têtes triables portent <code>aria-sort</code> et une place réservée à la flèche de tri
+        (trier ne change aucune largeur), la pagination est une
+        <code>&lt;nav&gt;</code> « Pagination » avec « Précédent », « Page 2 sur 5 » et « Suivant », <code>caption</code>
+        nomme la table, et <code>emptyLabel</code> s'affiche quand il n'y a aucune ligne (« Aucune donnée » par défaut).
+      </p>
+
+      <h2 id="textes">Les textes par défaut</h2>
+      <p>Les textes du kit sont en français par défaut. Ceux qu'une app voudra changer passent par des props :</p>
+      <table>
+        <thead><tr><th>Prop</th><th>Composants</th><th>Défaut</th></tr></thead>
+        <tbody>
+          <tr><td><code>closeLabel</code></td><td><code>Dialog</code>, <code>Modal</code>, <code>ConfirmDialog</code>, <code>Toasts</code></td><td>« Fermer »</td></tr>
+          <tr><td><code>confirmLabel</code>, <code>cancelLabel</code>, <code>title</code></td><td><code>ConfirmDialog</code></td><td>« Confirmer », « Annuler », « Confirmation »</td></tr>
+          <tr><td><code>label</code></td><td><code>Toasts</code>, <code>Spinner</code></td><td>« Notifications », « Chargement… »</td></tr>
+          <tr><td><code>emptyLabel</code></td><td><code>Table</code>, <code>Combobox</code></td><td>« Aucune donnée », « Aucun résultat »</td></tr>
+          <tr><td><code>pageSizeLabel</code></td><td><code>Table</code></td><td>« Lignes par page »</td></tr>
+          <tr><td><code>title</code>, <code>retryLabel</code></td><td><code>ErrorPanel</code></td><td>« Une erreur est survenue », « Réessayer »</td></tr>
+        </tbody>
+      </table>
+      <p>
+        Quelques textes n'ont pas encore de prop : « Vérification… » sous un champ, « Chargement… » dans une table ou un
+        combobox qui charge, la pagination de la table, et « Détails » dans <code>ErrorPanel</code>.
+      </p>
+
+      <h2 id="tester" data-llm="skip">Tester un écran qui utilise le kit</h2>
+      <p>
+        Rien de particulier : les composants du kit rendent dans le DOM de l'écran, et se trouvent par leur rôle et leur
+        libellé, comme le reste (voir <a href="tests.html">Tester</a>). Les tests des pages du kit montent le router sur
+        le chemin de la page, avec des stores factices ou en mémoire :
+      </p>
+      <script type="text/x-code" data-title="src/@components/kit/index.test.ts (extrait)" data-source="examples/demo/src/@components/kit/index.test.ts">
+        test('la modale s’ouvre et se ferme avec Échap', async () => {
+          const { ui } = await setup('/kit/windows');
+          await userEvent.click(ui.getByRole('button', { name: 'Ouvrir une modale' }));
+          await flush();
+          expect(ui.getByRole('heading', { name: 'À propos' })).toBeTruthy();
+
+          await userEvent.keyboard('{Escape}');
+          await flush();
+          expect(ui.queryByRole('heading', { name: 'À propos' })).toBeNull();
+        });
+      </script>
+      <p>
+        Un écran qui importe un fichier CSS en texte (<code>?raw</code>), comme la page « Thème », le reçoit vide sous
+        Vitest, qui ignore le CSS par défaut : <code>test.css.include</code> dans <code>vitest.config.ts</code> désigne
+        les fichiers à lire.
+      </p>
+
+      <h2 id="limites">Limites</h2>
+      <ul>
+        <li><strong>Pas de composant de mise en page</strong> : ni <code>Stack</code>, ni <code>Grid</code>, ni <code>Card</code>. L'agencement reste le CSS de l'app.</li>
+        <li><strong><code>fieldOf</code> s'écrit dans le rendu du composant qui possède le formulaire</strong> : passé à un sous-composant, le champ ne suivrait plus les changements du formulaire.</li>
+        <li><strong>Pas d'API <code>popover</code> du navigateur</strong> : les menus, popovers, info-bulles et listes du combobox sont positionnés en <code>position: absolute</code> sous leur déclencheur. Un ancêtre en <code>overflow: hidden</code> peut les couper, et ils ne se replacent pas au bord de l'écran.</li>
+        <li><strong>Les textes sont en français par défaut</strong> : la plupart se changent par une prop (<a href="#textes">Les textes par défaut</a>), quelques-uns pas encore.</li>
+        <li>La table trie sur une seule colonne à la fois, et n'a ni sélection de lignes, ni colonnes redimensionnables.</li>
+      </ul>
+    </article>
+    <script src="assets/search-index.js"></script>
+    <script src="assets/site.js"></script>
+  </body>
+</html>

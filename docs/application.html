@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Brancher l'application · Super</title>
+    <link rel="stylesheet" href="assets/site.css" />
+  </head>
+  <body>
+    <article>
+      <h1>Brancher l'application</h1>
+      <p class="lead">
+        La racine de composition, <code>main.ts</code>, est le seul endroit qui choisit les adapters, crée les stores et le
+        router, et les fournit aux composants.
+      </p>
+
+      <h2 id="la-racine-de-composition">La racine de composition</h2>
+      <script type="text/x-code" data-title="src/main.ts" data-source="examples/demo/src/main.ts">
+        import './styles.css'; // références globales d'abord : les feuilles des composants passent après
+        import './kit-theme.css'; // le thème de @super-ts/ui pour toute l'app
+        import { createApp, createRouter } from '@super-ts/dom';
+        import { AppShell } from '@components/app-shell';
+        import { CartStore } from '@core/cart/store';
+        import { CatalogStore } from '@core/catalog/store';
+        import { CheckoutStore } from '@core/checkout/store';
+        import { CounterStore } from '@core/counter/store';
+        import { ErrorLogStore } from '@core/error-log/store';
+        import { ProfileStore } from '@core/profile/store';
+        import { createDummyJsonProductCatalog } from './adapters/dummyjson-product-catalog';
+        import { createFakeOrderClient } from './adapters/fake-order-client';
+        import { createFakeProfileClient } from './adapters/fake-profile-client';
+        import { createLocalStorageCounterRepository } from './adapters/local-storage-counter-repository';
+        import { createSavedCart } from './adapters/saved-cart';
+        import { Router } from './routes';
+
+        // Racine de composition (user-land) : on choisit ici les adapters et on assemble les stores.
+        const counter = CounterStore.create({ counterRepository: createLocalStorageCounterRepository() });
+        const profile = ProfileStore.create({ profileClient: createFakeProfileClient() }); // serveur simulé, avec latence
+        const savedCart = createSavedCart();
+        const cart = CartStore.create({ quantities: savedCart.load() }); // le panier d'avant le rechargement
+        const checkout = CheckoutStore.create({ cart, orderClient: createFakeOrderClient() }); // un store qui dépend d'un autre
+        const errorLog = ErrorLogStore.create();
+        const catalog = CatalogStore.create({ productCatalog: createDummyJsonProductCatalog() }); // l'API publique de test dummyjson.com
+        // Le titre de l'onglet : celui que pose l'écran affiché (`@title`), suivi du nom de l'app.
+        const router = createRouter(Router, { title: { default: 'Super · exemples', suffix: ' · Super' } });
+
+        // subscribe : le panier est enregistré à chaque changement, et survit au rechargement de la page.
+        // Le store ne sait rien du stockage : c'est la racine de composition qui le branche.
+        cart.subscribe((state) => savedCart.save(state.quantities));
+
+        createApp({
+          root: document.querySelector<HTMLElement>('#app')!,
+          stores: [counter, profile, cart, checkout, errorLog, catalog],
+          router,
+          // Toute erreur de composant, rattrapée ou non : la console, et le journal affiché par l'exemple « Erreurs ».
+          onError: (error, { tag, phase, caughtBy }) => {
+            console.error(`[${tag}] ${phase}`, { caughtBy }, error);
+            errorLog.send('record', { message: error.message, tag, phase, caughtBy });
+          },
+        }).mount(AppShell.create());
+      </script>
+      <ol>
+        <li><strong>Créer les stores</strong> avec <code>XStore.create(deps)</code> : c'est ici qu'on choisit <code>localStorage</code>, une API HTTP ou une version en mémoire, et qu'on passe un store à celui qui en dépend (<code>checkout</code> reçoit <code>cart</code>). <code>create</code> renvoie le handle du store, jamais l'instance de la classe.</li>
+        <li><strong>Créer le router</strong> à partir du <code>Router</code> déclaré dans <code>routes.ts</code>, avec le cadre du titre de l'onglet (<code>title: { default, suffix }</code>, voir <a href="router.html#titre-de-la-page">Le titre de la page</a>).</li>
+        <li><strong>Créer l'application</strong> sur un élément racine, en lui fournissant stores et router.</li>
+        <li><strong>Monter</strong> le composant racine, créé par <code>AppShell.create()</code>. <code>main.ts</code> reste un fichier <code>.ts</code> : il n'a pas de template, il crée le composant par <code>create()</code> au lieu de l'écrire <code>&lt;AppShell /&gt;</code>. L'import <code>@components/app-shell</code>, sans extension, trouve <code>app-shell/index.super</code>.</li>
+      </ol>
+      <p>
+        <code>main.ts</code> est du user-land : Super ne lui impose rien. Pas de conteneur d'injection, pas de
+        configuration cachée : tout l'assemblage se lit dans ce fichier. Il peut aussi utiliser les handles directement,
+        comme ici <code>cart.subscribe</code>, qui enregistre le panier dans le <code>localStorage</code> à chaque
+        changement (par l'adapter <code>adapters/saved-cart.ts</code>) : le panier relu au démarrage
+        (<code>CartStore.create({ quantities: savedCart.load() })</code>) survit ainsi au rechargement de la page.
+      </p>
+      <p>
+        C'est un bon usage de <code>subscribe</code> : synchroniser l'état avec un système extérieur (stockage, analytics,
+        autre onglet), hors de tout composant, sans que le store le sache. <code>CartStore</code> ne connaît pas le
+        stockage, c'est la racine de composition qui le branche. Le compteur fait l'inverse : son store parle à un port,
+        <code>CounterRepository</code>, parce que la persistance fait partie de son métier (chargement asynchrone, erreurs à
+        afficher). Voir <a href="stores.html#subscribe">subscribe</a>.
+      </p>
+
+      <h2 id="createapp">createApp</h2>
+      <table>
+        <thead><tr><th>Option</th><th>Rôle</th></tr></thead>
+        <tbody>
+          <tr><td><code>root</code></td><td>L'élément HTML sous lequel l'application vit.</td></tr>
+          <tr><td><code>stores</code></td><td>Les handles de store à fournir aux composants rendus sous <code>root</code>, chacun sous le nom de son contrat.</td></tr>
+          <tr><td><code>router</code></td><td>Le router créé par <code>createRouter</code>. Il est fourni sous le nom <code>'router'</code>, les clics sur les liens internes deviennent des navigations, et ses guards lisent les stores de cette application.</td></tr>
+          <tr><td><code>onError</code></td><td>Reçoit toute erreur de composant rendu sous <code>root</code>, rattrapée ou non : <code>(error, { tag, phase, caughtBy })</code>. Voir <a href="erreurs.html#onerror">Gérer les erreurs</a>.</td></tr>
+        </tbody>
+      </table>
+      <table>
+        <thead><tr><th>Retour</th><th>Rôle</th></tr></thead>
+        <tbody>
+          <tr><td><code>mount(élément)</code></td><td>Remplace le contenu de la racine par l'élément, et le retourne.</td></tr>
+          <tr><td><code>dispose()</code></td><td>Retire le fournisseur et l'interception des liens, puis vide la racine.</td></tr>
+          <tr><td><code>root</code></td><td>L'élément racine.</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="comment-un-composant-trouve-son-store">Comment un composant trouve son store</h2>
+      <p>
+        Un composant déclare <code>@contract counter;</code>. À son montage, il demande au DOM, en remontant
+        depuis lui-même : « qui fournit un store pour le contrat <code>counter</code> ? ». L'application la plus proche qui
+        en a un répond. Conséquences pratiques :
+      </p>
+      <ul>
+        <li>Un composant fonctionne <strong>partout sous la racine</strong>, à n'importe quelle profondeur, sans qu'on lui passe le store en props.</li>
+        <li>Le <strong>nom du contrat</strong> sert de clé : celui de <code>super({ name: 'counter' })</code> dans <code>@core/counter/contract.ts</code>. Le composant n'importe ni le contrat ni le store ; le plugin Vite refuse deux contrats du même nom et génère <code>@core/contracts.d.ts</code>, qui type <code>@contract counter</code> (et <code>this.contract('counter')</code> dans un composant écrit en <code>.ts</code>).</li>
+        <li>Un composant monté <strong>sans store pour ce nom</strong> lève une erreur explicite (phase <code>setup</code>) : « aucun store fourni pour le contrat "counter". Ajoute-le à createApp({ stores }) ou à mount(..., { stores }) ».</li>
+      </ul>
+
+      <h2 id="applications-imbriquees">Plusieurs applications</h2>
+      <p class="example-link">Dans l'<a href="exemples.html#widget">exemple Widget</a> : <a href="../examples/demo/src/widgets/timer-widget.ts"><code>widgets/timer-widget.ts</code></a>, <a href="../examples/demo/src/@components/widget/index.super"><code>@components/widget/index.super</code></a>. Le minuteur vit dans une seconde application, imbriquée dans la première, avec son propre store.</p>
+      <p>
+        On peut créer plusieurs applications, et même les imbriquer : la plus proche du composant répond en premier. C'est
+        utile pour un widget qui a ses propres stores au milieu d'une page. Dans l'exemple, une fonction user-land monte le
+        minuteur sur l'élément qu'on lui donne, et renvoie de quoi tout libérer :
+      </p>
+      <script type="text/x-code" data-title="src/widgets/timer-widget.ts" data-source="examples/demo/src/widgets/timer-widget.ts">
+        import { createApp } from '@super-ts/dom';
+        import { TimerWidget } from '@components/widget/timer-widget';
+        import { TimerStore } from '@core/timer/store';
+
+        export function mountTimerWidget(root: HTMLElement): () => void {
+          const timer = TimerStore.create();
+          const app = createApp({ root, stores: [timer] });
+          app.mount(TimerWidget.create());
+          return () => {
+            app.dispose();
+            timer.dispose();
+          };
+        }
+      </script>
+      <p>L'écran <code>/widget</code> l'appelle sur un élément de son propre template, déclaré par <code>@ref widgetSlot: HTMLElement;</code> et posé avec <code>ref={this.widgetSlot}</code>, et libère le widget s'il est démonté pendant qu'il est ouvert :</p>
+      <script type="text/x-code" data-title="src/@components/widget/index.super (extrait)" data-source="examples/demo/src/@components/widget/index.super">
+        export class WidgetScreen extends SuperElement {
+          @tag = 'widget-screen';
+          @title = 'Widget';
+
+          @state local = { open: false };
+          @ref widgetSlot: HTMLElement;
+          #close: (() => void) | null = null;
+
+          toggle = () => {
+            if (this.#close) {
+              this.#close();
+              this.#close = null;
+              this.local.set({ open: false });
+              return;
+            }
+            this.#close = mountTimerWidget(this.widgetSlot.value!);
+            this.local.set({ open: true });
+          };
+
+          protected override unmounted() {
+            this.#close?.();
+            this.#close = null;
+          }
+
+          render() {
+            <main class="screen">
+              <h1>Widget</h1>
+              {/* … */}
+              <button type="button" on:click={this.toggle}>{this.local.get().open ? 'Fermer le minuteur' : 'Ouvrir le minuteur'}</button>
+              <div class="widget-slot" ref={this.widgetSlot}></div>
+            </main>
+          }
+        }
+      </script>
+      <p>
+        Sous l'élément du widget, <code>@contract timer</code> trouve le store de la seconde application ;
+        <code>@contract counter</code> remonterait jusqu'à la première. Le minuteur n'en sait rien : il demande un
+        contrat par son nom, et l'application la plus proche qui le fournit répond.
+      </p>
+      <div class="callout warn">
+        <strong>Un seul store par contrat dans une application</strong>
+        Fournir deux stores pour le même contrat à la même application lève une erreur :
+        « deux stores fournis pour le contrat "counter" ».
+      </div>
+
+      <h2 id="charger-les-donnees-au-demarrage">Charger les données au démarrage</h2>
+      <p>Deux façons, selon où tu veux voir l'intention :</p>
+      <script type="text/x-code" data-title="src/@components/app-shell/index.super (extrait)" data-source="examples/demo/src/@components/app-shell/index.super">
+        // Dans le composant racine, au montage (choix de l'exemple)
+        export class AppShell extends SuperElement {
+          @tag = 'app-shell';
+
+          @contract counter;
+          // …
+
+          protected override mounted() {
+            this.counter.send('load');
+          }
+        }
+      </script>
+      <script type="text/x-code" data-title="src/main.ts">
+        // Ou directement dans main.ts, sur le handle
+        void counter.send('load');
+      </script>
+    </article>
+    <script src="assets/search-index.js"></script>
+    <script src="assets/site.js"></script>
+  </body>
+</html>

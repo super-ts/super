@@ -1,0 +1,77 @@
+/* Mise en page des pages du kit : c'est l'app qui la décide, pas le kit. */
+.kit-page {
+  display: grid;
+  /* minmax(0, 1fr) : une colonne ne s'élargit jamais au-delà de l'écran (la table défile à la place). */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem;
+  width: min(48rem, 100%);
+}
+
+.kit-page-intro {
+  margin: 0;
+  text-align: center;
+}
+
+.kit-section {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+}
+
+.kit-section > h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.kit-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.kit-form {
+  display: grid;
+  gap: 1rem;
+  max-width: 28rem;
+}
+
+.kit-families {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.kit-families li {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, CanvasText 20%, transparent);
+  border-radius: 0.75rem;
+}
+
+.kit-families p {
+  margin: 0;
+}
+
+/* Le CSS d'une surcharge, affiché à côté de son effet. */
+.kit-code {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, CanvasText 8%, Canvas);
+  color: CanvasText;
+  font-size: 0.85rem;
+  overflow-x: auto;
+}
+
+.kit-example {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, CanvasText 20%, transparent);
+  border-radius: 0.75rem;
+}

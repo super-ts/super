@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ce que le compilateur vérifie · Super</title>
+    <link rel="stylesheet" href="assets/site.css" />
+  </head>
+  <body>
+    <article>
+      <h1>Ce que le compilateur vérifie</h1>
+      <p class="lead">
+        La plupart des erreurs d'usage de Super sont détectées avant l'exécution : par TypeScript, ou par le plugin Vite.
+        Cette page liste ce qui est vérifié, où, et ce qui ne l'est pas.
+      </p>
+      <p>
+        Sauf la section sur les <a href="#templates-super">templates</a>, chaque extrait ci-dessous vient des tests de types
+        du dépôt (<code>packages/*/src/*.test-d.ts</code>) : chaque
+        <code>@ts-expect-error</code> y fait échouer <code>npm run typecheck</code> si l'erreur attendue disparaît. Les
+        extraits utilisent leur contrat d'essai <code>basket</code> : commandes <code>add({ sku })</code>,
+        <code>clear()</code> et <code>save({ id })</code> (qui déclare <code>Outcome&lt;{ count: number }, 'empty' | 'offline'&gt;</code>),
+        événements <code>emptied</code> et <code>saved: { id }</code>, sélecteurs <code>quantity(sku)</code>, <code>count()</code>, <code>entries()</code>.
+      </p>
+
+      <h2 id="contrats-et-stores">Contrats et stores</h2>
+      <script type="text/x-code">
+        // @ts-expect-error une commande ne renvoie pas de donnée
+        class Async extends SuperContract<{ state: {}; commands: { add(): Promise<number> } }> {}
+        // @ts-expect-error deux paramètres : une commande n'a qu'un body
+        class Bad extends SuperContract<{ state: {}; commands: { add(a: number, b: number): void } }> {}
+        class Typo extends SuperContract<{ state: {}; command: { add(): void } }> {
+          constructor() {
+            // @ts-expect-error clé inconnue dans les types du contrat : command (attendu : state, commands, events)
+            super({ name: 'typo' });
+          }
+        }
+
+        class BadName extends SuperStore<BasketContract> {
+          constructor() {
+            // @ts-expect-error aucun contrat 'panier'
+            super({ contract: 'panier', initialState: { items: {} } });
+          }
+        }
+        // @ts-expect-error initialState ne respecte pas le state du contrat
+        super({ contract: 'basket', initialState: { items: 'aucun' } });
+
+        // @ts-expect-error le premier paramètre d'un sélecteur est l'état du contrat
+        abstract class WrongStore extends SuperStore<WrongState> {} // WrongState : count(s: { total: number })
+        // @ts-expect-error « pending » est réservé : Super le fournit avec les sélecteurs
+        abstract class PendingStore extends SuperStore<Pending> {}  // Pending déclare un sélecteur pending
+
+        // @ts-expect-error clear et save manquent
+        class Missing extends SuperStore<BasketContract> implements Commands<Missing> {
+          constructor() { super(init); }
+          add(_: { sku: string }) {}
+        }
+
+        class Wrong extends SuperStore<BasketContract> implements Commands<Wrong> {
+          // @ts-expect-error paramètres différents de ceux du contrat
+          add(_: { sku: 'mug' }) {}
+          // @ts-expect-error clear est déclaré void
+          clear() { return 42; }
+          // @ts-expect-error le résultat déclaré est { count: number }
+          async save(_: { id: string }) { return { total: 0 }; }
+          // @ts-expect-error méthode publique hors contrat
+          increment() {}
+        }
+
+        // Dans une méthode du store :
+        // @ts-expect-error événement inconnu
+        this.emit('nope');
+        // @ts-expect-error payload requis
+        this.emit('saved');
+        // @ts-expect-error raison d'échec non déclarée
+        this.fail('nope');
+        // @ts-expect-error commande inconnue
+        void this.send('nope');
+
+        // @ts-expect-error dépendance manquante
+        WithDeps.create();
+        // @ts-expect-error dépendance mal typée
+        Store.create({ api: { fetchCart: () => 42 } });
+        // @ts-expect-error un store sans dépendance n'en reçoit pas
+        NoDeps.create({ api: 1 });
+      </script>
+      <ul>
+        <li>Une commande déclarée avec une réponse directe, ou avec plusieurs paramètres.</li>
+        <li>Un <code>super({ contract })</code> qui nomme un contrat inconnu, ou un état initial non conforme.</li>
+        <li>Avec <code>implements Commands&lt;Self&gt;</code> : une commande sans méthode, une méthode aux paramètres différents de ceux du contrat, une méthode qui renvoie autre chose que le résultat déclaré (ou qui l'oublie), une méthode publique hors contrat.</li>
+        <li>Un événement inconnu, un payload mal typé ou oublié ; une raison d'échec inconnue du contrat ; une commande inconnue dans <code>this.send</code>.</li>
+        <li>Des dépendances manquantes ou mal typées à la création.</li>
+      </ul>
+
+      <h2 id="lire-et-envoyer">Lire et envoyer</h2>
+      <p>Sur le handle d'un store (tests, racine de composition, autres stores) :</p>
+      <script type="text/x-code">
+        const basket = Ok.create();
+        // @ts-expect-error l'instance ne sort pas : pas de méthode add sur le handle
+        basket.add({ sku: 'mug' });
+        // @ts-expect-error body mal typé
+        basket.send('add', { sku: 42 });
+        // @ts-expect-error paramètre du sélecteur requis
+        basket.selectors.quantity();
+
+        // @ts-expect-error commande inconnue
+        void shop.send('remove');
+        // @ts-expect-error body manquant
+        void shop.send('add');
+        // @ts-expect-error argument en trop
+        void shop.send('load', 1);
+        // @ts-expect-error événement inconnu
+        shop.on('removed', () => {});
+        // @ts-expect-error commande inconnue
+        cart.on('remove:done', () => {});
+        // @ts-expect-error champ absent du body
+        cart.pending('add', { id: 'a' });
+      </script>
+      <p>Dans un composant, par la vue du contrat (extrait des tests de types, écrits en <code>.ts</code> : dans un <code>.super</code>, <code>@contract basket;</code> et <code>@selector</code> donnent les mêmes vérifications) :</p>
+      <script type="text/x-code">
+        basket = this.contract('basket');
+        // @ts-expect-error aucun contrat 'panier'
+        other = this.contract('panier');
+
+        // @ts-expect-error un sélecteur à paramètre se lit dans une fonction
+        raw = this.selector(this.basket.selectors.quantity);
+        // @ts-expect-error 0 ne vient pas d'un sélecteur : la condition se fait dans render
+        shown = this.selector(() => (this.props.show ? this.basket.selectors.count() : 0));
+        // @ts-expect-error un calcul sur la valeur se fait dans render (ou dans un sélecteur du contrat)
+        double = this.selector(() => this.basket.selectors.count() * 2);
+        // @ts-expect-error un tableau dérivé n'est plus la valeur du sélecteur
+        skus = this.selector(() => this.basket.selectors.entries().map(([sku]) => sku));
+        // @ts-expect-error aucun sélecteur
+        constant = this.selector(() => 42);
+
+        render() {
+          // @ts-expect-error l'état brut n'est pas exposé
+          this.basket.state();
+          // @ts-expect-error body mal typé
+          this.basket.send('add', { sku: 1 });
+          // @ts-expect-error commande inconnue
+          this.basket.send('nope');
+          // …
+        }
+      </script>
+
+      <h2 id="composants">Composants</h2>
+      <p>
+        Ces tests écrivent <code>Dialog.create(…)</code> : c'est ce que devient <code>&lt;Dialog … /&gt;</code> dans le TS
+        virtuel d'un <code>.super</code>, d'où les mêmes erreurs dans un template (voir
+        <a href="#templates-super">plus bas</a>).
+      </p>
+      <script type="text/x-code">
+        class Dialog extends SuperElement<{ props: { question: string }; emits: { answered: { confirmed: boolean }; closed: void } }> {
+          static tag = 't-dialog';
+          render() {
+            // @ts-expect-error événement non déclaré
+            this.emit('nope');
+            // @ts-expect-error payload requis
+            this.emit('answered');
+            // …
+          }
+        }
+
+        // @ts-expect-error props requises
+        Dialog.create();
+        // @ts-expect-error prop mal typée
+        Dialog.create({ question: 42 });
+        // @ts-expect-error écouteur pour un événement que l'enfant n'émet pas
+        Dialog.create({ question: 'ok ?' }, { on: { nope: () => {} } });
+        // @ts-expect-error `static tag` manquant
+        NoTag.create();
+
+        // @ts-expect-error render est obligatoire
+        class NoRender extends SuperElement {
+          static tag = 'cmp-no-render';
+        }
+      </script>
+
+      <h3 id="formulaires">Formulaires</h3>
+      <script type="text/x-code">
+        // @ts-expect-error champ inconnu
+        edit.field('nope');
+        // @ts-expect-error une liste ne se lie pas comme un champ simple
+        edit.field('phones');
+        // @ts-expect-error valeur de radio hors de l'union
+        edit.field('plan', 'gold');
+        // @ts-expect-error ligne incomplète
+        phones.add({ label: 'travail' });
+      </script>
+      <p>
+        <code>this.form({ … })</code> vérifie aussi que <code>failures</code> répartit exactement les raisons d'échec de la
+        commande de soumission (une raison oubliée, présente deux fois ou inconnue du contrat ne compile pas, ni un champ
+        inconnu dans <code>fields</code>), que <code>submit.toInput</code> produit le body de la commande, et que le
+        <code>toInput</code> d'une vérification asynchrone (<code>checks</code>) produit celui de la sienne.
+      </p>
+
+      <h2 id="templates-super">Templates des fichiers .super</h2>
+      <p>
+        Le template d'un composant <code>.super</code> est vérifié par <code>npm run typecheck</code> (<code>super-tsc</code>),
+        et chaque erreur est rapportée à sa position dans le <code>.super</code>.
+        L'extrait vient du projet d'essai de <code>packages/lang</code> : chaque ligne marquée <code>ERREUR</code> doit être
+        signalée, et aucune autre (<code>packages/lang/src/check.test.ts</code>) ; il y en a 16. <code>Greeting</code> y est un
+        composant aux props <code>{ name: string }</code>, qui émet <code>closed</code> ; <code>Panel</code> déclare
+        <code>@prop heading: string;</code>, <code>@prop content: Children;</code> et <code>@prop footer?: Children;</code>.
+      </p>
+      <script type="text/x-code" data-title="errors.super" data-source="packages/lang/src/__fixtures__/project/errors.super">
+        export class ErrorsFixture extends SuperElement {
+          @tag = 'lang-errors';
+          @ref input: HTMLInputElement;
+          @state local = { user: null as { name: string } | null, status: 'idle' as Status, items: [] as Item[] };
+
+          render() {
+            <main>
+              <dvi>typo</dvi> {/* ERREUR balise inconnue */}
+              <p>{this.local.get().user.name}</p> {/* ERREUR null possible */}
+              const user = this.local.get().user;
+              if (user) {
+                <p>{user.name}</p>
+              }
+              for (const item of this.local.get().items; key item.idd) { {/* ERREUR clé */}
+                <li>{item}</li> {/* ERREUR objet interpolé */}
+              }
+              <button on:clik={() => {}}>x</button> {/* ERREUR événement inconnu */}
+              <input on:input={(e) => e.currentTarget.value.toFixed()} /> {/* ERREUR value est une chaîne */}
+              <div ref={this.input}></div> {/* ERREUR référence sur le mauvais élément */}
+              <input ref={this.input} />
+              const status = this.local.get().status;
+              switch (status) {
+                case 'idle': <p>idle</p>
+                default: {assertNever(status)} {/* ERREUR switch non exhaustif */}
+              }
+              <Greeting nam="Ada" on:closed={(e) => e.reason} /> {/* ERREUR prop inconnue */}
+              <Greeting name={42} /> {/* ERREUR prop mal typée */}
+              <Greeting name="Ada" on:open={() => {}} /> {/* ERREUR événement inconnu du composant */}
+              <p>for (more info) see below</p> {/* ERREUR texte ambigu */}
+              <Greeting name="Ada"><p>Greeting ne prend pas d’enfants</p></Greeting> {/* ERREUR enfants refusés */}
+              <Panel heading="Sans enfants" /> {/* ERREUR enfants obligatoires */}
+              <Panel heading="x"><p>a</p><:header>h</:header></Panel> {/* ERREUR emplacement inconnu */}
+            </main>
+          }
+        }
+
+        export class NativeName extends SuperElement {
+          @tag = 'lang-native-name';
+          @prop title: string; // {/* ERREUR nom déjà pris par les éléments HTML */}
+          render() {
+            <p>{this.title}</p>
+          }
+        }
+      </script>
+      <ul>
+        <li>Une balise sans tiret qui n'est pas une balise HTML connue.</li>
+        <li>Une valeur peut-être <code>null</code> lue sans test ; le rétrécissement d'un <code>if</code> vaut pour les éléments qu'il contient.</li>
+        <li>Une clé de boucle (<code>key</code>) qui n'existe pas sur l'élément parcouru.</li>
+        <li>Un objet affiché par <code>{…}</code> (fini les <code>[object Object]</code>).</li>
+        <li>Un écouteur <code>on:</code> pour un événement que la balise n'a pas, et le type de l'événement reçu (<code>e.currentTarget</code> est l'<code>HTMLInputElement</code>).</li>
+        <li>Une référence <code>ref={…}</code> posée sur un élément d'un autre type que le sien.</li>
+        <li>Un <code>switch</code> non exhaustif, avec <code>default: {assertNever(x)}</code>.</li>
+        <li>Sur un composant enfant : une prop inconnue, une prop mal typée, un <code>on:</code> pour un événement absent de ses <code>emits</code>.</li>
+        <li>Des enfants pour un composant qui ne déclare pas <code>content</code>, des enfants obligatoires qui manquent, un emplacement <code>&lt;:nom&gt;</code> qui n'est pas une prop du composant.</li>
+        <li>Un texte qui commence comme une instruction sans en être une, avec la correction proposée : <code>{'for (more info) see below'}</code>.</li>
+        <li>Une prop qui porte le nom d'une propriété des éléments HTML (<code>@prop title</code>, <code>id</code>, <code>hidden</code>…) : « <code>« title » est déjà une propriété des éléments HTML : choisis un autre nom</code> ».</li>
+      </ul>
+      <p>
+        Le message de TypeScript est rapporté tel quel (« <code>'nam' does not exist in type 'Props'. Did you mean to write
+        'name'?</code> »). Le parser refuse aussi, avec le message et souvent la correction
+        (<code>packages/lang/src/parser.test.ts</code>, <code>packages/lang/src/compile.test.ts</code>) :
+      </p>
+      <ul>
+        <li>la syntaxe de lit : <code>@click</code>, <code>?disabled</code>, <code>.value</code> (« Syntaxe de lit : écris <code>on:click={…}</code> ») ;</li>
+        <li><code>&lt;</code> et <code>}</code> dans le texte, avec la correction <code>{'&lt;'}</code>, <code>{'}'}</code> ;</li>
+        <li>une balise fermante qui ne correspond pas (« <code>&lt;/i&gt; ferme &lt;b&gt;</code> ») ;</li>
+        <li><code>return x;</code> dans une méthode qui émet des éléments (<code>return;</code> reste permis, comme <code>return x;</code> dans une fonction imbriquée) ;</li>
+        <li>un élément hors d'une méthode de classe ;</li>
+        <li>un bloc dont le <code>}</code> manque avant la balise fermante du parent ;</li>
+        <li>un emplacement <code>&lt;:nom&gt;</code> hors d'un composant, avec des attributs, rempli deux fois, ou nommé <code>content</code>.</li>
+      </ul>
+
+      <h3 id="declarations-composant">Déclarations d'un composant</h3>
+      <p>
+        Les déclarations <code>@tag</code>, <code>@title</code>, <code>@prop</code> et <code>@emit</code> sont lues par le parser, qui
+        refuse (<code>parser.test.ts</code>, « parse : déclarations d’un composant ») :
+      </p>
+      <ul>
+        <li>un composant sans <code>@tag</code> (« <code>Un composant déclare son tag : `@tag = 'mon-composant';`</code> »), sauf une classe <code>abstract</code> ;</li>
+        <li><code>static tag = '…';</code> dans un <code>.super</code> (« <code>Dans un `.super`, le tag se déclare par `@tag = '…';`</code> ») ;</li>
+        <li>un tag qui n'est pas une chaîne écrite telle quelle, en minuscules, avec un tiret ;</li>
+        <li>un générique <code>SuperElement&lt;…&gt;</code> écrit à la main (« <code>Dans un `.super`, les props et les événements se déclarent dans la classe : `@prop nom: Type;` et `@emit nom: Type;`</code> ») ;</li>
+        <li>une déclaration en double (« <code>`@tag` déclaré deux fois</code> », « <code>`@prop a` déclaré deux fois</code> ») ;</li>
+        <li>une prop sans type (<code>@prop label;</code>), une prop facultative avec une valeur par défaut (<code>@prop size?: number = 2;</code> : « retire le <code>?</code> »), un événement avec une valeur ;</li>
+        <li>une déclaration hors d'un composant (« <code>`@prop` ne s’écrit que dans un composant (`extends SuperElement`)</code> »).</li>
+      </ul>
+      <p>
+        Les types du composant en sont tirés (<code>virtual.test.ts</code>) : <code>@prop question: string;</code> devient une prop
+        obligatoire, <code>@prop tone: … = 'neutral';</code> et <code>@prop size?: number;</code> des props facultatives,
+        <code>@emit answered: { confirmed: boolean };</code> un événement. Ce sont eux que vérifient les balises qui utilisent le
+        composant (prop inconnue, mal typée, <code>on:</code> inconnu, ci-dessus).
+      </p>
+      <p>
+        Les déclarations de préparation (<code>@contract</code>, <code>@selector</code>, <code>@state</code>, <code>@form</code>,
+        <code>@ref</code>, <code>@on</code>) sont lues elles aussi, et le parser refuse (<code>parser.test.ts</code>,
+        « parse : déclarations de préparation et écouteurs ») :
+      </p>
+      <ul>
+        <li>un contrat déclaré deux fois, même sous un autre nom de champ (« <code>Le contrat `cart` est déjà déclaré par `@contract cart`</code> ») ;</li>
+        <li><code>@contract router;</code> (« <code>Le router se lit par `this.router`, sans `@contract`</code> ») ;</li>
+        <li>un contrat qui n'est pas une chaîne écrite telle quelle (<code>@contract cart = name;</code>) ;</li>
+        <li>un type sur <code>@selector</code> (« <code>Pas de type sur `@selector` : il vient de la valeur</code> ») ;</li>
+        <li>un <code>@ref</code> sans type (« <code>Une référence déclare le type de son élément : `@ref input: HTMLInputElement;`</code> ») ;</li>
+        <li>un <code>@on</code> mal écrit (<code>@on('cart')</code> : « <code>`@on` s’écrit `@on('contrat', 'événement')`, au-dessus d’une méthode</code> ») ;</li>
+        <li>l'ancienne forme dans un composant (<code>cart = this.contract('cart');</code>, <code>this.selector(…)</code>, <code>this.state(…)</code>, <code>this.ref&lt;T&gt;()</code>), avec la ligne réécrite en correction (<code>@contract cart;</code>, <code>@state local = { open: false };</code>…) ; hors composant, la même ligne reste du TS ordinaire ;</li>
+        <li>un écouteur posé dans le constructeur (« <code>Dans un `.super`, un écouteur se déclare sur une méthode : `@on('cart', 'événement') onEvent(payload) { … }`</code> »).</li>
+      </ul>
+      <p>
+        Le TS virtuel en tire les champs qu'on écrivait à la main (<code>virtual.test.ts</code>) : <code>@contract cart;</code> devient
+        <code>readonly cart = this.contract('cart');</code>, <code>@selector</code>, <code>@state</code> et <code>@ref</code> les
+        champs <code>this.selector(…)</code>, <code>this.state(…)</code>, <code>this.ref&lt;T&gt;()</code>, et
+        <code>@on('profile', 'save:done') onSaved(…)</code> un écouteur <code>this.contract('profile').on('save:done', …)</code> :
+        le paramètre de la méthode a donc le type du payload de l'événement, vérifié comme dans un écouteur écrit à la main.
+        <code>@on('router', 'navigated')</code> devient <code>this.router.on('navigated', …)</code>.
+      </p>
+
+      <h3 id="titre-de-la-page">Titre de la page</h3>
+      <p>
+        <code>@title = …;</code> et <code>this.page.title = …</code> sont vérifiés à l'exécution (<code>packages/dom/src/page.test.ts</code>) :
+      </p>
+      <ul>
+        <li>un titre posé pendant <code>render</code> lève « <code>`this.page.title` ne se pose pas pendant render</code> » ;</li>
+        <li><code>this.page.title</code> ne se lit pas : « <code>`this.page.title` se pose, il ne se lit pas</code> » ;</li>
+        <li>la pile est testée : le dernier composant monté qui pose un titre l'emporte, celui du dessous suit ses données sans s'afficher et revient au démontage ; un titre en fonction suit les valeurs qu'il lit, comme <code>render</code>.</li>
+      </ul>
+      <p>
+        Le code compilé garde les numéros de ligne de la source, et sa source map ramène le JS final à la ligne et à la colonne du <code>.super</code>
+        (<code>compile.test.ts</code>). Voir <a href="templates.html">Templates</a> et <a href="outillage.html">Outillage</a>.
+      </p>
+
+      <h2 id="router">Router</h2>
+      <p>
+        Avec <code>defineRouter({ home: '/', item: { path: '/items/:id', params: params&lt;{ id: number }&gt;({ id: Number }) }, list: '/list?sort&amp;tag[]' })</code> :
+      </p>
+      <script type="text/x-code">
+        // Dans un composant, par this.router :
+        // @ts-expect-error le router se lit par this.router
+        this.contract('router');
+        // @ts-expect-error paramètre `id` manquant
+        this.router.href('item');
+        // @ts-expect-error `id` est un nombre
+        this.router.href('item', { params: { id: '1' } });
+        // @ts-expect-error route inconnue
+        this.router.href('nope');
+        // @ts-expect-error params requis
+        this.router.send('navigate', { to: 'item' });
+        // @ts-expect-error route inconnue
+        this.router.send('navigate', { to: 'nope' });
+        // @ts-expect-error aucune route n'a ce paramètre
+        this.router.current.params.nope;
+        // @ts-expect-error dans l'écran de `item`, `sort` est la query d'une autre route
+        this.router.current.query.sort;
+        // @ts-expect-error route inconnue
+        this.router.at('nope');
+        // @ts-expect-error les sélecteurs du router sont devenus `current`
+        this.router.selectors;
+
+        // Hors composants, les mêmes vérifications sur Router.href(…) et router.send('navigate', …).
+
+        // @ts-expect-error écran manquant
+        declared.screens(() => ({ home: HomeScreen }));
+        // @ts-expect-error un écran ne reçoit pas de props de route
+        declared.screens(() => ({ home: HomeScreen, item: IdScreen }));
+        // @ts-expect-error l'écran '!' doit accepter { error, path }
+        declared.screens(() => ({ home: Screen, item: Screen, '!': IdScreen }));
+        // @ts-expect-error '*' est réservé, ce n'est pas un nom de route
+        defineRouter({ '*': '/x' });
+        // @ts-expect-error '!' n'est pas un nom de route
+        defineRouter({ '!': '/oops' });
+        // @ts-expect-error .screens() pas encore appelé
+        createRouter(declared, { mode: 'memory' });
+
+        // @ts-expect-error route inconnue
+        declared.screens(() => ({ home: Screen, item: Screen, stats: redirect({ to: 'nope' }) }));
+        // @ts-expect-error paramètre `id` manquant
+        declared.screens(() => ({ home: Screen, item: Screen, stats: redirect({ to: 'item' }) }));
+
+        // @ts-expect-error contrat inconnu
+        declared.guards(({ read }) => ({ home: () => read('rt-nope') && true }));
+        // @ts-expect-error cible de redirection inconnue
+        declared.guards(() => ({ home: () => ({ to: 'nope' }) }));
+        // @ts-expect-error guard pour une route inconnue
+        declared.guards(() => ({ nope: () => true }));
+        // @ts-expect-error les guards se déclarent avant les écrans : .screens() reste le dernier appel
+        declared.screens(() => ({ home: Screen, item: Screen })).guards(() => ({}));
+      </script>
+      <p>Dans un écran ou après <code>isValid()</code>, les valeurs ont le type de la route :</p>
+      <script type="text/x-code">
+        counterId = this.selector(this.router.current.params.id);   // number | undefined
+        render() {
+          if (!this.counterId.isValid()) {
+            <p>Introuvable</p>
+            return;
+          }
+          this.counterId.value;                                     // number
+        }
+      </script>
+      <p>Les descriptions sont vérifiées contre le type écrit par l'app :</p>
+      <script type="text/x-code">
+        // @ts-expect-error une clé obligatoire exige sa valeur par défaut
+        query<{ page: number }>({ page: Number });
+        // @ts-expect-error une clé facultative n'a pas de défaut
+        query<{ page?: number }>({ page: { type: Number, default: 1 } });
+        // @ts-expect-error mauvais type
+        query<{ page?: number }>({ page: String });
+        // @ts-expect-error valeur hors de l'union
+        query<{ sort?: 'a' | 'b' }>({ sort: { oneOf: ['a', 'c'] } });
+        // @ts-expect-error défaut hors de l'union
+        query<{ sort: 'a' | 'b' }>({ sort: { oneOf: ['a', 'b'], default: 'c' } });
+        // @ts-expect-error une liste se décrit entre crochets
+        query<{ tag: string[] }>({ tag: String });
+        // @ts-expect-error clé manquante
+        query<{ a?: string; b?: string }>({ a: String });
+        // @ts-expect-error clé en trop
+        query<{ a?: string }>({ a: String, b: String });
+        // @ts-expect-error un paramètre de chemin est toujours présent : pas de défaut
+        params<{ id: number }>({ id: { type: Number, default: 1 } });
+        // @ts-expect-error `slug` n'est pas un paramètre du chemin
+        defineRouter({ counter: { path: '/counters/:id', params: params<{ slug: string }>({ slug: String }) } });
+        // @ts-expect-error la query se décrit par query<T>, pas dans le chemin
+        defineRouter({ counters: { path: '/counters?sort' } });
+      </script>
+      <p>Pour la query, écrite dans le chemin (<code>list: '/list?sort&amp;tag[]'</code>) ou décrite (<code>counters</code>, comme dans <a href="router.html#decrire-les-valeurs">Décrire les valeurs</a>) :</p>
+      <script type="text/x-code">
+        // @ts-expect-error `page` n'est pas déclaré
+        Router.href('list', { query: { page: '2' } });
+        // @ts-expect-error `tag` est une liste
+        Router.href('list', { query: { tag: 'a' } });
+        // @ts-expect-error valeur hors de l'union (query décrite par { oneOf })
+        Router.href('counters', { query: { sort: 'nope' } });
+        // @ts-expect-error `id` reste requis
+        Router.href('item', { query: {} });
+        // @ts-expect-error `/` n'a pas de query
+        void router.send('navigate', { to: 'home', query: { sort: 'asc' } });
+      </script>
+
+      <h2 id="architecture">Architecture (plugin Vite)</h2>
+      <p>
+        Ces règles ne sont pas des erreurs de type : le plugin refuse de charger le module, en dev, au build et en test.
+        Pour un <code>.super</code>, elles s'appliquent à son code compilé. Les fichiers de test (<code>*.test.ts</code>)
+        n'y sont pas soumis.
+      </p>
+      <ul>
+        <li>Un module qui importe <code>SuperContract</code> ou <code>SuperStore</code> hors de <code>src/@core/</code>.</li>
+        <li>Un module qui importe <code>SuperElement</code> hors de <code>src/@components/</code>.</li>
+        <li>Un composant qui importe de <code>@core/</code> autre chose qu'un type (un contrat, un store, une constante, ou <code>import * as</code>) : il parle aux stores par <code>@contract nom;</code> (<code>this.contract('nom')</code> dans un <code>.ts</code>).</li>
+        <li>Un module de <code>@core/</code> qui importe une valeur de <code>@super-ts/dom</code>.</li>
+      </ul>
+      <p>Le plugin lit aussi les contrats et le router pour générer <code>src/@core/contracts.d.ts</code>. Il s'arrête avec une erreur sur :</p>
+      <ul>
+        <li>un contrat (<code>export class X extends SuperContract</code>) qui ne se nomme pas par <code>super({ name: '…' })</code> ;</li>
+        <li>deux contrats du même nom ;</li>
+        <li>un contrat nommé <code>'router'</code> quand l'app déclare un router ;</li>
+        <li>deux <code>export const … = defineRouter(…)</code> dans le <code>src</code>.</li>
+      </ul>
+      <p>Voir <a href="architecture.html#les-regles">Architecture</a>.</p>
+
+      <h2 id="a-l-execution">Erreurs à l'exécution</h2>
+      <table>
+        <thead><tr><th>Situation</th><th>Message</th></tr></thead>
+        <tbody>
+          <tr><td>Store non fourni pour un composant</td><td><code>[super] &lt;counter-screen&gt; : aucun store fourni pour le contrat "counter". Ajoute-le à createApp({ stores }) ou à mount(..., { stores }).</code></td></tr>
+          <tr><td>Deux stores pour le même contrat</td><td><code>[super] deux stores fournis pour le contrat "counter"</code></td></tr>
+          <tr><td>Commande inconnue</td><td><code>[super] commande inconnue "x" sur le store "counter"</code></td></tr>
+          <tr><td>Commande après <code>dispose()</code></td><td><code>[super] store "counter" disposé : commande "x" refusée</code></td></tr>
+          <tr><td>État lu ou modifié dans le constructeur d'un store</td><td><code>[super] un store ne lit ni ne modifie son état dans son constructeur : utilise create()</code></td></tr>
+          <tr><td>Méthode <code>pending</code> dans un contrat sans store déclaré (sinon refusée à la compilation)</td><td><code>[super] "pending" est réservé : Super le fournit avec les sélecteurs</code></td></tr>
+          <tr><td>Contrat introuvable (plugin Vite absent)</td><td><code>[super] aucun contrat nommé "counter". …</code></td></tr>
+          <tr><td>Tag absent ou sans tiret (composant <code>.ts</code> ; dans un <code>.super</code>, le parser le refuse avant)</td><td><code>[super] CounterScreen : le tag (`@tag = '…'` dans un .super, `static tag` dans un .ts) est obligatoire et doit contenir un tiret (reçu counter)</code></td></tr>
+          <tr><td>Même tag pour deux composants</td><td><code>[super] le tag "counter-screen" est déjà utilisé par un autre composant</code></td></tr>
+          <tr><td><code>connectedCallback</code> ou <code>disconnectedCallback</code> surchargé</td><td><code>[super] CounterScreen : ne surcharge pas connectedCallback, utilise mounted() / unmounted()</code></td></tr>
+          <tr><td><code>contract</code>, <code>state</code>, <code>selector</code>, <code>ref</code> ou <code>form</code> appelé pendant <code>render</code></td><td><code>[super] &lt;counter-screen&gt; : `selector` se déclare dans un champ ou le constructeur, pas pendant render</code></td></tr>
+          <tr><td><code>this.page.title</code> posé pendant <code>render</code></td><td><code>[super] &lt;counter-screen&gt; : `this.page.title` ne se pose pas pendant render</code></td></tr>
+          <tr><td><code>this.page.title</code> lu</td><td><code>[super] &lt;counter-screen&gt; : `this.page.title` se pose, il ne se lit pas</code></td></tr>
+          <tr><td><code>on</code> appelé pendant <code>render</code></td><td><code>[super] &lt;counter-screen&gt; : `on` ne s'appelle pas pendant render</code></td></tr>
+          <tr><td>Sélecteur lu avant le montage (dans le constructeur)</td><td><code>[super] &lt;counter-screen&gt; : le contrat "counter" ne se lit qu'une fois le composant monté</code></td></tr>
+          <tr><td><code>selector</code> qui ne renvoie pas la valeur d'un sélecteur (<code>null</code> ou <code>undefined</code>, que le compilateur ne voit pas)</td><td><code>[super] &lt;counter-screen&gt; : selector() doit renvoyer la valeur d’un sélecteur, telle quelle. …</code></td></tr>
+          <tr><td>Boucle de redirections</td><td><code>[super] trop de redirections à partir de "/a"</code></td></tr>
+          <tr><td>Guard qui lit un store non fourni</td><td><code>[super] guard du router : aucun store fourni pour le contrat "session"</code></td></tr>
+          <tr><td>Chemin qui ne commence pas par <code>/</code></td><td><code>[super] le chemin "counters" de la route "x" doit commencer par "/"</code></td></tr>
+          <tr><td><code>href</code> avec un paramètre manquant (typage contourné)</td><td><code>[super] paramètre "id" manquant pour la route "counter"</code></td></tr>
+          <tr><td><code>params</code> qui ne décrit pas exactement les paramètres du chemin (typage contourné)</td><td><code>[super] route "counter" : params doit décrire exactement les paramètres du chemin (id)</code></td></tr>
+          <tr><td>Query écrite dans le chemin d'une route objet (typage contourné)</td><td><code>[super] route "counters" : la query se décrit par query&lt;T&gt;({…}), pas dans le chemin</code></td></tr>
+          <tr><td>Description qui n'est ni <code>String</code>, <code>Number</code>, <code>Boolean</code>, ni <code>{ oneOf }</code></td><td><code>[super] clé "x" de la route "a" : attendu String, Number, Boolean ou { oneOf: [...] }</code></td></tr>
+          <tr><td>Valeur de <code>this.router.at(…)</code> lue sur une autre route</td><td><code>[super] &lt;counter-history&gt; : this.router.at('counter') lu alors que la route active est 'counters'</code></td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="ce-qui-n-est-pas-verifie">Ce qui n'est pas vérifié</h2>
+      <ul>
+        <li>Un store sans <code>implements Commands&lt;Self&gt;</code> : ni commande manquante, ni paramètres, ni résultat, ni méthode en trop. Une commande sans méthode n'est alors signalée qu'au <code>send</code> (« commande inconnue »).</li>
+        <li><code>this.fail</code> accepte les raisons de toutes les commandes du contrat, pas seulement celles de la commande en cours.</li>
+        <li>Un événement déclaré que le store n'émet jamais.</li>
+        <li>Un composant ne rattrape pas l'erreur de son propre constructeur : seul le <code>renderError</code> d'un ancêtre la reçoit.</li>
+        <li>Un seul router est typé : celui que le plugin trouve dans le <code>src</code>.</li>
+        <li>Une valeur de l'URL : elle vient de l'extérieur. Une valeur non conforme à la description est lue comme absente (query) ou <code>undefined</code> (paramètre), et <code>isValid()</code> le signale ; c'est à l'écran ou au guard d'en décider.</li>
+        <li>Le lien entre un écran et sa route vient de <code>.screens(…)</code>, lu par le plugin Vite : un écran qu'il ne retrouve pas (classe sans <code>@tag</code> lisible, ou sans <code>static tag</code> dans un <code>.ts</code>, import qu'il ne résout pas) voit toutes les routes. La route qu'un composant <code>.ts</code> déclare à la main (<code>SuperElement&lt;{ route: 'counter' }&gt;</code>) n'est pas comparée à <code>.screens(…)</code>.</li>
+        <li>Une liste <code>oneOf</code> incomplète : pour <code>sort: 'label' | 'value'</code>, <code>{ oneOf: ['label'] }</code> compile. Une valeur en trop est refusée, mais une valeur oubliée ne l'est pas : elle ne sera jamais lue comme valide dans l'URL. Le type étant donné à part (<code>query&lt;T&gt;</code>), TypeScript ne peut pas vérifier que la liste couvre toute l'union.</li>
+        <li>Un composant écrit par son tag (<code>&lt;counter-screen&gt;</code> dans un template) au lieu de sa classe (<code>&lt;CounterScreen /&gt;</code>) : une balise avec tiret est un élément personnalisé quelconque, ni ses attributs ni ses événements ne sont vérifiés, et ce n'est pas supporté.</li>
+        <li>Un <code>import * as</code> de <code>@super-ts/dom</code> ou <code>@super-ts/core</code> hors des dossiers imposés : la règle de placement ne voit que les imports nommés.</li>
+      </ul>
+      <p>Voir <a href="limites.html">Limites</a>.</p>
+    </article>
+    <script src="assets/search-index.js"></script>
+    <script src="assets/site.js"></script>
+  </body>
+</html>

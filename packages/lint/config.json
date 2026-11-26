@@ -1,0 +1,15 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.6.9/schema.json",
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": {
+          "level": "on",
+          "options": {
+            "groups": ["@super-ts/**", ["@components/**", "@core/**"]]
+          }
+        }
+      }
+    }
+  }
+}

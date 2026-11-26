@@ -1,0 +1,8 @@
+composition-tabs {
+  display: block;
+  width: min(32rem, 100%);
+  [role='tablist'] { display: flex; gap: 0.25rem; border-bottom: 1px solid color-mix(in srgb, currentColor 20%, transparent); }
+  [role='tab'] { font: inherit; padding: 0.4rem 0.9rem; border: none; background: none; cursor: pointer; opacity: 0.6; }
+  [role='tab'][aria-selected='true'] { opacity: 1; border-bottom: 2px solid currentColor; }
+  [role='tabpanel'] { padding: 0.75rem 0.25rem; }
+}

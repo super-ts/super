@@ -1,0 +1,18 @@
+import { type Children, SuperElement } from '@super-ts/dom';
+
+/** Un composant qui reçoit des enfants (obligatoires) et un emplacement nommé (facultatif). */
+export class Panel extends SuperElement {
+  @tag = 'lang-project-panel';
+  @prop heading: string;
+  @prop content: Children;
+  @prop footer?: Children;
+
+  render() {
+    <section>
+      <h2>{this.heading}</h2> {this.content}
+      if (this.footer) {
+        <footer>{this.footer}</footer>
+      }
+    </section>
+  }
+}

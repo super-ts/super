@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Démarrer · Super</title>
+    <link rel="stylesheet" href="assets/site.css" />
+  </head>
+  <body>
+    <article>
+      <h1>Démarrer</h1>
+      <p class="lead">Installer le dépôt, lancer l'exemple, puis écrire une fonctionnalité complète de bout en bout.</p>
+
+      <h2 id="installer">Installer</h2>
+      <p>Super n'est pas encore publié sur npm. On travaille dans le dépôt, qui contient les paquets et une app d'exemple.</p>
+      <script type="text/x-code" data-lang="bash">
+        npm install
+        npm run dev          # l'app d'exemple sur http://localhost:5173
+        npm test             # les tests (Vitest, happy-dom)
+        npm run typecheck    # super-tsc : les types des .ts et des .super, tests de types *.test-d.ts compris
+        npm run lint         # Biome (ordre des imports, formatage) et formatage des .super
+        npm run format       # formate tout : Biome pour les .ts, le formateur des .super pour les .super
+        npm run check        # lint, typecheck, tests, puis index de la doc
+      </script>
+      <p>
+        Les paquets <code>@super-ts/core</code>, <code>@super-ts/dom</code>, <code>@super-ts/testing</code>,
+        <code>@super-ts/ui</code> et <code>@super-ts/vite</code> sont résolus par des alias déclarés dans les <code>tsconfig.json</code> et
+        <code>vite.config.ts</code>. Dans l'app, les dossiers Super s'importent eux aussi par alias, depuis n'importe quel
+        fichier : <code>'@core/counter/contract'</code>, <code>'@components/app-shell'</code> (voir
+        <a href="architecture.html#importer-depuis-core-et-components">Architecture</a>).
+      </p>
+      <p>
+        Les composants s'écrivent dans des fichiers <code>.super</code> : le plugin Vite les compile, et
+        <code>npm run typecheck</code> les vérifie. Pour avoir les erreurs et la complétion dans ton éditeur, branche le
+        serveur de langage des <code>.super</code> (voir <a href="outillage.html#editeur">Outillage</a>).
+      </p>
+
+      <h2 id="l-app-d-exemple" data-llm="skip">L'app d'exemple</h2>
+      <p>
+        <code>examples/demo</code> est une seule app, qui regroupe les exemples de Super. <code>npm run dev</code> la lance
+        sur <code>http://localhost:5173</code> ; sa page d'accueil mène à chaque exemple :
+      </p>
+      <ul>
+        <li><strong>Compteurs</strong> (<code>/counters</code>) : une liste de compteurs, une page de détail par compteur avec des boutons + et −, une persistance dans le <code>localStorage</code>.</li>
+        <li><strong>Formulaire de profil</strong> (<code>/profile</code>) : tous les types de champs, des règles, une vérification asynchrone, une liste dynamique, et un serveur simulé (latence, adresse prise, panne réseau).</li>
+        <li><strong>Boutique</strong> (<code>/shop</code>) : un store qui dépend d'un autre, un événement écrit à la main, un dialogue de confirmation, un guard.</li>
+        <li><strong>Erreurs</strong> (<code>/errors</code>) : chaque niveau de gestion des erreurs, provoqué pour de vrai, avec le journal de <code>onError</code>.</li>
+        <li><strong>Widget</strong> (<code>/widget</code>) : une seconde application dans la page, un <code>mounted</code> avec nettoyage par <code>signal</code>, un raccourci clavier.</li>
+        <li><strong>Kit</strong> (<code>/kit</code>) : un sommaire et une page par famille de composants de <a href="ui.html"><code>@super-ts/ui</code></a>, branchés sur les stores de la démo, dont une table branchée sur une vraie API et une page de thème.</li>
+      </ul>
+      <p>
+        Presque tous les extraits de cette doc en viennent : quand un extrait est tiré de l'exemple, un lien mène au fichier
+        complet. La page <a href="exemples.html">Exemples</a> détaille ce que montre chaque fichier.
+      </p>
+      <script type="text/x-code" data-lang="text">
+        examples/demo/src/
+        ├── @core/                  imposé par Super : un dossier par contrat
+        │   ├── counter/            contract.ts, store.ts, store.test.ts
+        │   ├── profile/, cart/, checkout/, error-log/, timer/, catalog/
+        │   └── contracts.d.ts      généré par le plugin Vite : le dictionnaire des contrats
+        ├── @components/            imposé par Super : un dossier par écran
+        │   ├── app-shell/          la coquille : navigation et RouterOutlet
+        │   ├── counter/            index.super (CounterScreen), counter-controls.super, leurs .css et tests
+        │   ├── counter-list/, profile/, shop/, checkout/, errors/, widget/, composition/, kit/
+        │   ├── examples/, not-found/, error/
+        │   └── shared/             composants réutilisables (confirm-dialog.super)
+        ├── domain/                 user-land : types et règles métier, ni Super ni DOM
+        ├── ports/                  user-land : interfaces dont dépendent les stores
+        ├── adapters/               user-land : localStorage, mémoire, serveur simulé, API HTTP
+        ├── widgets/                user-land : une seconde app montée dans la page
+        ├── routes.ts               user-land : chemins et écrans, d'où sort le Router typé
+        └── main.ts                 user-land : racine de composition
+      </script>
+
+      <h2 id="ta-premiere-fonctionnalite">Ta première fonctionnalité : un bouton de thème</h2>
+      <p>
+        On va ajouter un bouton qui bascule entre mode clair et mode sombre. C'est volontairement simple, mais ça passe par
+        toutes les étapes : contrat, store, composant, branchement et test.
+      </p>
+
+      <h3 id="etape-1-le-contrat">Étape 1 : le contrat</h3>
+      <p>
+        Le contrat décrit ce que le store sait faire, sans dire comment. C'est une classe, dans son propre dossier sous
+        <code>src/@core/</code>, qui se nomme dans son constructeur : c'est par ce nom qu'on la demandera.
+      </p>
+      <script type="text/x-code" data-title="src/@core/theme/contract.ts">
+        import { SuperContract } from '@super-ts/core';
+
+        export type ThemeMode = 'light' | 'dark';
+        export type ThemeState = { mode: ThemeMode };
+
+        export type ThemeTypes = {
+          state: ThemeState;                        // ce que le store garde en mémoire
+          commands: { toggle(): void };             // ce qu'on peut lui demander
+          events: { changed: { mode: ThemeMode } }; // ce qu'il annonce
+        };
+
+        export class ThemeContract extends SuperContract<ThemeTypes> {
+          constructor() {
+            super({ name: 'theme' });
+          }
+
+          // Ce qu'on peut lire : un sélecteur est une méthode qui reçoit l'état.
+          isDark(s: ThemeState) {
+            return s.mode === 'dark';
+          }
+        }
+      </script>
+      <p>
+        Le plugin Vite repère le contrat et l'inscrit dans <code>src/@core/contracts.d.ts</code>, un fichier généré
+        (à committer, jamais à écrire à la main). C'est ce qui fait connaître <code>'theme'</code> au compilateur partout
+        dans l'app. Voir <a href="contrats.html">Contrats</a> et <a href="selecteurs.html">Sélecteurs</a>.
+      </p>
+
+      <h3 id="etape-2-le-store">Étape 2 : le store</h3>
+      <p>Le store implémente le contrat : un état de départ, et une méthode par commande.</p>
+      <script type="text/x-code" data-title="src/@core/theme/store.ts">
+        import { type Commands, SuperStore } from '@super-ts/core';
+        import type { ThemeContract } from './contract';
+
+        export class ThemeStore extends SuperStore<ThemeContract> implements Commands<ThemeStore> {
+          constructor() {
+            super({ contract: 'theme', initialState: { mode: 'light' } });
+          }
+
+          toggle() {
+            const mode = this.selectors.isDark() ? 'light' : 'dark';
+            this.set({ mode });
+            this.emit('changed', { mode });
+          }
+        }
+      </script>
+      <p>
+        <code>implements Commands&lt;ThemeStore&gt;</code> fait vérifier les méthodes par le compilateur : une commande
+        oubliée, un paramètre différent du contrat ou une méthode publique hors contrat ne compilent pas. Ce constructeur
+        ne prend rien : le store se crée avec <code>ThemeStore.create()</code>. Voir <a href="stores.html">Stores</a>.
+      </p>
+
+      <h3 id="etape-3-le-composant">Étape 3 : le composant</h3>
+      <p>
+        Le composant demande le store par le nom de son contrat, lit un sélecteur et envoie la commande au clic. Il est
+        réutilisable : il va dans <code>src/@components/shared/</code>, dans un fichier <code>.super</code>.
+      </p>
+      <script type="text/x-code" data-title="src/@components/shared/theme-toggle.super">
+        import { SuperElement } from '@super-ts/dom';
+
+        export class ThemeToggle extends SuperElement {
+          @tag = 'theme-toggle';
+
+          // Une fois, à la construction : le store, et ce qu'on en lit.
+          @contract theme;
+          @selector isDark = this.theme.selectors.isDark;
+
+          // À chaque rendu : on affiche à partir des valeurs courantes.
+          render() {
+            <button type="button" on:click={() => this.theme.send('toggle')}>
+              {this.isDark.value ? 'Passer en mode clair' : 'Passer en mode sombre'}
+            </button>
+          }
+        }
+      </script>
+      <p>
+        <code>render()</code> ne renvoie rien : le bouton est écrit comme une instruction, <code>on:click</code> pose
+        l'écouteur et <code>{…}</code> affiche une valeur (voir <a href="templates.html">Templates</a>). Le composant
+        n'importe rien de <code>src/@core/</code> : <code>@contract theme;</code> suffit, et le compilateur connaît
+        les sélecteurs et les commandes du contrat. Voir <a href="composants.html">Composants</a> et
+        <a href="lire-un-store.html">Lire un store</a>.
+      </p>
+
+      <h3 id="etape-4-le-branchement">Étape 4 : le branchement</h3>
+      <p>
+        La racine de composition, <code>main.ts</code>, crée les stores et les fournit à l'app. Le composant peut alors
+        être utilisé n'importe où sous la racine, par exemple dans l'en-tête de la coquille :
+        <code>&lt;ThemeToggle /&gt;</code>, après <code>import { ThemeToggle } from '@components/shared/theme-toggle'</code>.
+      </p>
+      <script type="text/x-code" data-title="src/main.ts (avec le thème)">
+        const counter = CounterStore.create({ counterRepository: createLocalStorageCounterRepository() });
+        const theme = ThemeStore.create();
+        const router = createRouter(Router);
+
+        createApp({ root: document.querySelector<HTMLElement>('#app')!, stores: [counter, theme], router })
+          .mount(AppShell.create());
+      </script>
+      <p>
+        L'app retrouve chaque store par le nom de son contrat : un composant qui demande <code>'theme'</code> reçoit
+        celui-ci. Voir <a href="application.html">Brancher l'application</a>.
+      </p>
+
+      <h3 id="etape-5-le-test">Étape 5 : le test</h3>
+      <script type="text/x-code" data-title="src/@components/shared/theme-toggle.test.ts">
+        import { flush, mount } from '@super-ts/testing';
+        import { ThemeStore } from '@core/theme/store';
+        import { within } from '@testing-library/dom';
+        import userEvent from '@testing-library/user-event';
+        import { expect, test } from 'vitest';
+        import { ThemeToggle } from './theme-toggle';
+
+        test('le bouton bascule le thème', async () => {
+          const theme = ThemeStore.create();
+          const { container } = await mount(ThemeToggle, { stores: [theme] });
+
+          await userEvent.click(within(container).getByRole('button'));
+          await flush();
+
+          expect(theme.selectors.isDark()).toBe(true);
+          expect(container.textContent).toContain('Passer en mode clair');
+        });
+      </script>
+      <p>
+        Le test reste un <code>.ts</code> : il importe le composant <code>.super</code> sans extension et le monte
+        avec <code>mount</code>. Un test peut importer un store : le plugin ne vérifie pas les fichiers
+        <code>*.test.ts</code>. Pour tester le
+        composant seul, remplace le vrai store par <code>fakeStore('theme', { state: { mode: 'dark' } })</code>. Voir
+        <a href="tests.html">Tester</a>.
+      </p>
+
+      <h2 id="et-ensuite" data-llm="skip">Et ensuite</h2>
+      <ul>
+        <li>Persister le thème : ajoute un port <code>ThemeStorage</code> et un adapter <code>localStorage</code> (voir <a href="ports-adapters.html">Ports et adapters</a>).</li>
+        <li>Comprendre le trajet complet d'une action : <a href="flux.html">Commandes et événements</a>.</li>
+        <li>Ajouter des pages : <a href="router.html">Router</a>.</li>
+      </ul>
+    </article>
+    <script src="assets/search-index.js"></script>
+    <script src="assets/site.js"></script>
+  </body>
+</html>

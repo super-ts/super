@@ -1,0 +1,17 @@
+import { SuperElement } from '@super-ts/dom';
+import './counter-list-item.css';
+
+/** Une ligne de la liste d'accueil : ne se re-rend que si la valeur de son compteur change. */
+export class CounterListItem extends SuperElement {
+  @tag = 'counter-list-item';
+  @prop counterId: string;
+  @prop label: string;
+
+  @contract counter;
+  @selector count = () => this.counter.selectors.count(this.counterId);
+
+  render() {
+    <a href={this.router.href('counter', { params: { id: this.counterId } })}>{this.label}</a>
+    <span class="counter-list-value">{this.count.value}</span>
+  }
+}

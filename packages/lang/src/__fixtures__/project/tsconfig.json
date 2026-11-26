@@ -1,0 +1,7 @@
+{
+  // Petit projet pour les tests de `check` : un composant .ts et des fichiers .super.
+  "extends": "../../../../../tsconfig.json",
+  "include": ["."],
+  // Pas l'exclude de la racine, qui écarte justement ce dossier.
+  "exclude": []
+}

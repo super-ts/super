@@ -1,0 +1,24 @@
+import { SuperElement } from '@super-ts/dom';
+import './confirm-dialog.css';
+
+/**
+ * Dialogue de confirmation : monté, il est ouvert. C'est le parent qui décide de le rendre ou non,
+ * et le dialogue répond par un événement. Il ne connaît ni store ni commande : il reste réutilisable.
+ */
+export class ConfirmDialog extends SuperElement {
+  @tag = 'confirm-dialog';
+  @prop question: string;
+  @emit answered: { confirmed: boolean };
+
+  render() {
+    <div class="backdrop">
+      <div role="dialog" aria-modal="true" aria-label="Confirmation">
+        <p>{this.question}</p>
+        <div class="actions">
+          <button type="button" on:click={() => this.emit('answered', { confirmed: false })}>Annuler</button>
+          <button type="button" class="danger" on:click={() => this.emit('answered', { confirmed: true })}>Confirmer</button>
+        </div>
+      </div>
+    </div>
+  }
+}

@@ -1,0 +1,11 @@
+import { SuperElement } from '@super-ts/dom';
+
+/** Un composant .super que card.super n'importe pas (pour la complétion avec import). */
+export class Badge extends SuperElement {
+  @tag = 'srv-badge';
+  @prop label: string;
+
+  render() {
+    <span class="badge">{this.label}</span>
+  }
+}

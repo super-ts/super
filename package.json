@@ -1,0 +1,33 @@
+{
+  "name": "super",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Framework front minimaliste : stores typés sur EventTarget et composants HTMLElement typés.",
+  "scripts": {
+    "dev": "vite",
+    "build:example": "vite build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "node packages/lang/src/cli.ts tsconfig.json && node packages/lang/src/cli.ts examples/demo/tsconfig.json",
+    "check": "npm run lint && npm run typecheck && npm run test && npm run docs:index",
+    "docs:index": "node docs/tools/build-docs-index.mjs",
+    "docs": "npm run docs:index && node docs/tools/serve.mjs",
+    "docs:check": "node docs/tools/build-docs-index.mjs --check",
+    "lint": "biome check && node packages/lang/src/format-cli.ts --check",
+    "lint:fix": "biome check --write && node packages/lang/src/format-cli.ts --write",
+    "format": "biome format --write && node packages/lang/src/format-cli.ts --write"
+  },
+  "dependencies": {
+    "lit-html": "^3.3.3"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.6.9",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/user-event": "^14.6.13",
+    "happy-dom": "^21.0.4",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "vitest": "^4.1.12"
+  }
+}

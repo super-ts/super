@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gérer les erreurs · Super</title>
+    <link rel="stylesheet" href="assets/site.css" />
+  </head>
+  <body>
+    <article>
+      <h1>Gérer les erreurs</h1>
+      <p class="lead">
+        Quand un composant plante, Super peut afficher un rendu de repli à la place de la partie cassée, et signaler
+        l'erreur à un endroit unique. Trois niveaux, du plus local au plus global : le <code>renderError</code> d'un
+        composant, l'écran <code>'!'</code> du router, et <code>onError</code> dans l'application.
+      </p>
+
+      <h2 id="sans-frontiere">Sans rien déclarer</h2>
+      <p class="example-link">Chaque cas de cette page se provoque dans l'<a href="exemples.html#erreurs">exemple Erreurs</a> (<code>npm run dev</code>, puis <code>/errors</code>) : <a href="../examples/demo/src/@components/errors/index.super"><code>errors/index.super</code></a> et ses blocs, <a href="../examples/demo/src/main.ts"><code>main.ts</code></a>. Son journal affiche ce que reçoit <code>onError</code>.</p>
+      <p>
+        Exemple : l'écran d'un compteur appelle <code>label.toUpperCase()</code> alors que <code>label</code> vaut
+        <code>null</code>. Sans frontière d'erreur, l'écran reste vide (ou figé sur son dernier affichage si l'erreur
+        survient plus tard), l'erreur part dans la console, et le reste de la page continue de fonctionner. L'utilisateur
+        voit une zone blanche, sans explication.
+      </p>
+
+      <h2 id="render-error">Le renderError d'un composant</h2>
+      <p>
+        <code>renderError(error)</code> est une méthode facultative, à côté de <code>render</code>. Elle s'affiche à la place
+        de <code>render</code> quand le composant, ou l'un de ses descendants, plante. Elle s'écrit comme
+        <code>render</code> : elle émet ses éléments, sans <code>return</code>.
+      </p>
+      <script type="text/x-code" data-title="src/@components/errors/fragile-card.super" data-source="examples/demo/src/@components/errors/fragile-card.super">
+        import { SuperElement } from '@super-ts/dom';
+
+        /** 1. Un bloc qui plante au rendu quand on le casse : son propre renderError remplace seulement sa zone. */
+        export class FragileCard extends SuperElement {
+          @tag = 'fragile-card';
+          @prop broken: boolean;
+
+          render() {
+            if (this.broken) throw new Error('le bloc a lu une donnée absente');
+            <p class="ok">Ce bloc s'affiche normalement.</p>
+          }
+
+          override renderError(error: Error) {
+            <p class="fallback">Ce bloc a planté ({error.message}) : son renderError le remplace, le reste de la page continue.</p>
+          }
+        }
+      </script>
+      <ul>
+        <li><strong>Il reçoit l'erreur</strong>, toujours un <code>Error</code> : une valeur levée qui n'en est pas un est convertie. Il a accès aux props (<code>this.broken</code>) et aux champs du composant, comme <code>render</code>.</li>
+        <li><strong>Il rattrape les erreurs des descendants</strong> : si un enfant plante, au rendu comme dans son constructeur, le parent entier passe à son <code>renderError</code>.</li>
+        <li><strong>Il rattrape un store introuvable au montage</strong> (phase <code>setup</code>) : l'instance existe, il peut afficher un remplacement. S'il lit lui-même ce store, il plante à son tour et l'erreur remonte.</li>
+        <li><strong>Il ne rattrape pas l'erreur de son propre constructeur</strong> : si le constructeur (ou un champ) plante, l'instance n'existe pas. L'erreur (phase <code>setup</code>) remonte au <code>renderError</code> d'un ancêtre.</li>
+        <li><strong>Une fois en <code>renderError</code>, le composant y reste</strong> jusqu'à son démontage. Il continue de se re-rendre si ses props changent. Un écran est remonté à chaque navigation, ce qui le remet à zéro. Pour remettre à zéro un bloc, on le recrée : l'exemple Erreurs place ses blocs dans <code>for (const _round of [round]; key _round)</code>, et « Recommencer » incrémente <code>round</code>, ce qui change la clé et recrée les composants (voir <a href="templates.html#listes">Listes</a>).</li>
+        <li><strong>S'il plante lui-même</strong>, l'erreur remonte au parent suivant : pas de boucle.</li>
+      </ul>
+      <script type="text/x-code" data-title="src/@components/errors/guarded-panel.super (extrait)" data-source="examples/demo/src/@components/errors/guarded-panel.super">
+        /** 2. (suite) Le parent de BrokenChild : son renderError rattrape l'erreur de l'enfant. */
+        export class GuardedPanel extends SuperElement {
+          @tag = 'guarded-panel';
+          @prop withChild: boolean;
+
+          render() {
+            <p class="ok">Panneau parent.</p>
+            if (this.withChild) {
+              <BrokenChild />
+            }
+          }
+
+          override renderError(error: Error) {
+            <p class="fallback">Le parent a rattrapé l'erreur de son enfant ({error.message}).</p>
+          }
+        }
+      </script>
+      <p>
+        <code>BrokenChild</code>, écrit <code>&lt;BrokenChild /&gt;</code> dans le <code>render</code> du panneau, lève une erreur dans son constructeur. Elle est signalée au nom de l'enfant
+        (<code>tag: 'broken-child'</code>, <code>phase: 'setup'</code>) et rattrapée par <code>GuardedPanel</code>
+        (<code>caughtBy: 'guarded-panel'</code>).
+      </p>
+      <div class="callout">
+        <strong>Pourquoi une méthode à part, et pas une erreur passée à <code>render</code></strong>
+        Si c'est <code>render</code> qui a planté, le rappeler risquerait de replanter au même endroit.
+        <code>renderError</code> est un second rendu, écrit pour ne dépendre que de l'erreur et du strict nécessaire.
+      </div>
+
+      <h3 id="ou-mettre-un-render-error">Où mettre un renderError</h3>
+      <ul>
+        <li>Sur un <strong>écran</strong>, pour un message adapté à la page (« Impossible d'afficher ce compteur »).</li>
+        <li>Sur une <strong>partie autonome</strong> d'un écran (un graphique, un widget), pour que le reste de l'écran reste utilisable.</li>
+        <li>Sur le <strong>shell</strong> (<code>AppShell</code>), pour couvrir les erreurs hors de l'écran actif, comme dans l'en-tête.</li>
+        <li>Pas besoin d'en mettre partout : l'écran <code>'!'</code> sert de filet par défaut pour tous les écrans.</li>
+      </ul>
+
+      <h2 id="l-ecran-d-erreur">L'écran '!' du router</h2>
+      <p>
+        Si l'erreur d'un écran remonte jusqu'au <code>RouterOutlet</code> sans avoir été rattrapée, l'outlet affiche l'écran
+        <code>'!'</code> à la place de l'écran actif. Le shell et la navigation restent utilisables.
+      </p>
+      <script type="text/x-code" data-title="src/routes.ts (extrait)" data-source="examples/demo/src/routes.ts">
+          .screens(() => ({
+            examples: ExamplesScreen,
+            // …
+            errors: ErrorsScreen,
+            widget: WidgetScreen,
+            composition: CompositionScreen,
+            // …
+            '*': NotFoundScreen,
+            '!': ErrorScreen,
+          }));
+      </script>
+      <script type="text/x-code" data-title="src/@components/error/index.super" data-source="examples/demo/src/@components/error/index.super">
+        import { SuperElement } from '@super-ts/dom';
+
+        /** Écran '!' : affiché par le router quand un écran plante sans être rattrapé. */
+        export class ErrorScreen extends SuperElement {
+          @tag = 'error-screen';
+          @title = 'Erreur';
+          @prop error: Error;
+          @prop path: string;
+
+          render() {
+            <main class="screen">
+              <h1>Cette page a rencontré un problème</h1>
+              <p>{this.error.message}</p>
+              <button type="button" on:click={() => this.router.send('navigate', { to: 'examples' })}>Retour aux exemples</button>
+            </main>
+          }
+        }
+      </script>
+      <ul>
+        <li>L'écran <code>'!'</code> reçoit <strong>l'erreur et le chemin</strong> en props : c'est le seul écran qui reçoit des props du router. Le compilateur exige que ses props soient <code>{ error: Error; path: string }</code> : <code>@prop error: Error;</code> et <code>@prop path: string;</code>.</li>
+        <li>
+          <strong>Toute navigation le referme</strong> et remonte un écran neuf : aller sur une autre page puis revenir, ou
+          simplement recliquer sur le lien de la page en erreur. Si l'écran plante encore, l'écran <code>'!'</code>
+          réapparaît.
+        </li>
+        <li>S'il plante lui-même, l'erreur continue de remonter.</li>
+      </ul>
+      <script type="text/x-code" data-title="src/@components/errors/double-failure.super (extrait)" data-source="examples/demo/src/@components/errors/double-failure.super">
+        /** 3. Un bloc dont le renderError plante aussi : l'erreur remonte jusqu'à l'écran '!' du router. */
+        export class DoubleFailure extends SuperElement {
+          @tag = 'double-failure';
+          @prop armed: boolean;
+
+          render() {
+            if (this.armed) throw new Error('rendu cassé');
+            <p class="ok">Prêt.</p>
+          }
+
+          override renderError(): unknown {
+            throw new Error('le renderError a planté lui aussi');
+          }
+        }
+      </script>
+
+      <h2 id="onerror">Signaler : onError</h2>
+      <p>
+        <code>onError</code>, dans <code>createApp</code>, reçoit <strong>toute</strong> erreur de composant rendu sous la
+        racine, qu'elle ait été rattrapée ou non. C'est l'endroit unique pour journaliser ou prévenir un outil de suivi.
+      </p>
+      <script type="text/x-code" data-title="src/main.ts (extrait)" data-source="examples/demo/src/main.ts">
+        createApp({
+          root: document.querySelector<HTMLElement>('#app')!,
+          stores: [counter, profile, cart, checkout, errorLog, catalog],
+          router,
+          // Toute erreur de composant, rattrapée ou non : la console, et le journal affiché par l'exemple « Erreurs ».
+          onError: (error, { tag, phase, caughtBy }) => {
+            console.error(`[${tag}] ${phase}`, { caughtBy }, error);
+            errorLog.send('record', { message: error.message, tag, phase, caughtBy });
+          },
+        }).mount(AppShell.create());
+      </script>
+      <p>En production, on y branche plutôt un outil de suivi :</p>
+      <script type="text/x-code" data-title="src/monitoring.ts (user-land)">
+        export function reportToMonitoring(error: Error, context: { tag: string; phase: string; caughtBy: string | null }) {
+          if (import.meta.env.DEV) console.error(`[${context.tag}] ${context.phase}`, error, context);
+          else navigator.sendBeacon('/api/errors', JSON.stringify({ message: error.message, stack: error.stack, ...context }));
+        }
+      </script>
+      <p><code>reportToMonitoring</code> est une fonction de ton projet : Super l'appelle par <code>onError</code>, il ne l'implémente pas.</p>
+      <table>
+        <thead><tr><th>Information</th><th>Contenu</th></tr></thead>
+        <tbody>
+          <tr><td><code>error</code></td><td>L'erreur, toujours un <code>Error</code>.</td></tr>
+          <tr><td><code>tag</code></td><td>Le composant qui a planté (<code>'fragile-card'</code>).</td></tr>
+          <tr><td><code>phase</code></td><td><code>'setup'</code> (constructeur, ou store introuvable au montage), <code>'render'</code> ou <code>'renderError'</code> : l'affichage était cassé. <code>'event'</code>, <code>'listener'</code> ou <code>'mount'</code> : une action a échoué (voir plus bas).</td></tr>
+          <tr><td><code>caughtBy</code></td><td>Ce qui l'a rattrapée : le tag d'un composant avec <code>renderError</code>, <code>'super-router-outlet'</code> pour l'écran <code>'!'</code>, ou <code>null</code>.</td></tr>
+        </tbody>
+      </table>
+      <p>
+        Sans <code>onError</code>, une erreur rattrapée part dans la console, et une erreur non rattrapée est levée.
+        Avec des applications imbriquées, c'est la plus proche du composant qui signale, une seule fois.
+      </p>
+
+      <h2 id="qui-rattrape-quoi">Qui rattrape quoi</h2>
+      <p>Une erreur remonte l'arbre des composants depuis celui qui a planté. Le premier qui sait la traiter la garde :</p>
+      <ol>
+        <li>le composant qui a planté, s'il a un <code>renderError</code> (sauf pour l'erreur de son propre constructeur) ;</li>
+        <li>sinon son parent, puis le parent du parent, jusqu'au premier qui a un <code>renderError</code> ;</li>
+        <li>sinon, si elle atteint le <code>RouterOutlet</code>, l'écran <code>'!'</code> ;</li>
+        <li>sinon personne : le composant reste vide.</li>
+      </ol>
+      <p>Dans tous les cas, <code>onError</code> est appelé une fois. Les blocs de l'exemple Erreurs couvrent chaque ligne :</p>
+      <table>
+        <thead><tr><th>Ce qui plante</th><th>Ce qui s'affiche</th></tr></thead>
+        <tbody>
+          <tr><td><code>FragileCard</code> au rendu, avec son propre <code>renderError</code></td><td>Son <code>renderError</code>, à la place du bloc seulement. <code>caughtBy: 'fragile-card'</code>.</td></tr>
+          <tr><td><code>BrokenChild</code> dans son constructeur, sous <code>GuardedPanel</code> (avec <code>renderError</code>)</td><td>Le <code>renderError</code> de <code>GuardedPanel</code>, à la place de tout le panneau. <code>tag: 'broken-child'</code>, <code>phase: 'setup'</code>, <code>caughtBy: 'guarded-panel'</code>.</td></tr>
+          <tr><td><code>DoubleFailure</code> au rendu, puis son <code>renderError</code></td><td>L'erreur continue jusqu'au <code>RouterOutlet</code> : écran <code>'!'</code> à la place de l'écran Erreurs. La navigation reste utilisable.</td></tr>
+          <tr><td>Un écran sans <code>renderError</code> (<code>CounterListScreen</code>)</td><td>L'écran <code>'!'</code>, à la place de la liste des compteurs.</td></tr>
+          <tr><td>L'en-tête dans <code>AppShell</code>, sans <code>renderError</code></td><td>Rien n'est rattrapé : l'en-tête reste vide, <code>onError</code> est appelé. Un <code>renderError</code> sur <code>AppShell</code> couvre ce cas.</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="erreurs-d-action">Les erreurs d'action : on:événement, on, mounted</h2>
+      <p>
+        Une erreur dans un gestionnaire d'événement du template, dans un écouteur <code>on</code> d'un contrat, ou dans
+        <code>mounted</code> / <code>unmounted</code> est elle aussi signalée à <code>onError</code>, avec le composant d'où
+        elle vient. Rien à écrire : Super enveloppe ces fonctions lui-même.
+      </p>
+      <script type="text/x-code" data-title="src/@components/errors/index.super (extrait)" data-source="examples/demo/src/@components/errors/index.super">
+        <section>
+          <h2>4. Un clic qui plante</h2>
+          <p>L'affichage ne change pas : l'erreur est seulement signalée (phase <code>event</code>).</p>
+          <button type="button" on:click={() => { throw new Error('le gestionnaire de clic a planté'); }}>Clic qui plante</button>
+        </section>
+      </script>
+      <table>
+        <thead><tr><th>Une erreur dans…</th><th><code>phase</code></th><th>À l'écran</th></tr></thead>
+        <tbody>
+          <tr><td>un gestionnaire <code>on:click={…}</code> (synchrone ou asynchrone)</td><td><code>'event'</code></td><td>Rien ne change.</td></tr>
+          <tr><td>un écouteur <code>@on('counter', '…')</code> (<code>this.counter.on(…)</code> dans un <code>.ts</code>)</td><td><code>'listener'</code></td><td>Rien ne change.</td></tr>
+          <tr><td><code>mounted()</code> ou <code>unmounted()</code></td><td><code>'mount'</code></td><td>Rien ne change.</td></tr>
+        </tbody>
+      </table>
+      <p>
+        <strong>Le composant ne bascule pas sur son <code>renderError</code></strong> : quand une action échoue, l'affichage
+        est en général toujours juste. Remplacer l'écran entier pour un clic raté serait disproportionné. L'erreur est
+        seulement signalée (dans la console sans <code>onError</code>), et <code>caughtBy</code> vaut <code>null</code>.
+      </p>
+
+      <h2 id="ce-qui-n-est-pas-couvert">Ce qui n'est pas couvert</h2>
+      <ul>
+        <li><strong>Le code que Super ne voit pas passer</strong> : un <code>setTimeout</code>, ou la fonction d'un <code>window.addEventListener</code> posé à la main dans <code>mounted</code>. Une erreur à cet endroit part dans la console.</li>
+        <li><strong><code>unmounted</code> d'un composant retiré du DOM</strong> : l'erreur ne peut plus remonter à l'application. Elle part dans la console.</li>
+        <li><strong>Un gestionnaire construit hors d'un composant</strong>, dans un gabarit <code>html</code> créé au chargement d'un module <code>.ts</code> par exemple : il n'est rattaché à aucun composant.</li>
+        <li><strong>Le constructeur d'un composant créé hors template</strong> (<code>AppShell.create()</code> dans <code>main.ts</code>) : l'erreur est levée à l'appel de <code>create</code>, comme pour tout code.</li>
+        <li><strong>Les erreurs des stores</strong> : elles ne passent pas par là. Un store rattrape ses erreurs et les publie par son état ou un événement (voir <a href="stores.html#les-erreurs">Stores : les erreurs</a>).</li>
+        <li><strong>Les erreurs de configuration</strong> levées par Super lui-même (deux stores pour un contrat, route inconnue dans <code>href</code>, <code>static tag</code> manquant dans un composant <code>.ts</code>) : ce sont des erreurs de programmation, à corriger.</li>
+      </ul>
+
+      <h2 id="tester-les-erreurs">Tester les erreurs</h2>
+      <p><code>mount</code> accepte aussi <code>onError</code> :</p>
+      <script type="text/x-code">
+        const onError = vi.fn();
+        const { container } = await mount(FragileCard, { props: { broken: true }, onError });
+
+        expect(container.textContent).toContain('Ce bloc a planté (le bloc a lu une donnée absente)');
+        expect(onError).toHaveBeenCalledWith(expect.any(Error), { tag: 'fragile-card', phase: 'render', caughtBy: 'fragile-card' });
+      </script>
+    </article>
+    <script src="assets/search-index.js"></script>
+    <script src="assets/site.js"></script>
+  </body>
+</html>

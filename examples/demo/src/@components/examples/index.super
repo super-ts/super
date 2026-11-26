@@ -1,0 +1,42 @@
+import { SuperElement } from '@super-ts/dom';
+import './index.css';
+
+/** Écran d'accueil : la liste des exemples de l'app. */
+export class ExamplesScreen extends SuperElement {
+  @tag = 'examples-screen';
+
+  render() {
+    <main class="screen">
+      <h1>Exemples Super</h1>
+      <ul class="examples">
+        <li>
+          <a href={this.router.href('counters')}>Compteurs</a>
+          <p>Un store et ses sélecteurs, des commandes et leur issue, une persistance dans le localStorage, le router.</p>
+        </li>
+        <li>
+          <a href={this.router.href('profile')}>Formulaire de profil</a>
+          <p>Tous les types de champs, des règles, une vérification asynchrone, une liste dynamique, des erreurs du serveur simulées.</p>
+        </li>
+        <li>
+          <a href={this.router.href('shop')}>Boutique</a>
+          <p>Un store qui dépend d'un autre, un événement écrit à la main, un dialogue de confirmation, un guard.</p>
+        </li>
+        <li>
+          <a href={this.router.href('errors')}>Erreurs</a>
+          <p>Des renderError, l'écran '!', les erreurs d'action, et le journal de ce que reçoit onError.</p>
+        </li>
+        <li>
+          <a href={this.router.href('widget')}>Widget</a>
+          <p>Une seconde application dans la page, mounted / unmounted, un raccourci clavier.</p>
+        </li>
+        <li>
+          <a href={this.router.href('composition')}>Composition</a>
+          <p>
+            Des composants qui reçoivent des enfants, et les deux façons de remplir un emplacement : <code>{'<:actions>'}</code> ou une
+            méthode.
+          </p>
+        </li>
+      </ul>
+    </main>
+  }
+}

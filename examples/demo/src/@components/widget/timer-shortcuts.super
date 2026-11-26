@@ -1,0 +1,25 @@
+import { SuperElement } from '@super-ts/dom';
+
+/** Un raccourci clavier posé sur window au montage, retiré par `signal` au démontage. */
+export class TimerShortcuts extends SuperElement {
+  @tag = 'timer-shortcuts';
+
+  @contract timer;
+
+  protected override mounted() {
+    window.addEventListener(
+      'keydown',
+      (event) => {
+        const typing = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement;
+        if (event.code !== 'Space' || typing) return;
+        event.preventDefault();
+        this.timer.send('toggle');
+      },
+      { signal: this.signal },
+    );
+  }
+
+  render() {
+    <p class="shortcut">Barre d'espace : démarrer ou mettre en pause.</p>
+  }
+}

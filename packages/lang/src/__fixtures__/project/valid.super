@@ -1,0 +1,50 @@
+import { SuperElement } from '@super-ts/dom';
+import { Greeting } from './greeting';
+import { Panel } from './panel';
+
+type Item = { id: string; label: string; done: boolean };
+
+/** Un fichier .super sans erreur : `check` ne doit rien signaler. */
+export class ValidFixture extends SuperElement {
+  @tag = 'lang-valid';
+  @ref input: HTMLInputElement;
+  @state local = { items: [] as Item[], filter: null as string | null };
+
+  #row(item: Item) {
+    <li class={item.done ? 'done' : null}>{item.label}</li>
+  }
+
+  #footer() {
+    <small>Pied rempli par une méthode</small>
+  }
+
+  render() {
+    <section aria-label="Liste">
+      <h1>Total : <strong>{this.local.get().items.length}</strong> éléments</h1>
+      <p>let me know, if you need anything</p>
+      <input
+        ref={this.input}
+        prop:value={this.local.get().filter ?? ''}
+        on:input={(e) => this.local.set({ filter: e.currentTarget.value })}
+      />
+      <br />
+      <ul>
+        for (const item of this.local.get().items; key item.id) {
+          {this.#row(item)}
+        }
+      </ul>
+      <Greeting name="Ada" on:closed={({ reason }) => console.log(reason.toUpperCase())} />
+      <Panel heading="Par une méthode" footer={this.#footer()}>
+        <p>Les enfants d’un composant.</p>
+      </Panel>
+      <Panel heading="Par un emplacement">
+        if (this.local.get().filter) {
+          <p>Filtre : {this.local.get().filter}</p>
+        }
+        <:footer>
+          <small>{this.local.get().items.length} éléments</small>
+        </:footer>
+      </Panel>
+    </section>
+  }
+}

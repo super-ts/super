@@ -1,0 +1,95 @@
+import { SuperElement } from '@super-ts/dom';
+import { Badge, Button, columns, EmptyState, Table } from '@super-ts/ui';
+import GLOBAL_CSS from '../../kit-theme.css?raw';
+import { KitPage } from './kit-page';
+import COMPACT_CSS from './theme-compact.css?raw';
+import DARK_CSS from './theme-dark.css?raw';
+import INSTANCE_CSS from './theme-instance.css?raw';
+import RULE_CSS from './theme-rule.css?raw';
+import ZONE_CSS from './theme-zone.css?raw';
+import './theme-compact.css';
+import './theme-dark.css';
+import './theme-instance.css';
+import './theme-rule.css';
+import './theme-zone.css';
+
+type Row = { id: string; label: string; count: number };
+const COLUMNS = columns<Row>([
+  { key: 'label', label: 'Compteur', sortable: true },
+  { key: 'count', label: 'Valeur', sortable: true, align: 'end' },
+]);
+
+/**
+ * Écran de la route `/kit/theme` : comment surcharger le style du kit. Chaque exemple affiche le
+ * CSS qui le produit, lu dans le fichier même qui est appliqué (`?raw`).
+ */
+export class KitThemeScreen extends SuperElement {
+  @tag = 'kit-theme-screen';
+
+  @contract counter;
+
+  #sample() {
+    <div class="kit-row">
+      <Button>
+        Principal
+      </Button>
+      <Button variant="secondary">
+        Secondaire
+      </Button>
+      <Badge tone="info">
+        Badge
+      </Badge>
+    </div>
+  }
+
+  render() {
+    const rows: Row[] = this.counter.selectors
+      .catalog()
+      .map((c) => ({ id: c.id, label: c.label, count: this.counter.selectors.count(c.id) }));
+    <KitPage
+      heading="Thème"
+      intro="Le kit range son CSS dans une couche à part et ne pose que des sélecteurs sans poids : la moindre règle de l’app passe devant, sans !important."
+    >
+      <section class="kit-example">
+        <h2>Toute l’app</h2>
+        <p>Les variables --super-* sur :root, dans src/kit-theme.css, chargé par main.ts. C’est ce qui donne à toute la démo son indigo.</p>
+        <pre class="kit-code"><code>{GLOBAL_CSS}</code></pre>
+        {this.#sample()}
+      </section>
+      <section class="kit-example">
+        <h2>Une zone</h2> <pre class="kit-code"><code>{ZONE_CSS}</code></pre> <div class="kit-ocean">{this.#sample()}</div>
+      </section>
+      <section class="kit-example">
+        <h2>Le thème sombre dans une zone</h2>
+        <p>Chaque couleur du kit a une valeur claire et une valeur sombre : le kit suit le color-scheme de l’élément.</p>
+        <pre class="kit-code"><code>{DARK_CSS}</code></pre>
+        <div class="kit-dark-zone">
+          {this.#sample()}
+          <EmptyState title="Aucun favori">
+            Le texte secondaire reste lisible sur le fond sombre.
+          </EmptyState>
+        </div>
+      </section>
+      <section class="kit-example">
+        <h2>Un seul composant</h2>
+        <pre class="kit-code"><code>{INSTANCE_CSS}</code></pre>
+        <div class="kit-row">
+          <Button>
+            Sans classe
+          </Button>
+          <Button class="kit-violet">
+            Avec class="kit-violet"
+          </Button>
+        </div>
+      </section>
+      <section class="kit-example">
+        <h2>Une règle ordinaire</h2> <pre class="kit-code"><code>{RULE_CSS}</code></pre> <div class="kit-caps">{this.#sample()}</div>
+      </section>
+      <section class="kit-example">
+        <h2>Une table dense</h2>
+        <pre class="kit-code"><code>{COMPACT_CSS}</code></pre>
+        <Table class="kit-compact" columns={COLUMNS} rows={rows} rowKey={(row) => row.id} />
+      </section>
+    </KitPage>
+  }
+}

@@ -1,0 +1,4 @@
+/* Un seul composant : la classe passée en prop arrive sur son élément. */
+.kit-violet {
+  --super-accent: light-dark(#7c3aed, #c4b5fd);
+}

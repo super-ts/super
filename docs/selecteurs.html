@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sélecteurs · Super</title>
+    <link rel="stylesheet" href="assets/site.css" />
+  </head>
+  <body>
+    <article>
+      <h1>Sélecteurs</h1>
+      <p class="lead">
+        Les sélecteurs sont les lectures autorisées de l'état. Ce sont les méthodes du contrat, utilisées telles quelles
+        par les composants, le store et les tests. Tu les écris avec l'état en premier paramètre, et Super le fournit à
+        l'appel : tu écris <code>count(s, id)</code> dans le contrat, puis <code>selectors.count(id)</code> partout ailleurs.
+      </p>
+
+      <h2 id="declarer-des-selecteurs">Déclarer des sélecteurs</h2>
+      <script type="text/x-code" data-title="src/@core/counter/contract.ts" data-source="examples/demo/src/@core/counter/contract.ts">
+        // Les seules lectures autorisées de l'état. Un composant lit par là (plus `pending`, fourni par Super).
+        export class CounterContract extends SuperContract<CounterTypes> {
+          constructor() {
+            super({ name: 'counter' });
+          }
+
+          catalog(_s: CounterState) {
+            return COUNTERS;
+          }
+          find(_s: CounterState, id: string) {
+            return COUNTERS.find((counter) => counter.id === id) ?? null;
+          }
+          count(s: CounterState, id: string) {
+            return s.counts[id] ?? 0;
+          }
+          label(_s: CounterState, id: string) {
+            return COUNTERS.find((counter) => counter.id === id)?.label ?? null;
+          }
+          loadErrorMessage(s: CounterState) {
+            return s.loadErrorMessage;
+          }
+          canDecrement(s: CounterState, id: string) {
+            return (s.counts[id] ?? 0) > MIN_COUNT;
+          }
+        }
+      </script>
+      <ul>
+        <li>Chaque sélecteur reçoit <strong>l'état en premier paramètre</strong>. Annote-le (<code>s: CounterState</code>) : TypeScript n'infère pas les paramètres d'une méthode.</li>
+        <li>Il peut prendre <strong>d'autres paramètres</strong> après l'état : <code>count(s, id: string)</code> s'utilise en <code>selectors.count('cafes')</code>.</li>
+        <li>Il peut <strong>ignorer l'état</strong> : <code>catalog</code> renvoie une donnée statique. C'est utile pour que les composants n'aient rien d'autre à demander que le contrat.</li>
+        <li>Il doit être <strong>pur</strong> : pas d'effet de bord, pas d'appel réseau, seulement une lecture.</li>
+        <li><code>pending</code> est réservé : Super l'ajoute aux sélecteurs, pour savoir si une commande est en cours (<code>selectors.pending('load')</code>). Une méthode <code>pending</code> dans le contrat ne compile pas (erreur à la déclaration du store). Un sélecteur ne lit que l'état ; les commandes en cours n'en font pas partie.</li>
+      </ul>
+
+      <h3 id="un-selecteur-sans-parametre">Un sélecteur sans paramètre</h3>
+      <p>
+        Un sélecteur ne prend un paramètre que si la réponse en dépend. <code>canDecrement</code> a besoin de l'<code>id</code>
+        (il faut savoir si <em>ce</em> compteur est au-dessus de 0). <code>loadErrorMessage</code> n'en a pas besoin : la
+        réponse ne dépend que de l'état global. Côté composant, la différence se voit : un sélecteur sans paramètre se passe
+        tel quel à <code>@selector loadErrorMessage = this.counter.selectors.loadErrorMessage;</code>, un sélecteur à paramètre s'appelle
+        dans une fonction (voir <a href="#dans-un-composant">Dans un composant</a>).
+      </p>
+
+      <h2 id="pourquoi-des-selecteurs">Pourquoi des sélecteurs</h2>
+      <ul>
+        <li><strong>Une seule définition.</strong> « Un compteur absent vaut 0 » est écrit une fois. Le store, les composants et les tests appliquent la même règle ; la changer dans le contrat la change partout.</li>
+        <li><strong>Une porte fermée.</strong> Un composant ne voit jamais l'état brut : <code>this.counter</code> n'a pas de <code>state()</code>, et <code>this.counter.selectors.counts</code> ne compile pas, <code>counts</code> n'étant pas un sélecteur. La vue ne peut pas réinventer une règle de lecture dans son coin.</li>
+        <li><strong>Moins de bruit.</strong> L'état est fourni par Super : pas de <code>s</code> à trimballer.</li>
+      </ul>
+
+      <h2 id="les-utiliser">Les utiliser</h2>
+      <table>
+        <thead><tr><th>Où</th><th>Comment</th><th>Exemple</th></tr></thead>
+        <tbody>
+          <tr><td>Composant</td><td>La vue du contrat, en général dans un <code>@selector</code> (voir <a href="composants.html#declarations-de-preparation">les déclarations</a>)</td><td><code>@selector count = () =&gt; this.counter.selectors.count(this.counterId);</code></td></tr>
+          <tr><td>Store</td><td>L'outil protégé <code>this.selectors</code></td><td><code>this.selectors.count(id) + 1</code></td></tr>
+          <tr><td>Test, autre store, <code>main.ts</code></td><td>Le handle du store</td><td><code>store.selectors.count('cafes')</code></td></tr>
+        </tbody>
+      </table>
+
+      <h3 id="dans-un-composant">Dans un composant</h3>
+      <script type="text/x-code" data-title="src/@components/counter/index.super" data-source="examples/demo/src/@components/counter/index.super">
+        // Le paramètre de la route, lu à l'appel : `this.counterId()`.
+        counterId = this.router.current.params.id;
+
+        // Ne lit que ce qui concerne le compteur affiché : les autres compteurs ne re-rendent pas l'écran.
+        @contract counter;
+        @selector label = () => this.counter.selectors.label(this.counterId());
+        @selector count = () => this.counter.selectors.count(this.counterId());
+        @selector canDecrement = () => this.counter.selectors.canDecrement(this.counterId());
+        // Un chargement ou une écriture en cours : on attend avant d'en relancer une.
+        @selector busy = () => this.counter.selectors.pending();
+      </script>
+      <p>
+        Un <code>@selector</code> lit la valeur d'un sélecteur telle quelle ; la condition ou le calcul se font dans
+        <code>render</code>, ou dans un nouveau sélecteur du contrat. Voir <a href="lire-un-store.html">Lire un store</a>
+        pour les règles de re-rendu.
+      </p>
+
+      <h3 id="dans-le-store">Dans le store</h3>
+      <script type="text/x-code" data-title="src/@core/counter/store.ts" data-source="examples/demo/src/@core/counter/store.ts">
+        increment({ id }: { id: string }) {
+          return this.#write(id, this.selectors.count(id) + 1);
+        }
+
+        decrement({ id }: { id: string }) {
+          if (this.selectors.find(id) && this.selectors.count(id) <= MIN_COUNT) this.fail('below-min');
+          return this.#write(id, this.selectors.count(id) - 1);
+        }
+      </script>
+      <p>
+        Chaque appel relit l'état courant : juste après un <code>this.set</code>, <code>this.selectors.count(id)</code>
+        renvoie déjà la nouvelle valeur.
+      </p>
+
+      <h3 id="dans-un-test">Dans un test</h3>
+      <script type="text/x-code" data-title="src/@core/counter/store.test.ts" data-source="examples/demo/src/@core/counter/store.test.ts">
+        const store = CounterStore.create({ counterRepository });
+        await store.send('load');
+
+        await store.send('increment', { id: 'cafes' });
+
+        expect(store.selectors.count('cafes')).toBe(2);
+      </script>
+      <div class="callout">
+        <strong>Pourquoi sur le handle, et pas sur le contrat ?</strong>
+        Un contrat n'a pas d'état : il décrit un store, il n'en est pas un. Il peut exister plusieurs stores pour le même
+        contrat. Les sélecteurs se lisent donc sur un store précis : son handle (<code>store.selectors</code>), sa vue dans
+        un composant (<code>this.counter.selectors</code>), ou <code>this.selectors</code> dans le store lui-même. Chacun
+        fournit l'état de ce store, et son cache.
+      </div>
+
+      <h2 id="quoi-mettre-dans-un-selecteur">Quoi mettre dans un sélecteur</h2>
+      <ul>
+        <li><strong>Oui</strong> : toute lecture qu'un composant ou le store fait plus d'une fois, ou qui contient une règle (« vaut 0 si absent », « possible si rien n'est en cours »).</li>
+        <li><strong>Oui</strong> : les données dont les composants ont besoin et qu'ils ne peuvent pas importer de <code>@core/</code> (catalogue, libellés).</li>
+        <li><strong>Oui</strong> : une valeur que l'écran affiche après une condition ou un calcul, quand ce calcul mérite un nom. <code>@selector</code> n'accepte qu'un sélecteur tel quel ; un sélecteur de plus garde le composant simple.</li>
+        <li><strong>Non</strong> : un sélecteur qui renvoie tout l'état (<code>all(s: CounterState) { return s; }</code>). Ça rouvre la porte que les sélecteurs ferment.</li>
+        <li><strong>Oui</strong> : les dérivations (lignes d'un panier, total, liste filtrée). Leur place est dans le contrat plutôt que dans les composants : elles sont partagées, testables sans DOM, et Super stabilise leur résultat (voir ci-dessous).</li>
+      </ul>
+
+      <h2 id="deriver-dans-un-selecteur">Dériver dans un sélecteur</h2>
+      <p>
+        Un sélecteur peut filtrer, trier ou construire de nouveaux objets sans précaution particulière. Chaque store garde
+        un cache de ses sélecteurs, et Super évite les recalculs et les re-rendus inutiles en deux temps.
+      </p>
+      <ul>
+        <li><strong>Recalculer ou non</strong> : Super note les champs de premier niveau de l'état que le sélecteur lit. Au changement d'état suivant, si aucun de ces champs n'a changé de référence, le résultat précédent est renvoyé sans recalcul.</li>
+        <li><strong>Garder la référence</strong> : après un recalcul, le résultat est comparé en profondeur au précédent. S'il est égal, c'est l'ancienne référence qui est renvoyée. Sinon, les parties inchangées (une ligne qui n'a pas bougé) gardent la leur.</li>
+      </ul>
+      <p>Exemple : une messagerie dont l'état contient les messages et la réponse en cours de saisie.</p>
+      <script type="text/x-code">
+        type InboxState = { messages: Message[]; folder: 'inbox' | 'archive'; draft: string };
+
+        export class InboxContract extends SuperContract<{ state: InboxState }> {
+          constructor() {
+            super({ name: 'inbox' });
+          }
+
+          visible(s: InboxState) {
+            return s.messages.filter((m) => m.folder === s.folder).sort((a, b) => b.date - a.date);
+          }
+        }
+      </script>
+      <p>
+        <code>visible</code> lit <code>messages</code> et <code>folder</code>. Une frappe dans <code>draft</code> crée un
+        nouvel état, mais ne déclenche ni filtre, ni tri, ni re-rendu. Un message reçu déclenche le recalcul ; la liste se
+        re-rend, et seule la ligne du nouveau message est nouvelle.
+      </p>
+      <p>Ce qu'il faut savoir :</p>
+      <ul>
+        <li>Le suivi s'arrête au premier niveau : un sélecteur qui renvoie <code>s.messages[3].subject</code> est recalculé dès qu'un message change. Le recalcul est sans conséquence, la comparaison du résultat évite le re-rendu.</li>
+        <li>Un sélecteur qui parcourt l'état entier (<code>Object.keys(s)</code>, <code>{ ...s }</code>) dépend de tout : il est recalculé à chaque changement.</li>
+        <li>La comparaison ne descend que dans les tableaux et les objets simples : une <code>Date</code>, une <code>Map</code> ou une instance de classe se compare par référence.</li>
+        <li>Un sélecteur ne lit que son état et ses arguments : ce qu'il lirait ailleurs (une variable de module, <code>Date.now()</code>) n'est pas suivi.</li>
+      </ul>
+
+      <h2 id="un-contrat-sans-selecteurs">Un contrat sans sélecteurs</h2>
+      <p>
+        Les sélecteurs sont facultatifs, mais ce sont les seules lectures qu'un composant a. Sans eux, un composant peut
+        envoyer des commandes au store et écouter ses événements, rien de plus : il ne voit jamais l'état brut. Le handle
+        complet, lui, garde <code>state()</code> pour les tests, la racine de composition et les autres stores. Le router
+        suit la même règle : les composants lisent la route active par <code>this.router.current</code>
+        (<code>name()</code>, <code>path()</code>, <code>params</code>, <code>query</code>), jamais son état brut (voir
+        <a href="router.html#l-etat-du-router">Router</a>).
+      </p>
+    </article>
+    <script src="assets/search-index.js"></script>
+    <script src="assets/site.js"></script>
+  </body>
+</html>

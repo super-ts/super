@@ -1,0 +1,33 @@
+profile-screen {
+  form { display: grid; gap: 1rem; width: min(34rem, 100%); }
+  /* Un fieldset refuse par défaut de rétrécir sous la largeur de son contenu : on l'y autorise. */
+  fieldset { min-width: 0; display: grid; gap: 0.4rem; border: 1px solid color-mix(in srgb, currentColor 15%, transparent); border-radius: 0.5rem; padding: 1rem; }
+  fieldset.inline { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; border: none; padding: 0.25rem 0; }
+  label { display: grid; gap: 0.25rem; min-width: 0; }
+  label.inline, fieldset.inline label { display: flex; align-items: center; gap: 0.4rem; }
+  /* Les champs prennent la largeur disponible, sans imposer la leur (un input fait ~20 caractères par défaut). */
+  input:not([type='checkbox'], [type='radio'], [type='color']), select, textarea { width: 100%; min-width: 0; padding: 0.4rem; font: inherit; }
+  input[type='range'] { padding: 0; }
+  input[type='file'] { padding: 0; font-size: 0.9rem; }
+  .phone { display: grid; grid-template-columns: minmax(6rem, auto) minmax(0, 1fr) auto; gap: 0.5rem; align-items: center; }
+  .phone .error { grid-column: 1 / -1; }
+  .error { min-height: 1em; margin: 0; color: #c2410c; font-size: 0.9rem; }
+  .error:empty { min-height: 0; }
+  .hint { overflow-wrap: anywhere; margin: 0; width: min(34rem, 100%); }
+  .hint, .checking { opacity: 0.7; }
+  .saved { color: #15803d; }
+  /* Les zones de message restent dans le DOM (lecteurs d'écran) mais ne prennent pas de place vides. */
+  .form-error, .saved { margin: 0; }
+  .form-error:empty, .saved:empty { display: contents; }
+  button { padding: 0.5rem 1rem; font: inherit; border-radius: 0.4rem; cursor: pointer; }
+  .phone button { padding: 0.4rem 0.75rem; }
+  .actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.75rem; }
+
+  /* Écran étroit : un numéro par ligne, et les boutons d'action en pleine largeur. */
+  @media (max-width: 30rem) {
+    fieldset { padding: 0.75rem; }
+    .phone { grid-template-columns: minmax(0, 1fr) auto; }
+    .phone input[type='tel'] { grid-column: 1 / -1; grid-row: 2; }
+    .actions button { flex: 1 1 100%; }
+  }
+}

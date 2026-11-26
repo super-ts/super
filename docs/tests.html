@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tester · Super</title>
+    <link rel="stylesheet" href="assets/site.css" />
+  </head>
+  <body>
+    <article>
+      <h1>Tester</h1>
+      <p class="lead">
+        Chaque brique se teste à son niveau : le store sans DOM, l'adapter seul, le composant avec un faux store, l'app
+        entière avec un router en mémoire. Et les garanties de typage ont leurs propres tests.
+      </p>
+
+      <h2 id="la-configuration">La configuration</h2>
+      <p>Les tests tournent sous Vitest avec happy-dom, un DOM simulé. Ils vivent à côté du code qu'ils testent (<code>@core/counter/store.test.ts</code> à côté de <code>@core/counter/store.ts</code>, <code>@components/counter/index.test.ts</code> à côté de l'écran, <code>index.super</code>).</p>
+      <p>
+        Un test reste un fichier <code>.ts</code>, même pour un composant écrit en <code>.super</code>. Vitest reprend les
+        plugins de <code>vite.config.ts</code> : le plugin Super y compile les <code>.super</code> comme en dev, et
+        <code>import { CounterControls } from './counter-controls'</code> trouve <code>counter-controls.super</code>.
+      </p>
+      <script type="text/x-code" data-title="vitest.config.ts">
+        export default defineConfig({
+          resolve: { alias },
+          plugins,                                       // le plugin Super compile aussi les .super des tests
+          test: {
+            environment: 'happy-dom',
+            execArgv: ['--no-experimental-webstorage'],  // Node 25+ : voir plus bas
+            globals: true,
+            setupFiles: ['./vitest.setup.ts'],
+          },
+        });
+      </script>
+      <script type="text/x-code" data-title="vitest.setup.ts">
+        import { cleanup } from '@super-ts/testing';
+        import { afterEach } from 'vitest';
+
+        // Démonte tout ce que `mount()` a monté pendant le test.
+        afterEach(() => cleanup());
+      </script>
+      <div class="callout">
+        <strong>Node 25 et plus</strong>
+        Node expose un <code>localStorage</code> natif qui masque celui de happy-dom (« <code>localStorage.clear is not a function</code> »).
+        L'option <code>execArgv: ['--no-experimental-webstorage']</code> le désactive dans les workers de test.
+      </div>
+
+      <h2 id="tester-un-store">Tester un store</h2>
+      <p>
+        Un store se teste sans DOM, avec un adapter en mémoire. <code>XStore.create(deps)</code> renvoie le handle, comme
+        dans <code>main.ts</code> ; <code>await send(…)</code> attend la fin de la commande, puis on vérifie l'état, les
+        sélecteurs et les événements.
+      </p>
+      <script type="text/x-code" data-title="src/@core/counter/store.test.ts" data-source="examples/demo/src/@core/counter/store.test.ts">
+        import { record } from '@super-ts/testing';
+        import { createInMemoryCounterRepository } from '../../adapters/in-memory-counter-repository';
+        import { CounterStore } from './store';
+
+        test('increment persiste, met à jour l’état, et Super publie increment:done avec le résultat', async () => {
+          const counterRepository = createInMemoryCounterRepository({ cafes: 1 });
+          const store = CounterStore.create({ counterRepository });
+          const done = record(store, 'increment:done');
+          await store.send('load');
+
+          await store.send('increment', { id: 'cafes' });
+
+          expect(store.selectors.count('cafes')).toBe(2);
+          expect(counterRepository.stored).toEqual({ cafes: 2 });
+          expect(done.calls).toEqual([{ input: { id: 'cafes' }, result: { count: 2 } }]);
+        });
+      </script>
+      <ul>
+        <li><strong><code>store.selectors.x(…)</code></strong> lit l'état courant par les sélecteurs du contrat ; <code>store.state()</code> donne l'état brut, figé.</li>
+        <li><strong><code>store.pending(…)</code></strong> dit si une commande est en cours : toutes (<code>pending()</code>), une commande (<code>pending('load')</code>), ou une commande pour un body (<code>pending('increment', { id: 'cafes' })</code>).</li>
+        <li><strong><code>record(store, événement)</code></strong> enregistre les payloads, y compris ceux du cycle de vie (<code>'increment:done'</code>) : <code>calls</code> (tous), <code>last</code> (le dernier), <code>stop()</code> (arrête l'écoute).</li>
+      </ul>
+      <p>Un échec se vérifie de deux façons : la promesse de <code>send</code>, rejetée avec une <code>CommandFailure</code> qui porte la raison, et l'événement <code>:failed</code>. Un faux adapter écrit sur place suffit :</p>
+      <script type="text/x-code" data-title="src/@core/counter/store.test.ts" data-source="examples/demo/src/@core/counter/store.test.ts">
+        test('un échec de sauvegarde donne la raison storage et conserve la valeur', async () => {
+          const store = CounterStore.create({
+            counterRepository: { loadAll: async () => ({ cafes: 3 }), save: async () => Promise.reject(new Error('quota dépassé')) },
+          });
+          const failed = record(store, 'increment:failed');
+          await store.send('load');
+
+          await store.send('increment', { id: 'cafes' }).catch(() => {});
+
+          expect(failed.last).toEqual({ input: { id: 'cafes' }, reason: 'storage', error: null });
+          expect(store.state().counts).toEqual({ cafes: 3 });
+          expect(store.pending()).toBe(false); // plus rien en cours, même après un échec
+        });
+      </script>
+      <p>
+        Un store qui dépend d'un autre se teste avec le vrai : on crée le panier, puis la commande qui le reçoit en
+        dépendance, exactement comme dans <code>main.ts</code>.
+      </p>
+      <script type="text/x-code" data-title="src/@core/checkout/store.test.ts" data-source="examples/demo/src/@core/checkout/store.test.ts">
+        function setup() {
+          const cart = CartStore.create();
+          const orderClient = createFakeOrderClient({ delay: 0 });
+          const checkout = CheckoutStore.create({ cart, orderClient });
+          return { cart, orderClient, checkout };
+        }
+
+        test('passe la commande avec le contenu du panier, puis vide le panier', async () => {
+          const { cart, orderClient, checkout } = setup();
+          await cart.send('add', { sku: 'tshirt' });
+
+          await checkout.send('placeOrder', { address: '12 rue des Lilas' });
+
+          expect(orderClient.orders).toEqual([{ address: '12 rue des Lilas', lines: [{ sku: 'tshirt', quantity: 1 }], total: 2500 }]);
+          expect(cart.selectors.isEmpty()).toBe(true);
+          expect(checkout.state().lastOrder).toEqual({ orderId: 'C0001', total: 2500 });
+        });
+      </script>
+
+      <h2 id="tester-un-adapter">Tester un adapter</h2>
+      <p>L'adapter <code>localStorage</code> se teste contre le <code>localStorage</code> de happy-dom, ou contre n'importe quel objet compatible grâce à son option <code>storage</code>. Rien de Super ici : c'est du user-land.</p>
+      <script type="text/x-code" data-title="src/adapters/local-storage-counter-repository.test.ts" data-source="examples/demo/src/adapters/local-storage-counter-repository.test.ts">
+        test('relit ce qui a été sauvegardé, sous la clé choisie, sans écraser les autres compteurs', async () => {
+          const repository = createLocalStorageCounterRepository({ key: 'test.counters' });
+
+          await repository.save('cafes', 7);
+          await repository.save('pompes', 2);
+
+          expect(JSON.parse(localStorage.getItem('test.counters')!)).toEqual({ cafes: 7, pompes: 2 });
+          await expect(createLocalStorageCounterRepository({ key: 'test.counters' }).loadAll()).resolves.toEqual({ cafes: 7, pompes: 2 });
+        });
+      </script>
+
+      <h2 id="tester-un-composant">Tester un composant seul</h2>
+      <p>
+        Un composant de présentation, sans store, se monte avec ses props ; ses événements s'écoutent par <code>on</code>,
+        typé par ses <code>emits</code>. Le composant est un <code>.super</code>, le test un <code>.ts</code> qui l'importe
+        sans extension.
+      </p>
+      <script type="text/x-code" data-title="src/@components/counter/counter-controls.test.ts" data-source="examples/demo/src/@components/counter/counter-controls.test.ts">
+        import { mount } from '@super-ts/testing';
+        import { within } from '@testing-library/dom';
+        import userEvent from '@testing-library/user-event';
+        import { CounterControls } from './counter-controls';
+
+        test('affiche la valeur et émet increment / decrement', async () => {
+          const increment = vi.fn();
+          const decrement = vi.fn();
+          const { container } = await mount(CounterControls, {
+            props: { count: 4, canDecrement: true, canIncrement: true },
+            on: { increment, decrement },
+          });
+          const ui = within(container);
+
+          await userEvent.click(ui.getByRole('button', { name: 'Incrémenter' }));
+          await userEvent.click(ui.getByRole('button', { name: 'Décrémenter' }));
+
+          expect(ui.getByLabelText('Valeur du compteur').textContent).toBe('4');
+          expect(increment).toHaveBeenCalledOnce();
+          expect(decrement).toHaveBeenCalledOnce();
+        });
+      </script>
+      <h3 id="mount">mount</h3>
+      <p><code>mount(Classe, options)</code> prend la classe exportée par le <code>.super</code> (pas un élément déjà créé), le monte dans <code>document.body</code> sous une application de test, attend le premier rendu et retourne :</p>
+      <table>
+        <thead><tr><th>Option</th><th>Rôle</th></tr></thead>
+        <tbody>
+          <tr><td><code>props</code></td><td>Les props du composant, typées par sa classe.</td></tr>
+          <tr><td><code>stores</code></td><td>Les stores à fournir (vrais ou faux), trouvés par le nom de leur contrat comme avec <code>createApp</code>.</td></tr>
+          <tr><td><code>router</code></td><td>Un router, en général <code>createRouter(Router, { mode: 'memory', initialPath })</code>. Un écran monté seul y lit sa route : <code>initialPath: '/counters/cafes'</code> lui donne <code>id === 'cafes'</code>.</td></tr>
+          <tr><td><code>on</code></td><td>Des écouteurs pour les événements du composant, typés par ses <code>emits</code>.</td></tr>
+          <tr><td><code>onError</code></td><td>Reçoit les erreurs des composants montés, comme <code>createApp({ onError })</code>. Voir <a href="erreurs.html#tester-les-erreurs">Tester les erreurs</a>.</td></tr>
+        </tbody>
+      </table>
+      <table>
+        <thead><tr><th>Retour</th><th>Rôle</th></tr></thead>
+        <tbody>
+          <tr><td><code>container</code></td><td>Le conteneur, à passer à <code>within()</code> de testing-library.</td></tr>
+          <tr><td><code>element</code></td><td>L'instance montée, typée par sa classe.</td></tr>
+          <tr><td><code>setProps(props)</code></td><td>Change les props et attend le rendu.</td></tr>
+          <tr><td><code>unmount()</code></td><td>Démonte (fait automatiquement par <code>cleanup</code>).</td></tr>
+        </tbody>
+      </table>
+
+      <h3 id="flush">flush</h3>
+      <p>
+        Les notifications de store et les rendus sont regroupés à la fin de la tâche. Après une action qui change un store
+        sans passer par testing-library (un <code>emit</code> de faux store, un <code>send</code> sur un vrai),
+        <code>await flush()</code> laisse passer les rendus en attente. Les <code>findBy*</code> de testing-library attendent
+        d'eux-mêmes.
+      </p>
+
+      <h2 id="faux-store">Tester un écran avec un faux store</h2>
+      <p>
+        <code>fakeStore('nom', { state, commands? })</code> crée un store pour le contrat de ce nom, sans implémentation.
+        L'écran le trouve comme il trouverait le vrai, par <code>@contract counter</code> : c'est ce que permet la
+        règle « un composant ne connaît que le contrat ». L'état donné est typé par le contrat, et les sélecteurs du contrat
+        le lisent normalement.
+      </p>
+      <script type="text/x-code" data-title="src/@components/counter/index.test.ts" data-source="examples/demo/src/@components/counter/index.test.ts">
+        import { createRouter } from '@super-ts/dom';
+        import { type FakeCommands, fakeStore, flush, mount } from '@super-ts/testing';
+        import type { CounterState } from '@core/counter/contract';
+        import { Router } from '../../routes';
+        import { CounterScreen } from '.';
+
+        const idle: CounterState = { counts: { cafes: 2 }, loadErrorMessage: null };
+
+        type CounterCommands = FakeCommands<'counter'>;
+
+        async function setup(id: string, commands: CounterCommands = {}) {
+          const counter = fakeStore('counter', { state: idle, commands });
+          // L'écran contient des liens : il lui faut un router (ici en mémoire).
+          const router = createRouter(Router, { mode: 'memory', initialPath: `/counters/${id}` });
+          const { container } = await mount(CounterScreen, { stores: [counter], router });
+          return { counter, router, ui: within(container) };
+        }
+
+        test('envoie les commandes avec l’id du compteur', async () => {
+          const { counter, ui } = await setup('cafes');
+
+          await userEvent.click(ui.getByRole('button', { name: 'Incrémenter' }));
+
+          expect(counter.sent).toEqual([{ name: 'increment', args: [{ id: 'cafes' }] }]);
+        });
+
+        test('affiche le message de la raison d’échec, pour son compteur seulement', async () => {
+          const { counter, ui } = await setup('cafes');
+
+          // Le test joue le rôle du store en émettant l'issue.
+          counter.emit('decrement:failed', { input: { id: 'pompes' }, reason: 'storage', error: null });
+          counter.emit('decrement:failed', { input: { id: 'cafes' }, reason: 'below-min', error: null });
+          await flush();
+
+          expect(ui.getByText('Le compteur est déjà à zéro.')).toBeTruthy();
+          expect(ui.queryByText('Impossible d’enregistrer : le stockage est indisponible.')).toBeNull();
+        });
+      </script>
+      <table>
+        <thead><tr><th>Membre du faux store</th><th>Rôle</th></tr></thead>
+        <tbody>
+          <tr><td><code>sent</code></td><td>Les commandes reçues, dans l'ordre : <code>{ name, args }</code>.</td></tr>
+          <tr><td><code>setState(patch)</code></td><td>Change l'état, comme le ferait le store.</td></tr>
+          <tr><td><code>emit(nom, payload)</code></td><td>Émet un événement du contrat, ou l'issue d'une commande (<code>'decrement:failed'</code>), comme le feraient le store et Super.</td></tr>
+          <tr><td><code>selectors</code>, <code>state()</code>, <code>on</code>…</td><td>Le reste du handle d'un store, comme un vrai.</td></tr>
+          <tr><td><code>commands</code> (option)</td><td>Des implémentations pour certaines commandes. Les autres sont enregistrées et se terminent sans publier d'issue : c'est au test d'émettre <code>:done</code> ou <code>:failed</code>, avec des valeurs conformes au contrat.</td></tr>
+        </tbody>
+      </table>
+      <p>
+        <code>FakeCommands&lt;'counter'&gt;</code> type ces implémentations par le nom du contrat. Chacune reçoit le body,
+        puis <code>{ fail }</code>, et retourne le résultat déclaré par l'<code>Outcome</code> : Super publie alors l'issue
+        comme pour un vrai store.
+      </p>
+      <script type="text/x-code">
+        const counter = fakeStore('counter', {
+          state: idle,
+          commands: {
+            increment: () => ({ count: 3 }),                 // publie increment:done avec { count: 3 }
+            decrement: (_input, { fail }) => fail('storage'), // publie decrement:failed avec la raison storage
+          },
+        });
+      </script>
+
+      <h2 id="tester-l-app-entiere">Tester l'application entière</h2>
+      <p>L'app s'assemble comme dans <code>main.ts</code> : vrais stores, adapters sans latence, router en mémoire. <code>mount</code> reçoit la coquille, <code>AppShell</code>, qui affiche l'écran de la route.</p>
+      <script type="text/x-code" data-title="src/app.test.ts" data-source="examples/demo/src/app.test.ts">
+        async function startApp(initialPath = '/') {
+          const counter = CounterStore.create({ counterRepository: createLocalStorageCounterRepository() });
+          const profileClient = createFakeProfileClient({ delay: 0 });
+          const profile = ProfileStore.create({ profileClient });
+          const cart = CartStore.create();
+          const orderClient = createFakeOrderClient({ delay: 0 });
+          const checkout = CheckoutStore.create({ cart, orderClient });
+          const errorLog = ErrorLogStore.create();
+          const router = createRouter(Router, { mode: 'memory', initialPath });
+          const { container } = await mount(AppShell, {
+            stores: [counter, profile, cart, checkout, errorLog],
+            router,
+            onError: (error, { tag, phase, caughtBy }) => errorLog.send('record', { message: error.message, tag, phase, caughtBy }),
+          });
+          await flush(); // laisse `load` se terminer
+          return { router, profileClient, orderClient, cart, ui: within(container) };
+        }
+
+        test('parcours complet des compteurs : liste, détail, incrément, retour', async () => {
+          const { router, ui } = await startApp('/counters');
+
+          await userEvent.click(ui.getByRole('link', { name: 'Cafés' }));
+          expect(router.state()).toMatchObject({ path: '/counters/cafes', name: 'counter', params: { id: 'cafes' } });
+          expect(ui.getByRole('heading', { name: 'Cafés' })).toBeTruthy();
+
+          await userEvent.click(ui.getByRole('button', { name: 'Incrémenter' }));
+          await userEvent.click(ui.getByRole('button', { name: 'Incrémenter' }));
+          expect(await ui.findByText('Incrémenté : 2')).toBeTruthy();
+
+          await userEvent.click(ui.getByRole('link', { name: '← Tous les compteurs' }));
+          expect(ui.getByRole('link', { name: 'Cafés' }).parentElement!.textContent).toContain('2');
+          expect(JSON.parse(localStorage.getItem('super.counters')!)).toEqual({ cafes: 2 });
+        });
+      </script>
+
+      <h2 id="tests-de-types">Tests de types : les fichiers *.test-d.ts</h2>
+      <p>
+        Une partie de ce que promet Super, ce sont des erreurs de compilation : une route inconnue, un paramètre manquant,
+        un écran aux mauvaises props. Un test Vitest ne peut pas constater qu'une ligne est refusée par le compilateur. Les
+        fichiers <code>*.test-d.ts</code> servent à ça.
+      </p>
+      <script type="text/x-code">
+        import { expectTypeOf, test } from 'vitest';
+
+        test('Router.href est typé par les chemins', () => {
+          expectTypeOf(Router.href('home')).toBeString();
+          // @ts-expect-error paramètre `id` requis
+          Router.href('counter');
+        });
+      </script>
+      <ul>
+        <li><strong>Le « d »</strong> vient de <code>.d.ts</code> : ces fichiers testent le typage, pas le comportement. C'est la convention de Vitest.</li>
+        <li><strong>Ils ne sont jamais exécutés</strong>. C'est <code>npm run typecheck</code> (<code>super-tsc</code>, qui lance <code>tsc</code>) qui les compile.</li>
+        <li><strong>Chaque <code>// @ts-expect-error</code></strong> affirme « cette ligne doit être refusée ». Si un changement la rend acceptable, la compilation échoue (« Unused '@ts-expect-error' directive »).</li>
+        <li><code>npm run check</code> lance le typecheck puis les tests : ces fichiers sont vérifiés à chaque passage.</li>
+      </ul>
+
+      <p>
+        Le template d'un <code>.super</code> n'a pas besoin de tests de types : <code>npm run typecheck</code> le vérifie
+        directement (props d'un enfant, attributs, événements, interpolations). Les types qu'un test voit d'un composant
+        <code>.super</code> (ses props pour <code>mount</code>, ses <code>emits</code> pour <code>on</code>) viennent du TS
+        virtuel, par la déclaration que <code>super-tsc</code> écrit dans <code>.super/types/</code> (voir
+        <a href="outillage.html#verifier-les-types">Outillage</a>).
+      </p>
+
+      <h2 id="qui-teste-quoi">Qui teste quoi</h2>
+      <table>
+        <thead><tr><th>Ce qui est testé</th><th>Où</th></tr></thead>
+        <tbody>
+          <tr><td>Le fonctionnement de Super (router, sélecteurs, re-rendus, typage des contrats…)</td><td>Les tests des paquets, dans <code>packages/</code>. Ton app n'a pas à les refaire.</td></tr>
+          <tr><td>Le comportement de ton app (règles du store, affichage des écrans, parcours)</td><td>Les tests de ton app, à côté de ton code.</td></tr>
+        </tbody>
+      </table>
+    </article>
+    <script src="assets/search-index.js"></script>
+    <script src="assets/site.js"></script>
+  </body>
+</html>

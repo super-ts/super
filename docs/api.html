@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>API · Super</title>
+    <link rel="stylesheet" href="assets/site.css" />
+  </head>
+  <body>
+    <article>
+      <h1>API</h1>
+      <p class="lead">Tout ce que les paquets de Super exportent, paquet par paquet. Chaque entrée renvoie vers la page qui l'explique.</p>
+
+      <h2 id="super-core">@super-ts/core</h2>
+      <p>Exports : <code>SuperContract</code>, <code>SuperStore</code>, <code>CommandFailure</code>, et des types.</p>
+
+      <h3 id="api-contract">SuperContract</h3>
+      <script type="text/x-code">
+        export type CounterTypes = {
+          state: CounterState;
+          commands?: { increment(input: { id: string }): Outcome<{ count: number }, 'unknown' | 'storage'>; load(): void };
+          events?: { emptied: void };
+        };
+
+        export class CounterContract extends SuperContract<CounterTypes> {
+          constructor() {
+            super({ name: 'counter' });                 // le nom, unique dans l'app : la clé du store
+          }
+          count(s: CounterState, id: string) {         // un sélecteur : une méthode, l'état en premier paramètre
+            return s.counts[id] ?? 0;
+          }
+        }
+      </script>
+      <p>
+        Une commande a au plus un paramètre, le body, et déclare <code>void</code> ou <code>Outcome&lt;Résultat, Raisons&gt;</code>.
+        Les sélecteurs sont mémoïsés ; <code>pending</code> est fourni par Super et ne peut pas être déclaré. Voir
+        <a href="contrats.html">Contrats</a> et <a href="selecteurs.html">Sélecteurs</a>.
+      </p>
+
+      <h3 id="api-superstore">SuperStore</h3>
+      <script type="text/x-code">
+        type Deps = { cart: StoreOfContract<'cart'>; orderClient: OrderClient };
+
+        export class CheckoutStore extends SuperStore<CheckoutContract> implements Commands<CheckoutStore> {
+          constructor({ cart, orderClient }: Deps) {
+            super({ contract: 'checkout', initialState: { lastOrder: null } });   // StoreOptions
+          }
+          async placeOrder({ address }: { address: string }) { … }               // une méthode publique par commande
+          #helper() { … }                                                         // code partagé : méthode #privée
+        }
+
+        CheckoutStore.create({ cart, orderClient })   // le handle (StoreHandle), jamais l'instance
+      </script>
+      <table>
+        <thead><tr><th>Outil protégé</th><th>Rôle</th></tr></thead>
+        <tbody>
+          <tr><td><code>this.get()</code></td><td>L'état courant, figé.</td></tr>
+          <tr><td><code>this.set(patch | fn)</code></td><td>Merge superficiel ; notification regroupée par microtask.</td></tr>
+          <tr><td><code>this.selectors.x(…)</code></td><td>Les sélecteurs du contrat sur l'état courant, plus <code>pending(…)</code>.</td></tr>
+          <tr><td><code>this.emit(nom, payload?)</code></td><td>Émet un événement déclaré par le contrat.</td></tr>
+          <tr><td><code>this.send(nom, body?)</code></td><td>Envoie une commande de ce store, suivie par Super.</td></tr>
+          <tr><td><code>this.fail(raison)</code></td><td>Fait échouer la commande en cours avec une raison déclarée. Ne revient pas.</td></tr>
+          <tr><td><code>this.signal</code></td><td>Avorté par <code>dispose()</code>.</td></tr>
+        </tbody>
+      </table>
+      <p>L'état n'est ni lisible ni modifiable dans le constructeur. <code>Commands&lt;Self&gt;</code> vérifie que chaque commande du contrat a une méthode aux paramètres identiques, qui ne renvoie que le résultat déclaré, et qu'aucune méthode publique n'est hors contrat.</p>
+      <table>
+        <thead><tr><th>StoreHandle</th><th>Signature</th></tr></thead>
+        <tbody>
+          <tr><td><code>contract</code></td><td>Le contrat implémenté (<code>contract.name</code>).</td></tr>
+          <tr><td><code>state()</code></td><td><code>Readonly&lt;S&gt;</code></td></tr>
+          <tr><td><code>selectors</code></td><td>Les sélecteurs du contrat sur l'état courant, plus <code>pending(…)</code> : <code>cart.selectors.count()</code>.</td></tr>
+          <tr><td><code>send(nom, body?)</code></td><td><code>Promise&lt;void&gt;</code>, rejetée avec une <code>CommandFailure</code> (<code>reason</code>) si la commande échoue</td></tr>
+          <tr><td><code>pending(commande?, body?)</code></td><td><code>boolean</code></td></tr>
+          <tr><td><code>on(nom, écouteur, { signal }?)</code></td><td>Retourne la fonction de désabonnement.</td></tr>
+          <tr><td><code>subscribe(écouteur, { signal }?)</code></td><td>Retourne la fonction de désabonnement.</td></tr>
+          <tr><td><code>dispose()</code></td><td><code>void</code> ; les <code>send</code> suivants sont rejetés.</td></tr>
+        </tbody>
+      </table>
+      <p>Voir <a href="stores.html">Stores</a>.</p>
+
+      <h3 id="api-outcome">Outcome et cycle de vie</h3>
+      <script type="text/x-code">
+        commands: { increment(input: { id: string }): Outcome<{ count: number }, 'unknown' | 'storage'> }
+
+        'increment:done'    // { input, result }
+        'increment:failed'  // { input, reason: 'unknown' | 'storage' | 'error', error: Error | null }
+        pending('increment', { id })   // sur les sélecteurs : this.counter.selectors.pending(…), this.selectors.pending(…), store.pending(…)
+
+        new CommandFailure(command, reason, input)   // l'erreur de la promesse de send pour un échec déclaré
+      </script>
+      <p>Voir <a href="flux.html#le-cycle-de-vie">Le cycle de vie d'une commande</a>.</p>
+
+      <h3 id="api-types-core">Types</h3>
+      <table>
+        <tbody>
+          <tr><td><code>ContractTypes</code></td><td>La forme de ce que déclare un contrat : <code>{ state; commands?; events? }</code>.</td></tr>
+          <tr><td><code>Contracts</code>, <code>ContractName</code></td><td>Le dictionnaire nom → classe de contrat, rempli par <code>src/@core/contracts.d.ts</code> (généré), et ses clés.</td></tr>
+          <tr><td><code>StoreOfContract&lt;'nom'&gt;</code></td><td>Le type du handle d'un store par le nom de son contrat, par exemple pour une dépendance entre stores.</td></tr>
+          <tr><td><code>ContractStore&lt;K&gt;</code></td><td>Le handle d'un store, par la classe de son contrat.</td></tr>
+          <tr><td><code>ContractState</code>, <code>ContractCommands</code>, <code>ContractEvents</code>, <code>ContractSelectors</code>, <code>ContractInput</code></td><td>Extraient une partie d'une classe de contrat.</td></tr>
+          <tr><td><code>BoundContractSelectors</code>, <code>BoundSelectors</code>, <code>PendingReader</code></td><td>Les sélecteurs, état déjà fourni, et <code>pending</code>.</td></tr>
+          <tr><td><code>Commands&lt;Self&gt;</code>, <code>StoreOptions</code></td><td>La vérification des commandes d'un store, et ce que reçoit <code>super(…)</code> dans son constructeur.</td></tr>
+          <tr><td><code>Outcome&lt;R, F&gt;</code>, <code>ResultOf</code>, <code>FailureOf</code>, <code>InputOf</code>, <code>UnexpectedFailure</code></td><td>L'issue déclarée d'une commande et ses parties ; <code>'error'</code>, la raison d'une exception.</td></tr>
+          <tr><td><code>CommandMap</code>, <code>Events</code>, <code>CommandEvents</code>, <code>AllEvents</code></td><td>Commandes, événements, et événements de cycle de vie (<code>nom:done</code>, <code>nom:failed</code>).</td></tr>
+          <tr><td><code>StoreHandle</code>, <code>AnyStore</code>, <code>StatePatch</code>, <code>PayloadArgs</code>, <code>ListenOptions</code>, <code>Unsubscribe</code></td><td>Le handle d'un store et les types de ses méthodes.</td></tr>
+          <tr><td><code>Handlers&lt;C&gt;</code>, <code>CommandTools</code></td><td>Des handlers de commandes, qui reçoivent le body puis <code>{ fail }</code> (les <code>commands</code> d'un <code>fakeStore</code>).</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="super-dom">@super-ts/dom</h2>
+      <p>Exports : <code>SuperElement</code>, <code>html</code>, <code>nothing</code>, <code>repeat</code>, <code>createApp</code>, <code>CONTEXT_REQUEST</code>, <code>defineRouter</code>, <code>params</code>, <code>query</code>, <code>createRouter</code>, <code>RouterOutlet</code>, <code>redirect</code>, et des types.</p>
+
+      <h3 id="api-fichiers-super">Un composant .super</h3>
+      <p>
+        Un composant s'écrit dans un fichier <code>.super</code> : un module TypeScript dont les méthodes de classe émettent
+        des éléments. Il exporte une classe qui étend <code>SuperElement</code>, comme n'importe quel module : l'API
+        ci-dessous ne change pas. Son seul import de <code>@super-ts/dom</code> est en général <code>SuperElement</code>
+        (et <code>RouterOutlet</code> pour une mise en page).
+      </p>
+      <script type="text/x-code" data-title="src/@components/not-found/index.super" data-source="examples/demo/src/@components/not-found/index.super">
+        import { SuperElement } from '@super-ts/dom';
+
+        /** Affiché par le router quand aucune route ne correspond. */
+        export class NotFoundScreen extends SuperElement {
+          @tag = 'not-found-screen';
+          @title = 'Page introuvable';
+
+          @selector path = this.router.current.path;
+
+          render() {
+            <main class="screen">
+              <h1>Page introuvable</h1>
+              <p>Rien à l’adresse <code>{this.path.value}</code>.</p>
+              <button type="button" on:click={() => this.router.send('navigate', { to: 'examples' })}>Retour aux exemples</button>
+            </main>
+          }
+        }
+      </script>
+      <ul>
+        <li><strong>Un import sans extension trouve le <code>.super</code></strong> : <code>import { NotFoundScreen } from '@components/not-found'</code> charge <code>not-found/index.super</code>, depuis un <code>.super</code> comme depuis un <code>.ts</code> (<code>routes.ts</code>, <code>main.ts</code>, un test), avec les types.</li>
+        <li><strong>Une méthode qui émet des éléments</strong> (<code>render</code>, <code>renderError</code>, une méthode <code>#privée</code>) ne renvoie rien : <code>return;</code> s'arrête en gardant ce qui est émis, <code>return x;</code> ne compile pas.</li>
+        <li><strong>Les déclarations s'écrivent dans la classe</strong>, sans générique : <code>@tag</code>, <code>@prop</code>, <code>@emit</code>, <code>@title</code>, et pour la préparation <code>@contract</code>, <code>@selector</code>, <code>@state</code>, <code>@form</code>, <code>@ref</code>, <code>@on</code> (voir <a href="composants.html#declarations">Déclarations du composant</a> et <a href="composants.html#declarations-de-preparation">Préparer</a>). Un composant écrit dans un <code>.ts</code> garde <code>static tag</code>, le générique <code>SuperElement&lt;{ props; emits }&gt;</code> et les méthodes (<code>this.contract(…)</code>, <code>this.selector(…)</code>…).</li>
+        <li><strong>Un module sans template</strong> (contrat, store, domaine, routes, <code>main.ts</code>, test) reste un <code>.ts</code>.</li>
+      </ul>
+      <p>Voir <a href="templates.html#fichiers-super">Templates</a> pour la syntaxe, et <a href="outillage.html#verifier-les-types">Outillage</a> pour la vérification des types et l'éditeur.</p>
+
+      <h3 id="api-superelement">SuperElement</h3>
+      <script type="text/x-code">
+        export class CounterCard extends SuperElement {                       // pas de générique dans un .super
+          @tag = 'counter-card';                                             // obligatoire, en minuscules avec un tiret
+          @title = () => `Compteur ${this.count.value}`;                     // facultatif : une chaîne, ou une fonction suivie
+          @prop counterId: string;                                           // obligatoire, lue par this.counterId
+          @prop compact?: boolean;                                           // facultative
+          @prop tone: 'neutral' | 'danger' = 'neutral';                      // facultative, avec une valeur par défaut
+          @emit answered: { confirmed: boolean };                            // émis par this.emit('answered', …) ; void sans payload
+
+          @contract counter;                                                 // ContractView : selectors, send, on
+          @selector count = () => this.counter.selectors.count(this.counterId);   // Selection : .value
+          @state local = { message: null as string | null };                 // LocalState : get(), set()
+          @form edit = { initial, submit };                                  // FormHandle : voir Formulaires
+          @ref input: HTMLInputElement;                                      // ElementRef : <input ref={this.input} />, .value
+
+          @on('counter', 'reset:done')                                       // écouteur : payload typé par l'événement
+          onReset({ input }) { … }
+
+          protected override mounted() { … }
+          protected override unmounted() { … }
+          render() { <main>…</main> }                                        // émet ses éléments, sans return
+          override renderError(error: Error) { <p>{error.message}</p> }     // facultatif
+        }
+
+        // Dans le render d'un parent (.super) : props et événements vérifiés contre @prop et @emit
+        <CounterCard counterId="cafes" on:answered={this.onAnswered} />
+
+        // Hors template (main.ts, tests) : renvoie l'élément
+        CounterCard.create(props?, { on? })
+        CounterCard.eventName('answered')     // nom DOM d'un événement émis, pour un écouteur posé à la main
+      </script>
+      <table>
+        <thead><tr><th>Membre</th><th>Rôle</th></tr></thead>
+        <tbody>
+          <tr><td><code>@tag = 'x-y';</code></td><td>Le nom du custom element : obligatoire (sauf classe <code>abstract</code>), une chaîne en minuscules avec un tiret. Remplace <code>static tag</code> dans un <code>.super</code>.</td></tr>
+          <tr><td><code>@prop nom: T;</code></td><td>Une prop : obligatoire (<code>nom: T</code>), facultative (<code>nom?: T</code>) ou avec une valeur par défaut calculée une fois par instance (<code>nom: T = valeur</code>). Pas de nom de propriété des éléments HTML (<code>id</code>, <code>title</code>…) ; <code>page</code> est réservé. Voir <a href="composants.html#declarations">Déclarations du composant</a>.</td></tr>
+          <tr><td><code>@emit nom: T;</code></td><td>Un événement émis vers le parent (<code>void</code> s'il ne transporte rien).</td></tr>
+          <tr><td><code>@title = …;</code></td><td>Le titre de la page tant que le composant est monté : une chaîne, ou une fonction suivie (recalculée après chaque rendu). Voir <a href="composants.html#titre-de-la-page">Le titre de la page</a>.</td></tr>
+          <tr><td><code>this.nom</code></td><td>Une prop déclarée, lisible dès les champs, toujours à sa valeur courante. Une copie faite à la construction ne suit pas les changements : lire dans <code>render</code> ou <code>selector</code> pour une valeur à jour.</td></tr>
+          <tr><td><code>this.props</code></td><td>Toutes les props, en lecture seule, en un objet. Dans un <code>.super</code>, on lit chaque prop par <code>this.nom</code>.</td></tr>
+          <tr><td><code>@contract nom;</code>, <code>@contract nom = 'contrat';</code></td><td>La vue du store fourni pour ce contrat, lue par <code>this.nom</code> : <code>selectors</code>, <code>send</code> (sans attente), <code>on</code>. Une fois par contrat, tous les contrats sauf le router. Forme <code>.ts</code> : <code>this.contract(nom)</code>. Voir <a href="lire-un-store.html">Lire un store</a>.</td></tr>
+          <tr><td><code>this.router</code></td><td>La vue du router de l'app, sans déclaration et lisible partout (<code>render</code> compris) : la route active <code>current</code> (<code>name()</code>, <code>path()</code>, <code>params.x()</code>, <code>query.x()</code>), une route précise <code>at(nom)</code>, commandes <code>navigate</code>, <code>visit</code>, <code>back</code>, et <code>href</code>. Voir <a href="router.html#le-router-est-un-store">Le router dans un composant</a>.</td></tr>
+          <tr><td><code>this.page.title = …</code></td><td>Pose le titre de la page (<code>TitleValue</code> : une chaîne ou une fonction suivie) tant que le composant est monté. Dans un champ ou le constructeur, repris à chaque montage (ce que fait <code>@title</code>) ; une fois monté, remplace le titre du composant jusqu'au démontage. En écriture seulement ; interdit pendant <code>render</code>. Le dernier composant monté qui pose un titre l'emporte.</td></tr>
+          <tr><td><code>@selector nom = lecture;</code></td><td><code>{ value }</code> : la valeur d'un sélecteur, telle quelle ; le composant ne se re-rend que si elle change. Sur une valeur de route (<code>@selector id = this.router.current.params.id;</code>), aussi <code>isValid()</code>. Forme <code>.ts</code> : <code>this.selector(lecture)</code>.</td></tr>
+          <tr><td><code>@state nom = initial;</code></td><td><code>{ get(), set(patch) }</code>. Forme <code>.ts</code> : <code>this.state(initial)</code>. Voir <a href="etat-local.html">État local</a>.</td></tr>
+          <tr><td><code>@form nom = options;</code></td><td>Un formulaire. Forme <code>.ts</code> : <code>this.form(options)</code>. Voir <a href="formulaires.html">Formulaires</a>.</td></tr>
+          <tr><td><code>@ref nom: T;</code></td><td>Une référence vers un élément du template, posée par <code>ref={this.nom}</code> (refusée si la balise n'est pas un <code>T</code>) ; <code>.value</code> vaut <code>undefined</code> tant que l'élément n'est pas rendu. Forme <code>.ts</code> : <code>this.ref&lt;T&gt;()</code>.</td></tr>
+          <tr><td><code>@on('contrat', 'événement') méthode(payload) { … }</code></td><td>Un écouteur sur une méthode, appelée à chaque événement tant que le composant est monté ; le paramètre est typé par l'événement. Pas besoin de <code>@contract</code> ; <code>'router'</code> écoute le router. Forme <code>.ts</code> : <code>this.contract('contrat').on('événement', …)</code> dans le constructeur. Voir <a href="composants.html#declarer-un-ecouteur">Les écouteurs</a>.</td></tr>
+          <tr><td><code>this.emit(nom, payload?)</code></td><td>Événement déclaré par <code>@emit</code>, vers le parent, écouté par <code>on:nom={…}</code> sur la balise (ou <code>{ on: { nom } }</code> avec <code>create</code>).</td></tr>
+          <tr><td><code>this.signal</code></td><td>Avorté au démontage.</td></tr>
+          <tr><td><code>mounted()</code>, <code>unmounted()</code></td><td>Après le premier rendu, à chaque montage ; au démontage.</td></tr>
+          <tr><td><code>render()</code></td><td>Émet le HTML du composant, à chaque rendu. <code>render() {}</code> ne rend rien.</td></tr>
+          <tr><td><code>renderError(error)</code></td><td>Facultatif : émet ses éléments à la place de <code>render</code> si <code>render</code> ou un descendant plante. Voir <a href="erreurs.html">Gérer les erreurs</a>.</td></tr>
+        </tbody>
+      </table>
+      <p><code>@contract</code>, <code>@selector</code>, <code>@state</code>, <code>@form</code>, <code>@ref</code> et <code>@on</code> se déclarent dans le corps de la classe ; dans un <code>.ts</code>, leurs méthodes s'appellent dans un champ ou le constructeur, jamais pendant <code>render</code>, et lèvent une erreur sinon ; <code>this.page.title</code> ne se pose pas non plus pendant <code>render</code>. Voir <a href="composants.html">Composants</a> et <a href="parents-enfants.html">Parents et enfants</a>.</p>
+
+      <h3 id="api-form">Formulaires</h3>
+      <script type="text/x-code">
+        @form order = {
+          initial,                                         // les valeurs, qui donnent les types
+          rules?: { champ: (valeur, valeurs) => true | 'message' },
+          validate?: (valeurs) => ({ champ: 'message' }),
+          scrollToError?: boolean,                         // true par défaut : focus sur la première erreur
+          checks?: { champ: { command, toInput, accept, delay? } },
+          submit: { to: this.checkout, command: 'placeOrder', toInput: (valeurs) => input },
+          failures?: { fields: { raison: { champ: 'message' } }, form: { raison: 'message', error?: 'message' } },
+        };
+        // → bind() · field(nom, valeur?) · error(nom) · formError() · submitting() · checking(nom)
+        //   values() · set(nom, valeur) · list(nom) · submit() · reset()
+        // list(nom) → items() (key, index, value, field, error) · add(ligne) · remove(ligne | index)
+      </script>
+      <p><code>submit.to</code> est une vue déclarée par <code>@contract</code> avant le formulaire (<code>this.contract(…)</code> dans un <code>.ts</code>). Voir <a href="formulaires.html">Formulaires</a>.</p>
+
+      <h3 id="api-templates">Templates</h3>
+      <p>Un template s'écrit dans les méthodes d'un fichier <code>.super</code> :</p>
+      <script type="text/x-code">
+        // texte brut et interpolation
+        <p class="total">Total : {formatPrice(total)}</p>
+        // attribut calculé (null le retire), attribut booléen, écouteur
+        <a href={url} aria-current={active ? 'page' : null}>Panier</a>
+        <button disabled={busy} on:click={this.save}>Enregistrer</button>
+        // propriété DOM, référence, directive d'élément (formulaires)
+        <input prop:value={draft} ref={this.input} />
+        <form {order.bind()}>…</form>
+        // afficher ou non, liste (à clés ou non), choix sans cascade
+        if (cond) { … } else { … }
+        for (const x of xs; key x.id) { … }
+        switch (s) { case 'a': … default: … }
+        // composant enfant : props et événements typés
+        <ConfirmDialog question="Vider le panier ?" on:answered={this.onAnswered} />
+      </script>
+      <p>
+        <code>html</code>, <code>nothing</code> et <code>repeat</code> (lit-html) restent exportés pour du code qui n'est
+        pas un composant ; ils ne servent plus à écrire un composant. Voir <a href="templates.html">Templates</a>, et
+        <a href="templates.html#html">Et html, nothing, repeat ?</a>.
+      </p>
+
+      <h3 id="api-createapp">createApp</h3>
+      <script type="text/x-code">
+        createApp({ root, stores?, router?, onError? })   // App : { root, mount(element), dispose() }
+        onError: (error, { tag, phase, caughtBy }) => void   // phase : setup · render · renderError · event · listener · mount
+        CONTEXT_REQUEST                                    // nom de l'événement DOM par lequel un composant demande un store
+      </script>
+      <p>Voir <a href="application.html">Brancher l'application</a> et <a href="erreurs.html">Gérer les erreurs</a>.</p>
+
+      <h3 id="api-router">Router</h3>
+      <script type="text/x-code">
+        export const Router = defineRouter({
+          examples: '/',
+          counters: '/counters?sort&tag[]',                                                       // chaîne : valeurs texte, tag[] : liste
+          counter: { path: '/counters/:id', params: params<{ id: number }>({ id: Number }) },    // objet : valeurs typées
+          search: { path: '/search', query: query<{ page: number; q?: string }>({ page: { type: Number, default: 1 }, q: String }) },
+        })
+          .guards(({ read }) => ({               // facultatif, avant les écrans
+            checkout: () => !read('cart').isEmpty() || { to: 'shop' },
+            counter: ({ params }) => params.id.isValid() || { to: 'counters' },   // la route, comme at() la donne
+          }))
+          .screens(() => ({                      // toujours le dernier appel
+            examples: ExamplesScreen,            // un écran : aucune prop obligatoire
+            counters: CounterListScreen,
+            counter: CounterScreen,
+            search: SearchScreen,
+            form: redirect({ to: 'profile' }),   // redirection à la place d'un écran
+            '*': NotFoundScreen,                 // facultatif : aucun chemin ne correspond
+            '!': ErrorScreen,                    // facultatif : un écran a planté, reçoit { error, path }
+          }));
+        const router = createRouter(Router, { mode?: 'browser' | 'memory', initialPath?, title? });   // RouterHandle
+        // title?: { default?, suffix? } : default sans titre posé, suffix ajouté au titre posé
+        createRouter(Router, { title: { default: 'Super · exemples', suffix: ' · Super' } })
+
+        Router.href('counter', { params: { id: 42 } })   // '/counters/42', hors composant
+        Router.paths                             // les routes déclarées
+
+        // dans un composant : this.router, sans déclaration
+        this.router.current.name()               // 'counter' | … | null ; aussi path()
+        this.router.current.params.id()          // dans l'écran de `counter` : number | undefined
+        this.router.current.query.sort()         // chaque valeur se passe aussi à @selector
+        this.router.current.params.id.isValid()  // l'URL portait-elle une valeur conforme ?
+        this.router.at('counter').params.id()    // une route précise ; lève une erreur si une autre est active
+        this.router.href('counters', { query: { sort: 'label' } })   // '/counters?sort=label', sans abonner le composant
+        this.router.send('navigate', { to: 'counter', params: { id: 42 }, query: { … } })   // aussi visit(path), back()
+        @on('router', 'navigated') onNavigated({ from, to }) { … }   // un écouteur ; dans un .ts : this.router.on('navigated', …)
+        <RouterOutlet />                         // dans un render : affiche l'écran actif
+
+        // le handle (tests, main.ts)
+        router.state()                           // { path, name, params, query, invalid, screen, errorScreen }
+      </script>
+      <p>Le titre se règle dans les options de <code>createRouter</code>, pas dans <code>defineRouter</code> (dont les clés sont des routes). Sans <code>default</code>, le titre d'origine du document revient. Voir <a href="router.html">Router</a> et <a href="router.html#titre-de-la-page">Le titre de la page</a>.</p>
+
+      <h3 id="api-types-dom">Types</h3>
+      <table>
+        <tbody>
+          <tr><td><code>ElementTypes</code>, <code>PropsIn</code>, <code>EmitsIn</code>, <code>RouteIn</code>, <code>PropsOf</code>, <code>EventsOf</code></td><td>Ce que déclare un composant (<code>{ props?, emits?, route? }</code>, tiré par le compilateur <code>.super</code> des <code>@prop</code>, des <code>@emit</code> et de la route d'un écran), et les props et événements d'une classe ou d'une instance.</td></tr>
+          <tr><td><code>ElementClass</code>, <code>Screen</code>, <code>ChildOptions</code></td><td>Une classe de composant, un écran du router, les options <code>{ on }</code> de <code>create</code>.</td></tr>
+          <tr><td><code>ContractView</code>, <code>RouterView</code>, <code>ViewOf</code>, <code>ElementSelectors</code>, <code>StoreContractName</code>, <code>AppRouterView</code></td><td>Ce que donnent <code>@contract</code> (<code>this.contract(nom)</code>) et <code>this.router</code>.</td></tr>
+          <tr><td><code>Selection</code>, <code>RouteSelection</code>, <code>Selected</code>, <code>SelectorValue</code>, <code>Unselected</code></td><td>Ce que donne <code>@selector</code> (avec <code>isValid()</code> pour une valeur de route), et la marque qui réserve <code>selector</code> aux valeurs de sélecteurs.</td></tr>
+          <tr><td><code>LocalState</code>, <code>ElementRef</code></td><td>Ce que donnent <code>@state</code> et <code>@ref</code> (<code>this.state</code> et <code>this.ref</code> dans un <code>.ts</code>).</td></tr>
+          <tr><td><code>Page</code>, <code>TitleValue</code>, <code>TitleOptions</code></td><td><code>this.page</code> (son <code>title</code>, en écriture seulement), la valeur d'un titre (<code>string | (() =&gt; string)</code>), et le réglage <code>{ default?, suffix? }</code> de l'option <code>title</code> de <code>createRouter</code>.</td></tr>
+          <tr><td><code>Children</code></td><td>Des éléments passés à un composant : le type d'une prop remplie par les enfants écrits entre ses balises (<code>content</code>), par un emplacement <code>&lt;:nom&gt;</code> ou par une méthode qui émet des éléments (voir <a href="templates.html#content">Templates</a>).</td></tr>
+          <tr><td><code>FormOptions</code>, <code>FormHandle</code>, <code>FormRules</code>, <code>FieldRule</code>, <code>FieldCheck</code>, <code>FormFailures</code>, <code>FormList</code>, <code>FormListItem</code>, <code>FieldName</code>, <code>ListName</code>, <code>FieldOption</code></td><td>Les formulaires.</td></tr>
+          <tr><td><code>App</code>, <code>AppOptions</code>, <code>ErrorInfo</code>, <code>ErrorDetail</code>, <code>ErrorPhase</code></td><td><code>createApp</code> et les erreurs de composants.</td></tr>
+          <tr><td><code>RouterDefinition</code>, <code>RouterHandle</code>, <code>RouterOptions</code>, <code>RouteState</code>, <code>RouterCommands</code>, <code>RouterEvents</code></td><td>La déclaration, le handle et le contrat du router.</td></tr>
+          <tr><td><code>AppRouterContract</code>, <code>AppRouterContractOf</code>, <code>AppRouteNames</code></td><td>Le contrat du router vu d'un composant, typé par les routes de l'app (inscrit sous <code>'router'</code> dans <code>contracts.d.ts</code>), et les noms de ces routes.</td></tr>
+          <tr><td><code>RouteTable</code>, <code>RouteDeclaration</code>, <code>PathParams</code>, <code>QueryParams</code>, <code>ParamsOf</code>, <code>QueryOf</code></td><td>Les routes déclarées (chaîne ou objet), et le type de leurs paramètres et de leur query.</td></tr>
+          <tr><td><code>ParamsSpec</code>, <code>QuerySpec</code>, <code>ParamsDescription</code>, <code>QueryDescription</code></td><td>Les descriptions écrites avec <code>params&lt;T&gt;({…})</code> et <code>query&lt;T&gt;({…})</code>, vérifiées contre <code>T</code>.</td></tr>
+          <tr><td><code>CurrentRoute</code>, <code>RouteAt</code>, <code>RouteValue</code></td><td>La route active (<code>this.router.current</code>), une route précise (<code>this.router.at(nom)</code>, un guard), et une de leurs valeurs, avec <code>isValid()</code>.</td></tr>
+          <tr><td><code>ScreenRoutes</code>, <code>RouteOfTag</code></td><td>Le lien entre le tag d'un écran et sa route, généré par le plugin Vite dans <code>contracts.d.ts</code>, et la route d'un composant d'après son tag.</td></tr>
+          <tr><td><code>RouteInput</code>, <code>HrefArgs</code>, <code>NavigateTargetOf</code></td><td>Le typage des liens et des navigations : <code>{ params, query }</code>.</td></tr>
+          <tr><td><code>ScreensDeclaration</code>, <code>ScreensFor</code>, <code>ErrorScreen</code>, <code>Redirect</code>, <code>GuardsFor</code>, <code>GuardResult</code>, <code>GuardTools</code></td><td>Les écrans, redirections et guards.</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="super-testing">@super-ts/testing</h2>
+      <script type="text/x-code">
+        mount(Classe, { props?, stores?, router?, on?, onError? })   // Promise<Mounted> : { container, element, setProps, unmount }
+        cleanup()                                            // démonte tout (dans un afterEach)
+        flush()                                              // laisse passer les rendus en attente
+        record(store, 'événement')                           // Recorder : { calls, last, stop }
+        fakeStore('nom', { state, commands? })               // FakeStore : handle + { sent, setState, emit }
+        FakeCommands<'nom'>                                  // le type des commands d'un faux store
+        SentCommand                                          // une entrée de sent : { name, args }
+      </script>
+      <p>Voir <a href="tests.html">Tester</a>.</p>
+
+      <h2 id="super-ui">@super-ts/ui</h2>
+      <p>Importer le paquet charge sa feuille de styles. Tous les composants acceptent une prop <code>class</code>.</p>
+      <table>
+        <thead><tr><th>Export</th><th>Rôle</th></tr></thead>
+        <tbody>
+          <tr><td><code>Field</code>, <code>Select</code>, <code>Checkbox</code>, <code>RadioGroup</code>, <code>fieldOf(form, 'nom')</code></td><td>Les champs reliés à un <code>@form</code>. Types : <code>FieldRef</code>, <code>Choice</code>.</td></tr>
+          <tr><td><code>CommandButton</code>, <code>commandOf(vue, 'commande', entrée)</code></td><td>Un bouton qui envoie une commande, désactivé pendant qu'elle est en cours. Type : <code>CommandRef</code>.</td></tr>
+          <tr><td><code>RouteLink</code></td><td>Un lien vers une route, <code>aria-current="page"</code> sur la page affichée.</td></tr>
+          <tr><td><code>Toasts</code>, <code>createToasts()</code>, <code>ToastQueue</code></td><td>Une file de messages et son affichage. Types : <code>Toast</code>, <code>ToastOptions</code>, <code>ToastTone</code>.</td></tr>
+          <tr><td><code>ErrorPanel</code></td><td>Une erreur présentée, pour un <code>renderError</code> ou l'écran <code>'!'</code>.</td></tr>
+          <tr><td><code>Dialog</code>, <code>Modal</code>, <code>ConfirmDialog</code></td><td>Les fenêtres modales. Types : <code>CloseOn</code>, <code>CloseReason</code>.</td></tr>
+          <tr><td><code>Menu</code>, <code>Tabs</code>, <code>Disclosure</code>, <code>Tooltip</code>, <code>Popover</code>, <code>Combobox</code></td><td>Les primitives accessibles. Types : <code>MenuItem</code>, <code>Tab</code>.</td></tr>
+          <tr><td><code>Button</code>, <code>Badge</code>, <code>Spinner</code>, <code>Skeleton</code>, <code>EmptyState</code></td><td>L'affichage.</td></tr>
+          <tr><td><code>Table</code>, <code>columns&lt;Row&gt;([…])</code></td><td>La table, statique ou branchée. Types : <code>Column</code>, <code>Sort</code>, <code>TableRequest</code>.</td></tr>
+        </tbody>
+      </table>
+      <p>Voir <a href="ui.html">Kit d'interface</a>.</p>
+
+      <h2 id="super-vite">@super-ts/vite</h2>
+      <script type="text/x-code">
+        superPlugin({ src: '/chemin/absolu/vers/src' })   // SuperPluginOptions ; règles d'architecture, alias @core/ et @components/,
+                                                         // génération de src/@core/contracts.d.ts, compilation des .super
+      </script>
+      <p>Les briques du plugin sont exportées aussi, pour un outillage maison :</p>
+      <table>
+        <tbody>
+          <tr><td><code>RULES</code>, <code>ALIASES</code></td><td>Où s'importent <code>SuperContract</code>/<code>SuperStore</code> (<code>@core</code>) et <code>SuperElement</code> (<code>@components</code>) ; les alias <code>@core</code> et <code>@components</code>.</td></tr>
+          <tr><td><code>checkModule</code>, <code>checkCoreImports</code>, <code>checkComponentImports</code></td><td><code>(cheminRelatif, code)</code> : le message d'erreur si le module enfreint une règle, <code>null</code> sinon.</td></tr>
+          <tr><td><code>contractsIn</code>, <code>scanContracts</code>, <code>scanRouter</code></td><td>Lisent les contrats d'un fichier ou de <code>src/@core/</code>, et le router de l'app.</td></tr>
+          <tr><td><code>contractsModule</code>, <code>contractsDeclaration</code></td><td>Produisent le module qui inscrit les contrats, et le contenu de <code>contracts.d.ts</code>.</td></tr>
+          <tr><td><code>hotModuleCode</code></td><td><code>(code)</code> : le code ajouté en dev à un module de composant pour le remplacement à chaud, <code>null</code> s'il ne déclare aucun composant.</td></tr>
+        </tbody>
+      </table>
+      <p>
+        Le plugin compile aussi chaque <code>.super</code> en TypeScript, puis en JS, avec une source map vers le
+        <code>.super</code>, et ajoute <code>.super</code> aux extensions résolues. Voir
+        <a href="architecture.html#le-plugin-vite">Architecture</a> et <a href="outillage.html#vite">Outillage</a>.
+      </p>
+
+      <h2 id="super-lint">@super-ts/lint</h2>
+      <script type="text/x-code" data-title="biome.json" data-lang="text">
+        { "extends": ["@super-ts/lint/config.json"] }   // ordre des imports : @super-ts, puis @components / @core, puis le reste
+      </script>
+      <p>Voir <a href="architecture.html#ordre-des-imports">L'ordre des imports</a>.</p>
+    </article>
+    <script src="assets/search-index.js"></script>
+    <script src="assets/site.js"></script>
+  </body>
+</html>

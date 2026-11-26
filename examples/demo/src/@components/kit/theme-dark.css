@@ -1,0 +1,8 @@
+/* Forcer le thème sombre dans une zone, quel que soit celui du système. */
+.kit-dark-zone {
+  color-scheme: dark;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: #0d1117;
+  color: #e6edf3;
+}

@@ -1,0 +1,16 @@
+import { SuperElement } from '@super-ts/dom';
+
+/** 3. Un bloc dont le renderError plante aussi : l'erreur remonte jusqu'à l'écran '!' du router. */
+export class DoubleFailure extends SuperElement {
+  @tag = 'double-failure';
+  @prop armed: boolean;
+
+  render() {
+    if (this.armed) throw new Error('rendu cassé');
+    <p class="ok">Prêt.</p>
+  }
+
+  override renderError(): unknown {
+    throw new Error('le renderError a planté lui aussi');
+  }
+}

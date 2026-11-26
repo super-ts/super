@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Architecture · Super</title>
+    <link rel="stylesheet" href="assets/site.css" />
+  </head>
+  <body>
+    <article>
+      <h1>Architecture</h1>
+      <p class="lead">
+        Super impose deux dossiers et quatre règles. Tout le reste de ton <code>src</code> est du user-land : Super ne le
+        regarde pas.
+      </p>
+
+      <h2 id="la-structure">La structure</h2>
+      <script type="text/x-code" data-lang="text">
+        src/
+        ├── @core/          IMPOSÉ PAR SUPER : contrats et stores
+        │   ├── counter/    contract.ts, store.ts, store.test.ts
+        │   └── contracts.d.ts   généré par le plugin Vite (à committer)
+        ├── @components/    IMPOSÉ PAR SUPER : composants (écrans compris)
+        │   ├── counter/    index.super, index.css, index.test.ts, counter-controls.super
+        │   ├── app-shell/  la coquille
+        │   └── shared/     composants réutilisables
+        ├── domain/         user-land (choix de ce projet)
+        ├── ports/          user-land (choix de ce projet)
+        ├── adapters/       user-land (choix de ce projet)
+        ├── routes.ts       user-land
+        └── main.ts         user-land
+      </script>
+      <p>
+        Dans <code>@core/</code>, la convention est <strong>un dossier par contrat</strong> : <code>contract.ts</code>,
+        <code>store.ts</code> et son test. Dans <code>@components/</code>, <strong>un dossier par écran</strong>, en
+        kebab-case et sans suffixe (<code>shop/index.super</code> exporte <code>ShopScreen</code>), avec ses
+        sous-composants en fichiers à plat (<code>counter/counter-controls.super</code>) ; les composants réutilisables
+        vont dans <code>shared/</code>. Un composant est un fichier <code>.super</code> (voir
+        <a href="templates.html#fichiers-super">Templates</a>) ; ses tests, eux, restent des <code>.ts</code>. Les règles du plugin, elles, ne regardent que le premier niveau : un fichier est sous
+        <code>@core/</code> ou sous <code>@components/</code>, ou ailleurs.
+      </p>
+      <p>
+        <code>src/@core/contracts.d.ts</code> est généré par le plugin Vite : c'est le dictionnaire nom → classe de
+        contrat (plus le router, sous <code>'router'</code>) qui permet d'écrire <code>@contract counter;</code>
+        avec tous les types, et le lien entre chaque écran et sa route (<code>ScreenRoutes</code>). On le committe, on ne
+        l'écrit jamais.
+      </p>
+
+      <h2 id="le-prefixe-arobase">Le préfixe <code>@</code></h2>
+      <p>
+        Le préfixe se lit d'un coup d'œil : <strong>un dossier préfixé appartient à Super</strong>, un dossier sans préfixe
+        appartient à ton projet. Un dossier <code>core/</code> ou <code>components/</code> sans <code>@</code> n'a rien de
+        spécial : c'est un dossier user-land comme un autre, qui ne peut donc contenir ni store ni composant.
+      </p>
+      <div class="callout">
+        <strong>Pourquoi <code>@</code> et pas <code>$</code> ?</strong>
+        Dans un shell, <code>$core</code> est lu comme une variable : <code>cd src/$core</code> arrive silencieusement dans
+        <code>src/</code>. <code>@</code> passe sans souci dans le shell, dans les imports relatifs et dans les URLs du
+        serveur de dev.
+      </div>
+      <div class="callout warn">
+        <strong>À ne pas confondre</strong>
+        <code>@super-ts/core</code> est le paquet du framework. <code>@core/counter/contract</code> est un fichier de ton
+        app, dans <code>src/@core/</code>. L'un vient de <code>node_modules</code>, l'autre de ton <code>src</code>.
+      </div>
+
+      <h2 id="importer-depuis-core-et-components">Importer depuis @core et @components</h2>
+      <p>
+        Les deux dossiers Super s'importent par alias, depuis n'importe quel fichier, quelle que soit sa profondeur :
+      </p>
+      <script type="text/x-code">
+        import { AppShell } from '@components/app-shell';
+        import { CounterStore } from '@core/counter/store';
+      </script>
+      <p>
+        Plus de <code>'../../@core/…'</code> à recompter quand un fichier change de dossier. Les imports relatifs
+        (<code>'../@core/counter/store'</code>) restent possibles, et les règles d'architecture s'appliquent aux deux
+        écritures.
+      </p>
+      <p>
+        <strong>Côté Vite et Vitest, rien à faire</strong> : le plugin <code>superPlugin</code> déclare ces alias lui-même,
+        à partir du dossier <code>src</code> que tu lui donnes. Un import sans extension trouve aussi un
+        <code>.super</code> : <code>'@components/app-shell'</code> mène à <code>app-shell/index.super</code>.
+      </p>
+      <p>
+        <strong>Côté TypeScript</strong>, pour l'IDE et le typecheck, déclare les alias dans le
+        <code>tsconfig.json</code> de ton app (aucun plugin ne peut les injecter dans TypeScript). Chaque alias a deux
+        cibles : ton <code>src</code>, et les déclarations des <code>.super</code>, que l'outillage écrit dans
+        <code>.super/types/</code> (un dossier ignoré par git). <code>rootDirs</code> fusionne les arborescences (ton
+        <code>src</code>, les déclarations, puis le TS virtuel de <code>.super/virtual/</code> d'où elles tirent leurs
+        types) : un <code>.ts</code> qui importe un composant <code>.super</code>, comme <code>routes.ts</code>, en voit
+        les types, et « aller à la définition » ouvre le <code>.super</code>.
+      </p>
+      <script type="text/x-code" data-title="tsconfig.json" data-source="examples/demo/tsconfig.json" data-lang="text">
+        {
+          "compilerOptions": {
+            "paths": {
+              // … les paquets @super-ts/…
+              "@core/*": ["./src/@core/*", "./.super/types/src/@core/*"],
+              "@components/*": ["./src/@components/*", "./.super/types/src/@components/*"]
+            },
+            "rootDirs": ["./src", "./.super/types/src", "./.super/virtual/src"]
+          }
+        }
+      </script>
+      <p>
+        Qui écrit ce TS virtuel, et quand : voir <a href="outillage.html#verifier-les-types">Outillage</a>.
+      </p>
+      <h2 id="ordre-des-imports">L'ordre des imports</h2>
+      <p>Super fixe aussi l'ordre des imports, vérifié au lint :</p>
+      <ol>
+        <li>les paquets Super : <code>@super-ts/…</code> ;</li>
+        <li>les dossiers Super : <code>@components/…</code> et <code>@core/…</code> ;</li>
+        <li>tout le reste : modules Node (<code>node:…</code>), paquets npm, puis chemins relatifs.</li>
+      </ol>
+      <p>À l'intérieur de chaque groupe, l'ordre est alphabétique.</p>
+      <script type="text/x-code" data-title="src/@components/counter/index.test.ts" data-source="examples/demo/src/@components/counter/index.test.ts">
+        import { createRouter } from '@super-ts/dom';
+        import { type FakeCommands, fakeStore, flush, mount } from '@super-ts/testing';
+        import type { CounterState } from '@core/counter/contract';
+        import { within } from '@testing-library/dom';
+        import userEvent from '@testing-library/user-event';
+        import { describe, expect, test } from 'vitest';
+        import { Router } from '../../routes';
+        import { CounterScreen } from '.';
+      </script>
+      <p>
+        On lit d'un coup d'œil ce qui vient du framework, ce qui vient des briques Super de l'app, et le reste. Les imports
+        sans nom (<code>import './styles.css'</code>) ne sont jamais déplacés : ils servent de séparateurs, ce qui préserve
+        l'ordre de chargement des feuilles de style.
+      </p>
+      <h3 id="le-lint">Le lint</h3>
+      <p>
+        La règle est portée par Biome. Super fournit sa configuration, que ton projet étend dans son
+        <code>biome.json</code> :
+      </p>
+      <script type="text/x-code" data-title="biome.json" data-lang="text">
+        {
+          "extends": ["@super-ts/lint/config.json"]
+        }
+      </script>
+      <script type="text/x-code" data-lang="bash">
+        npm run lint       # vérifie l'ordre des imports et le formatage (lancé aussi par npm run check)
+        npm run lint:fix   # corrige les deux
+      </script>
+      <p>
+        Dans ce dépôt, la configuration de Super est dans <code>packages/lint/config.json</code>. La configuration de Super ne
+        touche qu'à l'ordre des imports : le formatage et les autres règles de lint restent au choix du projet. Le dépôt, lui,
+        active le formateur de Biome (deux espaces, guillemets simples, 140 colonnes) et formate les <code>.super</code> avec
+        les mêmes règles (voir <a href="outillage.html#formater">Outillage</a>).
+      </p>
+
+      <div class="callout warn">
+        <strong>Les autres dossiers n'ont pas d'alias</strong>
+        Seuls les dossiers Super en ont. <code>ports/</code>, <code>adapters/</code> ou <code>routes.ts</code> s'importent
+        en relatif (<code>'../routes'</code>), ou avec tes propres alias si tu en déclares.
+      </div>
+
+      <h2 id="les-regles">Les quatre règles</h2>
+      <table>
+        <thead><tr><th>Règle</th><th>Ce qui est refusé</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Les contrats et les stores se définissent sous <code>src/@core/</code>.</td>
+            <td>Un module hors de <code>@core/</code> qui importe <code>SuperContract</code> ou <code>SuperStore</code> depuis <code>@super-ts/core</code>.</td>
+          </tr>
+          <tr>
+            <td>Les composants se définissent sous <code>src/@components/</code>.</td>
+            <td>Un module hors de <code>@components/</code> (<code>.super</code> ou <code>.ts</code>) qui importe <code>SuperElement</code> depuis <code>@super-ts/dom</code>.</td>
+          </tr>
+          <tr>
+            <td>Un composant n'importe de <code>@core/</code> que des types.</td>
+            <td>Un composant qui importe une valeur de <code>@core/</code> : un store, une classe de contrat, une constante, une fonction, ou un <code>import * as</code>.</td>
+          </tr>
+          <tr>
+            <td>Les contrats et les stores ne dépendent pas du DOM.</td>
+            <td>Un module de <code>@core/</code> qui importe quoi que ce soit de <code>@super-ts/dom</code> (<code>html</code>, <code>SuperElement</code>, <code>createApp</code>…), sauf des types.</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        La quatrième règle garde le cœur de l'app indépendant de l'affichage : un store se teste sans DOM, et pourrait
+        servir à une autre interface. La troisième règle est la plus importante : elle garantit qu'<strong>un composant ne voit un store qu'à travers son
+        contrat</strong>, qu'il demande par son nom (<code>@contract counter;</code>). Il lit par les sélecteurs,
+        envoie des commandes, écoute des événements, et rien d'autre. C'est ce qui permet de le tester avec un faux store,
+        et d'empêcher qu'une logique métier se glisse dans la vue.
+      </p>
+
+      <h2 id="le-plugin-vite">Le plugin Vite</h2>
+      <p>
+        Le plugin <code>@super-ts/vite</code> compile les <code>.super</code> et fait respecter ces règles. Il se déclare dans
+        <code>vite.config.ts</code>, et sert aussi à Vitest :
+      </p>
+      <script type="text/x-code" data-title="vite.config.ts">
+        import { superPlugin } from '@super-ts/vite';
+        import { fileURLToPath } from 'node:url';
+        import { defineConfig } from 'vite';
+
+        export default defineConfig({
+          plugins: [superPlugin({ src: fileURLToPath(new URL('./src', import.meta.url)) })],
+        });
+      </script>
+      <p>Le même plugin :</p>
+      <ul>
+        <li>
+          compile chaque <code>.super</code> en TypeScript (des gabarits lit-html), puis en retire les types ; une erreur de
+          compilation arrête le chargement du module, avec sa position dans le <code>.super</code> ;
+        </li>
+        <li>
+          fournit une source map du JS final vers le <code>.super</code> : traces d'erreur et débogueur pointent la ligne
+          et la colonne de la source (voir <a href="outillage.html#source-maps">Source maps</a>) ;
+        </li>
+        <li>
+          applique les règles d'architecture au code compilé : un <code>.super</code> est vérifié comme le serait un
+          <code>.ts</code> ;
+        </li>
+        <li>en dev, réécrit le TS virtuel d'un <code>.super</code> à chaque transformation, pour que les <code>.ts</code> qui l'importent en voient les types à jour ;</li>
+        <li>déclare les alias <code>@core/</code> et <code>@components/</code>, et ajoute <code>.super</code> aux extensions résolues (voir plus haut) ;</li>
+        <li>
+          lit les contrats de <code>src/@core/</code> (les fichiers <code>contract.ts</code>, ou <code>*.contract.ts</code>,
+          qui déclarent <code>export class X extends SuperContract</code> et se nomment par <code>super({ name })</code>),
+          refuse deux contrats du même nom, et les inscrit pour que chaque store retrouve le sien par son nom ;
+        </li>
+        <li>
+          repère le router de l'app (<code>export const Router = defineRouter(…)</code>) et l'ajoute sous
+          <code>'router'</code> ; lit ses <code>.screens(…)</code> pour relier le tag de chaque écran à sa route
+          (<code>'counter-screen': 'counter'</code>), qui type <code>this.router.current</code> dans l'écran ;
+        </li>
+        <li>écrit le tout dans <code>src/@core/contracts.d.ts</code>, au lancement puis à chaque fichier enregistré en dev ;</li>
+        <li>en dev, rend les composants remplaçables à chaud (voir ci-dessous).</li>
+      </ul>
+
+      <h3 id="remplacement-a-chaud">Remplacement à chaud des composants</h3>
+      <p>
+        En dev, modifier un composant ne recharge pas la page : la nouvelle version remplace l'ancienne, et les éléments
+        affichés <strong>gardent leur état</strong> (état local, saisie, état des stores) et se re-rendent avec le nouveau
+        code. Les composants créés ensuite utilisent la nouvelle version, y compris par un parent qui n'a pas été modifié.
+      </p>
+      <p>
+        Ce remplacement n'est sûr que si les champs du composant n'ont pas changé : les éléments affichés ont été construits
+        avec les anciens. Super recharge donc la page entière quand la modification :
+      </p>
+      <ul>
+        <li>ajoute, retire ou renomme un champ ou une déclaration de préparation (<code>@state extra = …;</code>) ;</li>
+        <li>modifie un handler en champ fléché (<code>onAnswered = () => …</code>) ;</li>
+        <li>touche un composant qui a des membres <code>#privés</code>, champs ou méthodes comme un <code>#row()</code> qui émet des éléments (ceux de l'ancienne classe ne sont pas ceux de la nouvelle).</li>
+      </ul>
+      <p>
+        Modifier <code>render</code>, <code>renderError</code>, <code>mounted</code> ou une autre méthode se fait à chaud.
+        Pour un <code>.super</code>, c'est son code compilé qui remplace l'ancien. Un
+        fichier de <code>@core/</code> (contrat, store) recharge toujours la page. Rien de tout ça n'existe en build : le code
+        ajouté par le plugin n'est actif que sous <code>vite</code> en dev.
+      </p>
+      <p>
+        Un module qui enfreint une règle <strong>n'est pas chargé</strong> : Vite refuse de le transformer et affiche
+        l'erreur (overlay en dev, échec du build ou du test).
+      </p>
+      <script type="text/x-code" data-lang="text">
+        [super] src/shared/badge.ts importe SuperElement depuis @super-ts/dom.
+        Les composants ne se définissent que sous src/@components/ : ce module n'est pas chargé.
+
+        [super] src/@components/counter-list/counter-list-item.super importe CounterContract depuis @core/counter/contract.
+        Un composant n'importe de src/@core/ que des types : il parle aux stores par leur contrat (@contract cart;).
+        Ce module n'est pas chargé.
+      </script>
+
+      <h3 id="ce-que-le-plugin-ne-verifie-pas">Ce que le plugin ne vérifie pas</h3>
+      <ul>
+        <li><strong>Les tests</strong> (<code>*.test.ts</code>, <code>*.test-d.ts</code>) : l'app ne les charge pas, ils peuvent importer un vrai store ou définir des doublures où ils veulent.</li>
+        <li><strong>Les imports de type</strong> (<code>import type { CounterState } from '@core/counter/contract'</code>) : ils disparaissent à la compilation, ils sont libres partout.</li>
+        <li><strong>Le user-land</strong> : <code>domain/</code>, <code>ports/</code>, <code>adapters/</code>, <code>routes.ts</code>, <code>main.ts</code> importent ce qu'ils veulent.</li>
+      </ul>
+      <p>
+        Le plugin lit le code comme du texte (pour un <code>.super</code>, le code compilé) : il reconnaît les imports nommés (y compris renommés avec <code>as</code>), un
+        contrat à sa déclaration <code>export class X extends SuperContract</code> et le router à
+        <code>export const Router = defineRouter(…)</code>. Voir <a href="limites.html">Limites</a>.
+      </p>
+
+      <h2 id="le-user-land">Le user-land</h2>
+      <p>Hors de <code>@core/</code> et <code>@components/</code>, tu organises comme tu veux. Dans l'<a href="exemples.html">app d'exemples</a> :</p>
+      <ul>
+        <li><strong><a href="../examples/demo/src/domain/"><code>domain/</code></a></strong> : les types et les règles métier (<code>Product</code>, <code>CartLine</code>, le catalogue des compteurs, la page de produits demandée à une API), sans Super ni DOM. Les contrats s'en servent ; un composant peut en importer les types.</li>
+        <li><strong><a href="../examples/demo/src/ports/"><code>ports/</code></a></strong> : les interfaces dont les stores ont besoin (ici <code>CounterRepository</code>, <code>ProfileClient</code>, <code>OrderClient</code>, <code>ProductCatalog</code>). C'est un choix inspiré de l'architecture hexagonale ; un autre projet pourrait mettre ces interfaces à côté du store, dans <code>@core/</code>.</li>
+        <li><strong><a href="../examples/demo/src/adapters/"><code>adapters/</code></a></strong> : les implémentations concrètes de ces ports (<code>localStorage</code>, mémoire, un serveur simulé, l'API HTTP de dummyjson.com…).</li>
+        <li><strong><a href="../examples/demo/src/routes.ts"><code>routes.ts</code></a></strong> : les routes et les écrans, déclarés dans un seul export, <code>Router</code>. Un composant y accède par <code>this.router</code>, qui construit aussi les liens (<code>this.router.href(…)</code>) ; <code>Router.href</code> sert au code hors composants.</li>
+        <li><strong><a href="../examples/demo/src/main.ts"><code>main.ts</code></a></strong> : la racine de composition, le seul endroit qui choisit les adapters et assemble le tout.</li>
+      </ul>
+
+      <h2 id="qui-importe-quoi">Qui importe quoi</h2>
+      <table>
+        <thead><tr><th>Depuis</th><th>Peut importer</th></tr></thead>
+        <tbody>
+          <tr><td><code>@core/</code> (contrats, stores)</td><td>Les autres contrats et stores, le domaine, les ports, <code>@super-ts/core</code> ; de <code>@super-ts/dom</code>, seulement des types.</td></tr>
+          <tr><td><code>@components/</code></td><td>Les types de <code>@core/</code>, les autres composants, le domaine et le reste du user-land, <code>@super-ts/dom</code>, et le kit <code>@super-ts/ui</code>.</td></tr>
+          <tr><td>User-land</td><td>Tout.</td></tr>
+        </tbody>
+      </table>
+      <div class="callout tip">
+        <strong>Une seule règle de dépendance à retenir</strong>
+        Un composant dépend du contrat d'un store, jamais de son implémentation.
+      </div>
+    </article>
+    <script src="assets/search-index.js"></script>
+    <script src="assets/site.js"></script>
+  </body>
+</html>

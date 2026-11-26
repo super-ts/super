@@ -1,0 +1,15 @@
+import { SuperElement } from '@super-ts/dom';
+
+/** Un composant qui déclare tout dans sa classe : tag, titre de page, props (avec défaut) et événement. */
+export class Declared extends SuperElement {
+  @tag = 'lang-declared';
+  @title = () => `Étiquette ${this.label}`;
+  @prop label: string;
+  @prop tone: 'neutral' | 'danger' = 'neutral';
+  @prop tags: string[] = [];
+  @emit picked: { label: string };
+
+  render() {
+    <button type="button" class={this.tone} on:click={() => this.emit('picked', { label: this.label })}>{this.label}</button>
+  }
+}

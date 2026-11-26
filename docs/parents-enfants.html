@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Parents et enfants · Super</title>
+    <link rel="stylesheet" href="assets/site.css" />
+  </head>
+  <body>
+    <article>
+      <h1>Parents et enfants</h1>
+      <p class="lead">
+        Props vers le bas, événements vers le haut. Un parent ne pilote jamais un enfant en appelant ses méthodes : il lui
+        passe des props, et l'enfant répond par des événements.
+      </p>
+
+      <h2 id="utiliser-un-sous-composant">Utiliser un sous-composant</h2>
+      <p>
+        Dans un template, un enfant se place en balise, au nom de sa classe : une balise qui commence par une majuscule est
+        un composant, importé comme n'importe quelle classe (<code>import { CounterControls } from './counter-controls'</code>).
+      </p>
+      <script type="text/x-code" data-title="src/@components/counter/index.super (extrait)" data-source="examples/demo/src/@components/counter/index.super">
+        <CounterControls
+          count={count}
+          canDecrement={this.canDecrement.value && !busy}
+          canIncrement={!busy}
+          on:increment={() => this.run('increment')}
+          on:decrement={() => this.run('decrement')}
+        />
+      </script>
+      <ul>
+        <li><strong>Les attributs sont les props.</strong> Le compilateur les vérifie contre les <code>@prop</code> de l'enfant : une prop requise manquante, une prop en trop ou une valeur mal typée est une erreur. Une valeur fixe s'écrit entre guillemets (<code>question="Vider le panier ?"</code>, une chaîne), une valeur calculée entre accolades.</li>
+        <li><strong><code>on:nom</code></strong> branche un événement de l'enfant sur une fonction du parent. Le nom et le payload sont vérifiés contre les <code>@emit</code> de l'enfant.</li>
+        <li>La balise est l'équivalent de <code>CounterControls.create({ count, … }, { on: { increment, … } })</code>, l'appel qui sert hors template (voir <a href="composants.html#creer-un-element-hors-template">Créer un élément hors template</a>).</li>
+        <li>L'élément enfant est <strong>créé une fois</strong> par emplacement, puis ses props sont mises à jour à chaque rendu du parent. Il garde son état local. S'il reçoit des props égales (comparées clé par clé), il ne se re-rend pas.</li>
+        <li>Un composant peut aussi recevoir des éléments entre ses balises, s'il les déclare (voir <a href="#composer">Composer : des enfants</a>).</li>
+      </ul>
+
+      <h2 id="declarer-les-props">Déclarer les props</h2>
+      <p>
+        Une prop se déclare dans le corps de la classe par <code>@prop</code>, avec son type, et se lit par
+        <code>this.nom</code>. Le tag, les props et les événements s'écrivent au même endroit, sans générique (le détail
+        de chaque déclaration est dans <a href="composants.html#declarations">Composants : les déclarations</a>) :
+      </p>
+      <script type="text/x-code" data-title="src/@components/counter-list/counter-list-item.super (extrait)" data-source="examples/demo/src/@components/counter-list/counter-list-item.super">
+        export class CounterListItem extends SuperElement {
+          @tag = 'counter-list-item';
+          @prop counterId: string;
+          @prop label: string;
+
+          render() {
+            <a href={this.router.href('counter', { params: { id: this.counterId } })}>{this.label}</a>
+            // …
+          }
+        }
+      </script>
+      <p id="trois-formes-de-prop">Une prop prend l'une de ces trois formes :</p>
+      <script type="text/x-code">
+        @prop question: string;                          // obligatoire
+        @prop note?: string;                             // facultative : string | undefined
+        @prop tone: 'neutral' | 'danger' = 'neutral';    // facultative, avec une valeur par défaut
+      </script>
+      <ul>
+        <li>Une prop <strong>obligatoire</strong> manquante dans la balise du parent est une erreur de compilation.</li>
+        <li>Une prop <strong>facultative</strong> (<code>?</code>) vaut <code>undefined</code> quand le parent ne la passe pas. <code>?</code> et une valeur par défaut ne vont pas ensemble : c'est une erreur.</li>
+        <li>La <strong>valeur par défaut</strong> rend la prop facultative ; elle est calculée une fois par instance (un <code>[]</code> par défaut n'est pas partagé entre deux éléments).</li>
+        <li>Un composant dont toutes les props sont facultatives se place sans attribut (<code>&lt;RouterOutlet /&gt;</code>).</li>
+      </ul>
+      <ul>
+        <li><code>this.counterId</code> est en lecture seule, et toujours à jour : un changement de prop re-rend l'enfant. <code>this.props</code> existe toujours (toutes les props, en lecture seule), mais on écrit <code>this.nom</code>.</li>
+        <li>Les props sont <strong>lisibles dès la construction</strong> (pour initialiser un <code>@state</code>, par exemple). Une copie faite à ce moment-là ne suit pas les changements suivants : lis <code>this.nom</code> dans <code>render</code> ou dans la fonction d'un <code>@selector</code> pour une valeur toujours à jour.</li>
+      </ul>
+
+      <h3 id="noms-de-props-refuses">Les noms déjà pris par les éléments HTML</h3>
+      <p>
+        Un composant est un élément HTML : <code>this.id</code>, <code>this.title</code>, <code>this.hidden</code> ou
+        <code>this.slot</code> existent déjà. Une prop ne peut donc pas porter l'un de ces noms, et le compilateur le dit :
+      </p>
+      <script type="text/x-code">
+        @prop title: string;
+        // ✗ « title » est déjà une propriété des éléments HTML : choisis un autre nom
+      </script>
+      <p>
+        Dans l'app d'exemples, <code>title</code> est devenu <code>heading</code> (<code>Card</code>, <code>KitPage</code>)
+        et <code>id</code> est devenu <code>counterId</code> (<code>CounterListItem</code>). Un paramètre de route
+        <code>id</code> se lit de même dans un champ nommé autrement :
+        <code>counterId = this.router.current.params.id;</code>. Le nom <code>page</code> est lui aussi réservé
+        (c'est <code>this.page</code>). Le contenu écrit entre les balises remplit pour la même raison une prop
+        <code>content</code> (<code>children</code> est natif), voir <a href="#composer">Composer : des enfants</a>.
+      </p>
+
+      <h2 id="emit-et-on">emit chez l'enfant, on chez le parent</h2>
+      <p>
+        Les deux côtés emploient chacun leur vocabulaire. <code>on:</code> est le préfixe qui sert, côté parent, à écouter ;
+        l'enfant ne le voit jamais.
+      </p>
+      <table>
+        <thead><tr><th></th><th>Côté enfant (<code>CounterControls</code>)</th><th>Côté parent (<code>CounterScreen</code>)</th></tr></thead>
+        <tbody>
+          <tr><td>Déclarer</td><td><code>@emit increment: void;</code> et <code>@emit decrement: void;</code>, dans le corps de la classe</td><td>rien</td></tr>
+          <tr><td>Agir</td><td><code>this.emit('increment')</code> : « j'annonce qu'on a cliqué »</td><td><code>on:increment={…}</code> : « quand tu annonces ça, je fais ceci »</td></tr>
+        </tbody>
+      </table>
+      <p>
+        L'enfant parle, le parent écoute. L'enfant ne sait pas qui l'écoute, ni même si quelqu'un l'écoute. C'est le même
+        principe qu'un <code>&lt;button&gt;</code> HTML : il émet <code>click</code>, et c'est la page qui écrit
+        <code>on:click={…}</code>, avec le même préfixe. Ailleurs, c'est <code>$emit</code> / <code>@increment</code> en Vue, <code>dispatch</code> /
+        <code>on:increment</code> en Svelte.
+      </p>
+
+      <h3 id="declarer-les-evenements">Déclarer les événements d'un composant</h3>
+      <script type="text/x-code">
+        export class ItemPicker extends SuperElement {
+          @tag = 'item-picker';
+          @emit picked: { id: string };
+          @emit closed: void;
+
+          render() {
+            <button on:click={() => this.emit('picked', { id: 'a' })}>Choisir A</button>
+            <button on:click={() => this.emit('closed')}>Fermer</button>
+          }
+        }
+      </script>
+      <p>
+        <code>@emit nom: T;</code> déclare un événement et le type de ce qu'il transporte (<code>void</code> s'il ne
+        transporte rien). Il n'a pas de valeur : <code>@emit closed: void = …</code> est une erreur. Un événement
+        <code>void</code> s'émet sans argument. Le compilateur refuse un nom inconnu, un payload mal typé, ou un payload
+        oublié.
+      </p>
+
+      <h3 id="le-trajet-complet">Le trajet complet d'un clic sur « + »</h3>
+      <ol>
+        <li><code>CounterControls</code> émet <code>increment</code>.</li>
+        <li><code>CounterScreen</code> reçoit l'événement et appelle <code>this.run('increment')</code>.</li>
+        <li><code>run</code> envoie <code>this.counter.send('increment', { id: 'cafes' })</code> au store.</li>
+        <li>Le store sauvegarde et met à jour son état ; Super publie <code>increment:done</code>.</li>
+        <li>L'écran se re-rend ; la nouvelle valeur redescend dans <code>CounterControls</code> par la prop <code>count</code>.</li>
+      </ol>
+      <p>
+        <code>CounterControls</code> ne connaît ni le store, ni l'<code>id</code>, ni la commande : il reste réutilisable.
+        C'est l'écran qui décide de ce que signifie « incrémenter ».
+      </p>
+
+      <h2 id="un-dialogue">Un dialogue : le parent le rend, il répond par un événement</h2>
+      <p class="example-link">Dans l'<a href="exemples.html#boutique">exemple Boutique</a> : <a href="../examples/demo/src/@components/shared/confirm-dialog.super"><code>shared/confirm-dialog.super</code></a>, <a href="../examples/demo/src/@components/shop/index.super"><code>shop/index.super</code></a>. « Vider le panier ? » est rendu par le parent et répond par un événement.</p>
+      <p>
+        Même un dialogue de confirmation suit cette règle. Le parent l'ouvre en le rendant, avec sa question en prop ; le dialogue
+        émet la réponse. Monté, il est ouvert : pas de prop nullable qui voudrait dire « fermé ». Personne n'attend rien, il n'y a
+        pas d'<code>await</code>.
+      </p>
+      <script type="text/x-code" data-title="src/@components/shared/confirm-dialog.super (extrait)" data-source="examples/demo/src/@components/shared/confirm-dialog.super">
+        export class ConfirmDialog extends SuperElement {
+          @tag = 'confirm-dialog';
+          @prop question: string;
+          @emit answered: { confirmed: boolean };
+
+          render() {
+            <div class="backdrop">
+              <div role="dialog" aria-modal="true" aria-label="Confirmation">
+                <p>{this.question}</p>
+                <div class="actions">
+                  <button type="button" on:click={() => this.emit('answered', { confirmed: false })}>Annuler</button>
+                  <button type="button" class="danger" on:click={() => this.emit('answered', { confirmed: true })}>Confirmer</button>
+                </div>
+              </div>
+            </div>
+          }
+        }
+      </script>
+      <script type="text/x-code" data-title="src/@components/shop/index.super (extrait)" data-source="examples/demo/src/@components/shop/index.super">
+        @contract cart;
+        // Le dialogue ouvert (aucun : null), et un message ponctuel.
+        @state local = { dialog: null as 'confirm-clear' | null, message: null as string | null };
+
+        // Le dialogue répond par un événement : le parent décide de la suite.
+        onClearAnswered = ({ confirmed }: { confirmed: boolean }) => {
+          this.local.set({ dialog: null });                                  // ferme le dialogue
+          if (confirmed) this.cart.send('clear');
+        };
+
+        render() {
+          <main class="screen">
+            {/* … */}
+            <button type="button" on:click={() => this.local.set({ dialog: 'confirm-clear' })}>Vider le panier</button>
+            {/* … */}
+            if (this.local.get().dialog === 'confirm-clear') {
+              <ConfirmDialog question="Vider le panier ?" on:answered={this.onClearAnswered} />
+            }
+          </main>
+        }
+      </script>
+      <ol>
+        <li>Clic sur « Vider le panier » : le parent met <code>dialog: 'confirm-clear'</code> dans son état local.</li>
+        <li>Le parent se re-rend ; la condition est vraie, le dialogue est monté avec sa question et s'affiche.</li>
+        <li>Clic sur « Confirmer » : le dialogue émet <code>answered { confirmed: true }</code>.</li>
+        <li><code>onClearAnswered</code> remet <code>dialog</code> à <code>null</code> (le dialogue est démonté) et envoie la commande.</li>
+      </ol>
+      <p>
+        Ouvrir et fermer un dialogue, c'est changer une valeur dans l'état du parent. Avec plusieurs dialogues, garde un seul champ
+        (<code>dialog: 'confirm-clear' | 'confirm-delete' | null</code>) et une condition par dialogue : chacun a sa question et son
+        handler, et deux modales ne peuvent pas être ouvertes en même temps. Le même motif vaut pour un drawer ou un menu.
+      </p>
+
+      <h3 id="handlers-en-champ-fleche">Un handler passé à un enfant : un champ fléché</h3>
+      <p>
+        <code>onClearAnswered</code> est un champ qui contient une fonction fléchée, pas une méthode. Une fonction fléchée
+        garde le <code>this</code> du composant ; une méthode passée telle quelle (<code>on:answered={this.onAnswered}</code>
+        avec <code>onAnswered() { … }</code>) le perdrait, et <code>this.local</code> serait <code>undefined</code> au moment
+        de l'appel. Même règle pour une action passée à <code>on:click</code> sans fonction autour.
+      </p>
+      <script type="text/x-code">
+        onAnswered = ({ confirmed }: { confirmed: boolean }) => { … };   // ✓ this lié
+        onAnswered({ confirmed }: { confirmed: boolean }) { … }          // ✗ this perdu une fois passé à on:answered
+      </script>
+
+      <h2 id="les-listes">Les listes</h2>
+      <p>
+        Pour une liste d'enfants, utilise une boucle <code>for</code> avec une clé, écrite après <code>key</code> : un
+        élément déplacé garde son DOM et son état local. Sans clé, le rendu suit la position (voir
+        <a href="templates.html#listes">Listes</a>).
+      </p>
+      <script type="text/x-code" data-title="src/@components/counter-list/index.super (extrait)" data-source="examples/demo/src/@components/counter-list/index.super">
+        <ul class="counter-list">
+          for (const c of shown; key c.id) {
+            <li><CounterListItem counterId={c.id} label={c.label} /></li>
+          }
+        </ul>
+      </script>
+
+      <h2 id="composer">Composer : des enfants</h2>
+      <p>
+        Une carte, une modale, des onglets : des composants de mise en page, dont le contenu vient du parent. Le composant
+        déclare ce qu'il accepte par des props de type <code>Children</code>, et le place où il veut :
+      </p>
+      <script type="text/x-code" data-title="src/@components/composition/card.super (extrait)" data-source="examples/demo/src/@components/composition/card.super">
+        import { type Children, SuperElement } from '@super-ts/dom';
+
+        /** Une carte : un titre, un contenu, et des actions facultatives. */
+        export class Card extends SuperElement {
+          @tag = 'composition-card';
+          @prop heading: string;
+          @prop content: Children;
+          @prop actions?: Children;
+
+          render() {
+            <section class="card" aria-label={this.heading}>
+              <h2>{this.heading}</h2>
+              <div class="content">{this.content}</div>
+              if (this.actions) {
+                <div class="actions">{this.actions}</div>
+              }
+            </section>
+          }
+        }
+      </script>
+      <ul>
+        <li id="content"><strong><code>content</code></strong> reçoit le contenu écrit entre les balises. C'est une prop comme les autres : <code>@prop content: Children;</code>, lue par <code>this.content</code>. Elle ne s'appelle pas <code>children</code> parce que <code>this.children</code> est la propriété native des éléments HTML (la liste de leurs éléments enfants).</li>
+        <li id="emplacements-nommes"><strong>Un emplacement nommé</strong> est une autre prop de type <code>Children</code>, ici <code>actions</code>, lue par <code>this.actions</code>. Facultatif, il s'écrit avec <code>?</code> (<code>@prop footer?: Children;</code>) ; un composant en déclare autant qu'il veut.</li>
+      </ul>
+      <p>Le parent remplit <code>content</code> par les éléments écrits entre les balises, et <code>actions</code> par un emplacement nommé, ou par une méthode :</p>
+      <script type="text/x-code">
+        // Un emplacement, écrit là où la carte est utilisée.
+        <Card heading={this.label.value}>
+          <p>Valeur : {this.count.value}</p>
+          <:actions>
+            <button on:click={() => this.run('reset')}>Remettre à zéro</button>
+          </:actions>
+        </Card>
+
+        // Ou une méthode, pratique dans une boucle (la variable passe en paramètre).
+        #actions(c: Counter) {
+          <button on:click={() => this.rename(c.id)}>Renommer</button>
+        }
+        // …
+        for (const c of this.counters.value; key c.id) {
+          <Card heading={c.label} actions={this.#actions(c)}>
+            <p>{c.count}</p>
+          </Card>
+        }
+      </script>
+      <ul>
+        <li><strong>Les enfants appartiennent au parent</strong> : le clic sur « Remettre à zéro » appelle une méthode du parent, et <code>this.count</code> est lu par le parent. Les enfants suivent son rendu ; la carte les garde quand elle se re-rend seule.</li>
+        <li><strong>Le compilateur vérifie le contrat</strong> : des enfants pour un composant qui ne déclare pas <code>content</code>, des enfants obligatoires qui manquent, un emplacement qui n'est pas une prop du composant sont des erreurs.</li>
+        <li>La syntaxe complète est dans <a href="templates.html#content">Templates : des enfants</a> et <a href="templates.html#emplacements">des emplacements nommés</a>. L'exemple <a href="exemples.html#composition">Composition</a> de l'app d'exemples montre les deux façons côte à côte.</li>
+      </ul>
+
+      <h2 id="ce-qui-n-existe-pas">Ce qui n'existe pas, volontairement</h2>
+      <ul>
+        <li><strong>Pas de référence vers un enfant</strong> pour appeler ses méthodes : un enfant n'expose pas d'API. Dans un template, <code>&lt;CounterControls … /&gt;</code> monte l'enfant, il ne donne pas une instance à garder.</li>
+        <li><strong>Pas de callback en prop pour remonter une information</strong> : rien ne l'empêche techniquement, mais on utilise un événement, déclaré par <code>@emit</code> et typé. L'enfant reste découplé, et le test peut écouter l'événement avec <code>mount(…, { on })</code>.</li>
+        <li><strong>Pas d'accès d'un enfant aux stores de son parent</strong> par les props : un enfant qui a besoin d'un store déclare lui-même <code>@contract nom;</code>.</li>
+        <li><strong>Pas de tag écrit à la main</strong> : <code>&lt;counter-controls&gt;</code> en HTML brut n'est pas supporté. Un enfant passe toujours par sa classe, <code>&lt;CounterControls … /&gt;</code> (ou <code>create</code> hors template).</li>
+      </ul>
+    </article>
+    <script src="assets/search-index.js"></script>
+    <script src="assets/site.js"></script>
+  </body>
+</html>

@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": false,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "types": ["vitest/globals", "vite/client"],
+    // Les déclarations des fichiers .super (voir packages/lang/src/virtual-files.ts).
+    "rootDirs": [".", "./.super/types", "./.super/virtual"],
+    "paths": {
+      "@super-ts/core/internal": ["./packages/core/src/internal.ts"],
+      "@super-ts/core": ["./packages/core/src/index.ts"],
+      "@super-ts/dom/internal": ["./packages/dom/src/internal.ts"],
+      "@super-ts/dom": ["./packages/dom/src/index.ts"],
+      "@super-ts/testing": ["./packages/testing/src/index.ts"],
+      "@super-ts/ui": ["./packages/ui/src/index.ts"],
+      "@super-ts/vite": ["./packages/vite/src/index.ts"],
+      "@super-ts/lang/check": ["./packages/lang/src/check.ts"],
+      "@super-ts/lang": ["./packages/lang/src/index.ts"]
+    }
+  },
+  "include": ["packages", "vite.config.ts", "vitest.config.ts", "vitest.setup.ts"],
+  // Le TS virtuel des fichiers .super, écrit par `super-tsc` : vérifié par son propre tsconfig.
+  // `__fixtures__/project` est un projet à part (erreurs volontaires), vérifié par check.test.ts.
+  "exclude": ["**/.super", "**/node_modules", "packages/lang/src/__fixtures__/project"]
+}

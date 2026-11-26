@@ -1,0 +1,23 @@
+import { type Children, SuperElement } from '@super-ts/dom';
+import './tabs.css';
+
+/** Des onglets : une liste d'emplacements (`panels`), un par libellé. L'onglet ouvert est son état local. */
+export class Tabs extends SuperElement {
+  @tag = 'composition-tabs';
+  @prop labels: string[];
+  @prop panels: Children[];
+
+  @state local = { active: 0 };
+
+  render() {
+    const { active } = this.local.get();
+    <div role="tablist">
+      for (const [i, label] of this.labels.entries(); key i) {
+        <button type="button" role="tab" aria-selected={i === active ? 'true' : 'false'} on:click={() => this.local.set({ active: i })}>
+          {label}
+        </button>
+      }
+    </div>
+    <div role="tabpanel" aria-label={this.labels[active]}>{this.panels[active]}</div>
+  }
+}

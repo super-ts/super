@@ -1,0 +1,20 @@
+import { SuperElement } from '@super-ts/dom';
+
+/** Ne rend rien du tout. */
+export class Empty extends SuperElement {
+  @tag = 'lang-empty';
+
+  render() {}
+}
+
+/** Ne rend rien tant que `shown` est faux, puis un paragraphe. */
+export class Toggled extends SuperElement {
+  @tag = 'lang-toggled';
+  @state local = { shown: false };
+
+  render() {
+    if (this.local.get().shown) {
+      <p>Visible</p>
+    }
+  }
+}

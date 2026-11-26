@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Commandes et événements · Super</title>
+    <link rel="stylesheet" href="assets/site.css" />
+  </head>
+  <body>
+    <article>
+      <h1>Commandes et événements</h1>
+      <p class="lead">
+        La vue envoie et laisse filer. Le store fait le travail, attend ce qu'il doit attendre, puis réussit ou échoue.
+        Super suit chaque commande de bout en bout : il sait quand elle est en cours, et publie son issue.
+      </p>
+
+      <h2 id="le-trajet-d-un-clic">Le trajet d'un clic</h2>
+      <p>Ce qui se passe quand on clique sur « + » dans l'écran d'un compteur :</p>
+      <ol>
+        <li><code>CounterControls</code> émet <code>increment</code> vers son parent (événement de composant).</li>
+        <li><code>CounterScreen</code> envoie la commande : <code>this.counter.send('increment', { id: 'cafes' })</code>. Il n'attend rien.</li>
+        <li>Super note que <code>increment</code> est <strong>en cours</strong> : <code>this.counter.selectors.pending()</code> devient vrai, l'écran se re-rend avec les boutons désactivés.</li>
+        <li>La méthode <code>increment</code> du store attend <code>this.#repository.save(…)</code>, met à jour <code>counts</code> et retourne <code>{ count: 3 }</code>.</li>
+        <li>Super note que la commande est finie (les boutons se réactivent) et publie <code>increment:done</code> avec <code>{ input: { id: 'cafes' }, result: { count: 3 } }</code>.</li>
+        <li>L'écran affiche la nouvelle valeur (elle a changé dans l'état) et « Incrémenté : 3 » (grâce à l'événement, reçu par sa méthode <code>@on('counter', 'increment:done')</code>).</li>
+      </ol>
+
+      <h2 id="envoyer-une-commande">Envoyer une commande</h2>
+      <script type="text/x-code" data-title="src/@components/counter/index.super (extrait)" data-source="examples/demo/src/@components/counter/index.super">
+        export class CounterScreen extends SuperElement {
+          @tag = 'counter-screen';
+
+          counterId = this.router.current.params.id;
+          @contract counter;
+
+          run = (command: CounterChange) => this.counter.send(command, { id: this.counterId() }); // et on laisse filer
+        }
+      </script>
+      <p>
+        Dans un composant, <code>send</code> renvoie <code>void</code>. Il n'y a rien à attendre : écrire
+        <code>await this.counter.send(…)</code> n'a pas de sens, et aucune donnée ne revient à l'appelant.
+      </p>
+
+      <h2 id="pourquoi-pas-d-await-dans-un-composant">Pourquoi pas d'await dans un composant</h2>
+      <ul>
+        <li><strong>Un seul endroit pour l'asynchrone.</strong> Les attentes et les erreurs vivent dans le store ; le suivi « en cours / réussi / échoué » est fait par Super. La vue reste une fonction de ce qu'elle lit.</li>
+        <li><strong>Pas de vue qui attend une réponse qui n'arrivera jamais.</strong> Si l'écran est démonté pendant la sauvegarde, rien ne casse : le store finit son travail et Super publie l'issue à qui l'écoute.</li>
+        <li><strong>Tout le monde voit l'issue.</strong> Une réponse ne profite qu'à l'appelant ; un événement profite à tous les composants concernés.</li>
+      </ul>
+
+      <h2 id="le-cycle-de-vie">Le cycle de vie d'une commande</h2>
+      <p>Chaque commande passe par trois moments, que Super suit sans que le store ait rien à écrire :</p>
+      <table>
+        <thead><tr><th>Moment</th><th>Ce que Super expose</th><th>Côté composant</th></tr></thead>
+        <tbody>
+          <tr><td>En cours</td><td>La méthode du store a commencé et n'a pas fini.</td><td><code>this.counter.selectors.pending('increment')</code> vaut <code>true</code> : re-rendu automatique.</td></tr>
+          <tr><td>Réussie</td><td>La méthode a fini sans erreur. Événement <code>increment:done</code>, avec le body (<code>input</code>) et le résultat (<code>result</code>).</td><td><code>@on('counter', 'increment:done') onIncremented({ input, result }) { … }</code></td></tr>
+          <tr><td>Échouée</td><td>La méthode a appelé <code>this.fail(raison)</code>, ou levé une exception. Événement <code>increment:failed</code>, avec le body, la raison et l'erreur.</td><td><code>@on('counter', 'increment:failed') onIncrementFailed({ input, reason }) { … }</code></td></tr>
+        </tbody>
+      </table>
+      <p>
+        <code>pending</code> redevient faux avant que <code>:done</code> ou <code>:failed</code> soit émis : un écouteur voit
+        déjà la commande comme terminée.
+      </p>
+
+      <h2 id="declarer-l-issue">Déclarer l'issue dans le contrat</h2>
+      <p>Une commande déclare ce que produit son succès et pourquoi elle peut échouer, avec <code>Outcome&lt;Résultat, Raisons&gt;</code> :</p>
+      <script type="text/x-code" data-title="src/@core/counter/contract.ts" data-source="examples/demo/src/@core/counter/contract.ts">
+        commands: {
+          load(): void;
+          increment(input: { id: string }): Outcome<{ count: number }, 'unknown' | 'storage'>;
+          decrement(input: { id: string }): Outcome<{ count: number }, 'unknown' | 'below-min' | 'storage'>;
+          reset(input: { id: string }): Outcome<{ count: number }, 'unknown' | 'storage'>;
+        };
+      </script>
+      <ul>
+        <li><strong>Le résultat</strong> (<code>{ count: number }</code>) est ce que Super publie dans <code>increment:done</code>. Il ne revient jamais à celui qui a envoyé la commande.</li>
+        <li><strong>Les raisons</strong> sont une liste fermée de codes, propres à ce contrat. Elles décrivent les refus prévus : <code>'unknown'</code> pour un compteur hors catalogue, <code>'below-min'</code> pour un compteur déjà à 0, <code>'storage'</code> quand l'enregistrement échoue.</li>
+        <li><strong>Une commande sans <code>Outcome</code></strong> (<code>load(): void</code>) a quand même son cycle de vie : <code>load:done</code> sans résultat, et <code>load:failed</code> pour une exception inattendue.</li>
+      </ul>
+
+      <h3 id="dans-le-store">Dans le store : retourner ou échouer</h3>
+      <script type="text/x-code" data-title="src/@core/counter/store.ts" data-source="examples/demo/src/@core/counter/store.ts">
+        increment({ id }: { id: string }) {
+          return this.#write(id, this.selectors.count(id) + 1);
+        }
+
+        decrement({ id }: { id: string }) {
+          if (this.selectors.find(id) && this.selectors.count(id) <= MIN_COUNT) this.fail('below-min');
+          return this.#write(id, this.selectors.count(id) - 1);
+        }
+
+        /** Le code commun aux trois écritures : une méthode privée, pas une commande. */
+        async #write(id: string, next: number) {
+          if (!this.selectors.find(id)) this.fail('unknown');                   // refus prévu, typé
+          await this.#repository.save(id, next).catch(() => this.fail('storage'));
+          this.set((s) => ({ counts: { ...s.counts, [id]: next } }));
+          return { count: next };                                                 // publié dans increment:done
+        }
+      </script>
+      <ul>
+        <li>Chaque commande du contrat est une méthode du store, qui reçoit le body. <code>implements Commands&lt;CounterStore&gt;</code> vérifie qu'aucune ne manque et que leurs paramètres sont exactement ceux du contrat.</li>
+        <li><code>this.fail(raison)</code> fait échouer la commande et ne revient pas. Seules les raisons déclarées par le contrat sont acceptées : <code>this.fail('nope')</code> ne compile pas.</li>
+        <li>La méthode retourne le résultat déclaré. L'oublier, ou retourner autre chose, ne compile pas.</li>
+        <li>Le code partagé s'écrit en méthode <code>#privée</code> : une méthode publique hors contrat est refusée par le compilateur.</li>
+        <li>Plus de drapeau « en cours » à remettre à zéro dans un <code>catch</code>, ni d'événement d'issue à émettre : Super s'en charge.</li>
+      </ul>
+
+      <h3 id="return-fail">return this.fail(…) ou this.fail(…)</h3>
+      <p>
+        <code>this.fail</code> est déclaré comme ne revenant jamais (<code>never</code>), et le compilateur en tient compte :
+        après un <code>this.fail(…)</code> conditionnel, le type se resserre. Le store du profil l'écrit avec
+        <code>return</code>, qui rend la sortie visible à la lecture :
+      </p>
+      <script type="text/x-code" data-title="src/@core/profile/store.ts" data-source="examples/demo/src/@core/profile/store.ts">
+        async save(input: ProfileInput) {
+          const result = await this.#client.save(input).catch(() => this.fail('network'));
+          if (!result.ok) return this.fail(result.reason); // ensuite, result.ok est vrai : result.id existe
+          return { id: result.id };
+        }
+      </script>
+      <ul>
+        <li>Les deux formes font exactement la même chose, à la compilation comme à l'exécution : <code>this.fail</code> interrompt la méthode dans tous les cas.</li>
+        <li><code>return this.fail(…)</code> se lit mieux quand la suite dépend de la condition, comme ici ; un simple <code>this.fail(…)</code> suffit pour une garde, comme <code>if (!this.selectors.find(id)) this.fail('unknown')</code>.</li>
+        <li>Un appel à <code>this.fail</code> dans une fonction fléchée (le <code>.catch(() =&gt; this.fail('network'))</code> ci-dessus) fait aussi échouer la commande : l'exception remonte jusqu'à elle.</li>
+      </ul>
+
+      <h2 id="raisons-d-echec">Les raisons d'échec : des codes, pas des messages</h2>
+      <p>
+        Le store dit <em>ce qui s'est passé</em> ; le composant choisit <em>quoi afficher</em>. Le texte, et donc la langue,
+        reste dans la vue, et le compilateur signale une raison oubliée :
+      </p>
+      <script type="text/x-code" data-title="src/@components/counter/index.super" data-source="examples/demo/src/@components/counter/index.super">
+        const FAILED: Record<CounterFailure | 'error', string> = {
+          unknown: 'Ce compteur n’existe pas.',
+          'below-min': 'Le compteur est déjà à zéro.',
+          storage: 'Impossible d’enregistrer : le stockage est indisponible.',
+          error: 'Une erreur inattendue est survenue.',
+        };
+      </script>
+      <p>
+        Avec un code, le composant peut aussi réagir différemment selon le cas : proposer de libérer de l'espace pour
+        <code>'storage'</code>, ou ne rien afficher pour <code>'below-min'</code>.
+      </p>
+
+      <h3 id="echec-inattendu">L'échec inattendu : la raison 'error'</h3>
+      <p>
+        Une exception que le store n'a pas prévue (un bug, un <code>undefined.x</code>) fait aussi échouer la commande, avec
+        la raison <code>'error'</code> et l'exception dans <code>error</code>. L'interface ne reste donc jamais bloquée en
+        « en cours ». Elle part aussi dans la console, alors qu'un échec déclaré, prévu, n'y apparaît pas.
+      </p>
+
+      <h2 id="en-cours">Savoir qu'une commande est en cours : pending</h2>
+      <script type="text/x-code">
+        @contract counter;
+        @selector isLoading = () => this.counter.selectors.pending('load');                         // une commande
+        @selector isSaving = () => this.counter.selectors.pending('increment', { id: this.counterId() }); // pour ce body
+        @selector isBusy = () => this.counter.selectors.pending();                                   // n'importe laquelle
+      </script>
+      <ul>
+        <li><code>pending</code> est fourni par Super avec les sélecteurs du contrat : lu dans un <code>@selector</code> (ou dans <code>render</code>), il re-rend le composant quand une commande commence ou finit.</li>
+        <li>Le body se filtre champ par champ : <code>{ id: 'cafes' }</code> correspond à toute commande dont le body a <code>id === 'cafes'</code>.</li>
+        <li>Si deux commandes identiques sont en cours, <code>pending</code> reste vrai jusqu'à la fin de la dernière.</li>
+        <li>Dans le store, <code>this.selectors.pending(…)</code> donne la même information ; hors composant, <code>store.pending(…)</code>.</li>
+        <li><code>pending</code> est réservé : un contrat ne peut pas déclarer de sélecteur de ce nom.</li>
+      </ul>
+
+      <h2 id="ecouter-l-issue">Écouter l'issue</h2>
+      <script type="text/x-code" data-title="src/@components/counter/index.super" data-source="examples/demo/src/@components/counter/index.super">
+        counterId = this.router.current.params.id;
+        @contract counter;
+        @state local = { message: null as string | null };
+
+        // L'écran envoie une commande et laisse filer ; Super publie l'issue de chacune.
+        @on('counter', 'increment:done')
+        onIncremented({ input, result }) {
+          this.#done('increment', input.id, result.count);
+        }
+
+        @on('counter', 'increment:failed')
+        onIncrementFailed({ input, reason }) {
+          this.#failed(input.id, reason);
+        }
+        // … de même pour decrement et reset
+
+        // Seules les issues du compteur affiché deviennent un message.
+        #done(change: CounterChange, id: string, count: number) {
+          if (id === this.counterId()) this.local.set({ message: `${DONE[change]} : ${count}` });
+        }
+
+        #failed(id: string, reason: CounterFailure | 'error') {
+          if (id === this.counterId()) this.local.set({ message: FAILED[reason] });
+        }
+      </script>
+      <ul>
+        <li><strong>Une méthode par événement</strong> : <code>@on('counter', 'increment:done')</code> appelle la méthode à chaque issue, avec un paramètre typé par l'événement (<code>{ input, result }</code>). Le nom de l'événement s'écrit tel quel, sans gabarit : pour plusieurs commandes, une méthode chacune, qui délèguent à une méthode privée. <code>@on</code> n'exige pas de <code>@contract</code> (voir <a href="composants.html#declarations-de-preparation">les déclarations</a>).</li>
+        <li><strong>Le body est joint à l'issue</strong> (<code>input</code>) : l'écran de « Cafés » reconnaît ses propres commandes, sans que le store ait à recopier l'<code>id</code>.</li>
+        <li><strong>La route se lit dans la méthode</strong> (<code>this.counterId()</code>), au moment où l'issue arrive : elle voit la route à jour.</li>
+        <li><strong>Transforme l'issue en état local</strong> pour l'afficher : un événement ne dure pas, l'état local si (voir <a href="etat-local.html">État local</a>).</li>
+        <li><strong>Rien à nettoyer</strong> : une méthode <code>@on</code> est appelée tant que le composant est monté, et plus après. Dans un composant écrit en <code>.ts</code>, l'équivalent est <code>this.counter.on(…)</code> dans un champ ou le constructeur ; <code>on</code> est interdit pendant <code>render</code>.</li>
+      </ul>
+
+      <h2 id="recevoir-le-resultat">Une issue durable : l'état</h2>
+      <p>Un événement est ponctuel : un composant monté plus tard ne le voit pas. Ce qui doit durer va dans l'état.</p>
+      <table>
+        <thead><tr><th></th><th>Par l'état</th><th>Par l'issue d'une commande</th></tr></thead>
+        <tbody>
+          <tr><td>Nature</td><td>Une donnée qui dure : une valeur, une erreur de chargement.</td><td>Un fait ponctuel : « c'est enregistré », « c'est refusé ».</td></tr>
+          <tr><td>Exemple</td><td><code>counts</code>, <code>loadErrorMessage</code></td><td><code>increment:done</code>, <code>increment:failed</code></td></tr>
+          <tr><td>Côté composant</td><td>Lu avec <code>@selector x = () =&gt; this.counter.selectors.…;</code>.</td><td>Écouté avec <code>@on('counter', '…')</code> sur une méthode.</td></tr>
+          <tr><td>Un composant monté plus tard</td><td>Voit la valeur.</td><td>Ne voit rien : l'événement est passé.</td></tr>
+        </tbody>
+      </table>
+      <p>
+        Dans l'exemple des compteurs, une erreur de chargement doit rester affichée sur la liste, même si on y revient plus
+        tard : le <a href="../examples/demo/src/@core/counter/store.ts">store</a> la range dans <code>loadErrorMessage</code> plutôt que de faire échouer <code>load</code>. Un refus d'écriture, lui,
+        n'a de sens que sur le moment : c'est l'issue de la commande.
+      </p>
+
+      <h2 id="evenements-ecrits-a-la-main">Les événements écrits à la main</h2>
+      <p class="example-link">Dans l'<a href="exemples.html#boutique">exemple Boutique</a> : <a href="../examples/demo/src/@core/cart/contract.ts"><code>@core/cart/contract.ts</code></a>, <a href="../examples/demo/src/@core/cart/store.ts"><code>@core/cart/store.ts</code></a>, <a href="../examples/demo/src/@components/shop/index.super"><code>@components/shop/index.super</code></a>. Le panier émet <code>emptied</code> quand il devient vide, que ce soit par <code>clear</code> ou par le dernier <code>remove</code>.</p>
+      <p>
+        Le cycle de vie couvre l'issue des commandes. Pour un fait qui n'est pas l'issue d'une commande (une synchronisation
+        de fond terminée, une donnée arrivée d'un serveur), le contrat déclare ses propres événements, et le store les émet :
+      </p>
+      <script type="text/x-code">
+        // contrat
+        events: { synced: { at: number } };
+
+        // store
+        this.emit('synced', { at: Date.now() });
+      </script>
+
+      <h2 id="qui-peut-emettre">Qui peut émettre, qui peut écouter</h2>
+      <table>
+        <thead><tr><th></th><th>Émettre un événement de store</th><th>L'écouter</th></tr></thead>
+        <tbody>
+          <tr><td>Super</td><td>Le cycle de vie des commandes (<code>:done</code>, <code>:failed</code>).</td><td></td></tr>
+          <tr><td>Le store</td><td>Ses événements déclarés, avec <code>this.emit</code> dans ses méthodes.</td><td>Ceux des stores reçus en dépendance (<code>cart.on(…)</code> dans son constructeur).</td></tr>
+          <tr><td>Un composant</td><td><strong>Non.</strong> La vue que donne <code>@contract</code> n'a pas d'<code>emit</code>.</td><td>Oui, avec <code>@on('counter', '…')</code> sur une méthode.</td></tr>
+          <tr><td>Un test</td><td>Oui, avec <code>fakeStore(…).emit(…)</code>, pour jouer le store.</td><td>Oui, avec <code>record(store, 'increment:done')</code>.</td></tr>
+        </tbody>
+      </table>
+      <div class="callout warn">
+        <strong>Le <code>emit</code> d'un composant n'est pas celui d'un store</strong>
+        Un composant a aussi un <code>this.emit</code>, mais il émet les événements <em>du composant</em> vers son
+        parent (ceux déclarés dans son type <code>emits</code>). Le store et ses abonnés ne le voient jamais. C'est voulu : un
+        composant ne peut pas annoncer une écriture qui n'a jamais eu lieu.
+      </div>
+
+      <h2 id="les-deux-sortes-d-evenements">Les deux sortes d'événements</h2>
+      <table>
+        <thead><tr><th></th><th>Événement de store</th><th>Événement de composant</th></tr></thead>
+        <tbody>
+          <tr><td>Déclaré dans</td><td>le contrat : <code>Outcome</code> d'une commande, ou <code>events: { synced: … }</code></td><td>le composant : <code>@emit increment: void;</code></td></tr>
+          <tr><td>Émis par</td><td>Super (issue d'une commande) ou le store (<code>this.emit</code>)</td><td>le composant : <code>this.emit('increment')</code></td></tr>
+          <tr><td>Écouté par</td><td>tout ce qui a accès au store : <code>@on('counter', 'increment:done')</code> dans un composant, <code>counter.on('increment:done', …)</code> ailleurs</td><td>le parent seulement : <code>&lt;CounterControls … on:increment={…} /&gt;</code></td></tr>
+          <tr><td>Sert à</td><td>annoncer ce qui s'est passé dans le store</td><td>signaler une interaction au parent</td></tr>
+        </tbody>
+      </table>
+      <p>Voir <a href="parents-enfants.html">Parents et enfants</a> pour les événements de composant.</p>
+
+      <h2 id="les-commandes-dans-les-tests">Les commandes dans les tests</h2>
+      <p>
+        Hors composant (tests, autres stores, racine de composition), <code>send</code> renvoie une promesse : elle se résout
+        quand la commande a réussi, et se rejette quand elle échoue, avec une <code>CommandFailure</code> qui porte la raison.
+      </p>
+      <script type="text/x-code">
+        const failed = record(store, 'decrement:failed');
+
+        await expect(store.send('decrement', { id: 'cafes' })).rejects.toMatchObject({ reason: 'below-min' });
+
+        expect(failed.last).toEqual({ input: { id: 'cafes' }, reason: 'below-min', error: null });
+      </script>
+    </article>
+    <script src="assets/search-index.js"></script>
+    <script src="assets/site.js"></script>
+  </body>
+</html>

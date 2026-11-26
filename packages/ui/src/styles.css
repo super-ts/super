@@ -1,0 +1,527 @@
+/*
+ * Styles du kit @super-ts/ui.
+ *
+ * Tout est dans la couche `super-ui`, avec des sélecteurs `:where(…)` de spécificité nulle : la
+ * moindre règle de l'app passe devant, sans `!important`. Le thème se règle par les variables
+ * `--super-*`, sur `:root` (toute l'app), sur une zone (`.shop { … }`) ou sur un composant.
+ */
+@layer super-ui {
+  /*
+   * Chaque couleur a une valeur claire et une valeur sombre (`light-dark`), choisie selon le
+   * `color-scheme` de l'élément : le kit suit le thème de l'app (`color-scheme: light dark` suit
+   * celui du système), et une zone peut forcer le sien (`.zone { color-scheme: dark }`).
+   */
+  :where(:root) {
+    --super-font: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --super-text: light-dark(#1f2328, #e6edf3);
+    --super-muted: light-dark(#59636e, #9ea7b3);
+    --super-surface: light-dark(#ffffff, #161b22);
+    --super-subtle: light-dark(#f4f5f7, #222933);
+    --super-border: light-dark(#d0d5dd, #3d444d);
+    --super-accent: light-dark(#2f6fde, #5a9bff);
+    --super-accent-contrast: light-dark(#ffffff, #0d1117);
+    --super-danger: light-dark(#c0362c, #ff7b72);
+    --super-danger-contrast: light-dark(#ffffff, #0d1117);
+    --super-success: light-dark(#1a7f37, #56d364);
+    --super-warning: light-dark(#9a6700, #e3b341);
+    --super-info: light-dark(#0969da, #79c0ff);
+    --super-radius: 6px;
+    --super-space: 0.5rem;
+    --super-shadow: 0 8px 24px rgb(0 0 0 / 0.16);
+    --super-focus: 0 0 0 3px color-mix(in srgb, var(--super-accent) 40%, transparent);
+    --super-backdrop: rgb(0 0 0 / 0.55);
+  }
+
+  /* Utilitaire : présent pour les lecteurs d'écran, invisible à l'écran. */
+  :where(.super-visually-hidden) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* Boutons ---------------------------------------------------------------------------------- */
+  :where(.super-button) {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--super-space);
+    padding: calc(var(--super-space) * 1) calc(var(--super-space) * 2);
+    border: 1px solid transparent;
+    border-radius: var(--super-radius);
+    font: 500 0.95rem/1.2 var(--super-font);
+    cursor: pointer;
+    background: var(--super-accent);
+    color: var(--super-accent-contrast);
+  }
+  :where(.super-button[data-variant='secondary']) {
+    background: var(--super-surface);
+    color: var(--super-text);
+    border-color: var(--super-border);
+  }
+  :where(.super-button[data-variant='danger']) {
+    background: var(--super-danger);
+    color: var(--super-danger-contrast);
+  }
+  :where(.super-button[data-variant='ghost']) {
+    background: transparent;
+    color: var(--super-accent);
+  }
+  :where(.super-button:disabled) {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  :where(.super-button, .super-input, .super-check, .super-tab, .super-menu-item, .super-link):focus-visible {
+    outline: none;
+    box-shadow: var(--super-focus);
+  }
+
+  /* Champs ----------------------------------------------------------------------------------- */
+  :where(.super-field) {
+    display: grid;
+    gap: calc(var(--super-space) / 2);
+    font-family: var(--super-font);
+    color: var(--super-text);
+  }
+  :where(.super-field-inline) {
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    column-gap: var(--super-space);
+  }
+  :where(.super-field-inline > :not(input)) {
+    grid-column: 2;
+  }
+  :where(.super-field-label) {
+    font-weight: 500;
+  }
+  :where(.super-input) {
+    padding: var(--super-space);
+    border: 1px solid var(--super-border);
+    border-radius: var(--super-radius);
+    background: var(--super-surface);
+    color: var(--super-text);
+    font: inherit;
+  }
+  :where(.super-input[aria-invalid='true']) {
+    border-color: var(--super-danger);
+  }
+  :where(.super-check) {
+    accent-color: var(--super-accent);
+  }
+  :where(.super-radio-group) {
+    border: 0;
+    padding: 0;
+    margin: 0;
+  }
+  :where(.super-radio) {
+    display: flex;
+    align-items: center;
+    gap: var(--super-space);
+  }
+  :where(.super-field-hint, .super-field-checking) {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--super-muted);
+  }
+  :where(.super-field-error) {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--super-danger);
+  }
+
+  /* Liens ------------------------------------------------------------------------------------ */
+  :where(.super-link) {
+    color: var(--super-accent);
+    border-radius: var(--super-radius);
+  }
+  :where(.super-link[aria-current='page']) {
+    font-weight: 600;
+  }
+
+  /* Fenêtres : Dialog, Modal, ConfirmDialog -------------------------------------------------- */
+  :where(.super-window) {
+    width: min(32rem, calc(100vw - 2rem));
+    padding: 0;
+    border: 1px solid var(--super-border);
+    border-radius: calc(var(--super-radius) * 2);
+    background: var(--super-surface);
+    color: var(--super-text);
+    box-shadow: var(--super-shadow);
+    font-family: var(--super-font);
+  }
+  :where(.super-window)::backdrop {
+    background: var(--super-backdrop);
+  }
+  :where(html:has(.super-window[open])) {
+    overflow: hidden;
+  }
+  :where(.super-window-content) {
+    display: grid;
+    gap: calc(var(--super-space) * 2);
+    padding: calc(var(--super-space) * 3);
+  }
+  :where(.super-window-header) {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: var(--super-space);
+  }
+  :where(.super-window-title) {
+    margin: 0;
+    font-size: 1.15rem;
+  }
+  :where(.super-window-close, .super-toast-close) {
+    border: 0;
+    background: transparent;
+    color: var(--super-muted);
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+  :where(.super-window-body) {
+    margin: 0;
+  }
+  :where(.super-window-actions) {
+    display: flex;
+    justify-content: end;
+    gap: var(--super-space);
+  }
+
+  /* Toasts ----------------------------------------------------------------------------------- */
+  :where(.super-toasts) {
+    position: fixed;
+    inset: auto 1rem 1rem auto;
+    display: grid;
+    gap: var(--super-space);
+    z-index: 1000;
+    font-family: var(--super-font);
+  }
+  :where(.super-toast) {
+    display: flex;
+    align-items: start;
+    gap: var(--super-space);
+    padding: var(--super-space) calc(var(--super-space) * 1.5);
+    border-left: 4px solid var(--super-info);
+    border-radius: var(--super-radius);
+    background: var(--super-surface);
+    color: var(--super-text);
+    box-shadow: var(--super-shadow);
+  }
+  :where(.super-toast[data-tone='success']) {
+    border-left-color: var(--super-success);
+  }
+  :where(.super-toast[data-tone='error']) {
+    border-left-color: var(--super-danger);
+  }
+  :where(.super-toast-message) {
+    margin: 0;
+    flex: 1;
+  }
+
+  /* Erreur ----------------------------------------------------------------------------------- */
+  :where(.super-error-panel) {
+    display: grid;
+    gap: var(--super-space);
+    padding: calc(var(--super-space) * 2);
+    border: 1px solid var(--super-danger);
+    border-radius: var(--super-radius);
+    font-family: var(--super-font);
+    color: var(--super-text);
+  }
+  :where(.super-error-panel-title) {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--super-danger);
+  }
+  :where(.super-error-panel-message) {
+    margin: 0;
+  }
+  :where(.super-error-panel-details pre) {
+    overflow: auto;
+    font-size: 0.8rem;
+    color: var(--super-muted);
+  }
+
+  /* Menu, Popover, Tooltip, Combobox : des contenus flottants ----------------------------------- */
+  :where(.super-menu, .super-popover, .super-tooltip, .super-combobox) {
+    position: relative;
+    display: inline-block;
+  }
+  :where(.super-combobox) {
+    display: grid;
+  }
+  :where(.super-menu-list, .super-popover-panel, .super-combobox-list) {
+    position: absolute;
+    inset: calc(100% + 4px) auto auto 0;
+    z-index: 100;
+    min-width: 100%;
+    margin: 0;
+    padding: calc(var(--super-space) / 2);
+    list-style: none;
+    border: 1px solid var(--super-border);
+    border-radius: var(--super-radius);
+    background: var(--super-surface);
+    color: var(--super-text);
+    box-shadow: var(--super-shadow);
+  }
+  :where(.super-popover-panel) {
+    padding: calc(var(--super-space) * 1.5);
+    min-width: 14rem;
+  }
+  :where(.super-menu-item, .super-combobox-option) {
+    padding: var(--super-space);
+    border-radius: calc(var(--super-radius) - 2px);
+    cursor: pointer;
+  }
+  :where(.super-menu-item:hover, .super-menu-item:focus, .super-combobox-option:hover, .super-combobox-option[aria-selected='true']) {
+    background: var(--super-subtle);
+  }
+  :where(.super-menu-item[aria-disabled='true']) {
+    color: var(--super-muted);
+    cursor: not-allowed;
+  }
+  :where(.super-combobox-status) {
+    padding: var(--super-space);
+    color: var(--super-muted);
+  }
+  :where(.super-tooltip-text) {
+    position: absolute;
+    inset: auto auto calc(100% + 6px) 50%;
+    translate: -50% 0;
+    z-index: 100;
+    padding: calc(var(--super-space) / 2) var(--super-space);
+    border-radius: var(--super-radius);
+    background: var(--super-text);
+    color: var(--super-surface);
+    font: 0.8rem/1.3 var(--super-font);
+    white-space: nowrap;
+  }
+
+  /* Onglets ---------------------------------------------------------------------------------- */
+  :where(.super-tabs-list) {
+    display: flex;
+    gap: calc(var(--super-space) / 2);
+    border-bottom: 1px solid var(--super-border);
+  }
+  :where(.super-tab) {
+    padding: var(--super-space) calc(var(--super-space) * 1.5);
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--super-muted);
+    font: 500 0.95rem var(--super-font);
+    cursor: pointer;
+  }
+  :where(.super-tab[aria-selected='true']) {
+    border-bottom-color: var(--super-accent);
+    color: var(--super-text);
+  }
+  :where(.super-tab-panel) {
+    padding-block: calc(var(--super-space) * 2);
+  }
+
+  /* Disclosure ------------------------------------------------------------------------------- */
+  :where(.super-disclosure-summary) {
+    cursor: pointer;
+    font-weight: 500;
+  }
+  :where(.super-disclosure-body) {
+    padding-block: var(--super-space);
+  }
+
+  /* Badge, Spinner, Skeleton, EmptyState ----------------------------------------------------- */
+  :where(.super-badge) {
+    display: inline-block;
+    padding: 0.1em 0.6em;
+    border-radius: 999px;
+    background: var(--super-subtle);
+    color: var(--super-text);
+    font: 500 0.8rem/1.5 var(--super-font);
+  }
+  :where(.super-badge[data-tone='info']) {
+    background: color-mix(in srgb, var(--super-info) 15%, transparent);
+    color: var(--super-info);
+  }
+  :where(.super-badge[data-tone='success']) {
+    background: color-mix(in srgb, var(--super-success) 15%, transparent);
+    color: var(--super-success);
+  }
+  :where(.super-badge[data-tone='warning']) {
+    background: color-mix(in srgb, var(--super-warning) 15%, transparent);
+    color: var(--super-warning);
+  }
+  :where(.super-badge[data-tone='danger']) {
+    background: color-mix(in srgb, var(--super-danger) 15%, transparent);
+    color: var(--super-danger);
+  }
+  :where(.super-spinner) {
+    display: inline-flex;
+  }
+  :where(.super-spinner-circle) {
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 2px solid var(--super-border);
+    border-top-color: var(--super-accent);
+    border-radius: 50%;
+    animation: super-spin 0.8s linear infinite;
+  }
+  :where(.super-spinner[data-size='small'] .super-spinner-circle) {
+    width: 0.9rem;
+    height: 0.9rem;
+  }
+  :where(.super-spinner[data-size='large'] .super-spinner-circle) {
+    width: 2rem;
+    height: 2rem;
+  }
+  :where(.super-skeleton) {
+    display: grid;
+    gap: calc(var(--super-space) / 2);
+  }
+  :where(.super-skeleton-line) {
+    display: block;
+    height: 1em;
+    border-radius: var(--super-radius);
+    background: linear-gradient(90deg, var(--super-subtle), var(--super-border), var(--super-subtle));
+    background-size: 200% 100%;
+    animation: super-shimmer 1.4s ease-in-out infinite;
+  }
+  :where(.super-empty-state) {
+    display: grid;
+    justify-items: center;
+    gap: var(--super-space);
+    padding: calc(var(--super-space) * 4);
+    text-align: center;
+    color: var(--super-muted);
+    font-family: var(--super-font);
+  }
+  :where(.super-empty-state-title) {
+    margin: 0;
+    font-weight: 600;
+    color: var(--super-text);
+  }
+
+  /* Table ------------------------------------------------------------------------------------ */
+  /* L'élément du composant ne s'élargit jamais au-delà de son conteneur. */
+  :where(super-table) {
+    display: block;
+    min-width: 0;
+    max-width: 100%;
+  }
+  :where(.super-table) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 100%;
+    gap: var(--super-space);
+    font-family: var(--super-font);
+    color: var(--super-text);
+  }
+  :where(.super-table table) {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  /* Défilement de gauche à droite : la table garde sa largeur naturelle, cellules sur une ligne. */
+  :where(.super-table-scroll) {
+    max-width: 100%;
+    overflow-x: auto;
+    border-radius: var(--super-radius);
+  }
+  :where(.super-table-scroll table) {
+    width: max-content;
+    min-width: 100%;
+  }
+  :where(.super-table-scroll td) {
+    white-space: nowrap;
+  }
+  :where(.super-table-scroll:focus-visible) {
+    outline: none;
+    box-shadow: var(--super-focus);
+  }
+  :where(.super-table-caption) {
+    margin: 0;
+    text-align: start;
+    font-weight: 600;
+    padding-block: var(--super-space);
+  }
+  :where(.super-table th, .super-table td) {
+    padding: var(--super-space);
+    border-bottom: 1px solid var(--super-border);
+    text-align: start;
+  }
+  :where(.super-table [data-align='end']) {
+    text-align: end;
+  }
+  :where(.super-table th) {
+    font-weight: 600;
+    background: var(--super-subtle);
+    white-space: nowrap;
+  }
+  :where(.super-table-sort) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    border: 0;
+    padding: 0;
+    background: none;
+    font: inherit;
+    color: inherit;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  /* La place de la flèche est réservée sur toute colonne triable : trier ne change aucune largeur. */
+  :where(.super-table-sort)::after {
+    content: '↕';
+    display: inline-block;
+    width: 1em;
+    text-align: center;
+    font-size: 0.8em;
+    opacity: 0.35;
+  }
+  :where(.super-table th[aria-sort='ascending'] .super-table-sort)::after {
+    content: '▲';
+    opacity: 1;
+  }
+  :where(.super-table th[aria-sort='descending'] .super-table-sort)::after {
+    content: '▼';
+    opacity: 1;
+  }
+  :where(.super-table[aria-busy='true'] tbody) {
+    opacity: 0.6;
+  }
+  :where(.super-table-empty) {
+    text-align: center;
+    color: var(--super-muted);
+  }
+  :where(.super-table-pages) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: end;
+    gap: var(--super-space);
+  }
+  :where(.super-table-size) {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--super-space);
+    margin-inline-end: auto;
+  }
+
+  @keyframes super-spin {
+    to {
+      rotate: 360deg;
+    }
+  }
+  @keyframes super-shimmer {
+    from {
+      background-position: 100% 0;
+    }
+    to {
+      background-position: -100% 0;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :where(.super-spinner-circle, .super-skeleton-line) {
+      animation-duration: 0s;
+    }
+  }
+}

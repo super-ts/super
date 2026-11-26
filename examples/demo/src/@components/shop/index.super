@@ -1,0 +1,97 @@
+import { SuperElement } from '@super-ts/dom';
+import { formatPrice } from '../../format';
+import { ConfirmDialog } from '../shared/confirm-dialog';
+import './index.css';
+
+/** Écran de la route `/shop` : le catalogue et le panier. */
+export class ShopScreen extends SuperElement {
+  @tag = 'shop-screen';
+  // Suivi : le titre de l'onglet change avec le panier, comme le rendu.
+  @title = () => {
+    const count = this.cart.selectors.count();
+    return count > 0 ? `Boutique (${count} au panier)` : 'Boutique';
+  };
+
+  @contract cart;
+  @selector catalog = this.cart.selectors.catalog;
+  @selector lines = this.cart.selectors.lines;
+  @selector total = this.cart.selectors.total;
+  @selector isEmpty = this.cart.selectors.isEmpty;
+  // Le dialogue ouvert (aucun : null), et un message ponctuel.
+  @state local = { dialog: null as 'confirm-clear' | null, message: null as string | null };
+
+  // L'événement écrit à la main par le store : le panier vient de se vider.
+  @on('cart', 'emptied')
+  onEmptied() {
+    this.local.set({ message: 'Ton panier est vide.' });
+  }
+
+  @on('cart', 'add:done')
+  onAdded() {
+    this.local.set({ message: null });
+  }
+
+  // Le dialogue répond par un événement : le parent décide de la suite.
+  onClearAnswered = ({ confirmed }: { confirmed: boolean }) => {
+    this.local.set({ dialog: null });
+    if (confirmed) this.cart.send('clear');
+  };
+
+  render() {
+    <main class="screen">
+      <h1>Boutique</h1>
+      <ul class="products">
+        for (const p of this.catalog.value; key p.sku) {
+          <li>
+            <span>{p.label}</span>
+            <span class="price">{formatPrice(p.price)}</span>
+            <button type="button" aria-label={`Ajouter ${p.label}`} on:click={() => this.cart.send('add', { sku: p.sku })}>Ajouter</button>
+          </li>
+        }
+      </ul>
+
+      <section class="cart" aria-label="Panier">
+        <h2>Panier</h2>
+        if (this.isEmpty.value) {
+          <p class="empty">{this.local.get().message ?? 'Aucun article pour l’instant.'}</p>
+        } else {
+          <ul>
+            for (const l of this.lines.value; key l.product.sku) {
+              const { product, quantity } = l;
+              <li>
+                <span>{product.label}</span>
+                <span class="quantity">
+                  <button
+                    type="button"
+                    aria-label={`Retirer un ${product.label}`}
+                    on:click={() => this.cart.send('remove', { sku: product.sku })}
+                  >
+                    −
+                  </button>
+                  {quantity}
+                  <button
+                    type="button"
+                    aria-label={`Ajouter un ${product.label}`}
+                    on:click={() => this.cart.send('add', { sku: product.sku })}
+                  >
+                    +
+                  </button>
+                </span>
+                <span class="price">{formatPrice(l.subtotal)}</span>
+              </li>
+            }
+          </ul>
+          <p class="total">Total : <strong>{formatPrice(this.total.value)}</strong></p>
+          <div class="actions">
+            <button type="button" on:click={() => this.local.set({ dialog: 'confirm-clear' })}>Vider le panier</button>
+            <a class="button" href={this.router.href('checkout')}>Commander</a>
+          </div>
+        }
+      </section>
+
+      if (this.local.get().dialog === 'confirm-clear') {
+        <ConfirmDialog question="Vider le panier ?" on:answered={this.onClearAnswered} />
+      }
+    </main>
+  }
+}

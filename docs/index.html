@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Introduction · Super</title>
+    <link rel="stylesheet" href="assets/site.css" />
+  </head>
+  <body>
+    <article>
+      <h1>Super</h1>
+      <p class="lead">
+        Un framework front minimaliste, typé de bout en bout, qui encadre trois choses : les stores, les composants et le
+        routing. Tout le reste appartient à ton projet.
+      </p>
+
+      <div class="callout warn">
+        <strong>Statut : draft exploratoire</strong>
+        L'API peut encore bouger. Les paquets ne sont pas publiés sur npm : ils vivent dans le dépôt, sous
+        <code>packages/</code>.
+      </div>
+
+      <h2 id="en-un-coup-d-oeil">En un coup d'œil</h2>
+      <p>
+        Une fonctionnalité Super tient en trois fichiers : un <strong>contrat</strong> qui dit ce qu'on peut lire,
+        demander et écouter ; un <strong>store</strong> qui l'implémente ; un <strong>composant</strong> qui affiche et
+        envoie des commandes. Chacun est une classe.
+      </p>
+
+      <script type="text/x-code" data-title="src/@core/counter/contract.ts" data-source="examples/demo/src/@core/counter/contract.ts">
+        import { type Outcome, SuperContract } from '@super-ts/core';
+
+        export type CounterState = { counts: Readonly<Record<string, number>> };
+
+        export type CounterTypes = {
+          state: CounterState;
+          commands: { increment(input: { id: string }): Outcome<{ count: number }, 'storage'> };
+        };
+
+        export class CounterContract extends SuperContract<CounterTypes> {
+          constructor() {
+            super({ name: 'counter' });
+          }
+
+          // Un sélecteur est une méthode : l'état d'abord, puis ses paramètres.
+          count(s: CounterState, id: string) {
+            return s.counts[id] ?? 0;
+          }
+        }
+      </script>
+
+      <script type="text/x-code" data-title="src/@core/counter/store.ts" data-source="examples/demo/src/@core/counter/store.ts">
+        import { type Commands, SuperStore } from '@super-ts/core';
+        import type { CounterRepository } from '../../ports/counter-repository';
+        import type { CounterContract } from './contract';
+
+        export class CounterStore extends SuperStore<CounterContract> implements Commands<CounterStore> {
+          #repository: CounterRepository;
+
+          constructor({ counterRepository }: { counterRepository: CounterRepository }) {
+            super({ contract: 'counter', initialState: { counts: {} } });
+            this.#repository = counterRepository;
+          }
+
+          // Une commande du contrat = une méthode. L'attente vit dans le store.
+          async increment({ id }: { id: string }) {
+            const count = this.selectors.count(id) + 1;
+            await this.#repository.save(id, count).catch(() => this.fail('storage'));
+            this.set((s) => ({ counts: { ...s.counts, [id]: count } }));
+            return { count }; // Super publie increment:done ; « en cours » est suivi tout seul
+          }
+        }
+      </script>
+
+      <script type="text/x-code" data-title="src/@components/shared/counter-button.super">
+        import { SuperElement } from '@super-ts/dom';
+
+        export class CounterButton extends SuperElement {
+          // Déclaré dans la classe : le tag, et la prop reçue du parent (<CounterButton counterId="cafes" />).
+          @tag = 'counter-button';
+          @prop counterId: string;
+
+          // Préparé une fois : le store, demandé par le nom de son contrat, et la valeur lue.
+          @contract counter;
+          @selector count = () => this.counter.selectors.count(this.counterId);
+
+          // À chaque rendu : on affiche, on envoie et on laisse filer.
+          render() {
+            <button on:click={() => this.counter.send('increment', { id: this.counterId })}>{this.count.value}</button>
+          }
+        }
+      </script>
+
+      <p>
+        Le composant est un fichier <code>.super</code> : du TypeScript dont les méthodes écrivent leurs éléments
+        directement, comme des instructions (voir <a href="templates.html">Templates</a>). Il déclare dans sa classe son
+        tag et ses props (<code>@tag</code>, <code>@prop</code>), le store qu'il lit et la valeur qu'il en tire
+        (<code>@contract</code>, <code>@selector</code>), et lit une prop par son nom :
+        <code>this.counterId</code>. Il n'importe rien de
+        <code>@core/</code> : il demande le store par le nom de son contrat, et le
+        compilateur connaît ses sélecteurs et ses commandes. Il envoie une commande et laisse filer ; le store fait le
+        travail asynchrone et met à jour son état ; Super suit la commande
+        (<code>this.counter.selectors.pending('increment')</code>) et publie son issue (<code>increment:done</code>,
+        <code>increment:failed</code>). Le composant se re-rend parce que la valeur qu'il lit a changé.
+      </p>
+
+      <h2 id="principes">Principes</h2>
+      <ul>
+        <li>
+          <strong>Deux dossiers imposés, le reste libre.</strong> Contrats et stores dans <code>src/@core/</code>,
+          composants dans <code>src/@components/</code>. Le préfixe <code>@</code> marque ce qui appartient à Super. Domaine,
+          ports, adapters, routes et racine de composition s'organisent comme ton projet l'entend.
+        </li>
+        <li>
+          <strong>Le contrat est la seule porte d'un store.</strong> Ses sélecteurs disent ce qu'on lit, ses commandes ce
+          qu'on demande, ses événements ce qu'on écoute. Un composant demande le store par son nom
+          (<code>@contract counter;</code>) et n'importe de <code>@core/</code> que des types.
+        </li>
+        <li>
+          <strong>La vue envoie et laisse filer.</strong> Une commande ne renvoie rien : il n'y a jamais d'<code>await</code>
+          dans un composant. Le résultat revient par l'état ou par un événement.
+        </li>
+        <li>
+          <strong>Props vers le bas, événements vers le haut.</strong> Un parent n'appelle jamais une méthode d'un enfant.
+        </li>
+        <li>
+          <strong>Préparer, puis afficher.</strong> Les champs et le constructeur d'un composant préparent une fois
+          (contrats, état local, lectures, écouteurs) ; <code>render</code> affiche à chaque rendu. Super refuse de
+          préparer quoi que ce soit pendant le rendu.
+        </li>
+        <li>
+          <strong>Le compilateur fait le travail.</strong> Une commande inconnue, un body manquant, une méthode de store
+          hors contrat, un lien sans son paramètre, un écran aux mauvaises props ou une faute dans un template ne compilent
+          pas.
+        </li>
+        <li>
+          <strong>Le standard web d'abord.</strong> Un store est un <code>EventTarget</code>, un composant est un custom
+          element. Les fichiers <code>.super</code> sont compilés vers lit-html, une dépendance assumée mais cachée : tu
+          n'importes jamais lit.
+        </li>
+      </ul>
+
+      <h2 id="par-ou-commencer" data-llm="skip">Par où commencer</h2>
+      <div class="cards">
+        <a class="card" href="demarrer.html"><strong>Démarrer</strong><span>Installer, lancer l'exemple, écrire ta première fonctionnalité.</span></a>
+        <a class="card" href="exemples.html"><strong>Exemples</strong><span>Compteurs, formulaire, boutique, erreurs, widget, kit d'interface : une app à lancer et à lire.</span></a>
+        <a class="card" href="architecture.html"><strong>Architecture</strong><span>Ce que Super impose, ce qui reste à toi.</span></a>
+        <a class="card" href="flux.html"><strong>Commandes et événements</strong><span>Le trajet d'une action, du clic à l'écran.</span></a>
+        <a class="card" href="composants.html"><strong>Composants</strong><span>Champs, constructeur et render, et comment choisir où mettre quoi.</span></a>
+        <a class="card" href="templates.html"><strong>Templates</strong><span>La syntaxe des fichiers <code>.super</code> : éléments, conditions, boucles, enfants.</span></a>
+        <a class="card" href="faq.html"><strong>Questions fréquentes</strong><span>Les questions qu'on se pose en découvrant Super.</span></a>
+        <a class="card" href="api.html"><strong>API</strong><span>Toutes les classes et fonctions, en une page.</span></a>
+      </div>
+
+      <h2 id="ce-que-super-ne-fait-pas">Ce que Super ne fait pas, volontairement</h2>
+      <ul>
+        <li>Pas de client HTTP, pas de conteneur d'injection : tu assembles tout dans ta racine de composition.</li>
+        <li>Pas de couches imposées au-delà de <code>@core/</code> et <code>@components/</code>.</li>
+        <li>Pas de shadow DOM : les composants rendent en light DOM, tes styles globaux s'appliquent.</li>
+      </ul>
+
+      <h2 id="les-paquets">Les paquets</h2>
+      <table>
+        <thead><tr><th>Paquet</th><th>Contenu</th></tr></thead>
+        <tbody>
+          <tr><td><code>@super-ts/core</code></td><td><code>SuperContract</code>, <code>SuperStore</code> : contrats, sélecteurs, stores. Aucune dépendance au DOM.</td></tr>
+          <tr><td><code>@super-ts/dom</code></td><td><code>SuperElement</code> : composants, rendu, <code>createApp</code>, router.</td></tr>
+          <tr><td><code>@super-ts/testing</code></td><td><code>mount</code>, <code>fakeStore</code>, <code>record</code>, <code>flush</code>, <code>cleanup</code>.</td></tr>
+          <tr><td><code>@super-ts/ui</code></td><td>Le kit d'interface : champs reliés aux formulaires, <code>CommandButton</code>, <code>RouteLink</code>, toasts, fenêtres, menus, table. Voir <a href="ui.html">Kit d'interface</a>.</td></tr>
+          <tr><td><code>@super-ts/vite</code></td><td>Le plugin qui compile les <code>.super</code>, fait respecter l'architecture et génère le dictionnaire des contrats (<code>@core/contracts.d.ts</code>).</td></tr>
+          <tr><td><code>@super-ts/lang</code></td><td>Le langage des <code>.super</code> : parser, compilation vers lit, vérification des types (<code>super-tsc</code>). Voir <a href="outillage.html">Outillage</a>.</td></tr>
+          <tr><td><code>super-language-server</code></td><td>Le serveur de langage des <code>.super</code> pour l'éditeur (<code>packages/lang-server</code>).</td></tr>
+          <tr><td><code>@super-ts/lint</code></td><td>La configuration Biome qui fixe l'ordre des imports.</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="avec-un-assistant-ia">Avec un assistant IA</h2>
+      <p>
+        La doc existe aussi en markdown, au format <a href="https://llmstxt.org">llms.txt</a>, pour la donner à un LLM ou à
+        un agent de code. Ces fichiers sont générés à partir de ces pages à chaque <code>npm run check</code>, et
+        <code>npm run docs:check</code> échoue s'ils ne sont plus à jour.
+      </p>
+      <ul>
+        <li><a href="llms.txt"><code>llms.txt</code></a> : l'index, une ligne par page.</li>
+        <li><a href="llms-full.txt"><code>llms-full.txt</code></a> : toute la doc en un fichier, code compris.</li>
+        <li>
+          <a href="llms-small.txt"><code>llms-small.txt</code></a> : la même, sans la FAQ, le catalogue des exemples ni les
+          renvois vers l'app d'exemples, pour les petites fenêtres de contexte.
+        </li>
+      </ul>
+      <p>
+        Dans un projet, il suffit d'indiquer le chemin à l'agent, par exemple dans un <code>AGENTS.md</code> :
+        « la doc de Super est dans <code>docs/llms-full.txt</code> ».
+      </p>
+    </article>
+    <script src="assets/search-index.js"></script>
+    <script src="assets/site.js"></script>
+  </body>
+</html>

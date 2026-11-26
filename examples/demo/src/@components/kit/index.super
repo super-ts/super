@@ -1,0 +1,56 @@
+import { SuperElement } from '@super-ts/dom';
+import { RouteLink } from '@super-ts/ui';
+import './kit.css';
+
+/** Écran de la route `/kit` : le sommaire du kit, une page par famille de composants. */
+export class KitScreen extends SuperElement {
+  @tag = 'kit-screen';
+  @title = 'Kit d’interface';
+
+  render() {
+    <main class="screen">
+      <div class="kit-page">
+        <h1>Kit d’interface</h1>
+        <p class="kit-page-intro">Chaque page montre une famille de composants de @super-ts/ui, branchée sur les stores de la démo.</p>
+        <ul class="kit-families">
+          <li>
+            <RouteLink to={{ to: 'kit-forms' }}>
+              Formulaires et commandes
+            </RouteLink>
+            <p>Field, Select, Checkbox, RadioGroup, CommandButton, Toasts.</p>
+          </li>
+          <li>
+            <RouteLink to={{ to: 'kit-windows' }}>
+              Fenêtres
+            </RouteLink>
+            <p>Dialog, Modal, ConfirmDialog.</p>
+          </li>
+          <li>
+            <RouteLink to={{ to: 'kit-primitives' }}>
+              Primitives
+            </RouteLink>
+            <p>Menu, Tabs, Disclosure, Tooltip, Popover, Combobox.</p>
+          </li>
+          <li>
+            <RouteLink to={{ to: 'kit-display' }}>
+              Affichage
+            </RouteLink>
+            <p>Button, Badge, Spinner, Skeleton, EmptyState, ErrorPanel.</p>
+          </li>
+          <li>
+            <RouteLink to={{ to: 'kit-table' }}>
+              Table
+            </RouteLink>
+            <p>Une table statique, et une table branchée sur une API, pilotée par l’URL.</p>
+          </li>
+          <li>
+            <RouteLink to={{ to: 'kit-theme' }}>
+              Thème
+            </RouteLink>
+            <p>Surcharger le style du kit : variables, zones, une instance, une règle.</p>
+          </li>
+        </ul>
+      </div>
+    </main>
+  }
+}

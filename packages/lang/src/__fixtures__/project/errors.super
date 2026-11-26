@@ -1,0 +1,63 @@
+import { SuperElement } from '@super-ts/dom';
+import { Greeting } from './greeting';
+import { Panel } from './panel';
+
+type Status = 'idle' | 'busy' | 'done';
+type Item = { id: string; label: string };
+
+/** Chaque ligne marquée ERREUR doit être signalée par `check`, et aucune autre. */
+export class ErrorsFixture extends SuperElement {
+  @tag = 'lang-errors';
+  @ref input: HTMLInputElement;
+  @state local = { user: null as { name: string } | null, status: 'idle' as Status, items: [] as Item[] };
+
+  render() {
+    <main>
+      <dvi>typo</dvi> {/* ERREUR balise inconnue */}
+      <p>{this.local.get().user.name}</p> {/* ERREUR null possible */}
+      const user = this.local.get().user;
+      if (user) {
+        <p>{user.name}</p>
+      }
+      for (const item of this.local.get().items; key item.idd) { {/* ERREUR clé */}
+        <li>{item}</li> {/* ERREUR objet interpolé */}
+      }
+      <button on:clik={() => {}}>x</button> {/* ERREUR événement inconnu */}
+      <input on:input={(e) => e.currentTarget.value.toFixed()} /> {/* ERREUR value est une chaîne */}
+      <div ref={this.input}></div> {/* ERREUR référence sur le mauvais élément */}
+      <input ref={this.input} />
+      const status = this.local.get().status;
+      switch (status) {
+        case 'idle': <p>idle</p>
+        case 'busy': <p>busy</p>
+        case 'done': <p>done</p> break;
+        default: {assertNever(status)}
+      }
+      switch (status) {
+        case 'idle': <p>idle</p>
+        default: {assertNever(status)} {/* ERREUR switch non exhaustif */}
+      }
+      <Greeting nam="Ada" on:closed={(e) => e.reason} /> {/* ERREUR prop inconnue */}
+      <Greeting name={42} /> {/* ERREUR prop mal typée */}
+      <Greeting name="Ada" on:open={() => {}} /> {/* ERREUR événement inconnu du composant */}
+      <p>for (more info) see below</p> {/* ERREUR texte ambigu */}
+      <Greeting name="Ada"><p>Greeting ne prend pas d’enfants</p></Greeting> {/* ERREUR enfants refusés */}
+      <Panel heading="Sans enfants" /> {/* ERREUR enfants obligatoires */}
+      <Panel heading="x"><p>a</p><:header>h</:header></Panel> {/* ERREUR emplacement inconnu */}
+    </main>
+  }
+}
+
+function assertNever(x: never): void {
+  throw new Error(String(x));
+}
+
+/** Une prop ne peut pas porter le nom d'une propriété des éléments HTML. */
+export class NativeName extends SuperElement {
+  @tag = 'lang-native-name';
+  @prop title: string; // {/* ERREUR nom déjà pris par les éléments HTML */}
+
+  render() {
+    <p>{this.title}</p>
+  }
+}

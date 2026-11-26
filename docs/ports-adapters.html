@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ports et adapters · Super</title>
+    <link rel="stylesheet" href="assets/site.css" />
+  </head>
+  <body>
+    <article>
+      <h1>Ports et adapters</h1>
+      <p class="lead">
+        Les sources de données externes (localStorage, API HTTP, IndexedDB) ne sont pas un concept Super : ce sont de
+        simples dépendances de tes stores. L'<a href="exemples.html">app d'exemples</a> les organise en ports et adapters, un choix de projet : un <code>localStorage</code> pour les compteurs, un serveur simulé pour le formulaire, une vraie API HTTP (dummyjson.com) pour la table branchée du kit.
+      </p>
+
+      <h2 id="le-principe">Le principe</h2>
+      <ul>
+        <li>Un <strong>port</strong> est une interface : ce dont le store a besoin, exprimé dans ses termes (« charger tous les compteurs », « enregistrer un compteur »).</li>
+        <li>Un <strong>adapter</strong> est une implémentation de ce port pour une technologie donnée.</li>
+        <li>Le <strong>store</strong> dépend du port, jamais d'un adapter.</li>
+        <li>La <strong>racine de composition</strong> choisit l'adapter.</li>
+      </ul>
+      <p>
+        Résultat : on change de stockage sans toucher au store, et on teste le store avec un adapter en mémoire.
+      </p>
+
+      <h2 id="le-port">Le port</h2>
+      <script type="text/x-code" data-title="src/ports/counter-repository.ts" data-source="examples/demo/src/ports/counter-repository.ts">
+        export interface CounterRepository {
+          loadAll(): Promise<Record<string, number>>;
+          save(id: string, count: number): Promise<void>;
+        }
+      </script>
+
+      <h2 id="les-adapters">Les adapters</h2>
+      <script type="text/x-code" data-title="src/adapters/local-storage-counter-repository.ts" data-source="examples/demo/src/adapters/local-storage-counter-repository.ts">
+        export function createLocalStorageCounterRepository({
+          storage = window.localStorage,
+          key = 'super.counters',
+        }: Options = {}): CounterRepository {
+          function read(): Record<string, number> {
+            const raw = storage.getItem(key);
+            if (raw === null) return {};
+            // … parse et valide le JSON, lève une erreur s'il est invalide
+          }
+
+          return {
+            async loadAll() {
+              return read();
+            },
+            async save(id, count) {
+              storage.setItem(key, JSON.stringify({ ...read(), [id]: count }));
+            },
+          };
+        }
+      </script>
+      <script type="text/x-code" data-title="src/adapters/in-memory-counter-repository.ts" data-source="examples/demo/src/adapters/in-memory-counter-repository.ts">
+        export function createInMemoryCounterRepository(
+          initial: Record<string, number> = {},
+        ): CounterRepository & { stored: Record<string, number> } {
+          return {
+            stored: { ...initial },
+            async loadAll() {
+              return { ...this.stored };
+            },
+            async save(id, count) {
+              this.stored = { ...this.stored, [id]: count };
+            },
+          };
+        }
+      </script>
+      <p>
+        L'adapter en mémoire expose <code>stored</code>, pratique pour vérifier ce qui a été enregistré dans un test.
+      </p>
+      <p>
+        Un adapter HTTP a la même forme, avec des <code>fetch</code>. Celui du catalogue de produits traduit la page
+        ou la recherche demandée par le store dans les paramètres de l'API publique de test dummyjson.com, et sa réponse dans les types
+        du domaine :
+      </p>
+      <script type="text/x-code" data-title="src/ports/product-catalog.ts (extrait)" data-source="examples/demo/src/ports/product-catalog.ts">
+        export interface ProductCatalog {
+          list(query: ProductQuery): Promise<ProductPage>;
+          /** Les produits dont le nom ou la description contient `text`, au plus `limit`. */
+          search(text: string, limit: number): Promise<Product[]>;
+        }
+      </script>
+      <script type="text/x-code" data-title="src/adapters/dummyjson-product-catalog.ts (extrait)" data-source="examples/demo/src/adapters/dummyjson-product-catalog.ts">
+        export function createDummyJsonProductCatalog(fetchImpl: typeof fetch = fetch): ProductCatalog {
+          const get = async (url: string): Promise<Raw> => {
+            const response = await fetchImpl(url);
+            if (!response.ok) throw new Error(`dummyjson : ${response.status}`);
+            return (await response.json()) as Raw;
+          };
+          return {
+            async list({ page, pageSize, sort, order }: ProductQuery): Promise<ProductPage> {
+              const params = new URLSearchParams({
+                limit: String(pageSize),
+                skip: String((page - 1) * pageSize),
+                select: SELECT,
+                ...(sort ? { sortBy: sort, order } : {}),
+              });
+              const raw = await get(`${API}?${params}`);
+              return { products: toProducts(raw), total: raw.total };
+            },
+            async search(text, limit) {
+              const params = new URLSearchParams({ q: text, limit: String(limit), select: SELECT });
+              return toProducts(await get(`${API}/search?${params}`));
+            },
+          };
+        }
+      </script>
+      <p>
+        <code>fetch</code> est lui-même un paramètre : le test de l'adapter lui en donne un faux, et vérifie l'URL
+        construite sans réseau. Les tests du store et de l'écran prennent l'autre adapter du port,
+        <code>createInMemoryProductCatalog</code>, qui trie, pagine et cherche en mémoire comme le ferait le serveur.
+      </p>
+
+      <h2 id="les-brancher">Les brancher</h2>
+      <script type="text/x-code">
+        // Le store déclare sa dépendance par les paramètres de son constructeur.
+        type Deps = { counterRepository: CounterRepository };
+
+        export class CounterStore extends SuperStore<CounterContract> implements Commands<CounterStore> {
+          #repository: CounterRepository;
+
+          constructor({ counterRepository }: Deps) {
+            super({ contract: 'counter', initialState: { counts: {}, loadErrorMessage: null } });
+            this.#repository = counterRepository;
+          }
+          // …
+        }
+
+        // main.ts choisit l'adapter.
+        CounterStore.create({ counterRepository: createLocalStorageCounterRepository() });
+
+        // Un test en choisit un autre.
+        CounterStore.create({ counterRepository: createInMemoryCounterRepository({ cafes: 1 }) });
+      </script>
+
+      <h2 id="ou-les-ranger">Où les ranger</h2>
+      <p>
+        <code>ports/</code> et <code>adapters/</code> sont des dossiers user-land : Super ne les connaît pas. Tu peux les
+        appeler autrement, ou mettre le port à côté du store, dans son dossier de <code>@core/</code>. Une règle de bon sens :
+        un composant n'importe jamais un adapter. Le plugin ne l'interdit pas (les adapters sont en user-land), mais un
+        composant qui appellerait un adapter contournerait le store, et perdrait l'état partagé et les événements.
+      </p>
+
+      <h2 id="erreurs-des-adapters">Les erreurs des adapters</h2>
+      <p>
+        Un adapter peut échouer (quota dépassé, réseau coupé). C'est au store de décider comment le publier :
+        <code>loadErrorMessage</code> dans l'état pour un chargement (l'erreur doit rester visible), une raison d'échec pour
+        une écriture. Voir <a href="stores.html#les-erreurs">Stores : les erreurs</a>.
+      </p>
+      <script type="text/x-code">
+        await this.#repository.save(id, next).catch(() => this.fail('storage')); // increment:failed, raison 'storage'
+      </script>
+    </article>
+    <script src="assets/search-index.js"></script>
+    <script src="assets/site.js"></script>
+  </body>
+</html>

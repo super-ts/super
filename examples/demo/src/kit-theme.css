@@ -1,0 +1,6 @@
+/* Le thème du kit pour toute la démo : quelques variables sur :root suffisent. */
+:root {
+  --super-accent: light-dark(#4f46e5, #a5b4fc);
+  --super-radius: 8px;
+  --super-font: inherit;
+}

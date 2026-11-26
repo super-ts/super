@@ -1,0 +1,10 @@
+node_modules
+dist
+.DS_Store
+.super
+editors/zed/target
+editors/zed/extension.wasm
+editors/zed/grammars
+.claude/settings.local.json
+# Dépôt git à part : branché en sous-module une fois son dépôt distant créé.
+editors/tree-sitter-super

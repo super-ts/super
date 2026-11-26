@@ -1,0 +1,16 @@
+{
+  "name": "super-language-server",
+  "private": true,
+  "type": "module",
+  "description": "Serveur de langage des fichiers .super (Volar sur TypeScript 6 : Volar ne supporte pas encore TypeScript 7).",
+  "bin": {
+    "super-language-server": "./src/server.ts"
+  },
+  "dependencies": {
+    "@volar/language-core": "^2.4.31",
+    "@volar/language-server": "^2.4.31",
+    "typescript": "^6.0.3",
+    "volar-service-typescript": "^0.0.71",
+    "vscode-uri": "^3.2.0"
+  }
+}

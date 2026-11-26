@@ -1,0 +1,106 @@
+import { SuperElement } from '@super-ts/dom';
+import { Button, columns, Table } from '@super-ts/ui';
+import { isProductSort, type Product, type ProductQuery, type ProductSort, type SortOrder } from '../../domain/catalog';
+import { KitPage } from './kit-page';
+
+type CounterRow = { id: string; label: string; count: number };
+
+const PAGE_SIZES = [5, 10, 20, 50] as const;
+type PageSize = (typeof PAGE_SIZES)[number];
+const isPageSize = (size: number): size is PageSize => (PAGE_SIZES as readonly number[]).includes(size);
+const PRICE = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'USD' });
+
+const COUNTER_COLUMNS = columns<CounterRow>([
+  { key: 'label', label: 'Compteur', sortable: true },
+  { key: 'count', label: 'Valeur', sortable: true, align: 'end' },
+]);
+const PRODUCT_COLUMNS = columns<Product>([
+  { key: 'title', label: 'Produit', sortable: true },
+  { key: 'brand', label: 'Marque', sortable: true, value: (p) => p.brand ?? 'Sans marque' },
+  { key: 'price', label: 'Prix', sortable: true, align: 'end', value: (p) => PRICE.format(p.price) },
+  { key: 'rating', label: 'Note', sortable: true, align: 'end' },
+]);
+
+/**
+ * Écran de la route `/kit/table`. La table des produits est branchée : le tri et la page vivent
+ * dans la query de l'URL (`?sort=price&order=desc&page=3`), la table demande ses données par
+ * `request`, et l'écran les charge depuis l'API de test dummyjson.com.
+ */
+export class KitTableScreen extends SuperElement {
+  @tag = 'kit-table-screen';
+
+  @contract counter;
+  @contract catalog;
+  @selector products = this.catalog.selectors.products;
+  @selector total = this.catalog.selectors.total;
+  @selector loading = () => this.catalog.selectors.pending('load');
+  @selector loadError = this.catalog.selectors.loadErrorMessage;
+
+  // La query de la route, typée par sa description dans routes.ts.
+  @selector sort = this.router.current.query.sort;
+  @selector order = this.router.current.query.order;
+  @selector pageNumber = this.router.current.query.page;
+  @selector size = this.router.current.query.size;
+
+  /** Change le tri, la page ou leur taille : c'est l'URL qui change, et la table suit. */
+  #go(next: { sort: ProductSort | undefined; order: SortOrder; page: number; size: PageSize }) {
+    const { sort, ...rest } = next;
+    this.router.send('navigate', { to: 'kit-table', query: sort ? { sort, ...rest } : rest });
+  }
+
+  #query(): ProductQuery {
+    return { page: this.pageNumber.value, pageSize: this.size.value, sort: this.sort.value ?? null, order: this.order.value };
+  }
+
+  #retry = () => this.catalog.send('load', this.#query());
+
+  render() {
+    const counters: CounterRow[] = this.counter.selectors
+      .catalog()
+      .map((c) => ({ id: c.id, label: c.label, count: this.counter.selectors.count(c.id) }));
+    const sort = this.sort.value;
+    const order = this.order.value;
+    const size = this.size.value;
+    <KitPage
+      heading="Table"
+      intro="Statique, la table trie et pagine seule. Branchée, elle demande ses données, et l’écran peut piloter son tri et sa page depuis l’URL."
+    >
+      <section class="kit-section">
+        <h2>Table statique</h2>
+        <p>Toutes les lignes sont là : la table trie et pagine elle-même, sans rien demander.</p>
+        <Table columns={COUNTER_COLUMNS} rows={counters} rowKey={(row) => row.id} caption="Compteurs" pageSize={2} />
+      </section>
+      <section class="kit-section">
+        <h2>Table branchée sur une API</h2>
+        <p>
+          Les produits viennent de dummyjson.com, page par page, triés par le serveur. Trier ou changer de page change l’URL : recharger la
+          page ou revenir en arrière retrouve le même état.
+        </p>
+        if (this.loadError.value) {
+          <div role="alert" class="kit-row">
+            <p>{this.loadError.value}</p>
+            <Button variant="secondary" on:press={this.#retry}>
+              Réessayer
+            </Button>
+          </div>
+        }
+        <Table
+          columns={PRODUCT_COLUMNS}
+          rows={this.products.value}
+          rowKey={(product) => product.id}
+          caption="Produits"
+          total={this.total.value}
+          pageSize={size}
+          pageSizes={PAGE_SIZES}
+          sort={sort ? { key: sort, direction: order } : null}
+          page={this.pageNumber.value}
+          loading={this.loading.value}
+          on:sort={({ key, direction }) => this.#go({ sort: isProductSort(key) ? key : undefined, order: direction, page: 1, size })}
+          on:page={({ page }) => this.#go({ sort, order, page, size })}
+          on:pageSize={({ pageSize }) => this.#go({ sort, order, page: 1, size: isPageSize(pageSize) ? pageSize : size })}
+          on:request={() => this.catalog.send('load', this.#query())}
+        />
+      </section>
+    </KitPage>
+  }
+}

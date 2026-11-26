@@ -1,0 +1,60 @@
+import { SuperElement } from '@super-ts/dom';
+import { Button, ConfirmDialog, createToasts, Dialog, Modal, Toasts } from '@super-ts/ui';
+import { KitPage } from './kit-page';
+
+/** Écran de la route `/kit/windows` : une fenêtre montée est ouverte, c'est l'écran qui décide de la rendre. */
+export class KitWindowsScreen extends SuperElement {
+  @tag = 'kit-windows-screen';
+
+  notices = createToasts();
+  @state local = { window: null as 'dialog' | 'modal' | 'confirm' | null };
+
+  #close = () => this.local.set({ window: null });
+
+  render() {
+    const open = this.local.get().window;
+    <KitPage heading="Fenêtres" intro="Échap et la croix ferment par défaut ; closeOn règle chaque moyen, dont le clic sur le fond.">
+      <div class="kit-row">
+        <Button variant="secondary" on:press={() => this.local.set({ window: 'dialog' })}>
+          Ouvrir un dialogue
+        </Button>
+        <Button variant="secondary" on:press={() => this.local.set({ window: 'modal' })}>
+          Ouvrir une modale
+        </Button>
+        <Button variant="danger" on:press={() => this.local.set({ window: 'confirm' })}>
+          Tout supprimer
+        </Button>
+      </div>
+      if (open === 'dialog') {
+        <Dialog title="Renommer" on:close={this.#close}>
+          <p>Un dialogue a un contenu et des actions.</p>
+          <:actions>
+            <Button variant="secondary" on:press={this.#close}>
+              Annuler
+            </Button>
+            <Button on:press={this.#close}>
+              Enregistrer
+            </Button>
+          </:actions>
+        </Dialog>
+      }
+      if (open === 'modal') {
+        <Modal title="À propos" closeOn={{ backdrop: true }} on:close={this.#close}>
+          <p>Une modale n’a pas d’actions : Échap, la croix ou un clic sur le fond la ferment.</p>
+        </Modal>
+      }
+      if (open === 'confirm') {
+        <ConfirmDialog
+          question="Supprimer tous les compteurs ?"
+          confirmLabel="Supprimer"
+          danger
+          on:answered={({ confirmed }) => {
+              this.#close();
+              if (confirmed) this.notices.show('C’était pour de faux.', { tone: 'error' });
+            }}
+        />
+      }
+      <Toasts of={this.notices} />
+    </KitPage>
+  }
+}

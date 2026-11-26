@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lire un store · Super</title>
+    <link rel="stylesheet" href="assets/site.css" />
+  </head>
+  <body>
+    <article>
+      <h1>Lire un store</h1>
+      <p class="lead">
+        <code>@contract nom;</code> donne au composant la vue du store fourni par l'application.
+        <code>@selector</code> choisit ce qu'il en lit : le composant ne se re-rend que si cette valeur change.
+      </p>
+
+      <h2 id="use">@contract et @selector</h2>
+      <script type="text/x-code" data-title="src/@components/counter-list/counter-list-item.super (extrait)" data-source="examples/demo/src/@components/counter-list/counter-list-item.super">
+        /** Une ligne de la liste d'accueil : ne se re-rend que si la valeur de son compteur change. */
+        export class CounterListItem extends SuperElement {
+          @tag = 'counter-list-item';
+          @prop counterId: string;
+          @prop label: string;
+
+          @contract counter;
+          @selector count = () => this.counter.selectors.count(this.counterId);
+
+          render() {
+            <a href={this.router.href('counter', { params: { id: this.counterId } })}>{this.label}</a>
+            <span class="counter-list-value">{this.count.value}</span>
+          }
+        }
+      </script>
+      <ul>
+        <li><code>@contract counter;</code> se déclare dans le corps de la classe, une fois par store utilisé, et se lit par <code>this.counter</code>. Le nom est celui du contrat, vérifié par le compilateur : <code>@contract compteur;</code> ne compile pas. Pour un autre nom de champ : <code>@contract shop = 'catalog';</code>.</li>
+        <li><code>@selector count = …;</code> se déclare aussi dans le corps de la classe, après le <code>@contract</code> qu'il lit. Sa valeur est la lecture d'<strong>un</strong> sélecteur ; il se lit par <code>.value</code> dans <code>render</code>, avec le type du sélecteur. Pas de type à écrire : il vient de la valeur.</li>
+        <li>Toutes ces déclarations sont décrites dans <a href="composants.html#declarations-de-preparation">Composants</a>. Un composant écrit dans un <code>.ts</code> garde les méthodes : <code>counter = this.contract('counter')</code>, <code>count = this.selector(…)</code>.</li>
+        <li>Les sélecteurs sont ceux du contrat, avec l'état déjà fourni, plus <code>pending(…)</code> pour savoir si une commande est en cours (voir <a href="flux.html#en-cours">pending</a>).</li>
+        <li>Le composant n'importe pas le contrat : il le nomme. Seuls des types peuvent venir de <code>@core/</code> (<code>import type</code>).</li>
+      </ul>
+
+      <h3 id="un-selecteur-tel-quel">Un sélecteur, tel quel</h3>
+      <p>
+        La valeur d'un <code>@selector</code> est la valeur d'un sélecteur <strong>telle quelle</strong>. Deux
+        écritures, selon que le sélecteur prend un paramètre ou non :
+      </p>
+      <script type="text/x-code" data-title="src/@components/counter-list/index.super (extrait)" data-source="examples/demo/src/@components/counter-list/index.super">
+        @contract counter;
+        @selector catalog = this.counter.selectors.catalog;                  // sans paramètre : passé tel quel
+        @selector isLoading = () => this.counter.selectors.pending('load');  // avec paramètre : une fonction
+        @selector loadErrorMessage = this.counter.selectors.loadErrorMessage;
+      </script>
+      <p>
+        Une condition, un calcul ou un mélange de deux sélecteurs ne vont pas dans un <code>@selector</code>. Ils vont dans
+        <code>render</code>, ou dans un nouveau sélecteur du contrat s'ils ont un sens métier :
+      </p>
+      <script type="text/x-code">
+        // ✗ ne compile pas : la fonction ne renvoie pas la valeur d'un sélecteur
+        @selector canDecrement = () => this.counter.selectors.canDecrement(this.counterId) && !this.counter.selectors.pending();
+
+        // ✓ deux lectures, combinées dans render
+        @selector canDecrement = () => this.counter.selectors.canDecrement(this.counterId);
+        @selector busy = () => this.counter.selectors.pending();
+        render() {
+          <button disabled={!this.canDecrement.value || this.busy.value}>−</button>
+        }
+      </script>
+      <p>
+        La règle est vérifiée à la compilation : une valeur de sélecteur porte une marque de type que
+        <code>@selector</code> exige. <code>null</code> et <code>undefined</code> ne peuvent pas porter de marque : pour eux,
+        Super vérifie à l'exécution, et lève une erreur qui explique quoi faire. La raison : un <code>@selector</code> qui
+        calcule pourrait ne dépendre d'aucun store et rester figé, ou mélanger le store avec autre chose sans que Super le
+        sache.
+      </p>
+
+      <h2 id="ce-que-renvoie-contract">Ce que donne @contract</h2>
+      <table>
+        <thead><tr><th>Membre</th><th>Rôle</th></tr></thead>
+        <tbody>
+          <tr><td><code>selectors</code></td><td>Les sélecteurs du contrat, plus <code>pending</code>, lus sur l'état courant à chaque appel. À passer à <code>@selector</code>, ou à lire directement dans <code>render</code>.</td></tr>
+          <tr><td><code>send(nom, body?)</code></td><td>Envoie une commande et laisse filer. Renvoie <code>void</code> ; l'issue revient par les sélecteurs, ou par <code>nom:done</code> / <code>nom:failed</code>.</td></tr>
+          <tr><td><code>on(nom, écouteur)</code></td><td>Écoute un événement du store, ou l'issue d'une commande. Dans un <code>.super</code>, il s'écrit sur une méthode, <code>@on('counter', 'increment:done')</code>, qui est appelée tant que le composant est monté : pas de <code>signal</code> à passer (voir <a href="flux.html#ecouter-l-issue">Écouter l'issue</a>). Dans un <code>.ts</code>, il se déclare dans le constructeur ; il est interdit pendant <code>render</code>.</td></tr>
+          <tr><td><code>href(route, { params, query }?)</code></td><td>Pour le router seulement : construit un lien typé, sans abonner le composant (voir <a href="#le-router">plus bas</a>).</td></tr>
+        </tbody>
+      </table>
+      <p>
+        Le composant ne reçoit pas le store lui-même : pas d'état brut, pas de <code>subscribe</code>, pas de
+        <code>dispose</code>, pas d'<code>emit</code>. Ces capacités restent à celui qui a créé le store.
+      </p>
+
+      <h2 id="quand-le-composant-se-re-rend">Quand le composant se re-rend</h2>
+      <p>
+        À chaque changement d'état du store, Super recalcule les <code>@selector</code> lus au dernier rendu et compare
+        chaque valeur avec celle affichée. <strong>Si rien n'a changé, le composant ne se re-rend pas.</strong>
+      </p>
+      <p>
+        Exemple : l'écran de « Cafés » lit <code>count('cafes')</code>. Incrémenter « Pompes » change l'état du store, mais
+        pas la valeur lue par l'écran : il ne se re-rend pas.
+      </p>
+
+      <h3 id="ce-qui-compte-comme-un-changement">Ce qui compte comme un changement</h3>
+      <p>
+        La valeur lue est comparée en profondeur à la précédente. Peu importe qu'un sélecteur la reconstruise : seul son
+        contenu compte, et Super garde l'ancienne référence tant qu'il est égal (partage structurel). Les tableaux et
+        objets simples sont comparés élément par élément ; une <code>Date</code>, une <code>Map</code> ou une instance de
+        classe, par référence.
+      </p>
+      <table>
+        <thead><tr><th>Lecture</th><th>Re-rendu quand…</th></tr></thead>
+        <tbody>
+          <tr><td><code>@selector count = () => this.counter.selectors.count(this.counterId)</code></td><td>le nombre change.</td></tr>
+          <tr><td><code>@selector busy = () => this.counter.selectors.pending()</code></td><td>une commande commence ou se termine.</td></tr>
+          <tr><td><code>@selector lines = this.cart.selectors.lines</code></td><td>une ligne change. Les lignes inchangées gardent leur référence.</td></tr>
+          <tr><td><code>@selector catalog = this.counter.selectors.catalog</code></td><td>jamais, si le catalogue ne change pas.</td></tr>
+        </tbody>
+      </table>
+      <p>
+        La valeur de <code>.value</code> est la même référence tant que son contenu ne change pas : la passer en props à un
+        enfant ne le re-rend pas inutilement. Un enfant ne se re-rend que si l'une de ses props change.
+      </p>
+      <div class="callout tip">
+        <strong>Pour une liste : un composant par ligne</strong>
+        <p>
+          Sur la liste des compteurs, chaque ligne est un petit composant (<code>CounterListItem</code>, plus haut) qui lit
+          sa propre valeur. Quand un compteur change, seule sa ligne se re-rend : la liste ne bouge pas, et le DOM des
+          autres lignes n'est pas recalculé.
+        </p>
+      </div>
+
+      <h3 id="lire-les-props-dans-la-lecture">Lire les props dans la lecture</h3>
+      <p>
+        La fonction d'un <code>@selector</code> peut lire les props (<code>this.counterId</code>). Elle est recalculée à chaque rendu, donc à
+        chaque changement de props : si l'écran passe de « Cafés » à « Pompes », la lecture suit, sans mise à jour
+        manquée. C'est aussi pour ça qu'un sélecteur à paramètre s'écrit dans une fonction : les props sont lisibles quand la
+        déclaration s'initialise, mais une valeur lue à ce moment-là resterait celle de la création.
+      </p>
+
+      <h2 id="sans-fonction-de-lecture">Lire un sélecteur directement dans render</h2>
+      <p>
+        Un sélecteur appelé directement dans <code>render</code> (<code>{this.counter.selectors.count('cafes')}</code>)
+        abonne aussi le composant, aussi finement qu'un <code>@selector</code> : Super retient chaque lecture et sa valeur,
+        et à chaque changement du store, il refait ces lectures. Le composant ne se re-rend que si l'une d'elles donne
+        une autre valeur (comparée en profondeur : un tableau neuf au même contenu ne compte pas).
+      </p>
+      <p>
+        La lecture est retenue chez le composant <strong>qui rend</strong>, même si la vue du contrat vient d'un autre :
+        un enfant qui reçoit en prop la vue de son parent et la lit dans son propre <code>render</code> s'abonne lui-même,
+        et se re-rend seul. C'est ce que fait le <a href="ui.html#commandbutton"><code>CommandButton</code></a> du kit,
+        qui lit <code>pending</code> sur le contrat de l'écran qui l'a préparé.
+      </p>
+      <p>
+        <code>@selector</code> reste utile pour lire une valeur hors de <code>render</code> par <code>.value</code>, pour
+        la nommer une fois et la réutiliser, et pour <code>isValid()</code> sur une valeur de route. Seul ce qui est lu
+        compte : ce que <code>render</code> affiche sans passer par un sélecteur (une variable de module,
+        <code>Date.now()</code>) ne déclenche aucun rendu.
+      </p>
+
+      <h2 id="n-afficher-rien-d-un-store">N'afficher rien d'un store</h2>
+      <p>
+        Un composant qui envoie des commandes ou écoute des événements, mais n'affiche rien du store, déclare le contrat
+        sans <code>@selector</code> : il ne se re-rend jamais pour ce store.
+      </p>
+      <script type="text/x-code" data-title="src/@components/app-shell/index.super (extrait)" data-source="examples/demo/src/@components/app-shell/index.super">
+        @contract counter;
+
+        protected override mounted() {
+          this.counter.send('load');
+        }
+      </script>
+
+      <h2 id="le-router">Le router</h2>
+      <p>Le router se lit par <code>this.router</code>, sans le déclarer : une vue toujours disponible. La route active se lit par <code>this.router.current</code> : <code>name()</code> (le nom de la route active), <code>path()</code>, <code>params.&lt;clé&gt;()</code>, <code>query.&lt;clé&gt;()</code>. Chacune se passe telle quelle à <code>@selector</code>, comme un sélecteur sans paramètre.</p>
+      <script type="text/x-code">
+        @selector route = this.router.current.name;   // 'examples' | 'counters' | 'counter' | … | null
+      </script>
+      <p>
+        <code>this.router.href('counter', { params: { id: 'cafes' } })</code> construit un lien, avec la route et ses
+        paramètres vérifiés. Il ne lit pas la route active : un composant qui ne fait qu'afficher des liens ne se re-rend pas à chaque
+        navigation. Voir <a href="router.html">Router</a>.
+      </p>
+
+      <h2 id="l-etat-brut-reste-cache">L'état brut reste caché</h2>
+      <p>Un composant ne lit l'état d'un store que par les sélecteurs de son contrat :</p>
+      <script type="text/x-code">
+        // @ts-expect-error `counts` n'est pas un sélecteur du contrat
+        this.counter.selectors.counts;
+        // @ts-expect-error la vue d'un contrat n'a pas d'état
+        this.counter.state();
+      </script>
+      <p>
+        Ce n'est pas qu'une question de types : à l'exécution, la vue ne passe que les sélecteurs, jamais l'objet d'état.
+        Les seuls moyens de contourner sont volontaires : un sélecteur qui renverrait tout l'état, un store exporté
+        depuis un module user-land, ou un <code>as any</code>.
+      </p>
+
+      <h2 id="plusieurs-stores">Plusieurs stores, ou plusieurs lectures</h2>
+      <p>Déclare autant de <code>@contract</code> et de <code>@selector</code> que nécessaire. Chaque <code>@selector</code> est comparé seul : le composant se re-rend si l'un d'eux change.</p>
+      <script type="text/x-code" data-title="src/@components/shop/index.super (extrait)" data-source="examples/demo/src/@components/shop/index.super">
+        @contract cart;
+        @selector catalog = this.cart.selectors.catalog;
+        @selector lines = this.cart.selectors.lines;
+        @selector total = this.cart.selectors.total;
+        @selector isEmpty = this.cart.selectors.isEmpty;
+      </script>
+
+      <h2 id="store-non-fourni">Quand le store n'est pas fourni</h2>
+      <p>
+        Super résout les contrats au montage. Si aucune application (ou aucun test) n'a fourni de store pour ce contrat, le
+        composant ne s'affiche pas (son <code>renderError</code>, s'il en a un, prend la place) et l'erreur est signalée
+        (phase <code>setup</code>, voir <a href="erreurs.html#qui-rattrape-quoi">Gérer les erreurs</a>) :
+      </p>
+      <script type="text/x-code" data-lang="text">
+        [super] <counter-screen> : aucun store fourni pour le contrat "counter".
+        Ajoute-le à createApp({ stores }) ou à mount(..., { stores }).
+      </script>
+    </article>
+    <script src="assets/search-index.js"></script>
+    <script src="assets/site.js"></script>
+  </body>
+</html>

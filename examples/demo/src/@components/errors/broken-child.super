@@ -1,0 +1,14 @@
+import { SuperElement } from '@super-ts/dom';
+
+/** 2. Un enfant qui plante dès son constructeur, sans renderError… */
+export class BrokenChild extends SuperElement {
+  @tag = 'broken-child';
+
+  constructor() {
+    super();
+    throw new Error('l’enfant n’a pas trouvé ce qu’il attendait');
+  }
+
+  // N'émet rien : ne rend rien (de toute façon, le constructeur plante avant).
+  render() {}
+}

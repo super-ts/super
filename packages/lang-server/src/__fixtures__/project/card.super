@@ -1,0 +1,24 @@
+import { SuperElement } from '@super-ts/dom';
+import { Greeting } from './greeting';
+
+type Item = { id: string; label: string };
+
+/** Le composant ouvert par les tests du serveur (ils en envoient des variantes en mémoire). */
+export class Card extends SuperElement {
+  @tag = 'srv-card';
+  @state local = { items: [] as Item[], user: null as { name: string } | null };
+
+  render() {
+    const user = this.local.get().user;
+    <section>
+      if (user) {
+        <Greeting name={user.name} />
+      }
+      <ul>
+        for (const item of this.local.get().items; key item.id) {
+          <li>{item.label}</li>
+        }
+      </ul>
+    </section>
+  }
+}

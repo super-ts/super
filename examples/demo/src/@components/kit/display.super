@@ -1,0 +1,71 @@
+import { SuperElement } from '@super-ts/dom';
+import { Badge, Button, EmptyState, ErrorPanel, Skeleton, Spinner } from '@super-ts/ui';
+import { KitPage } from './kit-page';
+
+const SAMPLE_ERROR = new Error('Le serveur ne répond pas.');
+
+/** Écran de la route `/kit/display` : les composants d'affichage. */
+export class KitDisplayScreen extends SuperElement {
+  @tag = 'kit-display-screen';
+
+  render() {
+    <KitPage heading="Affichage" intro="Des composants sans store : ils affichent ce qu’on leur donne.">
+      <section class="kit-section">
+        <h2>Button</h2>
+        <div class="kit-row">
+          <Button>
+            Principal
+          </Button>
+          <Button variant="secondary">
+            Secondaire
+          </Button>
+          <Button variant="danger">
+            Danger
+          </Button>
+          <Button variant="ghost">
+            Discret
+          </Button>
+          <Button disabled>
+            Désactivé
+          </Button>
+        </div>
+      </section>
+      <section class="kit-section">
+        <h2>Badge et Spinner</h2>
+        <div class="kit-row">
+          <Badge>
+            Neutre
+          </Badge>
+          <Badge tone="info">
+            Info
+          </Badge>
+          <Badge tone="success">
+            Actif
+          </Badge>
+          <Badge tone="warning">
+            En attente
+          </Badge>
+          <Badge tone="danger">
+            Bloqué
+          </Badge>
+          <Spinner size="small" />
+          <Spinner />
+          <Spinner size="large" />
+        </div>
+      </section>
+      <section class="kit-section"><h2>Skeleton</h2> <Skeleton lines={3} /></section>
+      <section class="kit-section">
+        <h2>EmptyState</h2>
+        <EmptyState title="Aucun favori">
+          Ajoute un compteur en favori pour le retrouver ici.
+          <:action>
+            <Button variant="secondary">
+              Parcourir
+            </Button>
+          </:action>
+        </EmptyState>
+      </section>
+      <section class="kit-section"><h2>ErrorPanel</h2> <ErrorPanel error={SAMPLE_ERROR} path="/kit/display" /></section>
+    </KitPage>
+  }
+}

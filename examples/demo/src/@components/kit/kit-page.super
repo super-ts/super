@@ -1,0 +1,27 @@
+import type { Children } from '@super-ts/dom';
+import { SuperElement } from '@super-ts/dom';
+import { RouteLink } from '@super-ts/ui';
+import './kit.css';
+
+/** La mise en page commune des pages du kit : retour au sommaire, titre, présentation, contenu. */
+export class KitPage extends SuperElement {
+  @tag = 'kit-page';
+  // Pas un écran : chaque page du kit passe par lui, il donne donc leur titre à toutes.
+  @title = () => this.heading;
+  @prop heading: string;
+  @prop intro: string;
+  @prop content: Children;
+
+  render() {
+    <main class="screen">
+      <div class="kit-page">
+        <RouteLink to={{ to: 'kit' }}>
+          ← Le kit
+        </RouteLink>
+        <h1>{this.heading}</h1>
+        <p class="kit-page-intro">{this.intro}</p>
+        {this.content}
+      </div>
+    </main>
+  }
+}

@@ -1,0 +1,784 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Formulaires · Super</title>
+    <link rel="stylesheet" href="assets/site.css" />
+  </head>
+  <body>
+    <article>
+      <h1>Formulaires</h1>
+      <p class="lead">
+        <code>@form</code> relie des champs à des valeurs typées, applique tes règles, vérifie au besoin côté serveur
+        pendant la saisie, et soumet par une commande de store. « En cours » et les erreurs du serveur viennent du cycle de
+        vie de cette commande.
+      </p>
+
+      <h2 id="un-premier-formulaire">Un premier formulaire</h2>
+      <script type="text/x-code" data-title="src/@core/account/contract.ts">
+        import { type Outcome, SuperContract } from '@super-ts/core';
+
+        export type AccountState = { userId: string | null };
+
+        export class AccountContract extends SuperContract<{
+          state: AccountState;
+          commands: {
+            register(input: { email: string; password: string }): Outcome<{ userId: string }, 'email-taken' | 'network'>;
+          };
+        }> {
+          constructor() {
+            super({ name: 'account' });
+          }
+          userId(s: AccountState) {
+            return s.userId;
+          }
+        }
+      </script>
+      <script type="text/x-code" data-title="src/@components/signup/index.super">
+        import { SuperElement } from '@super-ts/dom';
+
+        export class SignupScreen extends SuperElement {
+          @tag = 'signup-screen';
+          @title = 'Inscription';
+
+          @contract account;   // le store qui recevra la commande
+
+          @form signup = {
+            initial: { email: '', password: '' },
+            rules: {
+              email: (v) => /.+@.+\..+/.test(v) || 'Adresse invalide',
+              password: (v) => v.length >= 8 || '8 caractères minimum',
+            },
+            submit: { to: this.account, command: 'register', toInput: (values) => values },
+            failures: {
+              fields: { 'email-taken': { email: 'Adresse déjà utilisée' } },
+              form: { network: 'Connexion impossible, réessaie.' },
+            },
+          };
+
+          render() {
+            const { signup } = this;
+            <form {signup.bind()}>
+              <label>E-mail <input type="email" {signup.field('email')} /></label>
+              <p class="error">{signup.error('email')}</p>
+
+              <label>Mot de passe <input type="password" {signup.field('password')} /></label>
+              <p class="error">{signup.error('password')}</p>
+
+              <p role="alert">{signup.formError()}</p>
+              <button disabled={signup.submitting()}>Créer mon compte</button>
+            </form>
+          }
+        }
+      </script>
+      <ul>
+        <li><code>@form signup = { … };</code> se déclare dans le corps de la classe, une fois, comme les autres <a href="composants.html#declarations-de-preparation">déclarations de préparation</a>. Le type des champs vient de la valeur : pas d'annotation sur <code>@form</code>. Dans un composant écrit en <code>.ts</code>, l'équivalent est <code>signup = this.form({ … })</code>, qui lève une erreur s'il est appelé pendant <code>render</code>.</li>
+        <li>Le formulaire est prêt dès la construction : <code>render</code> peut lire ses valeurs et ses erreurs au premier rendu. Il se branche sur le store au montage du composant, et s'en débranche au démontage.</li>
+        <li><code>signup.bind()</code> et <code>signup.field('email')</code> sont des directives d'élément : elles s'écrivent entre accolades dans la balise, <code>&lt;form {signup.bind()}&gt;</code> pour le formulaire, <code>&lt;input {signup.field('email')} /&gt;</code> pour un champ (voir <a href="templates.html#attributs">Attributs</a>).</li>
+        <li><code>disabled={signup.submitting()}</code> pose l'attribut tant que la soumission est en cours, et le retire ensuite.</li>
+        <li><code>@contract account;</code> donne une vue du store sans rien en lire : le formulaire a ses propres valeurs. Il a seulement besoin du store pour envoyer <code>register</code> et suivre son issue. <code>submit.to</code> doit être une vue déclarée par <code>@contract</code>, <strong>avant</strong> le formulaire dans la classe : les déclarations s'initialisent dans l'ordre.</li>
+      </ul>
+      <h3 id="pourquoi-pas-un-composant-form">Pourquoi une déclaration et pas un composant &lt;Form&gt;</h3>
+      <p>
+        Un formulaire est de l'état du composant : ses valeurs, ses erreurs, ses vérifications et sa soumission sont lus
+        partout dans le template (<code>this.edit.field('name')</code>, <code>this.edit.values()</code>, le bouton
+        « Enregistrement… »). La balise, elle, existe déjà : c'est le <code>&lt;form&gt;</code> natif, relié par
+        <code>&lt;form {this.edit.bind()}&gt;</code>. Un composant <code>&lt;Form&gt;</code> cacherait cet état derrière
+        ses props et ferait perdre le typage des champs. <code>&lt;Table&gt;</code> est un autre cas : c'est un composant
+        d'affichage.
+      </p>
+
+      <h2 id="les-valeurs-initiales">Les valeurs initiales donnent les types</h2>
+      <p>Le type de chaque champ est déduit de <code>initial</code>. Élargis ce qui changera de type :</p>
+      <script type="text/x-code">
+        initial: {
+          name: '',                                   // string
+          age: null as number | null,                 // nombre facultatif : null quand le champ est vide
+          plan: 'free' as 'free' | 'pro' | 'team',    // une union : seuls ces choix sont acceptés
+          languages: [] as string[],                  // plusieurs valeurs
+          avatar: null as File | null,                // fichier
+          phones: [{ label: 'mobile', number: '' }],  // une liste de lignes (voir Listes dynamiques)
+        },
+      </script>
+      <p>Un tableau d'objets est une <a href="#listes-dynamiques">liste dynamique</a>. Un tableau de valeurs simples (<code>string[]</code>) est un champ à plusieurs valeurs : liste à choix multiples ou groupe de cases à cocher.</p>
+
+      <h2 id="lier-les-champs">Lier les champs : field</h2>
+      <p>
+        <code>field(nom)</code> se place sur un <code>&lt;input&gt;</code>, un <code>&lt;select&gt;</code> ou un
+        <code>&lt;textarea&gt;</code>. Il écrit la valeur dans le champ, écoute la saisie, et note le premier passage dans
+        le champ. Il choisit tout seul la bonne propriété selon le type d'élément.
+      </p>
+      <table>
+        <thead><tr><th>Champ</th><th>Écriture</th><th>Valeur</th></tr></thead>
+        <tbody>
+          <tr><td>texte, e-mail, mot de passe, recherche, téléphone, URL</td><td><code>&lt;input type="email" {f.field('email')} /&gt;</code></td><td><code>string</code></td></tr>
+          <tr><td>zone de texte</td><td><code>&lt;textarea {f.field('bio')}&gt;&lt;/textarea&gt;</code></td><td><code>string</code></td></tr>
+          <tr><td>date, heure, date et heure, mois, semaine, couleur</td><td><code>&lt;input type="date" {f.field('birthdate')} /&gt;</code></td><td><code>string</code> (format du navigateur : <code>1906-12-09</code>, <code>#ff0000</code>)</td></tr>
+          <tr><td>nombre</td><td><code>&lt;input type="number" {f.field('age')} /&gt;</code></td><td><code>number</code>, ou <code>null</code> si le champ est vidé</td></tr>
+          <tr><td>curseur</td><td><code>&lt;input type="range" min="0" max="100" {f.field('volume')} /&gt;</code></td><td><code>number</code></td></tr>
+          <tr><td>liste déroulante</td><td><code>&lt;select {f.field('country')}&gt;…&lt;/select&gt;</code></td><td><code>string</code> (la <code>value</code> de l'option)</td></tr>
+          <tr><td>liste à choix multiples</td><td><code>&lt;select multiple {f.field('languages')}&gt;…&lt;/select&gt;</code></td><td><code>string[]</code></td></tr>
+          <tr><td>boutons radio</td><td><code>&lt;input type="radio" {f.field('plan', 'pro')} /&gt;</code></td><td>la valeur du bouton coché</td></tr>
+          <tr><td>case à cocher seule</td><td><code>&lt;input type="checkbox" {f.field('newsletter')} /&gt;</code></td><td><code>boolean</code></td></tr>
+          <tr><td>groupe de cases à cocher</td><td><code>&lt;input type="checkbox" {f.field('interests', 'sport')} /&gt;</code></td><td><code>string[]</code> des cases cochées</td></tr>
+          <tr><td>fichier</td><td><code>&lt;input type="file" {f.field('avatar')} /&gt;</code></td><td><code>File | null</code></td></tr>
+          <tr><td>plusieurs fichiers</td><td><code>&lt;input type="file" multiple {f.field('photos')} /&gt;</code></td><td><code>File[]</code></td></tr>
+        </tbody>
+      </table>
+      <p>
+        Le <a href="ui.html#champs">kit d'interface</a> fournit des champs déjà câblés (<code>Field</code>,
+        <code>Select</code>, <code>Checkbox</code>, <code>RadioGroup</code>) : libellé, aide, erreur et attributs ARIA
+        compris, reliés par <code>fieldOf(edit, 'email')</code>.
+      </p>
+      <p>
+        Dans les extraits qui suivent, <code>initial</code> vient de la déclaration <code>@form edit = { … };</code>, et les balises
+        du corps de <code>render()</code>, où <code>const { edit } = this;</code> donne le formulaire.
+      </p>
+
+      <h3 id="champs-texte">Champs texte</h3>
+      <script type="text/x-code">
+        initial: { name: '', email: '', password: '', search: '', phone: '', website: '', bio: '' },
+
+        // dans render()
+        <input {edit.field('name')} />
+        <input type="email" {edit.field('email')} />
+        <input type="password" {edit.field('password')} />
+        <input type="search" {edit.field('search')} />
+        <input type="tel" {edit.field('phone')} />
+        <input type="url" {edit.field('website')} />
+        <textarea {edit.field('bio')}></textarea>
+      </script>
+      <p>La valeur suit chaque frappe ; le champ est noté « touché » quand on le quitte.</p>
+
+      <h3 id="nombres-et-curseurs">Nombres et curseurs</h3>
+      <script type="text/x-code">
+        initial: { age: null as number | null, quantity: 1, volume: 50 },
+
+        // dans render()
+        <input type="number" {edit.field('age')} />                       // null si vidé
+        <input type="number" min="1" step="1" {edit.field('quantity')} />
+        <input type="range" min="0" max="100" {edit.field('volume')} />
+      </script>
+      <p>
+        Un champ nombre vidé donne <code>null</code> : déclare <code>null as number | null</code> pour un nombre facultatif.
+        Les attributs <code>min</code>, <code>max</code> et <code>step</code> guident la saisie, mais ne remplacent pas une
+        règle : le formulaire désactive la validation native du navigateur au profit de tes règles.
+      </p>
+
+      <h3 id="dates-et-couleurs">Dates, heures et couleurs</h3>
+      <script type="text/x-code">
+        initial: { birthdate: '', alarm: '', meeting: '', month: '', week: '', color: '#3b82f6' },
+
+        // dans render()
+        <input type="date" {edit.field('birthdate')} />            // '1906-12-09'
+        <input type="time" {edit.field('alarm')} />                // '07:30'
+        <input type="datetime-local" {edit.field('meeting')} />    // '2026-11-25T14:00'
+        <input type="month" {edit.field('month')} />               // '2026-11'
+        <input type="week" {edit.field('week')} />                 // '2026-W48'
+        <input type="color" {edit.field('color')} />               // '#3b82f6'
+      </script>
+      <p>Ces champs donnent des chaînes, au format du navigateur. Convertis-les dans <code>submit.toInput</code> si la commande attend un autre format.</p>
+
+      <h3 id="listes-deroulantes">Listes déroulantes</h3>
+      <script type="text/x-code">
+        initial: { country: 'FR', languages: [] as string[] },
+
+        // dans render()
+        <select {edit.field('country')}>
+          <option value="FR">France</option>
+          <option value="BE">Belgique</option>
+        </select>
+
+        <select multiple {edit.field('languages')}>
+          for (const l of LANGUAGES; key l.code) {
+            <option value={l.code}>{l.label}</option>
+          }
+        </select>
+      </script>
+      <p>
+        Les options peuvent venir d'un tableau, rendues par une boucle <code>for</code> à clé : la sélection est rétablie
+        une fois les options en place.
+      </p>
+
+      <h3 id="boutons-radio">Boutons radio</h3>
+      <script type="text/x-code">
+        initial: { plan: 'free' as 'free' | 'pro' | 'team' },
+
+        // dans render()
+        <label><input type="radio" {edit.field('plan', 'free')} /> Gratuite</label>
+        <label><input type="radio" {edit.field('plan', 'pro')} /> Pro</label>
+        <label><input type="radio" {edit.field('plan', 'team')} /> Équipe</label>
+      </script>
+      <p>
+        Chaque bouton reçoit sa valeur en second argument ; le formulaire coche celui qui correspond. La valeur est typée
+        par l'union : <code>field('plan', 'gold')</code> ne compile pas. Pas besoin d'attribut <code>name</code> ni
+        <code>value</code>.
+      </p>
+
+      <h3 id="cases-a-cocher">Cases à cocher</h3>
+      <script type="text/x-code">
+        initial: { newsletter: false, interests: [] as string[] },
+
+        // dans render()
+        <label><input type="checkbox" {edit.field('newsletter')} /> Recevoir la newsletter</label>   // boolean
+
+        <label><input type="checkbox" {edit.field('interests', 'sport')} /> Sport</label>            // string[]
+        <label><input type="checkbox" {edit.field('interests', 'lecture')} /> Lecture</label>
+      </script>
+      <p>Sans second argument, la case vaut <code>true</code> ou <code>false</code>. Avec, elle ajoute ou retire sa valeur du tableau.</p>
+
+      <h3 id="fichiers">Fichiers</h3>
+      <script type="text/x-code">
+        initial: { avatar: null as File | null, photos: [] as File[] },
+
+        // dans render()
+        <input type="file" accept="image/*" {edit.field('avatar')} />
+        <input type="file" multiple {edit.field('photos')} />
+      </script>
+      <p>
+        Un navigateur ne permet pas de pré-remplir un champ fichier : la valeur initiale est forcément vide, et
+        <code>reset()</code> vide le champ.
+      </p>
+
+      <h3 id="champs-hors-formulaire">Les valeurs sans champ</h3>
+      <p>
+        Une valeur n'a pas besoin d'un champ visible : un identifiant, une valeur calculée ou choisie par un composant
+        maison se lisent avec <code>values()</code> et se modifient avec <code>set(nom, valeur)</code>.
+      </p>
+      <script type="text/x-code">
+        initial: { rating: 0 },
+
+        // dans render()
+        <StarRating value={edit.values().rating} on:picked={(n) => edit.set('rating', n)} />
+      </script>
+      <p>
+        Les props sont lisibles quand le formulaire se construit, mais <code>initial</code> n'est lu qu'une fois : une valeur qui vient
+        des props et peut changer (l'identifiant de la fiche éditée) n'y va pas. Ajoute-la dans <code>submit.toInput</code>, appelé à la
+        soumission : <code>toInput: (values) => ({ ...values, id: this.recordId })</code>, avec <code>@prop recordId: string;</code>
+        (une prop ne peut pas s'appeler <code>id</code>, propriété native des éléments HTML).
+      </p>
+
+      <h2 id="bind">La balise form : bind</h2>
+      <p>
+        <code>&lt;form {edit.bind()}&gt;</code> soumet le formulaire au clic sur un bouton ou à la touche
+        Entrée, sans recharger la page. Il désactive la validation native du navigateur (bulles d'erreur), remplacée par
+        tes règles et tes messages. Sans <code>&lt;form&gt;</code>, appelle <code>edit.submit()</code> toi-même.
+      </p>
+
+      <h2 id="regles">Les règles</h2>
+      <p>Une règle reçoit la valeur du champ et toutes les valeurs, et renvoie <code>true</code> ou le message d'erreur :</p>
+      <script type="text/x-code">
+        rules: {
+          name: (v) => v.trim() !== '' || 'Nom obligatoire',
+          age: (v) => v === null || (v >= 13 && v <= 120) || 'Entre 13 et 120 ans',
+          languages: (v) => v.length > 0 || 'Choisis au moins une langue',
+          avatar: (v) => v === null || v.size < 2_000_000 || 'Image de 2 Mo maximum',
+          endDate: (v, values) => v >= values.startDate || 'La fin doit suivre le début',
+        },
+      </script>
+      <p>Super n'impose aucune bibliothèque de validation. Avec Zod, par exemple :</p>
+      <script type="text/x-code">
+        const emailSchema = z.string().email();
+
+        rules: {
+          email: (v) => emailSchema.safeParse(v).success || 'Adresse invalide',
+        },
+      </script>
+
+      <h3 id="validate">Les règles croisées : validate</h3>
+      <p>Quand une erreur dépend de plusieurs champs, <code>validate</code> reçoit toutes les valeurs et renvoie les erreurs par champ :</p>
+      <script type="text/x-code">
+        validate: (values) => (values.password === values.confirm ? {} : { confirm: 'Les mots de passe diffèrent' }),
+
+        // Avec un schéma Zod complet :
+        validate: (values) => {
+          const result = profileSchema.safeParse(values);
+          if (result.success) return {};
+          return Object.fromEntries(result.error.issues.map((issue) => [issue.path[0], issue.message]));
+        },
+      </script>
+
+      <h3 id="quand-les-erreurs-s-affichent">Quand les erreurs s'affichent</h3>
+      <ul>
+        <li><strong>Une règle ou <code>validate</code></strong> : après le premier passage dans le champ (on le quitte, ou on change une case, une liste, un fichier), ou après une tentative de soumission. Taper une adresse incomplète n'affiche rien tant qu'on est dans le champ.</li>
+        <li><strong>Une erreur du serveur</strong> (<code>failures.fields</code>) : tout de suite, et jusqu'à ce qu'on modifie ce champ.</li>
+        <li><strong>Une vérification asynchrone</strong> refusée : dès sa réponse.</li>
+      </ul>
+      <p><code>error('email')</code> renvoie un seul message, dans cet ordre de priorité : serveur, règle du champ, <code>validate</code>, vérification asynchrone.</p>
+
+      <h2 id="soumission">La soumission</h2>
+      <p>
+        La soumission est une commande d'un store. <code>submit</code> dit laquelle, et <code>toInput</code> convertit les
+        valeurs du formulaire en <code>input</code> de la commande : on retire ce qui ne sert qu'à l'écran (une
+        confirmation de mot de passe), on convertit (une date vide en <code>null</code>), on regroupe. Quand les valeurs ont
+        déjà la bonne forme, <code>toInput: (values) => values</code> suffit. C'est ce même <code>input</code> qu'on
+        retrouve dans <code>save:done</code> et <code>save:failed</code>.
+      </p>
+      <script type="text/x-code">
+        submit: {
+          to: this.profile,                               // déclaré plus haut par @contract profile;
+          command: 'save',
+          toInput: ({ confirm, birthdate, ...values }) => ({ ...values, birthdate: birthdate || null }),
+        },
+      </script>
+      <p>Ce qui se passe à la soumission :</p>
+      <ol>
+        <li>Tous les champs sont marqués « touchés » : les erreurs des règles apparaissent.</li>
+        <li>S'il reste une erreur (règle, <code>validate</code> ou vérification refusée), rien n'est envoyé, et le <a href="#aller-a-la-premiere-erreur">premier champ en erreur</a> est centré à l'écran et reçoit le focus.</li>
+        <li>Si une vérification asynchrone est en cours, la soumission l'attend, puis repart toute seule.</li>
+        <li>Sinon, la commande part avec <code>toInput(valeurs)</code>. <code>submitting()</code> est vrai jusqu'à son issue.</li>
+        <li>En cas d'échec, l'erreur s'affiche selon <code>failures</code>. En cas de succès, le formulaire efface ses erreurs et garde ses valeurs.</li>
+      </ol>
+      <p>Pour réagir au succès (naviguer, afficher une confirmation, vider le formulaire), écoute l'issue de la commande par une méthode <code>@on</code> :</p>
+      <script type="text/x-code">
+        @contract profile;
+        @form edit = { /* … */ submit: { to: this.profile, command: 'save', toInput: (values) => values } };
+
+        @on('profile', 'save:done')
+        onSaved() {
+          this.router.send('navigate', { to: 'home' });
+        }
+      </script>
+      <p>
+        La méthode est appelée à chaque <code>save:done</code> tant que le composant est monté ; son paramètre est typé
+        par l'événement (<code>{ input, result }</code>). Soumettre avant le montage (appeler <code>edit.submit()</code>
+        pendant la construction) lève une erreur : le formulaire ne parle au store qu'une fois
+        branché.
+      </p>
+
+      <h3 id="aller-a-la-premiere-erreur">Aller à la première erreur</h3>
+      <p>
+        Quand une soumission est bloquée, le formulaire centre à l'écran le premier champ en erreur, dans l'ordre de la page,
+        et lui donne le focus. Même chose quand le serveur renvoie une erreur rattachée à un champ
+        (<code>failures.fields</code>). Sur un long formulaire, l'utilisateur voit tout de suite ce qu'il doit corriger, peut
+        le faire au clavier, et un lecteur d'écran annonce le champ.
+      </p>
+      <ul>
+        <li>Pour un groupe de radios ou de cases, c'est la première case du groupe qui reçoit le focus.</li>
+        <li>Une erreur rattachée au formulaire entier (<code>failures.form</code>) ne déplace rien : elle n'a pas de champ.</li>
+        <li>Seuls les champs liés par <code>field(…)</code> sont retrouvés : une valeur sans champ visible ne déplace rien.</li>
+      </ul>
+      <p>Pour le désactiver :</p>
+      <script type="text/x-code">
+        @form edit = { initial, rules, submit, scrollToError: false };
+      </script>
+
+      <h2 id="erreurs-du-serveur">Les erreurs du serveur : failures</h2>
+      <p>Chaque raison d'échec déclarée par la commande est rattachée à un champ, ou au formulaire entier :</p>
+      <script type="text/x-code">
+        // save(input: ProfileInput): Outcome<{ id: string }, 'email-taken' | 'avatar-too-large' | 'network' | 'rate-limited'>
+
+        failures: {
+          fields: {
+            'email-taken': { email: 'Adresse déjà utilisée' },              // sous le champ email
+            'avatar-too-large': { avatar: 'Image refusée par le serveur' },
+          },
+          form: {
+            network: 'Connexion impossible, réessaie.',                     // dans formError()
+            'rate-limited': 'Trop de tentatives, réessaie dans une minute.',
+            error: 'Un problème est survenu de notre côté.',                // facultatif
+          },
+        },
+      </script>
+      <table>
+        <thead><tr><th>Clé</th><th>Où s'affiche le message</th><th>Quand il disparaît</th></tr></thead>
+        <tbody>
+          <tr><td><code>fields</code></td><td>Sous le champ, avec <code>error('email')</code>. Une raison peut viser plusieurs champs.</td><td>Quand on modifie ce champ.</td></tr>
+          <tr><td><code>form</code></td><td>Pour tout le formulaire, avec <code>formError()</code>.</td><td>À la soumission suivante.</td></tr>
+        </tbody>
+      </table>
+      <ul>
+        <li><strong>Chaque raison déclarée apparaît une seule fois</strong>, dans <code>fields</code> ou dans <code>form</code>. Une raison oubliée, en double, inconnue du contrat, ou un champ inconnu dans <code>fields</code> ne compilent pas.</li>
+        <li><strong><code>form.error</code> est facultatif.</strong> C'est le message d'une exception inattendue (un bug, une réponse illisible). Sans lui, <code>formError()</code> affiche « Une erreur inattendue est survenue. », pour que l'utilisateur ne reste jamais sans retour. L'exception part aussi dans <code>onError</code>.</li>
+        <li>Une commande sans raison d'échec déclarée n'a pas besoin de <code>failures</code>.</li>
+      </ul>
+
+      <h2 id="verifications-asynchrones">Les vérifications asynchrones : checks</h2>
+      <p>
+        Une vérification pendant la saisie (« cette adresse est-elle libre ? ») est une commande du store de soumission.
+        Le formulaire la déclenche et lit son issue :
+      </p>
+      <script type="text/x-code">
+        // checkEmail(input: { email: string }): Outcome<{ available: boolean }, 'network'>
+
+        checks: {
+          email: {
+            command: 'checkEmail',
+            toInput: (email) => ({ email }),
+            accept: ({ available }) => available || 'Adresse déjà utilisée',
+            delay: 400,
+          },
+        },
+
+        // dans render()
+        <input type="email" {edit.field('email')} />
+        if (edit.checking('email')) {
+          <small>Vérification…</small>
+        }
+        <p class="error">{edit.error('email')}</p>
+      </script>
+      <ul>
+        <li><strong>Seulement si les règles du champ passent</strong> : inutile d'interroger le serveur pour <code>"abc"</code>.</li>
+        <li><strong>Après une pause dans la saisie</strong> de <code>delay</code> millisecondes (300 par défaut) : une seule requête pour une adresse tapée d'un trait.</li>
+        <li><strong>Les réponses périmées sont ignorées</strong> : si le champ a changé depuis, la réponse de l'ancienne valeur ne compte pas.</li>
+        <li><strong><code>checking('email')</code></strong> est vrai pendant la pause et pendant la requête.</li>
+        <li><strong>La soumission attend</strong> la fin des vérifications en cours.</li>
+        <li><strong>Une vérification qui échoue</strong> (réseau coupé) ne bloque pas : le serveur reste juge à la soumission, et la raison revient alors par <code>failures</code>.</li>
+        <li>Les vérifications passent par <strong>le même store que la soumission</strong> : c'est ce qui permet au compilateur de typer <code>toInput</code> et <code>accept</code> selon la commande choisie.</li>
+      </ul>
+
+      <h2 id="listes-dynamiques">Listes dynamiques</h2>
+      <p>Pour un nombre de lignes qui change pendant la saisie (téléphones, adresses, lignes de facture), déclare un tableau d'objets :</p>
+      <script type="text/x-code">
+        @contract profile;
+
+        @form edit = {
+          initial: { phones: [{ label: 'mobile', number: '' }] },
+          rules: {
+            phones: { number: (v) => /^\+?[0-9 ]{6,}$/.test(v) || 'Numéro invalide' },   // une règle par champ de ligne
+          },
+          validate: (v) => (v.phones.length > 0 ? {} : { phones: 'Au moins un numéro' }),
+          submit: { to: this.profile, command: 'savePhones', toInput: (v) => v },
+        };
+
+        phones = this.edit.list('phones');
+
+        render() {
+          const { edit, phones } = this;
+          for (const item of phones.items(); key item.key) {
+            <div>
+              <select {item.field('label')}><option>mobile</option><option>travail</option></select>
+              <input type="tel" {item.field('number')} />
+              <button type="button" on:click={() => phones.remove(item)}>Retirer</button>
+              <p class="error">{item.error('number')}</p>
+            </div>
+          }
+          <p class="error">{edit.error('phones')}</p>
+          <button type="button" on:click={() => phones.add({ label: 'mobile', number: '' })}>Ajouter un numéro</button>
+        }
+      </script>
+      <table>
+        <thead><tr><th>Membre</th><th>Rôle</th></tr></thead>
+        <tbody>
+          <tr><td><code>list('phones')</code></td><td>La liste, à déclarer dans un champ, après le formulaire (<code>phones = this.edit.list('phones')</code>).</td></tr>
+          <tr><td><code>items()</code></td><td>Les lignes, chacune avec <code>key</code>, <code>index</code>, <code>value</code>, <code>field(nom)</code> et <code>error(nom)</code>.</td></tr>
+          <tr><td><code>add(ligne)</code></td><td>Ajoute une ligne complète, typée par la liste.</td></tr>
+          <tr><td><code>remove(ligne | index)</code></td><td>Retire une ligne.</td></tr>
+        </tbody>
+      </table>
+      <p>
+        <strong>Utilise <code>item.key</code> comme clé de la boucle</strong> (<code>for (const item of phones.items(); key item.key)</code>). Elle ne change pas quand on retire une
+        autre ligne : la saisie et les erreurs restent sur la bonne ligne. L'index, lui, se décale.
+      </p>
+
+      <h2 id="lire-et-piloter">Lire et piloter le formulaire</h2>
+      <table>
+        <thead><tr><th>Membre</th><th>Rôle</th></tr></thead>
+        <tbody>
+          <tr><td><code>bind()</code></td><td>Sur <code>&lt;form&gt;</code> : soumission sans rechargement.</td></tr>
+          <tr><td><code>field(nom, valeur?)</code></td><td>Sur un champ. La valeur en second argument pour un radio ou une case d'un groupe.</td></tr>
+          <tr><td><code>error(nom)</code></td><td>Le message sous un champ, ou <code>null</code>.</td></tr>
+          <tr><td><code>formError()</code></td><td>Le message pour tout le formulaire, ou <code>null</code>.</td></tr>
+          <tr><td><code>submitting()</code></td><td>La soumission est en cours, ou attend des vérifications.</td></tr>
+          <tr><td><code>checking(nom)</code></td><td>Une vérification de ce champ est en cours.</td></tr>
+          <tr><td><code>values()</code></td><td>Les valeurs courantes.</td></tr>
+          <tr><td><code>set(nom, valeur)</code></td><td>Change une valeur, comme une saisie.</td></tr>
+          <tr><td><code>list(nom)</code></td><td>Une liste dynamique.</td></tr>
+          <tr><td><code>submit()</code></td><td>Soumet, comme le bouton (et amène à la première erreur s'il y en a).</td></tr>
+          <tr><td><code>reset()</code></td><td>Revient aux valeurs initiales, efface erreurs, champs touchés et vérifications.</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="exemple-complet" data-llm="skip">Exemple complet</h2>
+      <p>
+        Ce formulaire tourne dans l'app d'exemples : <code>npm run dev</code>, puis la page <code>/profile</code>. Il utilise
+        chaque type de champ, une règle croisée, une vérification asynchrone, une liste dynamique, et un serveur simulé par
+        un adapter (latence, adresse déjà prise, image trop lourde, panne réseau). Voir aussi le
+        <a href="../examples/demo/src/@core/profile/store.ts">store</a>, le
+        <a href="../examples/demo/src/ports/profile-client.ts">port</a>, le type <a href="../examples/demo/src/domain/profile.ts"><code>ProfileInput</code></a>, l'<a href="../examples/demo/src/adapters/fake-profile-client.ts">adapter simulé</a>
+        et les <a href="../examples/demo/src/@components/profile/index.test.ts">tests de l'écran</a>.
+      </p>
+      <script type="text/x-code" data-title="src/@core/profile/contract.ts" data-source="examples/demo/src/@core/profile/contract.ts">
+        import { type Outcome, SuperContract } from '@super-ts/core';
+        import type { ProfileInput } from '../../domain/profile';
+
+        // Ce store n'a pas d'état : il fait l'intermédiaire avec le serveur. Ses commandes et leur cycle de vie
+        // (en cours, réussie, échouée) suffisent au formulaire.
+        export class ProfileContract extends SuperContract<{
+          state: {};
+          commands: {
+            // La soumission du formulaire : son issue alimente « en cours » et les erreurs du serveur.
+            save(input: ProfileInput): Outcome<{ id: string }, 'email-taken' | 'avatar-too-large' | 'network'>;
+            // La vérification asynchrone de l'adresse, pendant la saisie.
+            checkEmail(input: { email: string }): Outcome<{ available: boolean }, 'network'>;
+          };
+        }> {
+          constructor() {
+            super({ name: 'profile' });
+          }
+        }
+      </script>
+      <script type="text/x-code" data-title="src/@components/profile/index.super" data-source="examples/demo/src/@components/profile/index.super">
+        import { SuperElement } from '@super-ts/dom';
+        import './index.css';
+
+        const COUNTRIES = [
+          { code: 'FR', label: 'France' },
+          { code: 'BE', label: 'Belgique' },
+          { code: 'CH', label: 'Suisse' },
+          { code: 'CA', label: 'Canada' },
+        ];
+        const LANGUAGES = [
+          { code: 'fr', label: 'Français' },
+          { code: 'en', label: 'Anglais' },
+          { code: 'es', label: 'Espagnol' },
+        ];
+        const INTERESTS = [
+          { value: 'sport', label: 'Sport' },
+          { value: 'lecture', label: 'Lecture' },
+          { value: 'musique', label: 'Musique' },
+        ];
+
+        /** Écran de la route `/profile` : un formulaire avec chaque type de champ, soumis à un serveur simulé. */
+        export class ProfileScreen extends SuperElement {
+          @tag = 'profile-screen';
+          @title = 'Profil';
+
+          // Le store ne sert qu'à envoyer les commandes et suivre leur issue : on n'en lit rien.
+          @contract profile;
+          @state local = { saved: null as string | null };
+
+          @form edit = {
+            // Les valeurs initiales donnent le type de chaque champ.
+            initial: {
+              name: '',
+              email: '',
+              password: '',
+              confirm: '',
+              age: null as number | null,
+              website: '',
+              bio: '',
+              country: 'FR',
+              languages: [] as string[],
+              plan: 'free' as 'free' | 'pro' | 'team',
+              newsletter: false,
+              interests: [] as string[],
+              birthdate: '',
+              meetingTime: '',
+              color: '#4f46e5',
+              volume: 50,
+              avatar: null as File | null,
+              phones: [{ label: 'mobile', number: '' }],
+            },
+
+            // Une règle par champ : `true`, ou le message d'erreur.
+            rules: {
+              name: (v) => v.trim() !== '' || 'Nom obligatoire',
+              email: (v) => /.+@.+\..+/.test(v) || 'Adresse invalide',
+              password: (v) => v.length >= 8 || '8 caractères minimum',
+              age: (v) => v === null || (v >= 13 && v <= 120) || 'Entre 13 et 120 ans',
+              website: (v) => v === '' || /^https?:\/\/.+/.test(v) || 'Adresse commençant par http:// ou https://',
+              bio: (v) => v.length <= 280 || '280 caractères maximum',
+              languages: (v) => v.length > 0 || 'Choisis au moins une langue',
+              avatar: (v) => v === null || v.type.startsWith('image/') || 'Choisis une image',
+              phones: { number: (v) => /^\+?[0-9 ]{6,}$/.test(v) || 'Numéro invalide' },
+            },
+
+            // Les règles qui croisent plusieurs champs.
+            validate: (v) => ({
+              ...(v.password === v.confirm ? {} : { confirm: 'Les mots de passe diffèrent' }),
+              ...(v.phones.length > 0 ? {} : { phones: 'Au moins un numéro' }),
+            }),
+
+            // La vérification asynchrone de l'adresse, pendant la saisie.
+            checks: {
+              email: {
+                command: 'checkEmail',
+                toInput: (email) => ({ email }),
+                accept: ({ available }) => available || 'Adresse déjà utilisée',
+                delay: 400,
+              },
+            },
+
+            // La soumission est une commande : `confirm` ne sert qu'à l'écran, on le retire.
+            submit: { to: this.profile, command: 'save', toInput: ({ confirm, ...values }) => values },
+
+            // Chaque raison d'échec de `save`, sur un champ ou sur le formulaire.
+            failures: {
+              fields: {
+                'email-taken': { email: 'Adresse déjà utilisée' },
+                'avatar-too-large': { avatar: 'Image trop lourde (1 Mo maximum)' },
+              },
+              form: { network: 'Connexion impossible, réessaie.' },
+            },
+          };
+
+          phones = this.edit.list('phones');
+
+          @on('profile', 'save:done')
+          onSaved({ result }) {
+            this.local.set({ saved: result.id });
+          }
+
+          render() {
+            const { edit, phones, local } = this;
+            <main class="screen">
+              <h1>Formulaire de profil</h1>
+              <p class="hint">
+                Le serveur est simulé. Essaie <code>taken@example.com</code> (adresse déjà prise), une adresse contenant <code>offline</code> (panne
+                réseau), ou une image de plus de 1 Mo.
+              </p>
+
+              <form {edit.bind()}>
+                <fieldset>
+                  <legend>Identité</legend>
+                  <label>Nom <input {edit.field('name')} /></label>
+                  <p class="error">{edit.error('name')}</p>
+
+                  <label>E-mail <input type="email" {edit.field('email')} /></label>
+                  if (edit.checking('email')) {
+                    <small class="checking">Vérification…</small>
+                  }
+                  <p class="error">{edit.error('email')}</p>
+
+                  <label>Mot de passe <input type="password" {edit.field('password')} /></label>
+                  <p class="error">{edit.error('password')}</p>
+                  <label>Confirmation <input type="password" {edit.field('confirm')} /></label>
+                  <p class="error">{edit.error('confirm')}</p>
+
+                  <label>Âge <input type="number" {edit.field('age')} /></label>
+                  <p class="error">{edit.error('age')}</p>
+
+                  <label>Site web <input type="url" {edit.field('website')} /></label>
+                  <p class="error">{edit.error('website')}</p>
+
+                  <label>Présentation <textarea rows="3" {edit.field('bio')}></textarea></label>
+                  <p class="error">{edit.error('bio')}</p>
+                </fieldset>
+
+                <fieldset>
+                  <legend>Préférences</legend>
+                  <label>
+                    Pays
+                    <select {edit.field('country')}>
+                      for (const c of COUNTRIES; key c.code) {
+                        <option value={c.code}>{c.label}</option>
+                      }
+                    </select>
+                  </label>
+
+                  <label>
+                    Langues
+                    <select multiple {edit.field('languages')}>
+                      for (const l of LANGUAGES; key l.code) {
+                        <option value={l.code}>{l.label}</option>
+                      }
+                    </select>
+                  </label>
+                  <p class="error">{edit.error('languages')}</p>
+
+                  <fieldset class="inline">
+                    <legend>Offre</legend>
+                    <label><input type="radio" {edit.field('plan', 'free')} /> Gratuite</label>
+                    <label><input type="radio" {edit.field('plan', 'pro')} /> Pro</label>
+                    <label><input type="radio" {edit.field('plan', 'team')} /> Équipe</label>
+                  </fieldset>
+
+                  <label class="inline"><input type="checkbox" {edit.field('newsletter')} /> Recevoir la newsletter</label>
+
+                  <fieldset class="inline">
+                    <legend>Centres d'intérêt</legend>
+                    for (const i of INTERESTS; key i.value) {
+                      <label><input type="checkbox" {edit.field('interests', i.value)} /> {i.label}</label>
+                    }
+                  </fieldset>
+                </fieldset>
+
+                <fieldset>
+                  <legend>Dates, couleur, volume, avatar</legend>
+                  <label>Date de naissance <input type="date" {edit.field('birthdate')} /></label>
+                  <label>Heure de rendez-vous <input type="time" {edit.field('meetingTime')} /></label>
+                  <label>Couleur préférée <input type="color" {edit.field('color')} /></label>
+                  <label>Volume ({edit.values().volume}) <input type="range" min="0" max="100" {edit.field('volume')} /></label>
+                  <label>Avatar <input type="file" accept="image/*" {edit.field('avatar')} /></label>
+                  <p class="error">{edit.error('avatar')}</p>
+                </fieldset>
+
+                <fieldset>
+                  <legend>Téléphones</legend>
+                  for (const item of phones.items(); key item.key) {
+                    <div class="phone">
+                      <select aria-label="Type de numéro" {item.field('label')}>
+                        <option value="mobile">mobile</option><option value="travail">travail</option><option value="domicile">domicile</option>
+                      </select>
+                      <input type="tel" aria-label="Numéro" {item.field('number')} />
+                      <button type="button" on:click={() => phones.remove(item)}>Retirer</button>
+                      <p class="error">{item.error('number')}</p>
+                    </div>
+                  }
+                  <p class="error">{edit.error('phones')}</p>
+                  <button type="button" on:click={() => phones.add({ label: 'mobile', number: '' })}>Ajouter un numéro</button>
+                </fieldset>
+
+                <p role="alert" class="form-error">{edit.formError()}</p>
+                <p role="status" class="saved">{local.get().saved ? `Profil enregistré (n° ${local.get().saved}).` : ''}</p>
+
+                <div class="actions">
+                  <button type="button" on:click={() => (edit.reset(), local.set({ saved: null }))}>Tout effacer</button>
+                  <button type="submit" disabled={edit.submitting()}>{edit.submitting() ? 'Enregistrement…' : 'Enregistrer'}</button>
+                </div>
+              </form>
+            </main>
+          }
+        }
+      </script>
+
+      <h2 id="tester-un-formulaire">Tester un formulaire</h2>
+      <p>On remplit les champs comme le ferait le navigateur, puis on joue le rôle du store avec un faux store :</p>
+      <script type="text/x-code" data-title="src/@components/signup/index.test.ts">
+        test('affiche l’erreur du serveur sous le bon champ', async () => {
+          const account = fakeStore('account', { state: { userId: null } });
+          const { container } = await mount(SignupScreen, { stores: [account] });
+          const ui = within(container);
+
+          await userEvent.type(ui.getByLabelText('E-mail'), 'ada@example.com');
+          await userEvent.type(ui.getByLabelText('Mot de passe'), 'longpassword');
+          await userEvent.click(ui.getByRole('button', { name: 'Créer mon compte' }));
+
+          expect(account.sent).toEqual([{ name: 'register', args: [{ email: 'ada@example.com', password: 'longpassword' }] }]);
+
+          const input = account.sent[0]!.args[0];   // le body envoyé : l'issue doit porter le même
+          account.emit('register:failed', { input, reason: 'email-taken', error: null });
+          await flush();
+
+          expect(ui.getByText('Adresse déjà utilisée')).toBeTruthy();
+        });
+      </script>
+      <p>
+        L'issue émise doit porter le même <code>input</code> que la commande envoyée : c'est ainsi que le formulaire
+        reconnaît la réponse à sa propre soumission.
+      </p>
+
+      <h2 id="ce-que-le-compilateur-verifie">Ce que le compilateur vérifie</h2>
+      <ul>
+        <li><code>field</code> vise un champ existant, qui n'est pas une liste ; la valeur d'un radio appartient à l'union déclarée.</li>
+        <li>Chaque règle reçoit le bon type : <code>age</code> reçoit <code>number | null</code>, <code>newsletter</code> un <code>boolean</code>.</li>
+        <li><code>submit.toInput</code> produit bien l'<code>input</code> de la commande.</li>
+        <li><code>failures</code> répartit exactement les raisons de la commande entre <code>fields</code> et <code>form</code>, et <code>fields</code> ne vise que des champs existants.</li>
+        <li>Une vérification vise une commande du store, et <code>toInput</code> et <code>accept</code> sont typés par elle.</li>
+        <li><code>list(…).add(…)</code> exige une ligne complète.</li>
+      </ul>
+
+      <h2 id="limites">Limites</h2>
+      <ul>
+        <li>Les objets imbriqués ne sont pris en charge que sous forme de listes de lignes. Pour un sous-objet (une adresse), aplatis ses champs (<code>street</code>, <code>city</code>), puis reconstruis l'objet dans <code>submit.toInput</code>.</li>
+        <li>Les erreurs du serveur (<code>failures.fields</code>) visent des champs de premier niveau, pas une ligne d'une liste.</li>
+        <li>Les vérifications asynchrones passent par le store de soumission.</li>
+        <li>Un champ fichier ne peut pas être pré-rempli.</li>
+      </ul>
+    </article>
+    <script src="assets/search-index.js"></script>
+    <script src="assets/site.js"></script>
+  </body>
+</html>

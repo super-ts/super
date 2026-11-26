@@ -1,0 +1,101 @@
+import { SuperElement } from '@super-ts/dom';
+import { Button, Combobox, createToasts, Disclosure, Menu, Popover, Tabs, Toasts, Tooltip } from '@super-ts/ui';
+import { KitPage } from './kit-page';
+
+const ACTIONS = [
+  { id: 'hello', label: 'Dire bonjour' },
+  { id: 'archive', label: 'Archiver', disabled: true },
+  { id: 'oops', label: 'Signaler une erreur' },
+];
+// Des valeurs écrites en dur : le combobox les filtre lui-même, sans accents ni casse.
+const FRUITS = [
+  'Abricot',
+  'Ananas',
+  'Banane',
+  'Cerise',
+  'Citron',
+  'Fraise',
+  'Framboise',
+  'Mangue',
+  'Myrtille',
+  'Pêche',
+  'Poire',
+  'Pomme',
+].map((fruit) => ({ value: fruit.toLowerCase(), label: fruit }));
+const TABS = [
+  { id: 'profile', label: 'Profil' },
+  { id: 'security', label: 'Sécurité' },
+];
+
+/** Écran de la route `/kit/primitives` : des composants accessibles au clavier. */
+export class KitPrimitivesScreen extends SuperElement {
+  @tag = 'kit-primitives-screen';
+
+  notices = createToasts();
+  // Les suggestions viennent du store du catalogue, qui cherche dans l'API dummyjson.com.
+  @contract catalog;
+  @selector suggestions = this.catalog.selectors.suggestions;
+  @selector searching = () => this.catalog.selectors.pending('search');
+
+  #action = ({ id }: { id: string }) => {
+    if (id === 'hello') this.notices.show('Bonjour !');
+    if (id === 'oops') this.notices.show('Quelque chose s’est mal passé.', { tone: 'error', duration: 0 });
+  };
+
+  #profile() {
+    <p>Le panneau du profil.</p>
+  }
+
+  #security() {
+    <p>Le panneau de la sécurité. Les flèches gauche et droite passent d’un onglet à l’autre.</p>
+  }
+
+  render() {
+    <KitPage heading="Primitives" intro="Flèches, Début, Fin, Entrée et Échap : tout se fait aussi au clavier.">
+      <section class="kit-section">
+        <h2>Menu, Popover, Tooltip</h2>
+        <div class="kit-row">
+          <Menu label="Actions" items={ACTIONS} on:select={this.#action} />
+          <Popover label="Filtres">
+            <p>Un contenu flottant, non modal.</p>
+          </Popover>
+          <Tooltip text="Une info-bulle, au survol et au focus">
+            <Button variant="ghost">
+              Survole-moi
+            </Button>
+          </Tooltip>
+        </div>
+      </section>
+      <section class="kit-section"><h2>Tabs</h2> <Tabs tabs={TABS} panels={[this.#profile(), this.#security()]} label="Compte" /></section>
+      <section class="kit-section">
+        <h2>Disclosure</h2>
+        <Disclosure summary="Pourquoi ce compteur ?">
+          <p>Un contenu repliable, sur les balises details et summary.</p>
+        </Disclosure>
+      </section>
+      <section class="kit-section">
+        <h2>Combobox à valeurs en dur</h2>
+        <Combobox
+          label="Fruit"
+          options={FRUITS}
+          placeholder="Tape « peche »…"
+          on:select={({ label }) => this.notices.show(`Fruit choisi : ${label}`)}
+        />
+      </section>
+      <section class="kit-section">
+        <h2>Combobox branché sur une API</h2>
+        <p>Chaque frappe demande des suggestions au store ; il attend la fin de la frappe, puis cherche dans dummyjson.com.</p>
+        <Combobox
+          label="Produit"
+          options={this.suggestions.value.map((p) => ({ value: String(p.id), label: p.title }))}
+          filter={false}
+          loading={this.searching.value}
+          placeholder="Tape « apple »…"
+          on:search={({ text }) => this.catalog.send('search', { text })}
+          on:select={({ label }) => this.notices.show(`Produit choisi : ${label}`)}
+        />
+      </section>
+      <Toasts of={this.notices} />
+    </KitPage>
+  }
+}

@@ -1,0 +1,58 @@
+import { SuperElement } from '@super-ts/dom';
+import { formatPrice } from '../../format';
+import './index.css';
+
+/**
+ * Écran de la route `/shop/checkout`, protégé par un guard : on n'y arrive qu'avec un panier non vide
+ * (voir routes.ts). La commande est une commande du store Checkout, qui dépend du panier.
+ */
+export class CheckoutScreen extends SuperElement {
+  @tag = 'checkout-screen';
+  @title = 'Commande';
+
+  @contract cart;
+  @selector count = this.cart.selectors.count;
+  @selector total = this.cart.selectors.total;
+  @contract checkout;
+  @selector lastOrder = this.checkout.selectors.lastOrder;
+
+  @form order = {
+    initial: { address: '' },
+    rules: { address: (v) => v.trim().length >= 10 || 'Adresse complète, 10 caractères minimum' },
+    submit: { to: this.checkout, command: 'placeOrder', toInput: ({ address }) => ({ address: address.trim() }) },
+    failures: {
+      fields: { 'payment-refused': { address: 'Paiement refusé pour cette adresse de facturation' } },
+      form: { 'empty-cart': 'Ton panier est vide.', network: 'Connexion impossible, réessaie.' },
+    },
+  };
+
+  render() {
+    const lastOrder = this.lastOrder.value;
+    if (lastOrder) {
+      <main class="screen">
+        <h1>Commande confirmée</h1>
+        <p role="status">Commande n° {lastOrder.orderId}, {formatPrice(lastOrder.total)}.</p>
+        <a href={this.router.href('shop')}>Retour à la boutique</a>
+      </main>
+      return;
+    }
+    const count = this.count.value;
+    const { order } = this;
+    <main class="screen">
+      <h1>Commander</h1>
+      <p>{count} article{count > 1 ? 's' : ''}, {formatPrice(this.total.value)}.</p>
+      <p class="hint">
+        Serveur simulé : une adresse contenant <code>refus</code> fait refuser le paiement, <code>offline</code> simule une panne.
+      </p>
+      <form {order.bind()}>
+        <label>Adresse de livraison <textarea rows="3" {order.field('address')}></textarea></label>
+        <p class="error">{order.error('address')}</p>
+        <p role="alert" class="error">{order.formError()}</p>
+        <div class="actions">
+          <a href={this.router.href('shop')}>Retour au panier</a>
+          <button disabled={order.submitting()}>{order.submitting() ? 'Commande en cours…' : 'Payer'}</button>
+        </div>
+      </form>
+    </main>
+  }
+}

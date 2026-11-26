@@ -1,0 +1,63 @@
+import { SuperElement } from '@super-ts/dom';
+import { Badge } from './badge';
+
+type Item = { id: string; label: string };
+type Status = 'idle' | 'busy' | 'done';
+
+/** Chaque forme de la syntaxe, pour vérifier le code compilé dans le DOM. */
+export class Showcase extends SuperElement {
+  @tag = 'lang-showcase';
+  @ref input: HTMLInputElement;
+  @state local = {
+    items: [
+      { id: 'a', label: 'Alpha' },
+      { id: 'b', label: 'Beta' },
+    ] as Item[],
+    status: 'idle' as Status,
+    busy: false,
+    title: null as string | null,
+    clicks: 0,
+    picked: null as string | null,
+    hidden: false,
+  };
+
+  #row(item: Item) {
+    <li data-id={item.id}>{item.label}</li>
+  }
+
+  render() {
+    const { items, status, busy, title, clicks, picked } = this.local.get();
+    if (this.local.get().hidden) return;
+    <section title={title}>
+      <h1>Total : <strong>{items.length}</strong> éléments</h1> <p class="text">Une phrase sur deux lignes</p>
+      if (items.length === 0) {
+        <p class="empty">Vide</p>
+      } else {
+        <ul class="keyed">
+          for (const item of items; key item.id) {
+            {this.#row(item)}
+          }
+        </ul>
+      }
+      <ol class="plain">
+        for (const item of items) {
+          const upper = item.label.toUpperCase();
+          <li>{upper}</li>
+        }
+      </ol>
+      switch (status) {
+        case 'idle': <p class="status">au repos</p>
+        case 'busy': <p class="status">occupé</p>
+        default: <p class="status">fini</p>
+      }
+      <button type="button" class="counter" disabled={busy} on:click={() => this.local.set({ clicks: clicks + 1 })}>
+        Cliquer {clicks}
+      </button>
+      <input ref={this.input} prop:value={'prérempli'} />
+      <Badge label="Nouveau" on:picked={({ label }) => this.local.set({ picked: label })} />
+      <p class="picked">{picked}</p>
+      <p class="literal">{'for (more) see below'} `$` \ fin</p>
+    </section>
+    <footer>après la section</footer>
+  }
+}

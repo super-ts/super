@@ -1,0 +1,17 @@
+import { SuperElement } from '@super-ts/dom';
+
+/** Écran '!' : affiché par le router quand un écran plante sans être rattrapé. */
+export class ErrorScreen extends SuperElement {
+  @tag = 'error-screen';
+  @title = 'Erreur';
+  @prop error: Error;
+  @prop path: string;
+
+  render() {
+    <main class="screen">
+      <h1>Cette page a rencontré un problème</h1>
+      <p>{this.error.message}</p>
+      <button type="button" on:click={() => this.router.send('navigate', { to: 'examples' })}>Retour aux exemples</button>
+    </main>
+  }
+}

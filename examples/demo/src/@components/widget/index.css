@@ -1,0 +1,5 @@
+widget-screen {
+  .hint { opacity: 0.7; margin: 0; width: min(32rem, 100%); }
+  .widget-slot { width: min(32rem, 100%); }
+  button { padding: 0.5rem 1rem; font: inherit; border-radius: 0.4rem; cursor: pointer; }
+}

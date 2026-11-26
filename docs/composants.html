@@ -1,0 +1,736 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Composants : une classe et son render · Super</title>
+    <link rel="stylesheet" href="assets/site.css" />
+  </head>
+  <body>
+    <article>
+      <h1>Composants : une classe et son render</h1>
+      <p class="lead">
+        Un composant est un custom element typé, écrit comme une classe qui étend <code>SuperElement</code>. Ses déclarations
+        et ses champs préparent l'instance une fois ; <code>render()</code> affiche à chaque rendu.
+      </p>
+
+      <h2 id="definir-un-composant">Définir un composant</h2>
+      <p>
+        Un composant vit dans un fichier <code>.super</code> sous <code>src/@components/</code>, par exemple
+        <code>src/@components/shop/index.super</code>. C'est un module TypeScript ordinaire, à une différence près : dans
+        ses méthodes, le HTML s'écrit directement, en éléments placés comme des instructions (voir
+        <a href="templates.html#fichiers-super">Templates</a>). Un import sans extension le trouve :
+        <code>@components/shop</code> désigne <code>shop/index.super</code>.
+      </p>
+      <script type="text/x-code" data-title="src/@components/counter/index.super" data-source="examples/demo/src/@components/counter/index.super">
+        import { SuperElement } from '@super-ts/dom';
+        import type { CounterChange, CounterFailure } from '../../domain/counter';
+        import { CounterControls } from './counter-controls';
+        import './index.css';
+
+        const DONE: Record<CounterChange, string> = {
+          increment: 'Incrémenté',
+          decrement: 'Décrémenté',
+          reset: 'Remis à zéro',
+        };
+
+        // L'écran choisit le texte de chaque raison d'échec (le compilateur signale une raison oubliée).
+        const FAILED: Record<CounterFailure | 'error', string> = {
+          unknown: 'Ce compteur n’existe pas.',
+          'below-min': 'Le compteur est déjà à zéro.',
+          storage: 'Impossible d’enregistrer : le stockage est indisponible.',
+          error: 'Une erreur inattendue est survenue.',
+        };
+
+        /** Écran de la route `/counters/:id` : il lit `id` dans sa route. */
+        export class CounterScreen extends SuperElement {
+          @tag = 'counter-screen';
+          // Suivi : renommer le compteur change aussi le titre de l'onglet.
+          @title = () => this.label.value ?? 'Compteur introuvable';
+
+          // Le paramètre de la route, lu à l'appel : `this.counterId()`.
+          counterId = this.router.current.params.id;
+
+          // Ne lit que ce qui concerne le compteur affiché : les autres compteurs ne re-rendent pas l'écran.
+          @contract counter;
+          @selector label = () => this.counter.selectors.label(this.counterId());
+          @selector count = () => this.counter.selectors.count(this.counterId());
+          @selector canDecrement = () => this.counter.selectors.canDecrement(this.counterId());
+          // Un chargement ou une écriture en cours : on attend avant d'en relancer une.
+          @selector busy = () => this.counter.selectors.pending();
+          @state local = { message: null as string | null };
+
+          // L'écran envoie une commande et laisse filer ; Super publie l'issue de chacune.
+          @on('counter', 'increment:done')
+          onIncremented({ input, result }) {
+            this.#done('increment', input.id, result.count);
+          }
+
+          @on('counter', 'decrement:done')
+          onDecremented({ input, result }) {
+            this.#done('decrement', input.id, result.count);
+          }
+
+          @on('counter', 'reset:done')
+          onReset({ input, result }) {
+            this.#done('reset', input.id, result.count);
+          }
+
+          @on('counter', 'increment:failed')
+          onIncrementFailed({ input, reason }) {
+            this.#failed(input.id, reason);
+          }
+
+          @on('counter', 'decrement:failed')
+          onDecrementFailed({ input, reason }) {
+            this.#failed(input.id, reason);
+          }
+
+          @on('counter', 'reset:failed')
+          onResetFailed({ input, reason }) {
+            this.#failed(input.id, reason);
+          }
+
+          // Seules les issues du compteur affiché deviennent un message.
+          #done(change: CounterChange, id: string, count: number) {
+            if (id === this.counterId()) this.local.set({ message: `${DONE[change]} : ${count}` });
+          }
+
+          #failed(id: string, reason: CounterFailure | 'error') {
+            if (id === this.counterId()) this.local.set({ message: FAILED[reason] });
+          }
+
+          run = (command: CounterChange) => this.counter.send(command, { id: this.counterId() });
+
+          #back() {
+            <a class="back-link" href={this.router.href('counters')}>← Tous les compteurs</a>
+          }
+
+          render() {
+            const label = this.label.value;
+            if (label === null) {
+              <main class="screen">{this.#back()}<h1>Compteur introuvable</h1><p>Aucun compteur « {this.counterId()} ».</p></main>
+              return;
+            }
+
+            const count = this.count.value;
+            const busy = this.busy.value;
+            <main class="screen counter-screen">
+              {this.#back()}
+              <h1>{label}</h1>
+              <CounterControls
+                count={count}
+                canDecrement={this.canDecrement.value && !busy}
+                canIncrement={!busy}
+                on:increment={() => this.run('increment')}
+                on:decrement={() => this.run('decrement')}
+              />
+              <button type="button" class="counter-reset" disabled={count === 0 || busy} on:click={() => this.run('reset')}>Remettre à zéro</button>
+              <p class="counter-message" role="status">{this.local.get().message}</p>
+            </main>
+          }
+        }
+      </script>
+
+      <p>Une classe de composant se compose de quatre éléments :</p>
+      <table>
+        <thead><tr><th>Élément</th><th>Rôle</th></tr></thead>
+        <tbody>
+          <tr><td><code>extends SuperElement</code></td><td>La classe de base, sans générique dans un <code>.super</code> : le compilateur tire les types du composant de ses déclarations.</td></tr>
+          <tr><td>Les déclarations</td><td><code>@tag</code> (le nom du custom element, obligatoire, avec un tiret), puis selon les besoins <code>@prop</code> pour les props reçues, <code>@emit</code> pour les événements émis vers le parent, <code>@title</code> pour le titre de la page. Voir <a href="#declarations">Déclarations du composant</a>. Un écran ne reçoit pas de props du router : il lit sa route par <code>this.router.current</code>, typé d'après sa route sans rien déclarer (voir <a href="router.html#l-ecran-et-sa-route">L'écran et sa route</a>).</td></tr>
+          <tr><td>La préparation</td><td>Les contrats (<code>@contract</code>), les valeurs lues (<code>@selector</code>), l'état local (<code>@state</code>), le formulaire (<code>@form</code>), les références (<code>@ref</code>), les écouteurs (<code>@on</code> sur une méthode), et les actions en champs. Voir <a href="#declarations-de-preparation">Préparer</a>.</td></tr>
+          <tr><td><code>render()</code></td><td>Le HTML du composant, obligatoire, écrit en éléments dans le corps de la méthode, sans <code>return</code>. Une méthode facultative <code>renderError(error)</code> le remplace si le composant ou un descendant plante (voir <a href="erreurs.html#render-error">Gérer les erreurs</a>).</td></tr>
+        </tbody>
+      </table>
+      <p>
+        Le composant n'importe rien de <code>@core/</code>, sauf des types : il parle aux stores par
+        <code>@contract nom;</code> (et au router par <code>this.router</code>), et le plugin Vite le vérifie.
+      </p>
+
+      <h2 id="declarations">Déclarations du composant</h2>
+      <p>
+        Ce qui décrit le composant vu de l'extérieur s'écrit en tête du corps de sa classe : son tag, ses props, ses
+        événements, et le titre de la page tant qu'il est monté. Pas de générique sur <code>SuperElement</code>, pas de
+        <code>type Props</code> au-dessus de la classe : le compilateur tire les types du composant de ces lignes, et les
+        vérifie à chaque balise qui l'utilise. Ce que le composant prépare une fois (contrats, lectures, état,
+        formulaire, références, écouteurs) se déclare de la même façon : voir
+        <a href="#declarations-de-preparation">Préparer</a>.
+      </p>
+      <script type="text/x-code" data-title="Exemple">
+        export class ConfirmDialog extends SuperElement {
+          @tag = 'confirm-dialog';
+          @title = 'Confirmation';
+          @prop question: string;
+          @prop tone: 'neutral' | 'danger' = 'neutral';
+          @prop note?: string;
+          @emit answered: { confirmed: boolean };
+
+          render() {
+            <p>{this.question}</p>
+            <button on:click={() => this.emit('answered', { confirmed: true })}>Confirmer</button>
+          }
+        }
+      </script>
+      <table>
+        <thead><tr><th>Déclaration</th><th>Sens</th></tr></thead>
+        <tbody>
+          <tr><td><code>@tag = 'x-y';</code></td><td>Le nom du custom element. Obligatoire (sauf classe <code>abstract</code>), une chaîne en minuscules avec un tiret. Unique dans l'app : un second composant avec le même tag lève une erreur à son premier <code>create</code>.</td></tr>
+          <tr><td><code>@prop nom: T;</code></td><td>Une prop obligatoire, lue par <code>this.nom</code>.</td></tr>
+          <tr><td><code>@prop nom?: T;</code></td><td>Une prop facultative (<code>T | undefined</code>).</td></tr>
+          <tr><td><code>@prop nom: T = valeur;</code></td><td>Une prop facultative avec une valeur par défaut, calculée une fois par instance.</td></tr>
+          <tr><td><code>@emit nom: T;</code></td><td>Un événement, émis par <code>this.emit('nom', payload)</code> (<code>void</code> s'il ne transporte rien).</td></tr>
+          <tr><td><code>@title = …;</code></td><td>Le titre de la page tant que le composant est monté : une chaîne, ou une fonction suivie. Voir <a href="#titre-de-la-page">Le titre de la page</a>.</td></tr>
+        </tbody>
+      </table>
+
+      <h3 id="declarer-les-props">Les props</h3>
+      <p>
+        Une prop se lit par son nom, <code>this.question</code>, partout dans la classe et dès les champs. La lecture donne
+        toujours la valeur courante, et un changement de prop re-rend le composant. <code>this.props</code> existe toujours
+        (toutes les props, en lecture seule), mais on écrit <code>this.nom</code>. Le détail des trois formes est dans
+        <a href="parents-enfants.html#declarer-les-props">Parents et enfants</a>.
+      </p>
+      <ul>
+        <li>
+          <strong>Le contenu écrit entre les balises remplit la prop <code>content</code>.</strong> Elle se déclare
+          comme les autres (<code>@prop content: Children;</code>) et se lit par <code>this.content</code>. Voir
+          <a href="parents-enfants.html#composer">Composer : des enfants</a>.
+        </li>
+        <li>
+          <strong>Les noms des propriétés natives sont refusés.</strong> Le composant est un élément du DOM : une prop ne
+          peut pas s'appeler <code>id</code>, <code>title</code>, <code>hidden</code>, <code>slot</code>… L'erreur de type
+          le dit : « « title » est déjà une propriété des éléments HTML : choisis un autre nom ». Dans la démo,
+          <code>title</code> est devenu <code>heading</code> (<code>KitPage</code>, <code>Card</code>) et <code>id</code>
+          est devenu <code>counterId</code> (<code>CounterListItem</code>). Un paramètre de route <code>id</code> se lit de
+          même dans un champ nommé autrement : <code>counterId = this.router.current.params.id;</code>.
+        </li>
+        <li><strong><code>page</code> est réservé</strong> : c'est <code>this.page</code>, qui porte le titre de la page.</li>
+      </ul>
+
+      <h3 id="declarer-les-evenements">Les événements</h3>
+      <p>
+        <code>@emit nom: T;</code> déclare un événement et ce qu'il transporte (<code>void</code> s'il ne transporte rien).
+        Le composant l'émet par <code>this.emit('nom', payload)</code>, le parent l'écoute par <code>on:nom={…}</code> sur
+        la balise. Voir <a href="parents-enfants.html#emit-et-on">emit chez l'enfant, on chez le parent</a>.
+      </p>
+
+      <h3 id="erreurs-de-declaration">Ce que le compilateur refuse</h3>
+      <ul>
+        <li>Un tag manquant, écrit <code>static tag = …</code> (une correction rapide le réécrit en <code>@tag</code>), ou qui n'est pas une chaîne en minuscules avec un tiret.</li>
+        <li>Un générique écrit à la main : « Dans un <code>.super</code>, les props et les événements se déclarent dans la classe : <code>@prop nom: Type;</code> et <code>@emit nom: Type;</code> ».</li>
+        <li>Une déclaration en double, une prop sans type, un <code>?</code> avec une valeur par défaut, un <code>@emit</code> avec une valeur, une déclaration hors d'un composant.</li>
+      </ul>
+      <p>
+        Un composant écrit dans un fichier <code>.ts</code> (<code>RouterOutlet</code>, les composants de
+        <code>@super-ts/ui</code>, les tests du framework) n'a pas ces déclarations : il garde <code>static tag</code> et le
+        générique, et lit ses props par <code>this.props</code>. Il prépare aussi par des méthodes
+        (<code>this.contract(…)</code>, <code>this.selector(…)</code>, <code>this.state(…)</code>, <code>this.form(…)</code>,
+        <code>this.ref&lt;T&gt;()</code>, <code>.on(…)</code> dans le constructeur).
+      </p>
+      <script type="text/x-code" data-title="Un composant dans un .ts">
+        type Props = { question: string };
+        type Emits = { answered: { confirmed: boolean } };
+
+        export class ConfirmDialog extends SuperElement<{ props: Props; emits: Emits }> {
+          static tag = 'confirm-dialog';
+          // …
+        }
+      </script>
+
+      <h3 id="declarations-de-preparation">Préparer : stores, lectures, état, formulaire, références, écouteurs</h3>
+      <p>
+        Ce que le composant prépare une fois, à sa construction, se déclare aussi dans le corps de sa classe : les
+        contrats qu'il lit, ses valeurs lues, son état local, son formulaire, ses références et ses écouteurs. La plupart
+        des composants n'ont donc plus de constructeur.
+      </p>
+      <script type="text/x-code" data-title="Exemple">
+        export class ProfileScreen extends SuperElement {
+          @tag = 'profile-screen';
+          @contract profile;
+          @contract shop = 'catalog';                       // un autre nom de champ que celui du contrat
+          @selector saving = () => this.profile.selectors.pending('save');
+          @state local = { saved: null as string | null };
+          @form edit = { initial: { name: '' }, submit: { to: this.profile, command: 'save' } };
+          @ref nameInput: HTMLInputElement;
+
+          @on('profile', 'save:done')
+          onSaved({ result }) {
+            this.local.set({ saved: result.id });
+          }
+
+          render() {
+            <form {this.edit.bind()}>
+              <input ref={this.nameInput} {this.edit.field('name')} />
+              <button type="submit" disabled={this.saving.value}>Enregistrer</button>
+            </form>
+          }
+        }
+      </script>
+      <table>
+        <thead><tr><th>Dans un <code>.super</code></th><th>Avant, et toujours dans un <code>.ts</code></th><th>Se lit par</th></tr></thead>
+        <tbody>
+          <tr><td><code>@contract cart;</code></td><td><code>cart = this.contract('cart');</code></td><td><code>this.cart.selectors.x()</code>, <code>this.cart.send(…)</code></td></tr>
+          <tr><td><code>@contract shop = 'catalog';</code></td><td><code>shop = this.contract('catalog');</code></td><td>idem, sous le nom <code>this.shop</code></td></tr>
+          <tr><td><code>@selector lines = this.cart.selectors.lines;</code></td><td><code>lines = this.selector(this.cart.selectors.lines);</code></td><td><code>this.lines.value</code></td></tr>
+          <tr><td><code>@selector count = () =&gt; …;</code></td><td><code>count = this.selector(() =&gt; …);</code></td><td><code>this.count.value</code></td></tr>
+          <tr><td><code>@state local = { … };</code></td><td><code>local = this.state({ … });</code></td><td><code>this.local.get()</code>, <code>this.local.set(…)</code></td></tr>
+          <tr><td><code>@form edit = { … };</code></td><td><code>edit = this.form({ … });</code></td><td><code>this.edit.bind()</code>, <code>this.edit.field('name')</code>…</td></tr>
+          <tr><td><code>@ref input: HTMLInputElement;</code></td><td><code>input = this.ref&lt;HTMLInputElement&gt;();</code></td><td><code>ref={this.input}</code>, puis <code>this.input.value</code></td></tr>
+          <tr><td><code>@on('profile', 'save:done') onSaved(p) { … }</code></td><td><code>this.profile.on('save:done', (p) =&gt; …)</code> dans le constructeur</td><td>la méthode, appelée à chaque événement tant que le composant est monté</td></tr>
+        </tbody>
+      </table>
+      <p>
+        Seule la déclaration change : la lecture reste la même (<code>this.lines.value</code>, <code>this.local.get()</code>,
+        <code>this.edit.bind()</code>, <code>this.input.value</code>, <code>this.cart.send(…)</code>).
+      </p>
+      <ul>
+        <li>
+          <strong>Pas de type sur <code>@contract</code>, <code>@selector</code>, <code>@state</code>, <code>@form</code></strong> :
+          il vient de la valeur. Pour l'élargir, on écrit <code>as</code> dans la valeur (<code>null as string | null</code>).
+          <code>@ref</code>, à l'inverse, déclare le type de son élément et n'a pas de valeur.
+        </li>
+        <li>
+          <strong>La valeur de <code>@contract x = '…'</code> est une chaîne écrite telle quelle</strong>, le nom du contrat :
+          <code>@contract log = 'error-log';</code> lit le contrat <code>error-log</code> sous le nom <code>this.log</code>.
+        </li>
+        <li>
+          <strong>L'ordre compte</strong>, comme pour des champs : un <code>@selector</code> ou un <code>@form</code> qui lit
+          <code>this.cart</code> vient après <code>@contract cart</code>.
+        </li>
+      </ul>
+
+      <h3 id="declarer-un-ecouteur">Les écouteurs : <code>@on</code></h3>
+      <p>
+        Un écouteur se déclare sur une méthode : <code>@on('contrat', 'événement')</code> au-dessus d'elle, et la méthode est
+        appelée à chaque événement tant que le composant est monté. Plus besoin de constructeur pour poser un écouteur.
+      </p>
+      <ul>
+        <li>
+          <strong><code>@on</code> n'exige pas de <code>@contract</code></strong> : il ouvre lui-même l'accès au contrat.
+          Un composant qui ne fait qu'écouter <code>profile</code> n'a pas besoin de <code>@contract profile;</code>.
+        </li>
+        <li>
+          <strong>Le paramètre de la méthode est typé par l'événement</strong> : pour <code>save:done</code>,
+          <code>{ input, result }</code> ; pour <code>save:failed</code>, <code>{ input, reason }</code>. Pas besoin de
+          l'annoter.
+        </li>
+        <li>
+          <strong><code>@on('router', 'navigated')</code> écoute le router</strong>, comme
+          <code>this.router.on('navigated', …)</code>.
+        </li>
+        <li>
+          <strong>Le nom de l'événement est une chaîne écrite telle quelle</strong>, sans gabarit
+          (<code>`${change}:done`</code>) : une méthode par événement. Dans la démo, <code>CounterScreen</code> déclare
+          <code>onIncremented</code>, <code>onDecremented</code>, <code>onReset</code>, <code>onIncrementFailed</code>…, qui
+          appellent toutes <code>#done</code> ou <code>#failed</code> (voir l'extrait en <a href="#definir-un-composant">tête de page</a>).
+        </li>
+      </ul>
+
+      <h3 id="formulaire-et-balise-form">Pourquoi <code>@form</code> et pas un composant <code>&lt;Form&gt;</code></h3>
+      <p>
+        Un formulaire est de l'état du composant : ses valeurs, ses erreurs, ses vérifications, sa soumission, lus partout
+        dans le template (<code>this.edit.field('name')</code>, <code>this.edit.values()</code>, le bouton
+        « Enregistrement… »). La balise, elle, existe déjà : c'est le <code>&lt;form&gt;</code> natif, relié par
+        <code>&lt;form {this.edit.bind()}&gt;</code>. Un <code>&lt;Form&gt;</code> cacherait cet état et ferait perdre le
+        typage des champs. <code>&lt;Table&gt;</code>, lui, est un composant parce qu'il ne fait qu'afficher.
+      </p>
+
+      <h3 id="erreurs-de-preparation">Les erreurs de préparation</h3>
+      <ul>
+        <li>Un contrat déclaré deux fois : « Le contrat <code>cart</code> est déjà déclaré par <code>@contract cart</code> ».</li>
+        <li><code>@contract router</code> : « Le router se lit par <code>this.router</code>, sans <code>@contract</code> ».</li>
+        <li>Un type sur <code>@contract</code>, <code>@selector</code>, <code>@state</code> ou <code>@form</code> : « Pas de type sur <code>@selector</code> : il vient de la valeur ».</li>
+        <li>
+          Les anciennes formes, dans un <code>.super</code> : <code>local = this.state({ … })</code> donne « Dans un
+          <code>.super</code>, <code>this.state(…)</code> se déclare par <code>@state</code> : <code>@state local = …;</code> »,
+          avec une correction rapide qui réécrit la ligne (de même pour <code>this.contract</code>, <code>this.selector</code>,
+          <code>this.form</code> et <code>this.ref</code>).
+        </li>
+        <li>
+          Un <code>this.x.on(…)</code> dans le constructeur : « Dans un <code>.super</code>, un écouteur se déclare sur une
+          méthode : <code>@on('x', 'événement') onEvent(payload) { … }</code> ». Pas de correction automatique : la méthode
+          est à écrire.
+        </li>
+      </ul>
+      <p>
+        Hors d'un composant, rien ne change : un store qui écoute un autre store garde <code>cart.on('add:done', …)</code>
+        dans son constructeur, <code>main.ts</code> garde <code>cart.subscribe(…)</code>, et le handle d'un store, dans un
+        test, garde <code>counter.on('increment:done', …)</code>.
+      </p>
+
+      <h3 id="declarations-dans-l-editeur">Dans l'éditeur</h3>
+      <p>
+        Un <code>@</code> tapé dans le corps d'un composant propose <code>tag</code>, <code>title</code>,
+        <code>prop</code>, <code>emit</code>, <code>contract</code>, <code>selector</code>, <code>state</code>,
+        <code>form</code>, <code>ref</code> et <code>on</code>, avec un gabarit à compléter ; <code>@t</code> ne propose plus que
+        <code>tag</code> et <code>title</code>, et un <code>@tag</code> ou un <code>@title</code> déjà écrit n'est plus
+        proposé. Le survol de chaque déclaration affiche sa documentation. Après <code>@contract </code>, l'éditeur propose les
+        contrats de l'app que le composant ne déclare pas encore. Dans <code>@contract x = '…'</code> et
+        <code>@on('…', '…')</code>, l'éditeur complète les noms des contrats de l'app, puis ceux des événements du contrat
+        choisi. <code>@prop</code> et <code>@emit</code> sont du TypeScript valide (des champs décorés) ;
+        <code>@tag = …</code> et <code>@title = …</code> ne le sont pas, mais le formateur et la grammaire Tree-sitter de
+        Zed les connaissent (voir <a href="outillage.html#editeur">Outillage</a>).
+      </p>
+
+      <h2 id="les-deux-phases">Préparer, puis rendre</h2>
+      <table>
+        <thead><tr><th></th><th>Déclarations et champs</th><th><code>render()</code></th></tr></thead>
+        <tbody>
+          <tr><td>Quand</td><td>Une fois, à la création de l'instance.</td><td>Au montage, puis à chaque changement de props, d'état local ou de valeur lue dans un store.</td></tr>
+          <tr><td>Rôle</td><td>Préparer : déclarer les contrats lus, les valeurs réactives, l'état local, le formulaire, les références, les écouteurs, les actions.</td><td>Décrire le HTML à partir des valeurs courantes.</td></tr>
+          <tr><td>S'écrit avec</td><td><code>@contract</code>, <code>@selector</code>, <code>@state</code>, <code>@form</code>, <code>@ref</code>, <code>@on</code>, <code>@title</code> (dans un <code>.ts</code> : <code>this.contract</code>, <code>this.selector</code>, <code>this.state</code>, <code>this.form</code>, <code>this.ref</code>, <code>on</code> d'un contrat, <code>this.page.title</code>).</td><td>Les champs préparés : <code>.value</code>, <code>get()</code>, les sélecteurs, les props (<code>this.nom</code>).</td></tr>
+          <tr><td>Produit</td><td>Rien.</td><td>Les éléments qu'il émet, ou rien du tout (<code>render() {}</code>).</td></tr>
+        </tbody>
+      </table>
+      <p>
+        <strong>La préparation est bloquée pendant le rendu.</strong> Dans un <code>.super</code>, elle ne s'écrit que
+        par des déclarations, en dehors de <code>render</code>. Les méthodes qu'elles appellent (<code>contract</code>,
+        <code>state</code>, <code>selector</code>, <code>ref</code> et <code>form</code>, écrites telles quelles dans un
+        <code>.ts</code>) lèvent une erreur si elles sont appelées pendant <code>render</code> : on ne peut pas résoudre
+        un store ou créer un état à chaque rendu. L'écouteur <code>on</code>
+        d'un contrat est permis dans un gestionnaire ou dans <code>mounted</code>, mais lève une erreur pendant un rendu ;
+        <code>this.page.title</code> de même (voir <a href="#titre-de-la-page">Le titre de la page</a>). L'erreur passe par le <a href="erreurs.html#render-error">renderError</a> du composant, comme toute erreur de rendu.
+      </p>
+      <p>
+        <strong>Les props sont lisibles dès les déclarations et les champs</strong> : Super les dépose avant de construire
+        l'instance. Une valeur copiée à ce moment-là (<code>@state local = { draft: this.text };</code>, les valeurs
+        initiales d'un formulaire d'édition) ne suit pas les changements suivants : pour une valeur toujours à jour, lis
+        la prop (<code>this.text</code>) dans <code>render</code>, dans la fonction d'un <code>selector</code> ou dans un écouteur,
+        comme les méthodes <code>@on</code> de <code>CounterScreen</code>, qui appellent <code>this.counterId()</code> quand l'événement arrive et lisent donc la route du moment.
+      </p>
+
+      <h2 id="preparation-ou-render">Où mettre quoi : préparation ou render ?</h2>
+      <p>La question à se poser : <strong>est-ce que ça doit exister une seule fois pour l'instance, ou est-ce que ça se recalcule à partir des valeurs du moment ?</strong></p>
+      <table>
+        <thead><tr><th>Ligne</th><th>Où</th><th>Pourquoi</th></tr></thead>
+        <tbody>
+          <tr><td><code>@tag</code>, <code>@prop</code>, <code>@emit</code></td><td>déclaration</td><td>Ce que le composant est vu de l'extérieur : en tête de la classe, une fois pour toutes.</td></tr>
+          <tr><td><code>@title = () => …</code></td><td>déclaration</td><td>Le titre se pose une fois ; la fonction, elle, est recalculée après chaque rendu.</td></tr>
+          <tr><td><code>@contract counter;</code></td><td>déclaration</td><td>Résoudre un store est un branchement, fait une fois. Pendant un rendu, il lève une erreur.</td></tr>
+          <tr><td><code>@selector count = …;</code></td><td>déclaration</td><td>Déclare ce que le composant lit. La valeur, elle, est recalculée à chaque lecture de <code>.value</code>.</td></tr>
+          <tr><td><code>@state local = { message: null };</code></td><td>déclaration</td><td>L'état local doit survivre aux rendus. Recréé à chaque rendu, il repartirait de zéro.</td></tr>
+          <tr><td><code>@form edit = { … };</code>, <code>@ref input: HTMLInputElement;</code></td><td>déclaration</td><td>Un formulaire et une référence sont de l'état de l'instance : créés une fois, lus à chaque rendu.</td></tr>
+          <tr><td><code>@on('counter', 'increment:done') onIncremented(…) { … }</code></td><td>méthode décorée</td><td>Un écouteur se pose une fois, et vit tant que le composant est monté. Pas de constructeur.</td></tr>
+          <tr><td><code>run = (command) => …</code></td><td>champ fléché</td><td>Une action stable, créée une fois, avec <code>this</code> lié.</td></tr>
+          <tr><td><code>this.count.value</code></td><td><code>render</code></td><td>Les valeurs changent : on les lit au moment du rendu.</td></tr>
+          <tr><td><code>if (label === null)</code></td><td><code>render</code></td><td>Une décision d'affichage dépend de la valeur actuelle. La branche émet ses éléments, puis <code>return;</code> arrête le rendu : ce qui est déjà émis est gardé.</td></tr>
+          <tr><td><code>&lt;main&gt;…&lt;/main&gt;</code></td><td><code>render</code></td><td>Les éléments sont l'affichage lui-même.</td></tr>
+          <tr><td><code>#back() { &lt;a …&gt;…&lt;/a&gt; }</code></td><td>méthode</td><td>Un morceau de HTML réutilisé s'écrit dans une méthode qui émet ses éléments, appelée par <code>{this.#back()}</code> dans <code>render</code>.</td></tr>
+        </tbody>
+      </table>
+      <p>
+        En résumé : la préparation porte les verbes <em>déclarer, s'abonner, écouter, préparer</em> ; <code>render</code>
+        porte les verbes <em>lire, décider, afficher</em>. <code>render</code> doit pouvoir être appelé dix fois de suite
+        sans conséquence.
+      </p>
+      <div class="callout warn">
+        <strong>L'erreur classique : lire une valeur dans un champ</strong>
+        <p>Un champ s'initialise à la création de l'instance : les props sont lisibles, mais le store n'est pas encore résolu, et une valeur lue à ce moment-là ne suivrait pas les changements.</p>
+        <script type="text/x-code">
+          // ✗ lève une erreur : le contrat ne se lit qu'une fois le composant monté
+          count = this.counter.selectors.count(this.counterId);
+
+          // ✓ déclare la lecture, lis la valeur dans render
+          @selector count = () => this.counter.selectors.count(this.counterId);
+          render() {
+            <output>{this.count.value}</output>
+          }
+        </script>
+      </div>
+
+      <h2 id="un-composant-sans-store">Un composant sans store</h2>
+      <p>Un composant de présentation, qui affiche ses props et émet des événements, n'a besoin que de <code>render</code> :</p>
+      <script type="text/x-code" data-title="src/@components/counter/counter-controls.super (extrait)" data-source="examples/demo/src/@components/counter/counter-controls.super">
+        /** Composant de présentation pur : il ne connaît aucun store. */
+        export class CounterControls extends SuperElement {
+          @tag = 'counter-controls';
+          @prop count: number;
+          @prop canDecrement: boolean;
+          @prop canIncrement: boolean;
+          @emit increment: void;
+          @emit decrement: void;
+
+          render() {
+            <div class="counter-controls" role="group" aria-label="Compteur">
+              <button type="button" aria-label="Décrémenter" disabled={!this.canDecrement} on:click={() => this.emit('decrement')}>−</button>
+              <output class="counter-value" aria-label="Valeur du compteur">{this.count}</output>
+              <button type="button" aria-label="Incrémenter" disabled={!this.canIncrement} on:click={() => this.emit('increment')}>+</button>
+            </div>
+          }
+        }
+      </script>
+      <p>Il ne connaît aucun store : il reste réutilisable et se teste seul.</p>
+
+      <h2 id="un-composant-pour-un-effet-de-bord">Un composant pour un effet de bord</h2>
+      <p class="example-link">Dans l'<a href="exemples.html#widget">exemple Widget</a> : <a href="../examples/demo/src/@components/widget/timer-shortcuts.super"><code>timer-shortcuts.super</code></a>. Un raccourci clavier sur <code>window</code>, nettoyé par <code>signal</code>.</p>
+      <p>
+        Certains composants existent surtout pour ce qu'ils font au montage, pas pour ce qu'ils affichent. Tout ce qu'ils
+        posent avec <code>this.signal</code>, ou par un écouteur <code>@on</code>, est nettoyé au démontage.
+      </p>
+      <script type="text/x-code" data-title="src/@components/widget/timer-shortcuts.super" data-source="examples/demo/src/@components/widget/timer-shortcuts.super">
+        import { SuperElement } from '@super-ts/dom';
+
+        /** Un raccourci clavier posé sur window au montage, retiré par `signal` au démontage. */
+        export class TimerShortcuts extends SuperElement {
+          @tag = 'timer-shortcuts';
+
+          @contract timer;
+
+          protected override mounted() {
+            window.addEventListener(
+              'keydown',
+              (event) => {
+                const typing = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement;
+                if (event.code !== 'Space' || typing) return;
+                event.preventDefault();
+                this.timer.send('toggle');
+              },
+              { signal: this.signal },
+            );
+          }
+
+          render() {
+            <p class="shortcut">Barre d'espace : démarrer ou mettre en pause.</p>
+          }
+        }
+      </script>
+      <p>Cas typiques : lancer une commande au montage, écouter un événement pour déclencher une action ailleurs (analytics, son, focus), poser un écouteur sur <code>window</code>. Un composant qui n'affiche rien garde un <code>render</code> vide : <code>render() {}</code> (voir <a href="templates.html#ne-rien-rendre">Ne rien rendre</a>).</p>
+
+      <h2 id="les-outils-d-un-composant">Les outils d'un composant</h2>
+      <p>
+        Tout passe par <code>this</code>. Ce que la classe déclare, ce qu'elle utilise (les outils de préparation sont
+        protégés : seule la classe y a accès), et ce que Super appelle sur la classe elle-même.
+      </p>
+      <table>
+        <thead><tr><th>Membre</th><th>Où</th><th>Rôle</th></tr></thead>
+        <tbody>
+          <tr><th colspan="3">Ce que la classe déclare</th></tr>
+          <tr><td><code>@tag = 'x-y';</code></td><td>en tête de la classe</td><td>Le nom du custom element, obligatoire, avec un tiret (<code>'counter-screen'</code>). Vérifié au premier <code>create</code>. Voir <a href="#declarations">Déclarations du composant</a>.</td></tr>
+          <tr><td><code>@prop nom: T;</code></td><td>en tête de la classe</td><td>Une prop reçue du parent : obligatoire, facultative (<code>nom?: T</code>) ou avec une valeur par défaut (<code>nom: T = valeur</code>).</td></tr>
+          <tr><td><code>@emit nom: T;</code></td><td>en tête de la classe</td><td>Un événement émis vers le parent (<code>void</code> s'il ne transporte rien).</td></tr>
+          <tr><td><code>@title = …;</code></td><td>en tête de la classe</td><td>Le titre de la page tant que le composant est monté : une chaîne, ou une fonction suivie. Voir <a href="#titre-de-la-page">Le titre de la page</a>.</td></tr>
+          <tr><td><code>@contract nom;</code>, <code>@contract nom = 'contrat';</code></td><td>dans la classe</td><td>Le store fourni pour ce contrat, vu à travers ses sélecteurs, <code>send</code> et <code>on</code>. Tous les contrats sauf le router. Dans un <code>.ts</code> : <code>this.contract(nom)</code>. Voir <a href="lire-un-store.html">Lire un store</a>.</td></tr>
+          <tr><td><code>@selector nom = …;</code></td><td>dans la classe</td><td>Une valeur lue d'un sélecteur, lue par <code>.value</code> dans <code>render</code> ; le composant ne se re-rend que si elle change. Dans un <code>.ts</code> : <code>this.selector(lecture)</code>. Voir <a href="lire-un-store.html">Lire un store</a>.</td></tr>
+          <tr><td><code>@state nom = { … };</code></td><td>dans la classe</td><td>L'état local, lu par <code>get()</code>, changé par <code>set(…)</code>. Dans un <code>.ts</code> : <code>this.state(initial)</code>. Voir <a href="etat-local.html">État local</a>.</td></tr>
+          <tr><td><code>@form nom = { … };</code></td><td>dans la classe</td><td>Un formulaire : champs liés, règles, vérifications, soumission par une commande. Dans un <code>.ts</code> : <code>this.form(options)</code>. Voir <a href="formulaires.html">Formulaires</a>.</td></tr>
+          <tr><td><code>@ref nom: T;</code></td><td>dans la classe</td><td>Une référence vers un élément du template : <code>&lt;input ref={this.input} /&gt;</code>, puis <code>this.input.value</code> une fois monté. Le compilateur refuse la référence si <code>T</code> n'est pas le type de la balise (voir <a href="templates.html#references">Références</a>). Dans un <code>.ts</code> : <code>this.ref&lt;T&gt;()</code>.</td></tr>
+          <tr><td><code>@on('contrat', 'événement') méthode(payload) { … }</code></td><td>sur une méthode</td><td>Un écouteur, appelé à chaque événement tant que le composant est monté, sans <code>@contract</code> nécessaire ; <code>'router'</code> écoute le router. Dans un <code>.ts</code> : <code>.on(…)</code> dans le constructeur. Voir <a href="#declarer-un-ecouteur">Les écouteurs</a>.</td></tr>
+          <tr><td><code>render()</code></td><td>méthode obligatoire</td><td>Décrit le HTML, à chaque rendu. Ne peut ni lire un nouveau contrat ni créer d'état.</td></tr>
+          <tr><td><code>renderError(error)</code></td><td>méthode facultative</td><td>Affiché à la place de <code>render</code> si <code>render</code>, un descendant, ou la résolution d'un store au montage plante. S'il plante lui-même, l'erreur remonte au parent. Voir <a href="erreurs.html#render-error">Gérer les erreurs</a>.</td></tr>
+          <tr><td><code>mounted()</code>, <code>unmounted()</code></td><td>méthodes facultatives</td><td>Appelées après le premier rendu de chaque montage, et au démontage.</td></tr>
+          <tr><th colspan="3">Ce que la classe utilise</th></tr>
+          <tr><td><code>this.nom</code></td><td>partout, dès les champs</td><td>Une prop déclarée par <code>@prop</code>, toujours à sa valeur courante. Un changement de prop re-rend le composant ; une copie faite à la construction ne le suit pas. <code>this.props</code> les donne toutes, en lecture seule.</td></tr>
+          <tr><td><code>this.emit(nom, payload?)</code></td><td>partout</td><td>Émet un événement déclaré par <code>@emit</code>, vers le parent. Voir <a href="parents-enfants.html">Parents et enfants</a>.</td></tr>
+          <tr><td><code>this.router</code></td><td>partout</td><td>Le router de l'app, sans déclaration : ses sélecteurs, <code>send</code>, <code>on</code> et <code>href</code>. Voir <a href="router.html#le-router-est-un-store">Le router dans un composant</a>.</td></tr>
+          <tr><td><code>this.page.title = …</code></td><td>partout sauf <code>render</code></td><td>Pose le titre de la page tant que le composant est monté, comme <code>@title</code> : une chaîne, ou une fonction suivie. En écriture seulement. Voir <a href="#titre-de-la-page">Le titre de la page</a>.</td></tr>
+          <tr><td><code>this.signal</code></td><td>une fois monté</td><td><code>AbortSignal</code> avorté au démontage, pour les écouteurs posés hors de Super (<code>window.addEventListener(…, { signal: this.signal })</code>). Inutile pour les stores : les écouteurs <code>@on</code> se nettoient seuls.</td></tr>
+          <tr><td><code>this</code></td><td>partout</td><td>L'élément lui-même, pour les cas que l'API ne couvre pas (focus, mesures).</td></tr>
+          <tr><th colspan="3">Sur la classe</th></tr>
+          <tr><td><code>&lt;Classe prop={…} on:nom={…} /&gt;</code></td><td>template</td><td>Monte l'enfant à cet emplacement (même instance d'un rendu à l'autre). Les props sont vérifiées contre ses <code>@prop</code>, les écouteurs contre ses <code>@emit</code>. Voir <a href="parents-enfants.html">Parents et enfants</a>.</td></tr>
+          <tr><td><code>Classe.create(props?, { on }?)</code></td><td>hors template</td><td>Renvoie l'élément, pour le montage initial, le router ou un test. Les props et les écouteurs sont typés de la même façon.</td></tr>
+          <tr><td><code>Classe.eventName(nom)</code></td><td>hors template</td><td>Le nom DOM d'un événement émis (<code>'confirm-dialog:answered'</code>), pour un écouteur posé à la main.</td></tr>
+        </tbody>
+      </table>
+      <p>
+        Un champ ou une prop ne peut pas porter le nom d'une propriété native d'<code>HTMLElement</code> (<code>slot</code>,
+        <code>title</code>, <code>hidden</code>, <code>id</code>…) : le composant est un élément du DOM, et ce nom est déjà
+        pris. <code>page</code> est réservé de même, pour <code>this.page</code>. Ne surcharge pas non plus <code>connectedCallback</code> ni <code>disconnectedCallback</code> : Super lève une
+        erreur au premier <code>create</code>. Utilise <code>mounted</code> et <code>unmounted</code>.
+      </p>
+
+      <h3 id="mounted-et-unmounted">mounted et unmounted</h3>
+      <p class="example-link">Dans l'<a href="exemples.html#widget">exemple Widget</a> : <a href="../examples/demo/src/@components/widget/timer-widget.super"><code>timer-widget.super</code></a>. Un intervalle démarré au montage, arrêté au démontage.</p>
+      <script type="text/x-code" data-title="src/@components/app-shell/index.super" data-source="examples/demo/src/@components/app-shell/index.super">
+        import { RouterOutlet, SuperElement } from '@super-ts/dom';
+        import { RouteLink } from '@super-ts/ui';
+        import './index.css';
+
+        /** Mise en page commune : la navigation entre les exemples, puis l'écran de la route active. */
+        export class AppShell extends SuperElement {
+          @tag = 'app-shell';
+
+          @contract counter;
+
+          protected override mounted() {
+            this.counter.send('load');
+          }
+
+          render() {
+            // Chaque lien se marque lui-même `aria-current="page"` sur la page affichée ; `activeFor`
+            // étend une section à ses autres routes (la liste des compteurs et un compteur).
+            <header class="app-header">
+              <nav aria-label="Exemples">
+                <RouteLink to={{ to: 'examples' }}>
+                  Exemples
+                </RouteLink>
+                <RouteLink to={{ to: 'counters' }} activeFor={['counter']}>
+                  Compteurs
+                </RouteLink>
+                <RouteLink to={{ to: 'profile' }}>
+                  Formulaire
+                </RouteLink>
+                <RouteLink to={{ to: 'shop' }} activeFor={['checkout']}>
+                  Boutique
+                </RouteLink>
+                <RouteLink to={{ to: 'errors' }}>
+                  Erreurs
+                </RouteLink>
+                <RouteLink to={{ to: 'widget' }}>
+                  Widget
+                </RouteLink>
+                <RouteLink to={{ to: 'composition' }}>
+                  Composition
+                </RouteLink>
+                <RouteLink to={{ to: 'kit' }}>
+                  Kit
+                </RouteLink>
+              </nav>
+            </header>
+            <RouterOutlet />
+          }
+        }
+      </script>
+      <p>
+        Le shell ne lit rien du store des compteurs : il ne se re-rend jamais pour lui. Il s'en sert seulement pour charger
+        les compteurs une fois, au montage.
+      </p>
+      <p>Utilise <code>mounted</code> quand tu as besoin du DOM déjà rendu (mesurer, donner le focus) ou pour lancer une action au montage. Ce qui doit s'arrêter au démontage s'arrête dans <code>unmounted</code> :</p>
+      <script type="text/x-code" data-title="src/@components/widget/timer-widget.super (extrait)" data-source="examples/demo/src/@components/widget/timer-widget.super">
+        #interval: ReturnType<typeof setInterval> | undefined;
+
+        // L'intervalle vit entre le montage et le démontage du widget.
+        protected override mounted() {
+          this.#interval = setInterval(() => this.timer.send('tick'), 1000);
+        }
+
+        protected override unmounted() {
+          clearInterval(this.#interval);
+        }
+      </script>
+
+      <h2 id="cycle-de-vie">Cycle de vie</h2>
+      <ol>
+        <li><strong>Création</strong> : la balise du parent (ou <code>create</code>) dépose les props, puis construit l'instance (déclarations et champs, dans leur ordre, puis constructeur s'il y en a un), qui les lit déjà.</li>
+        <li><strong>Montage</strong> : l'élément entre dans le DOM. Super résout les contrats déclarés, branche les écouteurs <code>@on</code>, fait le premier <code>render</code>, pose son titre s'il en déclare un, puis appelle <code>mounted</code>.</li>
+        <li><strong>Rendus</strong> : à chaque changement de props, d'état local ou de valeur lue dans un store. Plusieurs changements dans la même tâche ne donnent qu'un rendu.</li>
+        <li><strong>Déplacement</strong> : un élément déplacé dans le DOM (par exemple par une boucle <code>for</code> avec <code>key</code>) n'est pas redémarré : il garde son état.</li>
+        <li><strong>Démontage</strong> : un vrai retrait du DOM avorte <code>signal</code>, désabonne le composant de ses stores (lectures et écouteurs <code>@on</code>), retire son titre, puis appelle <code>unmounted</code>. S'il est réinséré plus tard, la même instance se remonte : ses contrats sont résolus de nouveau, ses écouteurs <code>@on</code> rebranchés, son titre reposé, et <code>mounted</code> rappelé. Son état local est conservé.</li>
+      </ol>
+
+      <h2 id="titre-de-la-page">Le titre de la page</h2>
+      <p>
+        Le titre de l'onglet (<code>document.title</code>) appartient aux composants montés : un composant le pose par
+        <code>@title</code>, et le retire en se démontant. Personne n'écrit <code>document.title</code> à la main.
+      </p>
+
+      <h3 id="titre-fixe-ou-suivi">Un titre fixe ou suivi</h3>
+      <p>
+        Une chaîne donne un titre fixe, posé au montage et retiré au démontage : <code>@title = 'Widget';</code>. Une
+        fonction donne un titre <strong>suivi</strong> : elle est recalculée après chaque rendu, avec les mêmes lectures que
+        <code>render</code>. Le titre de la boutique change donc avec le panier :
+      </p>
+      <script type="text/x-code" data-title="src/@components/shop/index.super (extrait)" data-source="examples/demo/src/@components/shop/index.super">
+        export class ShopScreen extends SuperElement {
+          @tag = 'shop-screen';
+          // Suivi : le titre de l'onglet change avec le panier, comme le rendu.
+          @title = () => {
+            const count = this.cart.selectors.count();
+            return count > 0 ? `Boutique (${count} au panier)` : 'Boutique';
+          };
+
+          @contract cart;
+          // …
+        }
+      </script>
+      <p>
+        Le calcul est libre (une condition, un formatage), contrairement à la fonction d'un <code>@selector</code>. Dans
+        l'écran d'un compteur, <code>@title = () =&gt; this.label.value ?? 'Compteur introuvable';</code> suit le nom du
+        compteur : le renommer change aussi le titre de l'onglet.
+      </p>
+
+      <h3 id="this-page-title">this.page.title</h3>
+      <p>
+        <code>@title</code> est un raccourci : <code>this.page.title = …</code> fait la même chose en impératif, avec une
+        chaîne ou une fonction. Ce qui change, c'est le moment où on l'écrit.
+      </p>
+      <table>
+        <thead><tr><th>Posé dans</th><th>Effet</th></tr></thead>
+        <tbody>
+          <tr><td>Un champ ou le constructeur, dans un <code>.ts</code> (ce que fait <code>@title</code>)</td><td>Le titre du composant, repris à chaque montage.</td></tr>
+          <tr><td><code>mounted</code>, un gestionnaire</td><td>Remplace le titre du composant jusqu'à son démontage.</td></tr>
+          <tr><td><code>render</code></td><td>Interdit : lève une erreur.</td></tr>
+        </tbody>
+      </table>
+      <script type="text/x-code">
+        onSaved = () => {
+          this.page.title = 'Profil enregistré';
+        };
+      </script>
+
+      <h3 id="la-pile-des-titres">La pile des titres</h3>
+      <p>
+        Plusieurs composants montés peuvent poser un titre en même temps. Le dernier monté l'emporte ; ceux en dessous
+        continuent de suivre leurs données sans s'afficher ; quand il se démonte, le titre précédent revient. N'importe
+        quel composant peut poser un titre, pas seulement un écran : dans la démo, <code>KitPage</code>, la mise en page
+        commune du kit, donne leur titre à toutes les pages du kit avec <code>@title = () =&gt; this.heading;</code>.
+      </p>
+      <p>
+        Le déroulé, pour la boutique et un dialogue de confirmation qui déclarerait <code>@title = 'Confirmation';</code>,
+        avec le réglage de la démo (<code>suffix: ' · Super'</code>, <code>default: 'Super · exemples'</code>) :
+      </p>
+      <table>
+        <thead><tr><th>Moment</th><th>Titres posés (du plus ancien au plus récent)</th><th>Titre de l'onglet</th></tr></thead>
+        <tbody>
+          <tr><td>La boutique se monte, panier vide</td><td><code>Boutique</code></td><td>Boutique · Super</td></tr>
+          <tr><td>Un produit ajouté au panier</td><td><code>Boutique (1 au panier)</code></td><td>Boutique (1 au panier) · Super</td></tr>
+          <tr><td>« Vider le panier » ouvre le dialogue</td><td><code>Boutique (1 au panier)</code>, <code>Confirmation</code></td><td>Confirmation · Super</td></tr>
+          <tr><td>« Confirmer » : le panier se vide, le dialogue se démonte</td><td><code>Boutique</code></td><td>Boutique · Super</td></tr>
+          <tr><td>Navigation vers un écran sans titre</td><td>aucun</td><td>Super · exemples</td></tr>
+        </tbody>
+      </table>
+      <p>
+        À l'avant-dernière ligne, la boutique a suivi le panier vidé pendant que le dialogue était au-dessus : son titre est
+        déjà à jour quand il revient.
+      </p>
+
+      <h3 id="titre-ce-qui-est-interdit">Ce qui est interdit</h3>
+      <ul>
+        <li>Poser le titre pendant <code>render</code> : <code>this.page.title</code> lève une erreur (« ne se pose pas pendant render »).</li>
+        <li>Lire le titre : <code>this.page.title</code> se pose, il ne se lit pas ; le lire lève une erreur.</li>
+        <li>Une prop nommée <code>title</code> : c'est une propriété des éléments HTML (la démo l'appelle <code>heading</code>). <code>page</code> est réservé.</li>
+      </ul>
+
+      <h3 id="titre-par-defaut-et-suffixe">Titre par défaut et suffixe</h3>
+      <p>
+        Le router règle ce qui entoure les titres posés, dans les options de <code>createRouter</code> (pas dans
+        <code>defineRouter</code>, dont les clés sont des routes) :
+      </p>
+      <script type="text/x-code" data-title="src/main.ts (extrait)" data-source="examples/demo/src/main.ts">
+        const router = createRouter(Router, { title: { default: 'Super · exemples', suffix: ' · Super' } });
+      </script>
+      <p>
+        <code>default</code> s'affiche quand aucun composant ne pose de titre ; <code>suffix</code> est ajouté au titre
+        posé. Sans <code>default</code>, c'est le titre d'origine du document qui revient. Voir
+        <a href="router.html#titre-de-la-page">Le titre de la page</a> dans la page du router.
+      </p>
+
+      <h2 id="creer-un-element-hors-template">Créer un élément hors template</h2>
+      <p>
+        Dans un fichier <code>.super</code>, <code>&lt;CounterControls count={count} … /&gt;</code> monte l'enfant à cet
+        emplacement (voir <a href="parents-enfants.html">Parents et enfants</a>) ; l'outillage le traduit en
+        <code>CounterControls.create(props, { on })</code>. Hors template, pour le montage initial ou un test, on appelle ce
+        <code>create(props?, { on }?)</code> directement : il renvoie l'élément.
+      </p>
+      <script type="text/x-code">
+        createApp({ root, stores, router }).mount(AppShell.create());
+      </script>
+      <p>
+        Un composant ne s'écrit pas par son tag : <code>&lt;counter-screen&gt;</code> tapé dans un template ou dans
+        <code>index.html</code> n'est pas supporté. Il passe toujours par sa classe, en balise
+        (<code>&lt;CounterControls count={count} … /&gt;</code>) ou par <code>create</code>.
+      </p>
+    </article>
+    <script src="assets/search-index.js"></script>
+    <script src="assets/site.js"></script>
+  </body>
+</html>

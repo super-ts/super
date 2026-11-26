@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Chantiers et questions ouvertes · Super</title>
+    <link rel="stylesheet" href="assets/site.css" />
+  </head>
+  <body>
+    <article>
+      <h1>Chantiers et questions ouvertes</h1>
+      <p class="lead">
+        Ce qui manque à Super pour une vraie app, les suites mises de côté, et les questions encore en discussion. Rien
+        de tout cela n'est décidé : c'est la liste d'où partira le prochain chantier. Ce que Super ne fait pas bien
+        aujourd'hui est dans <a href="limites.html">Limites</a>.
+      </p>
+
+      <h2 id="chantiers">Les chantiers qui manquent le plus</h2>
+      <p>Par ordre d'importance : ce sont les manques les plus visibles face aux autres frameworks.</p>
+
+      <h3 id="chargement-a-la-demande">1. Chargement à la demande des écrans, et loaders</h3>
+      <p>
+        Aujourd'hui, toute l'app part dans un seul bundle : le router importe tous ses écrans, aucun n'est chargé à la
+        demande. Une app qui grossit le paie à chaque premier chargement.
+      </p>
+      <ul>
+        <li><strong>Des écrans chargés à la navigation</strong> : <code>counter: () =&gt; import('@components/counter')</code> dans <code>.screens(…)</code>, avec un état de chargement et une erreur de chargement rattrapée comme une erreur d'écran.</li>
+        <li><strong>Des loaders</strong> : un écran déclare les données à charger avant de s'afficher (une commande de store), pour ne pas afficher un écran vide puis le remplir.</li>
+        <li><strong>Le préchargement</strong> : le code et les données d'un écran chargés au survol ou au focus d'un lien qui y mène.</li>
+      </ul>
+
+      <h3 id="donnees-serveur">2. Une couche de données serveur au-dessus des commandes</h3>
+      <p>
+        Les commandes d'un store parlent au serveur par ses ports, et leur issue revient par <code>nom:done</code> et
+        <code>nom:failed</code>. Tout le reste s'écrit à la main dans chaque store, alors que les besoins sont toujours
+        les mêmes (c'est ce que fait TanStack Query) :
+      </p>
+      <ul>
+        <li>dédoublonner deux chargements identiques lancés en même temps ;</li>
+        <li>servir la valeur déjà connue et la revalider en arrière-plan ;</li>
+        <li>réessayer un chargement qui échoue ;</li>
+        <li>invalider ce qu'une écriture rend périmé ;</li>
+        <li>appliquer une écriture tout de suite (mise à jour optimiste), et revenir en arrière si elle échoue ;</li>
+        <li>choisir quoi faire de deux commandes concurrentes (garder la dernière, les mettre en file).</li>
+      </ul>
+
+      <h3 id="journal-des-commandes">3. Un journal des commandes pour le développement</h3>
+      <p>
+        Chaque commande passe déjà par un <code>EventTarget</code>, avec son issue. Un panneau de développement pourrait
+        les lister : la commande, ce qu'elle a reçu, sa durée, son résultat ou sa raison d'échec, et l'état du store
+        avant et après. C'est peu de code pour beaucoup d'aide au débogage, et une première brique de devtools.
+      </p>
+
+      <h2 id="suites">Les suites laissées de côté</h2>
+
+      <h3 id="suites-router">Router</h3>
+      <ul>
+        <li>Un raccourci pour changer une seule clé de la query (aujourd'hui, <code>navigate</code> avec <code>...query</code>).</li>
+        <li>Des paramètres et une query décrits par un schéma Zod ou Valibot (Standard Schema), à la place des descriptions de Super.</li>
+        <li>Renvoyer vers l'écran <code>'*'</code> quand un paramètre est invalide (<code>{ invalid: 'not-found' }</code> par paramètre).</li>
+        <li>Restaurer le scroll et placer le focus après une navigation.</li>
+        <li>Le reste du <code>&lt;head&gt;</code> par écran (<code>&lt;meta&gt;</code>, description) : le titre existe déjà, par <code>@title</code>.</li>
+        <li>Une valeur oubliée dans <code>oneOf</code> n'est pas signalée à la compilation.</li>
+      </ul>
+
+      <h3 id="suites-kit">Kit d'interface</h3>
+      <ul>
+        <li>Quelques textes ne se changent pas encore par une prop : « Vérification… », « Chargement… » de <code>Table</code> et <code>Combobox</code>, la pagination, « Détails ».</li>
+        <li>Le tri d'une table sur plusieurs colonnes.</li>
+        <li>L'API <code>popover</code> native quand le navigateur l'a, avec le repli actuel sinon.</li>
+        <li><code>fieldOf</code> ne sert que dans le rendu du composant qui déclare le formulaire.</li>
+      </ul>
+
+      <h3 id="publication">Publication</h3>
+      <ul>
+        <li>Publier les paquets <code>@super-ts/*</code> sur npm, une fois l'API stabilisée : aujourd'hui, ils sont résolus par alias depuis <code>packages/*/src</code>.</li>
+        <li>Publier la grammaire Tree-sitter et l'extension Zed. Il faut pour cela un dépôt public pour chacune, une licence, des textes en anglais, un serveur de langage publié sur npm (en un seul fichier) que l'extension installe, et une demande d'ajout au registre des extensions de Zed.</li>
+      </ul>
+
+      <h2 id="questions-ouvertes">Questions ouvertes</h2>
+      <ol>
+        <li><strong>Les dépendances entre contrats.</strong> Déclarer qu'un store écoute un autre store, pour rendre le graphe lisible et détecter les cycles.</li>
+        <li><strong>Overlays globaux</strong> (toast, confirmation demandée depuis n'importe quel écran) : rester en user-land avec un store dédié qui pilote un composant monté dans le shell, ou devenir un concept Super.</li>
+        <li><strong>Guard de sortie.</strong> Empêcher de quitter un écran (modifications non enregistrées), porté par l'écran plutôt que par la route.</li>
+      </ol>
+    </article>
+    <script src="assets/search-index.js"></script>
+    <script src="assets/site.js"></script>
+  </body>
+</html>
