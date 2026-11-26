@@ -86,11 +86,18 @@ But : versionner et sauvegarder, sans rien publier. Le câblage local reste tel 
 - [x] `"workspaces"` à la racine (les 7 paquets listés un par un) ; `lang-server` reste hors workspaces pour l'instant (phase 5). `npm run check` vert (457 tests), build de la démo et serveur de dev vérifiés.
 - À savoir pour la phase 3 : `virtual.ts` lit `check.ts` à l'exécution (`readFileSync(import.meta.dirname, 'check.ts')`), il faudra donc livrer ce fichier dans `dist`. Le README annonce 24,6 Ko gzip pour la démo, alors que le build fait 38,3 Ko gzip, déjà avant la phase 2 : chiffre périmé à corriger.
 
-## Phase 3 : build (moi)
+## Phase 3 : build (faite le 2026-11-26)
 
-- [ ] Un `tsconfig.build.json` par paquet : tsc 7, `declaration`, `rewriteRelativeImportExtensions`, sortie dans `dist/`, tests et `__fixtures__` exclus.
-- [ ] Un script racine `npm run build` qui construit tous les paquets dans l'ordre des dépendances.
-- [ ] Le binaire `super-tsc` est compilé en JS avec un shebang Node.
+- [x] `tsconfig.build.json` à la racine (base : tsc 7, `declaration`, `rewriteRelativeImportExtensions`, `noEmitOnError`, `types: []`, sans `paths` ni condition `@super-ts/source`) et un par paquet (`rootDir: src`, `outDir: dist`, tests, `*.test-d.ts` et `__fixtures__` exclus ; `types: ["node"]` pour `lang` et `vite`). Chaque paquet lit ses dépendances @super-ts/* par leurs `dist/*.d.ts`, comme chez un utilisateur.
+- [x] `npm run build` → `scripts/build.mjs` : vide `dist`, lance tsc dans l'ordre core, dom, testing, ui, lang, vite, copie les fichiers non compilés (`ui` : `styles.css`, `styles.d.css.ts` ; `lang` : `check.ts`, lu à l'exécution par `virtual.ts`), rend les binaires exécutables.
+- [x] `bin` de `@super-ts/lang` : `super-tsc` → `dist/cli.js` et `super-fmt` → `dist/format-cli.js`, avec shebang. Leur garde « lancé directement » compare `realpathSync(argv[1])` : via le lien de `node_modules/.bin`, l'ancien test d'égalité échouait en silence.
+- Changements de code faits pour le build :
+  - imports relatifs de core, dom, ui, testing passés en `.ts` (comme lang et vite) : le JS émis réécrit en `.js`, sinon il ne se chargeait pas dans Node. Les `.d.ts` gardent `./x.ts` et se résolvent bien (vérifié en `bundler` et `nodenext`).
+  - `ui/src/app.ts` : `CommandRef.view` typé `{ selectors: unknown; send: unknown }` au lieu de `ContractView<any>`. Sans contrat déclaré (build du kit), `ContractName` vaut `never` et TS 7 refuse `any` pour cette contrainte.
+  - `ui/src/styles.d.css.ts` type `import './styles.css'` (`allowArbitraryExtensions` dans le tsconfig.build de ui). Livré dans dist : sans lui, un projet sans `vite/client` et sans `skipLibCheck` casse sur `dist/index.d.ts`.
+  - `**/dist` exclu du tsconfig racine.
+- Vérifié : `npm run check` vert (457 tests), build de la démo, chargement de `dist` dans Node sans la condition source, binaires via lien symbolique, typecheck d'un projet utilisateur contre les `.d.ts` avec `skipLibCheck: false` (bundler et nodenext), `npm pack --dry-run`.
+- Pas de source maps ni de declaration maps : `src` n'est pas publié, elles pointeraient dans le vide. À rouvrir si on publie `src`.
 
 ## Phase 4 : test d'installation comme un vrai utilisateur (moi)
 
