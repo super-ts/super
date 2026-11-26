@@ -132,8 +132,8 @@ Préparé le 2026-11-26 dans `editors/tree-sitter-super` (commits locaux, à pou
   - Pourquoi pas Changesets : @manypkg/find-root prend comme racine le premier parent qui déclare des workspaces ; depuis le sous-module, toute commande `changeset` remonte à la racine de Super et y écrit (`"workspaces": []` → aucun paquet ; `["."]` → npm casse).
 - [x] Dépôt `super-ts/tree-sitter-super` passé en public par l'utilisateur ; commits poussés et tag annoté `v0.1.0` (sur `b8c59a9`) poussé le 2026-11-26 ; pointeur du sous-module avancé dans Super.
 - [ ] L'utilisateur : cocher « Allow GitHub Actions to create and approve pull requests » dans les réglages Actions de l'**organisation** `super-ts` (grisé au niveau du dépôt, verrouillé par l'org). La permission par défaut peut rester en lecture : le workflow déclare `contents: write` et `pull-requests: write`. Sans ce réglage, release-please échoue à ouvrir sa PR.
-- [ ] Je fais passer `[grammars.super]` de `extension.toml` en `https://github.com/…` + `rev`.
-- [ ] Une CI dans ce dépôt : `tree-sitter generate` sans diff, puis `npm test`.
+- [x] `[grammars.super]` de `extension.toml` en `https://github.com/super-ts/tree-sitter-super`, `rev` = `b8c59a9` (tag v0.1.0, même grammaire compilée que l'ancienne rev). Vérifié : clone HTTPS à la rev, compilation de `parser.c` + `scanner.c`, `generate` sans diff, `npm test`. L'utilisateur doit réinstaller l'extension dev. Conséquence : pour voir une modification de grammaire dans Zed, il faut maintenant la **pousser** (le script `use-local-grammar.sh` prévu plus bas permettrait de repasser en `file://` le temps d'itérer).
+- [x] CI de la grammaire (`.github/workflows/ci.yml`, `actions/checkout@v6` et `setup-node@v6`, Node 24) : `npm ci`, `tree-sitter generate` puis `git diff --exit-code -- src`, `npm test`. Commit `93e5cfc`, à pousser pour la voir tourner.
 
 ## Phase 7 : extension Zed publiable (moi)
 
