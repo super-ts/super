@@ -9,7 +9,7 @@ A minimalist front-end framework, typed end to end. It frames three things, **st
 
 With Super, the IDE knows the body of every command, the payload of every event and the parameters of every route. A link without its parameter, a screen with the wrong props, an unknown command or a typo in a template do not compile.
 
-<!-- version -->**Version 0.1.0**<!-- /version --> of the `@super-ts/*` packages, published on npm.
+<!-- version -->**Version 0.1.0**<!-- /version --> of the `@super-ts/*` packages, published on npm. Documentation: **[super-ts.github.io/super](https://super-ts.github.io/super/)**.
 
 > Status: exploratory draft. The API may still change: in 0.x, a minor version can break.
 
@@ -150,7 +150,7 @@ The Zed extension and the Tree-sitter grammar for `.super` files live in their o
 
 ## Documentation
 
-The documentation is a static site in [`docs/`](docs/index.html). Open `docs/index.html` in a browser, or run `npm run docs`. It has built-in search (`/` key).
+The documentation is online at **[super-ts.github.io/super](https://super-ts.github.io/super/)**, published from [`docs/`](docs/index.html) by GitHub Pages on every change. Locally, run `npm run docs`. It has built-in search (`/` key).
 
 - [Getting started](docs/getting-started.html): your first feature, from contract to test.
 - [Examples](docs/examples.html): what each file of the demo app shows.

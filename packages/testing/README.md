@@ -35,4 +35,4 @@ mounted.
 The `@super-ts/*` packages share one version: install them at the same version. In 0.x, a minor
 version can break the API.
 
-Documentation: [github.com/super-ts/super](https://github.com/super-ts/super#readme). Licence: MIT.
+Documentation: [super-ts.github.io/super](https://super-ts.github.io/super/). Source: [github.com/super-ts/super](https://github.com/super-ts/super). Licence: MIT.
