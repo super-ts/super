@@ -3,16 +3,16 @@ name = "Super"
 version = "0.1.0"
 schema_version = 1
 authors = ["Super"]
-description = "Fichiers .super du framework Super : coloration, erreurs, complétion, formatage."
+description = ".super files for the Super framework: highlighting, errors, completion, formatting."
 
 [language_servers.super-language-server]
 name = "Super Language Server"
 languages = ["Super"]
 
-# La grammaire des .super : celle de TSX (fork de Zed) étendue aux instructions écrites entre les
-# balises, dans son dépôt public (sous-module editors/tree-sitter-super). Zed la clone et la compile
-# à cette révision (ici le tag v0.1.0) : après une modification de la grammaire, la pousser là-bas
-# puis mettre à jour `rev`.
+# The .super grammar: Zed's TSX grammar (forked) extended with statements written between
+# tags, in its public repository (submodule editors/tree-sitter-super). Zed clones and compiles it
+# at this revision (here the v0.1.0 tag): after changing the grammar, push it there
+# then update `rev`.
 [grammars.super]
 repository = "https://github.com/super-ts/tree-sitter-super"
 rev = "b8c59a98fd8c51778723f44d06f1b7e6252e5803"

@@ -511,14 +511,14 @@
 
 (html_character_reference) @string.special
 
-; .super : `key` dans une boucle écrite entre des balises (`for (const x of xs; key x.id)`).
+; .super: `key` in a loop written between tags (`for (const x of xs; key x.id)`).
 (jsx_for_statement "key" @keyword)
 
-; .super : un emplacement nommé d'un composant (`<:footer>…</:footer>`).
+; .super: a component's named slot (`<:footer>…</:footer>`).
 (jsx_slot name: (identifier) @tag)
 (jsx_slot close_name: (identifier) @tag)
 
-; `@tag = '…';` et `@title = …;` dans le corps d'un composant (editors/tree-sitter-super).
+; `@tag = '…';` and `@title = …;` in a component's body (editors/tree-sitter-super).
 (super_declaration
   "@" @punctuation.special
   name: (identifier) @attribute)

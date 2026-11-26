@@ -5,43 +5,43 @@
   </picture>
 </p>
 
-# Extension Zed des fichiers `.super`
+# Zed extension for `.super` files
 
-Déclare le langage « Super » (fichiers `.super`) et lance son serveur de langage
-(`packages/lang-server`) : erreurs, complétion, survol, définition, formatage.
+Declares the "Super" language (`.super` files) and starts its language server
+(`packages/lang-server`): errors, completion, hover, definition, formatting.
 
-Les `.super` ont leur propre langage : vtsls (le serveur TypeScript de Zed) ne les voit plus, et
-aucun chemin absolu n'est nécessaire (le serveur est cherché dans le projet ouvert, Node dans son
+`.super` files have their own language: vtsls (Zed's TypeScript server) no longer sees them, and
+no absolute path is needed (the server is looked up in the open project, Node on its
 PATH).
 
-## Installer
+## Installing
 
-1. Rust, par rustup (Zed compile l'extension avec) :
+1. Rust, through rustup (Zed compiles the extension with it):
 
    ```sh
    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
    ```
 
-   Puis redémarre Zed pour qu'il trouve `cargo`.
+   Then restart Zed so it finds `cargo`.
 
-2. Dans Zed : palette de commandes, `zed: install dev extension`, puis choisis ce dossier
-   (`editors/zed`). Zed compile l'extension et la grammaire (la première fois, compter une minute).
+2. In Zed: command palette, `zed: install dev extension`, then pick this folder
+   (`editors/zed`). Zed compiles the extension and the grammar (the first time, allow a minute).
 
-3. Un `.super` ouvert affiche « Super » en bas à droite de Zed. Après une modification de
-   l'extension : *Rebuild* dans le panneau des extensions.
+3. An open `.super` file shows "Super" at the bottom right of Zed. After changing the
+   extension: *Rebuild* in the extensions panel.
 
-## Ce qui reste à faire
+## What is left to do
 
-- **Grammaire** : `editors/tree-sitter-super`, compilée par Zed depuis son dépôt public
-  ([super-ts/tree-sitter-super](https://github.com/super-ts/tree-sitter-super)), à la `rev` de
-  `extension.toml`. Après une modification de la grammaire : la pousser là-bas, mettre à jour `rev`,
-  puis réinstaller l'extension (`zed: install dev extension`).
-- **« Aller à la définition » depuis un `.ts`** vers un composant `.super` ne demande rien à
-  l'extension : vtsls suit la source map de la déclaration du composant (`.super/types/`).
+- **Grammar**: `editors/tree-sitter-super`, compiled by Zed from its public repository
+  ([super-ts/tree-sitter-super](https://github.com/super-ts/tree-sitter-super)), at the `rev` in
+  `extension.toml`. After changing the grammar: push it there, update `rev`,
+  then reinstall the extension (`zed: install dev extension`).
+- **"Go to definition" from a `.ts` file** to a `.super` component needs nothing from the
+  extension: vtsls follows the source map of the component's declaration (`.super/types/`).
 
-## Réglages
+## Settings
 
-Le binaire du serveur peut être imposé, comme pour tout serveur de Zed :
+The server binary can be forced, as for any Zed server:
 
 ```json
 { "lsp": { "super-language-server": { "binary": { "path": "node", "arguments": ["…/server.ts", "--stdio"] } } } }

@@ -1,5 +1,5 @@
-# Le langage « Super » : les fichiers .super, avec leur grammaire (editors/tree-sitter-super). Pas de
-# Prettier (prettier_parser_name absent) : le formatage vient du serveur .super.
+# The "Super" language: .super files, with their grammar (editors/tree-sitter-super). No
+# Prettier (prettier_parser_name absent): formatting comes from the .super server.
 name = "Super"
 grammar = "super"
 path_suffixes = ["super"]
@@ -31,7 +31,7 @@ tag_name_node_name_alternates = ["member_expression"]
 [overrides.default]
 linked_edit_characters = [".", "-"]
 
-# Entre des balises, un commentaire s'écrit {/* … */} (`//` y serait du texte).
+# Between tags, a comment is written {/* … */} (`//` would be text there).
 [overrides.element]
 line_comments = { remove = true }
 block_comment = { start = "{/*", prefix = "", end = "*/}", tab_size = 1 }

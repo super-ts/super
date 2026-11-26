@@ -1,9 +1,9 @@
-//! Extension Zed des fichiers `.super` : déclare le langage « Super » et lance son serveur de
-//! langage (`packages/lang-server` du dépôt Super, ou le paquet `super-language-server` installé).
+//! Zed extension for `.super` files: declares the "Super" language and starts its language
+//! server (`packages/lang-server` in the Super repository, or the installed `super-language-server` package).
 
 use zed_extension_api::{self as zed, settings::LspSettings, LanguageServerId, Result};
 
-/// Où chercher le serveur, relativement à la racine du projet ouvert.
+/// Where to look for the server, relative to the root of the open project.
 const SERVER_SCRIPTS: &[&str] = &[
     "node_modules/super-language-server/src/server.ts",
     "packages/lang-server/src/server.ts",
@@ -23,7 +23,7 @@ impl zed::Extension for SuperExtension {
     ) -> Result<zed::Command> {
         let env = worktree.shell_env();
 
-        // Un binaire donné dans les réglages (`lsp.super-language-server.binary`) l'emporte.
+        // A binary given in the settings (`lsp.super-language-server.binary`) takes precedence.
         let settings = LspSettings::for_worktree(language_server_id.as_ref(), worktree).ok();
         if let Some(binary) = settings.and_then(|s| s.binary) {
             if let Some(path) = binary.path {
@@ -39,13 +39,13 @@ impl zed::Extension for SuperExtension {
             .iter()
             .find(|path| worktree.read_text_file(path).is_ok())
             .ok_or_else(|| {
-                "serveur .super introuvable : installe le paquet super-language-server, ou ouvre le dépôt Super"
+                ".super server not found: install the super-language-server package, or open the Super repository"
                     .to_string()
             })?;
         let server = format!("{}/{}", worktree.root_path(), script);
 
-        // Le serveur est écrit en TypeScript, lancé tel quel : il faut un Node qui retire les types.
-        // Celui du PATH du projet d'abord (Node 23.6 ou plus le fait seul), sinon celui de Zed.
+        // The server is written in TypeScript and run as is: it needs a Node that strips types.
+        // The one on the project's PATH first (Node 23.6 or later does it on its own), otherwise Zed's.
         let (node, mut args) = match worktree.which("node") {
             Some(node) => (node, vec![]),
             None => (zed::node_binary_path()?, vec!["--experimental-strip-types".to_string()]),
