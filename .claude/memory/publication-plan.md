@@ -62,7 +62,7 @@ But : versionner et sauvegarder, sans rien publier. Le câblage local reste tel 
 - [x] La grammaire est un sous-module de Super (`.gitmodules` en HTTPS, URL locale surchargée en `github.perso`), citée dans le README.
 - [x] Une autre session a réécrit l'historique local des deux dépôts (messages en anglais, Conventional Commits, mon commit fourre-tout `d2fb748` scindé). L'ancien historique de la grammaire reste dans sa branche locale `backup/pre-conventional-commits`.
 - [x] Grammaire passée sur `main` en local et poussée (nouvelle branche) ; `.gitmodules` en `branch = main`.
-- [ ] Reste : l'utilisateur met `main` en branche par défaut de `super-ts/tree-sitter-super` sur GitHub ; puis je supprime `master` sur GitHub et je `push --force` le `main` réécrit de Super (accord explicite demandé, pas encore donné au 2026-11-26).
+- [x] `main` est la branche par défaut des deux dépôts ; `master` supprimée sur GitHub ; `main` réécrit de Super poussé en force avec l'accord de l'utilisateur (2026-11-26). Phase 1 terminée.
 - Leçon : dans ce dossier, d'autres sessions travaillent en parallèle. Ne jamais faire `git add -A` : n'ajouter que les fichiers touchés soi-même.
 
 ## Passage en public (plus tard, après les phases 2 à 8)
