@@ -1,0 +1,20 @@
+{
+  // Base du build des paquets publiés (voir scripts/build.mjs) : chaque paquet l'étend et
+  // émet src/ vers dist/. Pas de `paths` ni de condition `@super-ts/source` ici : un paquet
+  // lit ses dépendances @super-ts/* par leurs dist/*.d.ts, comme chez un utilisateur.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "types": [],
+    "declaration": true,
+    "rewriteRelativeImportExtensions": true,
+    "noEmitOnError": true
+  }
+}

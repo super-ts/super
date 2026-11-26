@@ -16,6 +16,7 @@
   ],
   "scripts": {
     "dev": "vite --configLoader native",
+    "build": "node scripts/build.mjs",
     "build:example": "vite build --configLoader native",
     "test": "vitest run --configLoader native",
     "test:watch": "vitest --configLoader native",

@@ -30,5 +30,5 @@
   "include": ["packages", "vite.config.ts", "vitest.config.ts", "vitest.setup.ts"],
   // Le TS virtuel des fichiers .super, écrit par `super-tsc` : vérifié par son propre tsconfig.
   // `__fixtures__/project` est un projet à part (erreurs volontaires), vérifié par check.test.ts.
-  "exclude": ["**/.super", "**/node_modules", "packages/lang/src/__fixtures__/project"]
+  "exclude": ["**/.super", "**/node_modules", "**/dist", "packages/lang/src/__fixtures__/project"]
 }
