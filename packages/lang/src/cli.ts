@@ -11,6 +11,7 @@
  */
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { toSource, toVirtual, type VirtualCode } from './virtual.ts';
@@ -81,6 +82,15 @@ function position(text: string, offset: number): { line: number; column: number 
 
 function offsetOf(text: string, line: number, column: number): number {
   return (lineStarts(text)[line - 1] ?? 0) + column - 1;
+}
+
+/** Le binaire `tsc` du paquet `typescript` que voit le projet. */
+function tscOf(projectDir: string): string {
+  try {
+    return join(dirname(createRequire(join(projectDir, 'package.json')).resolve('typescript/package.json')), 'bin', 'tsc');
+  } catch {
+    throw new Error(`[super] typescript est introuvable depuis ${projectDir} : installe-le dans le projet.`);
+  }
 }
 
 /** Le chemin réel d'un fichier, ou le chemin tel quel s'il n'existe pas. */
@@ -159,7 +169,14 @@ export function check(configPath: string): string[] {
     ),
   );
 
-  const tsc = spawnSync('npx', ['tsc', '--noEmit', '--pretty', 'false', '-p', join(shadowDir, 'tsconfig.json')], { encoding: 'utf8' });
+  // tsc écrit ses chemins relatifs à son dossier courant, qu'il lit dans PWD : on le lance depuis le
+  // dossier réel du projet, avec un PWD qui le dit, et on résout ses chemins depuis ce même dossier.
+  // Pas `npx tsc` : dans un workspace npm, npx se place à la racine du paquet, pas dans ce dossier.
+  const tsc = spawnSync(process.execPath, [tscOf(projectDir), '--noEmit', '--pretty', 'false', '-p', join(shadowDir, 'tsconfig.json')], {
+    cwd: projectDir,
+    env: { ...process.env, PWD: projectDir },
+    encoding: 'utf8',
+  });
   const output = `${tsc.stdout}${tsc.stderr}`.trim();
   for (const raw of output ? output.split('\n') : []) {
     const match = /^(.+?)\((\d+),(\d+)\): (.*)$/.exec(raw);
@@ -169,9 +186,10 @@ export function check(configPath: string): string[] {
       continue;
     }
     const [, file, line, column, message] = match as unknown as [string, string, string, string, string];
-    const entry = virtuals.get(realPath(resolve(shadowDir, file))) ?? virtuals.get(realPath(resolve(file)));
+    const reported = realPath(resolve(projectDir, file));
+    const entry = virtuals.get(reported);
     if (!entry) {
-      errors.push(`${relative(process.cwd(), resolve(file))}(${line},${column}): ${message}`);
+      errors.push(`${relative(process.cwd(), reported)}(${line},${column}): ${message}`);
       continue;
     }
     const at = toSource(entry.virtual, offsetOf(entry.virtual.code, Number(line), Number(column)));

@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -43,6 +44,26 @@ describe('check (TS virtuel vérifié par tsc)', () => {
         errors.filter((e) => e.includes('project/errors.super(')).length,
       );
       expect(linked.filter((e) => !e.includes('project/errors.super('))).toEqual([]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('ramène les erreurs au .super quand super-tsc est lancé depuis un dossier atteint par un lien', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'super-check-'));
+    try {
+      const link = join(dir, 'project');
+      symlinkSync(join(import.meta.dirname, '__fixtures__/project'), link, 'dir');
+      // Comme un shell : le dossier courant logique (PWD) passe par le lien.
+      const cli = spawnSync(process.execPath, [join(import.meta.dirname, 'cli.ts'), 'tsconfig.json'], {
+        cwd: link,
+        env: { ...process.env, PWD: link },
+        encoding: 'utf8',
+      });
+      const lines = cli.stdout.split('\n').filter((line) => /^\S.*\(\d+,\d+\): /.test(line));
+      expect(cli.status).toBe(1);
+      expect(lines.length).toBeGreaterThan(0);
+      expect(lines.filter((line) => !line.includes('errors.super('))).toEqual([]);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
