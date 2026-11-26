@@ -1,7 +1,7 @@
 {
-  // Base du build des paquets publiés (voir scripts/build.mjs) : chaque paquet l'étend et
-  // émet src/ vers dist/. Pas de `paths` ni de condition `@super-ts/source` ici : un paquet
-  // lit ses dépendances @super-ts/* par leurs dist/*.d.ts, comme chez un utilisateur.
+  // Build base for the published packages (see scripts/build.mjs): each package extends it and
+  // emits src/ to dist/. No `paths` and no `@super-ts/source` condition here: a package
+  // reads its @super-ts/* dependencies through their dist/*.d.ts, as a user's project would.
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",

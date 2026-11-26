@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Framework front minimaliste : stores typés sur EventTarget et composants HTMLElement typés.",
+  "description": "Minimalist front-end framework: typed stores on EventTarget and typed HTMLElement components.",
   "license": "MIT",
   "workspaces": [
     "packages/core",

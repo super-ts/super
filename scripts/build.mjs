@@ -1,5 +1,5 @@
-// `npm run build` : construit les paquets publiés, src/ → dist/, dans l'ordre des dépendances.
-// Chaque paquet lit les @super-ts/* dont il dépend par leurs dist/*.d.ts, d'où l'ordre.
+// `npm run build`: builds the published packages, src/ → dist/, in dependency order.
+// Each package reads the @super-ts/* packages it depends on through their dist/*.d.ts, hence the order.
 import { spawnSync } from 'node:child_process';
 import { chmodSync, cpSync, readFileSync, rmSync } from 'node:fs';
 import { builtinModules } from 'node:module';
@@ -12,9 +12,9 @@ const PACKAGES = [
   { name: 'core' },
   { name: 'dom' },
   { name: 'testing' },
-  // La feuille de style est importée par index.js ; c'est le bundler de l'app qui la charge.
+  // The stylesheet is imported by index.js; the app's bundler loads it.
   { name: 'ui', copy: ['styles.css', 'styles.d.css.ts'] },
-  // virtual.ts lit check.ts à l'exécution, à côté de lui : on le livre tel quel.
+  // virtual.ts reads check.ts at runtime, next to itself: it is shipped as is.
   { name: 'lang', copy: ['check.ts'], bin: ['cli.js', 'format-cli.js'] },
   { name: 'vite' },
 ];
@@ -34,8 +34,8 @@ for (const pkg of PACKAGES) {
   console.log(`build: @super-ts/${pkg.name}`);
 }
 
-// Le serveur de langage : un seul dist/server.js, qui embarque le code de lang (importé par chemins
-// relatifs). Ses dépendances npm (TypeScript 6, Volar, vscode-uri) restent externes.
+// The language server: a single dist/server.js, which bundles the lang code (imported through relative
+// paths). Its npm dependencies (TypeScript 6, Volar, vscode-uri) stay external.
 {
   const dir = join(root, 'packages', 'lang-server');
   const { dependencies } = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
@@ -50,7 +50,7 @@ for (const pkg of PACKAGES) {
     logLevel: 'warn',
     output: { file: join(dir, 'dist', 'server.js'), format: 'esm' },
   });
-  // Le check.ts de lang, lu à l'exécution par le code de virtual.ts embarqué, à côté de server.js.
+  // lang's check.ts, read at runtime by the bundled virtual.ts code, next to server.js.
   cpSync(join(root, 'packages', 'lang', 'src', 'check.ts'), join(dir, 'dist', 'check.ts'));
   chmodSync(join(dir, 'dist', 'server.js'), 0o755);
   console.log('build: @super-ts/language-server');

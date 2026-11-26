@@ -13,7 +13,7 @@
     "noEmit": true,
     "allowImportingTsExtensions": true,
     "types": ["vitest/globals", "vite/client"],
-    // Les déclarations des fichiers .super (voir packages/lang/src/virtual-files.ts).
+    // The declarations of .super files (see packages/lang/src/virtual-files.ts).
     "rootDirs": [".", "./.super/types", "./.super/virtual"],
     "paths": {
       "@super-ts/core/internal": ["./packages/core/src/internal.ts"],
@@ -28,7 +28,7 @@
     }
   },
   "include": ["packages", "vite.config.ts", "vitest.config.ts", "vitest.setup.ts"],
-  // Le TS virtuel des fichiers .super, écrit par `super-tsc` : vérifié par son propre tsconfig.
-  // `__fixtures__/project` est un projet à part (erreurs volontaires), vérifié par check.test.ts.
+  // The virtual TypeScript of .super files, written by `super-tsc`: checked by its own tsconfig.
+  // `__fixtures__/project` is a separate project (deliberate errors), checked by check.test.ts.
   "exclude": ["**/.super", "**/node_modules", "**/dist", "packages/lang/src/__fixtures__/project"]
 }

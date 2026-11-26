@@ -6,11 +6,11 @@ export default defineConfig({
   plugins,
   test: {
     environment: 'happy-dom',
-    // Node >= 25 expose un localStorage natif qui masque celui de happy-dom.
+    // Node >= 25 exposes a native localStorage that hides happy-dom's.
     execArgv: ['--no-experimental-webstorage'],
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
-    // Les exemples de thème du kit affichent leur propre CSS (`?raw`) : Vitest doit le lire.
+    // The kit's theme examples display their own CSS (`?raw`): Vitest must read it.
     css: { include: [/kit-theme\.css/, /kit\/theme-[a-z]+\.css/] },
     include: ['packages/**/*.test.ts', 'examples/**/*.test.ts'],
   },

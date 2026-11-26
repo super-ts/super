@@ -1,8 +1,8 @@
-// Réglages Zed du projet. Les fichiers `.super` sont servis par l'extension de editors/zed (langage
-// « Super » et son serveur) : rien à régler pour eux ici.
+// Zed settings for the project. `.super` files are served by the extension in editors/zed (the "Super"
+// language and its server): nothing to set for them here.
 //
-// Pas d'ESLint pour les `.ts` : le dépôt utilise Biome, et le serveur ESLint de Zed plante en boucle
-// (`eslint/noLibrary`) faute de trouver ESLint dans le projet.
+// No ESLint for `.ts` files: the repository uses Biome, and Zed's ESLint server crashes in a loop
+// (`eslint/noLibrary`) because it cannot find ESLint in the project.
 {
   "languages": {
     "TypeScript": {

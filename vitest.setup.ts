@@ -1,5 +1,5 @@
 import { cleanup } from '@super-ts/testing';
 import { afterEach } from 'vitest';
 
-// Démonte tout ce que `mount()` a monté pendant le test.
+// Unmounts everything `mount()` mounted during the test.
 afterEach(() => cleanup());

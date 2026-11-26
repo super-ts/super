@@ -1,12 +1,12 @@
-// `npm run smoke` : installe les paquets comme un vrai utilisateur, sans registre ni alias.
+// `npm run smoke`: installs the packages as a real user would, with no registry and no aliases.
 //
-// 1. build, puis `npm pack` de chaque paquet ;
-// 2. une app Vite vierge dans un dossier temporaire, qui installe les tarballs ;
-// 3. l'exemple de docs/getting-started.html : contrat, store, composant .super, test ;
-// 4. vite build, super-tsc, vitest, super-fmt, biome avec @super-ts/lint ;
-// 5. les tests du serveur de langage, sur le serveur installé.
+// 1. build, then `npm pack` of each package;
+// 2. a blank Vite app in a temporary folder, which installs the tarballs;
+// 3. the example from docs/getting-started.html: contract, store, .super component, test;
+// 4. vite build, super-tsc, vitest, super-fmt, biome with @super-ts/lint;
+// 5. the language server tests, on the installed server.
 //
-// `--keep` garde le dossier temporaire (il est gardé aussi en cas d'échec).
+// `--keep` keeps the temporary folder (it is also kept on failure).
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -14,12 +14,12 @@ import { dirname, join } from 'node:path';
 
 const root = join(import.meta.dirname, '..');
 const keep = process.argv.includes('--keep');
-// Dossiers de packages/ ; le nom npm est lu dans leur package.json.
+// Folders in packages/; the npm name is read from their package.json.
 const PACKAGES = ['core', 'dom', 'ui', 'testing', 'lang', 'vite', 'lint', 'lang-server'];
 const manifest = (dir) => JSON.parse(readFileSync(join(root, 'packages', dir, 'package.json'), 'utf8'));
 
-// Rien du dépôt ne doit fuir dans l'app : ni la condition `@super-ts/source` (le `.npmrc` du dépôt
-// la passe par NODE_OPTIONS aux scripts npm), ni la config npm du `npm run` parent.
+// Nothing from the repository may leak into the app: neither the `@super-ts/source` condition (the repository's
+// `.npmrc` passes it to npm scripts through NODE_OPTIONS), nor the npm config of the parent `npm run`.
 const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => key !== 'NODE_OPTIONS' && !/^npm_/i.test(key)));
 
 const work = mkdtempSync(join(tmpdir(), 'super-smoke-'));
@@ -46,7 +46,7 @@ function write(path, content) {
   writeFileSync(file, `${content.replace(/^\n/, '')}`);
 }
 
-// 1. build et tarballs
+// 1. build and tarballs
 run('build', 'npm', ['run', 'build'], root);
 mkdirSync(tarballs);
 for (const dir of PACKAGES) run(`pack ${manifest(dir).name}`, 'npm', ['pack', '--pack-destination', tarballs, '--silent'], join(root, 'packages', dir));
@@ -55,7 +55,7 @@ const tarball = (dir) => {
   return `file:${join(tarballs, `${name.replace('@', '').replace('/', '-')}-${version}.tgz`)}`;
 };
 
-// 2. l'app : les outils aux versions du dépôt, Super par ses tarballs
+// 2. the app: the tools at the repository's versions, Super through its tarballs
 const devVersions = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).devDependencies;
 const tools = ['vite', 'vitest', 'typescript', 'happy-dom', '@testing-library/dom', '@testing-library/user-event', '@biomejs/biome'];
 write(
@@ -114,7 +114,7 @@ export default defineConfig({
   plugins: [superPlugin({ src: 'src' })],
   test: {
     environment: 'happy-dom',
-    // Node >= 25 expose un localStorage natif qui masque celui de happy-dom.
+    // Node >= 25 exposes a native localStorage that hides happy-dom's.
     execArgv: ['--no-experimental-webstorage'],
     setupFiles: ['./src/test-setup.ts'],
   },
@@ -139,7 +139,7 @@ write(
   'index.html',
   `
 <!doctype html>
-<html lang="fr">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <title>Super smoke</title>
@@ -152,7 +152,7 @@ write(
 `,
 );
 
-// 3. l'exemple de docs/getting-started.html
+// 3. the example from docs/getting-started.html
 write(
   'src/@core/theme/contract.ts',
   `
@@ -212,14 +212,14 @@ export class ThemeToggle extends SuperElement {
 
   render() {
     <button type="button" on:click={() => this.theme.send('toggle')}>
-      {this.isDark.value ? 'Passer en mode clair' : 'Passer en mode sombre'}
+      {this.isDark.value ? 'Switch to light mode' : 'Switch to dark mode'}
     </button>
   }
 }
 `,
 );
 
-// Un composant du kit : l'importer charge la feuille de style de @super-ts/ui.
+// A kit component: importing it loads the @super-ts/ui stylesheet.
 write(
   'src/@components/shared/theme-panel.super',
   `
@@ -236,7 +236,7 @@ export class ThemePanel extends SuperElement {
     <section>
       <ThemeToggle />
       <Button variant="secondary" on:press={() => this.theme.send('toggle')}>
-        Basculer
+        Toggle
       </Button>
     </section>
   }
@@ -277,7 +277,7 @@ import userEvent from '@testing-library/user-event';
 import { expect, test } from 'vitest';
 import { ThemeToggle } from './theme-toggle';
 
-test('le bouton bascule le thème', async () => {
+test('the button toggles the theme', async () => {
   const theme = ThemeStore.create();
   const { container } = await mount(ThemeToggle, { stores: [theme] });
 
@@ -285,12 +285,12 @@ test('le bouton bascule le thème', async () => {
   await flush();
 
   expect(theme.selectors.isDark()).toBe(true);
-  expect(container.textContent).toContain('Passer en mode clair');
+  expect(container.textContent).toContain('Switch to light mode');
 });
 `,
 );
 
-// 4. ce que fait un utilisateur
+// 4. what a user does
 run('npm install (tarballs)', 'npm', ['install', '--no-audit', '--no-fund', '--prefer-offline'], app);
 for (const dir of PACKAGES) {
   if (existsSync(join(app, 'node_modules', manifest(dir).name, 'src'))) {
@@ -305,7 +305,7 @@ const css = spawnSync('sh', ['-c', 'cat dist/assets/*.css'], { cwd: app, encodin
 if (!css.includes('.super-button')) fail("the @super-ts/ui stylesheet is missing from the build's CSS");
 run('super-tsc', 'npx', ['super-tsc', 'tsconfig.json'], app);
 
-// super-tsc doit aussi échouer : une commande mal nommée dans le .super, signalée sur le .super.
+// super-tsc must also fail: a misnamed command in the .super file, reported on the .super file.
 const toggle = join(app, 'src/@components/shared/theme-toggle.super');
 const valid = readFileSync(toggle, 'utf8');
 writeFileSync(toggle, valid.replace("send('toggle')", "send('toggel')"));
@@ -321,7 +321,7 @@ run('super-fmt --write', 'npx', ['super-fmt', '--write', 'src'], app);
 run('super-fmt --check', 'npx', ['super-fmt', '--check', 'src'], app);
 run('biome check (@super-ts/lint)', 'npx', ['biome', 'check'], app);
 
-// Le serveur de langage installé (TypeScript 6 et Volar venus de npm), piloté par les tests du dépôt.
+// The installed language server (TypeScript 6 and Volar from npm), driven by the repository's tests.
 console.log('\nsmoke: language server tests on the installed server');
 const server = join(app, 'node_modules', '@super-ts', 'language-server', 'dist', 'server.js');
 const tests = spawnSync('npm', ['run', 'test', '--', 'packages/lang-server/src/server.test.ts'], {

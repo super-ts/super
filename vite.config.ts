@@ -5,7 +5,7 @@ import { superPlugin } from './packages/vite/src/index.ts';
 const fromRoot = (path: string) => fileURLToPath(new URL(path, import.meta.url));
 
 export const alias = {
-  // Avant `@super-ts/core` : le premier alias qui correspond l'emporte.
+  // Before `@super-ts/core`: the first matching alias wins.
   '@super-ts/core/internal': fromRoot('./packages/core/src/internal.ts'),
   '@super-ts/core': fromRoot('./packages/core/src/index.ts'),
   '@super-ts/dom/internal': fromRoot('./packages/dom/src/internal.ts'),
@@ -16,10 +16,10 @@ export const alias = {
   '@super-ts/lang': fromRoot('./packages/lang/src/index.ts'),
 };
 
-/** Impose @core/ et @components/ dans le src de l'app d'exemples. */
+/** Enforces @core/ and @components/ in the demo app's src. */
 export const plugins = [superPlugin({ src: fromRoot('./examples/demo/src') })];
 
-// `npm run dev` sert l'app d'exemples (compteurs, formulaire).
+// `npm run dev` serves the demo app (counters, form).
 export default defineConfig({
   root: fromRoot('./examples/demo'),
   resolve: { alias },
