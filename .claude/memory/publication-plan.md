@@ -106,11 +106,11 @@ But : versionner et sauvegarder, sans rien publier. Le câblage local reste tel 
   - CORRIGÉ le 2026-11-26 : `super-tsc` ne ramenait pas les erreurs sur les `.super` si le chemin du projet passait par un lien symbolique (ex. `/tmp` → `/private/tmp` sur macOS). `cli.ts` part maintenant du chemin réel du tsconfig et ramène les fichiers cités par tsc à leur chemin réel ; test dans `check.test.ts`.
 - Pas de source maps ni de declaration maps : `src` n'est pas publié, elles pointeraient dans le vide. À rouvrir si on publie `src`.
 
-## Phase 4 : test d'installation comme un vrai utilisateur (faite le 2026-11-26, sauf la CI)
+## Phase 4 : test d'installation comme un vrai utilisateur (faite le 2026-11-26)
 
 - [x] `npm run smoke` → `scripts/smoke-install.mjs` : build, `npm pack` des 7 paquets, app Vite vierge dans un dossier temporaire qui installe les tarballs (outils aux versions du dépôt, `--prefer-offline`), l'exemple du bouton de thème de `docs/getting-started.html` (contrat, store, `.super`, test) plus un `.super` qui utilise `Button` du kit, puis `vite build`, `super-tsc`, `super-tsc` sur un `.super` cassé (doit signaler l'erreur sur le `.super`), `vitest run`, `biome format`, `super-fmt --write/--check`, `biome check` avec `@super-ts/lint`. Contrôles en plus : aucun paquet ne livre `src/`, le plugin écrit `contracts.d.ts`, la CSS du kit est dans le build. `--keep` garde l'app ; elle est gardée en cas d'échec.
   - Le script retire `NODE_OPTIONS` et les variables `npm_*` de l'environnement : sinon la condition `@super-ts/source` du `.npmrc` du dépôt fuit dans l'app et pointe vers des `src/` absents des tarballs.
-- [ ] Le faire tourner en CI : avec la phase 8 (il n'y a pas encore de workflow).
+- [x] Le faire tourner en CI : `npm run smoke` dans `.github/workflows/ci.yml` (phase 8).
 - Bugs trouvés et corrigés par ce test :
   - **CSS du kit absente du build** dès qu'une app n'importe que certains composants : avec `sideEffects: ["**/*.css"]`, le bundler saute `index.js` (sans effet de bord) et perd son `import './styles.css'`. La démo avait le même bug en production (CSS 9,9 → 21 Ko après correction ; invisible en dev). Corrigé : `sideEffects` liste aussi `./dist/index.js` et `./src/index.ts`.
   - **`super-tsc` lancé depuis un dossier atteint par un lien** (`/var` → `/private/var` sur macOS, donc tout dossier temporaire) : erreurs rapportées sur le TS virtuel. tsc écrit ses chemins relatifs à son dossier courant logique (PWD) et `npx` se replace à la racine du paquet dans un workspace. Corrigé : `cli.ts` lance le `bin/tsc` du `typescript` résolu depuis le projet, avec `cwd` et `PWD` au dossier réel du projet, et résout ses chemins depuis ce dossier. Test CLI dans `check.test.ts`.
@@ -118,16 +118,16 @@ But : versionner et sauvegarder, sans rien publier. Le câblage local reste tel 
   - `super-fmt` exige `biome.json` et `node_modules/.bin/biome` dans le même dossier (`biome.ts`) : à revoir pour les monorepos où Biome est hissé plus haut.
   - `super-tsc` sur un projet neuf échoue tant que `src/@core/contracts.d.ts` n'existe pas : il est écrit par le plugin Vite (`vite build` ou `vite`). La doc dit de le committer ; le smoke lance `vite build` d'abord.
 
-## Phase 5 : serveur de langage publiable (faite le 2026-11-26, sauf le groupe `fixed`)
+## Phase 5 : serveur de langage publiable (faite le 2026-11-26)
 
 - [x] `packages/lang-server` s'appelle `@super-ts/language-server` (0.1.0, public, `files: ["dist"]`, `bin.super-language-server` → `dist/server.js`). Il est dans les workspaces : son `package-lock.json` et son `node_modules` à part sont supprimés, un `npm ci` racine suffit dans un clone neuf. TypeScript 6 reste imbriqué dans `packages/lang-server/node_modules` (TS 7 à la racine) ; `declarations.test.ts` lit `../node_modules/typescript/lib/tsserver.js`, toujours valable.
 - [x] Assemblé par Rolldown (devDependency explicite, même version que celle de Vite 8) dans `scripts/build.mjs` : un `dist/server.js` (≈ 107 Ko, shebang) qui embarque le code de lang (importé par `../../lang/src/…`). Externes : les `dependencies` du paquet (TypeScript 6, Volar, volar-service-typescript, vscode-uri) et les modules Node. `check.ts` de lang est copié dans `dist` (lu à l'exécution par le code de `virtual.ts` embarqué).
 - [x] Testé assemblé : `server.test.ts` pilote `SUPER_LS_SERVER` s'il est défini. `npm run smoke` installe le tarball du serveur dans l'app (TS 6 et Volar venus de npm) et lance les 25 tests sur ce serveur installé.
-- [ ] Groupe `fixed` de Changesets : avec la phase 8.
+- [x] Groupe `fixed` de Changesets : `.changeset/config.json` (phase 8).
 - Doc : tableau des paquets de `docs/index.html` mis à jour.
 - Pour la phase 7 : `editors/zed/src/lib.rs` cherche encore `node_modules/super-language-server/src/server.ts`, chemin mort depuis le renommage (repli sur `packages/lang-server/src/server.ts` dans le dépôt) ; `docs/tooling.html` décrit ce comportement. Le nom du serveur LSP côté Zed (`super-language-server`, réglage `lsp.super-language-server.binary`) ne change pas.
 
-## Phase 6 : grammaire publique (l'utilisateur, puis moi)
+## Phase 6 : grammaire publique (faite le 2026-11-26)
 
 Préparé le 2026-11-26 dans `editors/tree-sitter-super` (commits locaux, à pousser) :
 - [x] Dépôt entièrement en anglais britannique (README, commentaires de `grammar.js`, `scanner.c`, `scanner.h`, descriptions). Fichiers générés inchangés.
@@ -150,7 +150,7 @@ Préparé le 2026-11-26 dans `editors/tree-sitter-super` (commits locaux, à pou
 - L'utilisateur doit désinstaller l'ancienne extension dev d'id `super`, puis `zed: install dev extension` sur `editors/zed`.
 - `repository` pointe vers le dépôt privé : à changer pour le futur dépôt public avant la PR Zed (phase 10).
 
-## Phase 8 : Changesets, version et CI (faite le 2026-11-26)
+## Phase 8 : Changesets, version et CI (faite et poussée le 2026-11-26)
 
 - [x] `@changesets/cli` à la racine, `.changeset/config.json` : `fixed: [["@super-ts/*"]]` (les 8 paquets, serveur de langage et lint compris), `access: public`, `baseBranch: main`. La démo n'est pas un workspace : rien à ignorer.
   - Piège trouvé par un essai de `changeset version` dans un worktree jetable : un `minor` sur core passait **tout en 1.0.0**, parce que `@super-ts/lang` avait `@super-ts/dom` en peer dependency exacte (Changesets force un major sur les dépendants d'une peer dependency, et le groupe fixe le propage). Corrigé : peer `"@super-ts/dom": ">=0.1.0"` + option `___experimentalUnsafeOptions_WILL_CHANGE_IN_PATCH.onlyUpdatePeerDependentsWhenOutOfRange: true`. Revérifié : minor → 0.2.0 partout, patch → 0.1.1, dépendances internes exactes mises à jour.
