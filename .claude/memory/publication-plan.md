@@ -125,9 +125,14 @@ But : versionner et sauvegarder, sans rien publier. Le câblage local reste tel 
 
 ## Phase 6 : grammaire publique (l'utilisateur, puis moi)
 
-- [ ] L'utilisateur crée le dépôt GitHub public de `editors/tree-sitter-super` et pousse (le `src/parser.c` généré est déjà commité).
+Préparé le 2026-11-26 dans `editors/tree-sitter-super` (commits locaux, à pousser) :
+- [x] Dépôt entièrement en anglais britannique (README, commentaires de `grammar.js`, `scanner.c`, `scanner.h`, descriptions). Fichiers générés inchangés.
+- [x] Tests autonomes `test/corpus/` (`npm test` = `tree-sitter test`, 8 cas avec noms de champ) : if/else, for avec key, switch, déclaration, slot nommé, @tag/@title, texte commençant par un mot réservé, point-virgule automatique. `npm run check` (lit les .super du dépôt Super) ne marche que dans le sous-module.
+- [x] Versionnage par **release-please** (choix de l'utilisateur, après essai de Changesets) : `release-please-config.json` (type node, tag `vX.Y.Z`, `bump-minor-pre-major`, `extra-files` pour `$.metadata.version` de `tree-sitter.json`, `bootstrap-sha` = commit des tests), `.release-please-manifest.json` à 0.1.0, workflow `.github/workflows/release-please.yml` (`googleapis/release-please-action@v4`), `CHANGELOG.md` avec l'entrée 0.1.0, `version` dans `package.json`.
+  - Pourquoi pas Changesets : @manypkg/find-root prend comme racine le premier parent qui déclare des workspaces ; depuis le sous-module, toute commande `changeset` remonte à la racine de Super et y écrit (`"workspaces": []` → aucun paquet ; `["."]` → npm casse).
+- [ ] L'utilisateur : réglage GitHub « Allow GitHub Actions to create and approve pull requests » sur le dépôt (sinon release-please ne peut pas ouvrir sa PR) ; tag `v0.1.0` à poser sur l'état actuel ; passage du dépôt en public.
 - [ ] Je fais passer `[grammars.super]` de `extension.toml` en `https://github.com/…` + `rev`.
-- [ ] Une CI dans ce dépôt : `tree-sitter generate` sans diff, puis parsing des `.super` sans `ERROR`.
+- [ ] Une CI dans ce dépôt : `tree-sitter generate` sans diff, puis `npm test`.
 
 ## Phase 7 : extension Zed publiable (moi)
 
