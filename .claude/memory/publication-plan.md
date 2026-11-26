@@ -71,6 +71,7 @@ But : versionner et sauvegarder, sans rien publier. Le câblage local reste tel 
 ## Passage en public (plus tard, après les phases 2 à 8)
 
 - **Nouveau dépôt public créé à partir d'un commit propre**, sans `.claude/memory` ni l'historique privé. Le dépôt privé reste l'archive de travail. Ne pas rendre public le dépôt privé, sinon toute la mémoire part avec l'historique.
+- FAIT le 2026-11-26 : dépôt Super entièrement traduit en anglais britannique (code, messages, kit, démo, doc, README, Zed, scripts), pages de doc renommées (`components.html`, `tooling.html`, `getting-started.html`…), ancres réparées, ids de compteurs `coffees`/`pushups`/`books`. La mémoire (`.claude/memory`) reste en français, elle n'est pas publiée. Outils de contrôle utilisés : liens et ancres de la doc, extraits `data-source` comparés à leur source (20 écarts volontaires).
 - **Tout passe en anglais** dans les dépôts publics (demande de l'utilisateur) : README, doc HTML et `llms*.txt`, commentaires du code, messages d'erreur du framework et du plugin, tests, textes de l'extension Zed, grammaire. C'est un chantier à part entière, à faire avant le premier dépôt public.
 - **GitHub Pages pour la doc** : un workflow lance `npm run docs:index` puis publie `docs/`. Pages sur un dépôt privé demande un compte payant, d'où son arrivée au passage en public.
 - La grammaire passe en public elle aussi, puis `extension.toml` pointe vers son URL HTTPS (phase 6).
