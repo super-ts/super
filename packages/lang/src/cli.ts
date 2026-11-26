@@ -83,10 +83,22 @@ function offsetOf(text: string, line: number, column: number): number {
   return (lineStarts(text)[line - 1] ?? 0) + column - 1;
 }
 
+/** Le chemin réel d'un fichier, ou le chemin tel quel s'il n'existe pas. */
+function realPath(path: string): string {
+  try {
+    return realpathSync(path);
+  } catch {
+    return path;
+  }
+}
+
 /** Vérifie le projet ; renvoie les erreurs, une par ligne, au format de `tsc --pretty false`. */
 export function check(configPath: string): string[] {
   const errors: string[] = [];
-  const projectDir = dirname(resolve(configPath));
+  // Tout en chemins réels : tsc rapporte les fichiers par leur chemin réel, et un projet ouvert par
+  // un lien symbolique (`/tmp` → `/private/tmp` sur macOS) ne retrouverait plus son TS virtuel.
+  const configFile = realpathSync(resolve(configPath));
+  const projectDir = dirname(configFile);
   const shadowDir = join(projectDir, '.super');
   const virtualDir = join(shadowDir, 'virtual');
   const toShadow = (abs: string) => {
@@ -104,7 +116,7 @@ export function check(configPath: string): string[] {
   // pas les motifs `*`).
   const within = (file: string, path: string) => file === path || file.startsWith(`${path}${sep}`);
   const included = (readJsonc(configPath).include ?? ['.']).map((p) => resolve(projectDir, p));
-  const excluded = effectiveExclude(resolve(configPath)).filter((p) => !p.includes('*'));
+  const excluded = effectiveExclude(configFile).filter((p) => !p.includes('*'));
   const sources = superFiles(projectDir).filter((f) => included.some((p) => within(f, p)) && !excluded.some((p) => within(f, p)));
   for (const source of sources) {
     const sourceText = readFileSync(source, 'utf8');
@@ -120,7 +132,7 @@ export function check(configPath: string): string[] {
 
   // Le tsconfig de l'ombre : celui du projet, avec la seconde arborescence.
   const config = readJsonc(configPath);
-  const { paths, dir: pathsDir } = effectivePaths(resolve(configPath));
+  const { paths, dir: pathsDir } = effectivePaths(configFile);
   const shadowPaths: Record<string, string[]> = {};
   for (const [pattern, targets] of Object.entries(paths)) {
     shadowPaths[pattern] = targets.flatMap((t) => {
@@ -134,11 +146,11 @@ export function check(configPath: string): string[] {
     join(shadowDir, 'tsconfig.json'),
     JSON.stringify(
       {
-        extends: toShadow(resolve(configPath)),
+        extends: toShadow(configFile),
         compilerOptions: { rootDirs: [toShadow(projectDir), './virtual'], paths: shadowPaths },
         include: [...include, './virtual'],
         // Un `exclude` hérité qui viserait `.super` (celui du tsconfig racine) cacherait le TS virtuel.
-        exclude: effectiveExclude(resolve(configPath))
+        exclude: effectiveExclude(configFile)
           .filter((p) => !p.includes('.super'))
           .map((p) => (p.startsWith('*') ? p : toShadow(p))),
       },
@@ -157,7 +169,7 @@ export function check(configPath: string): string[] {
       continue;
     }
     const [, file, line, column, message] = match as unknown as [string, string, string, string, string];
-    const entry = virtuals.get(resolve(shadowDir, file)) ?? virtuals.get(resolve(file));
+    const entry = virtuals.get(realPath(resolve(shadowDir, file))) ?? virtuals.get(realPath(resolve(file)));
     if (!entry) {
       errors.push(`${relative(process.cwd(), resolve(file))}(${line},${column}): ${message}`);
       continue;

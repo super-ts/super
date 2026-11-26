@@ -1,4 +1,5 @@
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, symlinkSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { check } from './cli.ts';
 
@@ -30,5 +31,20 @@ describe('check (TS virtuel vérifié par tsc)', () => {
     expect(errors.find((e) => e.includes('"title"'))).toContain(
       '« title » est déjà une propriété des éléments HTML : choisis un autre nom',
     );
+  });
+
+  it('ramène les erreurs au .super quand le projet est ouvert par un lien symbolique', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'super-check-'));
+    try {
+      const link = join(dir, 'project');
+      symlinkSync(join(import.meta.dirname, '__fixtures__/project'), link, 'dir');
+      const linked = check(join(link, 'tsconfig.json'));
+      expect(linked.filter((e) => e.includes('project/errors.super('))).toHaveLength(
+        errors.filter((e) => e.includes('project/errors.super(')).length,
+      );
+      expect(linked.filter((e) => !e.includes('project/errors.super('))).toEqual([]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
