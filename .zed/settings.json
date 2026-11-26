@@ -1,5 +1,9 @@
-// Zed settings for the project. `.super` files are served by the extension in editors/zed (the "Super"
-// language and its server): nothing to set for them here.
+// Zed settings for the project.
+//
+// `.super` files are served by the extension in editors/zed (the "Super" language and its server).
+// Outside this repository the extension installs @super-ts/language-server from npm; here the server
+// runs from its sources, with the Node on the PATH (Node 23.6 or later strips the types itself).
+// Language servers start in the project root, so the path is relative to it.
 //
 // No ESLint for `.ts` files: the repository uses Biome, and Zed's ESLint server crashes in a loop
 // (`eslint/noLibrary`) because it cannot find ESLint in the project.
@@ -7,6 +11,11 @@
   "languages": {
     "TypeScript": {
       "language_servers": ["vtsls", "!typescript-language-server", "!eslint", "..."]
+    }
+  },
+  "lsp": {
+    "super-language-server": {
+      "binary": { "path": "node", "arguments": ["packages/lang-server/src/server.ts", "--stdio"] }
     }
   }
 }

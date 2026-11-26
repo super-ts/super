@@ -1,13 +1,19 @@
-id = "super"
+id = "super-lang"
 name = "Super"
 version = "0.1.0"
 schema_version = 1
-authors = ["Super"]
+authors = ["Dimitri Lahaye"]
 description = ".super files for the Super framework: highlighting, errors, completion, formatting."
+repository = "https://github.com/super-ts/super"
 
 [language_servers.super-language-server]
 name = "Super Language Server"
 languages = ["Super"]
+
+# The server is installed from npm (see src/lib.rs): only this package.
+[[capabilities]]
+kind = "npm:install"
+package = "@super-ts/language-server"
 
 # The .super grammar: Zed's TSX grammar (forked) extended with statements written between
 # tags, in its public repository (submodule editors/tree-sitter-super). Zed clones and compiles it
