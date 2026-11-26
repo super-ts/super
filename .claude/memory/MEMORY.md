@@ -10,3 +10,4 @@
 - [Scope npm @super-ts](npm-scope-super-ts.md) — org npm "super-ts" (super était pris) ; dépôt renommé en @super-ts/… le 2026-11-26
 - [Couche données serveur](server-data-layer-design.md) — esquisse @read/@write façon TanStack Query, questions ouvertes, à rouvrir (2026-11-26)
 - [Plan de publication](publication-plan.md) — npm @super-ts/*, extension Zed, grammaire, travail local ; décisions ouvertes (version, dépôt, licence, id)
+- [Logo et favicon](brand-logo.md) — « Super. » / « S. », Inter Bold, blanc liseré + point #c4b5fd ; chemins relatifs à revoir à la publication
