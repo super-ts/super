@@ -1,11 +1,32 @@
 {
-  "name": "super-language-server",
-  "private": true,
-  "type": "module",
-  "description": "Serveur de langage des fichiers .super (Volar sur TypeScript 6 : Volar ne supporte pas encore TypeScript 7).",
-  "bin": {
-    "super-language-server": "./src/server.ts"
+  "name": "@super-ts/language-server",
+  "version": "0.1.0",
+  "description": "Language server for Super .super files (errors, completion, hover, definitions, formatting), built on Volar and TypeScript 6.",
+  "keywords": [
+    "super",
+    "super-ts",
+    "language-server",
+    "lsp",
+    "volar"
+  ],
+  "license": "MIT",
+  "author": "Dimitri Lahaye",
+  "homepage": "https://github.com/super-ts/super#readme",
+  "bugs": {
+    "url": "https://github.com/super-ts/super/issues"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/super-ts/super.git",
+    "directory": "packages/lang-server"
+  },
+  "type": "module",
+  "bin": {
+    "super-language-server": "./dist/server.js"
+  },
+  "files": [
+    "dist"
+  ],
   "dependencies": {
     "@volar/language-core": "^2.4.31",
     "@volar/language-server": "^2.4.31",
@@ -13,5 +34,10 @@
     "volar-service-typescript": "^0.0.71",
     "vscode-uri": "^3.2.0"
   },
-  "license": "MIT"
+  "engines": {
+    "node": ">=20.19"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }
