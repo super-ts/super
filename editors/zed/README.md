@@ -32,9 +32,10 @@ PATH).
 
 ## Ce qui reste à faire
 
-- **Grammaire** : `editors/tree-sitter-super`, compilée par Zed depuis ce dépôt git local (chemin
-  absolu dans `extension.toml`, à remplacer par l'adresse du dépôt une fois publié). Après une
-  modification de la grammaire : commiter là-bas, mettre à jour `rev`, puis *Rebuild*.
+- **Grammaire** : `editors/tree-sitter-super`, compilée par Zed depuis son dépôt public
+  ([super-ts/tree-sitter-super](https://github.com/super-ts/tree-sitter-super)), à la `rev` de
+  `extension.toml`. Après une modification de la grammaire : la pousser là-bas, mettre à jour `rev`,
+  puis réinstaller l'extension (`zed: install dev extension`).
 - **« Aller à la définition » depuis un `.ts`** vers un composant `.super` ne demande rien à
   l'extension : vtsls suit la source map de la déclaration du composant (`.super/types/`).
 
