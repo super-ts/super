@@ -4,7 +4,7 @@ import { Panel } from './panel';
 
 type Item = { id: string; label: string; done: boolean };
 
-/** Un fichier .super sans erreur : `check` ne doit rien signaler. */
+/** A .super file without errors: `check` must report nothing. */
 export class ValidFixture extends SuperElement {
   @tag = 'lang-valid';
   @ref input: HTMLInputElement;
@@ -15,12 +15,12 @@ export class ValidFixture extends SuperElement {
   }
 
   #footer() {
-    <small>Pied rempli par une méthode</small>
+    <small>Footer filled by a method</small>
   }
 
   render() {
-    <section aria-label="Liste">
-      <h1>Total : <strong>{this.local.get().items.length}</strong> éléments</h1>
+    <section aria-label="List">
+      <h1>Total: <strong>{this.local.get().items.length}</strong> items</h1>
       <p>let me know, if you need anything</p>
       <input
         ref={this.input}
@@ -34,15 +34,15 @@ export class ValidFixture extends SuperElement {
         }
       </ul>
       <Greeting name="Ada" on:closed={({ reason }) => console.log(reason.toUpperCase())} />
-      <Panel heading="Par une méthode" footer={this.#footer()}>
-        <p>Les enfants d’un composant.</p>
+      <Panel heading="By a method" footer={this.#footer()}>
+        <p>The children of a component.</p>
       </Panel>
-      <Panel heading="Par un emplacement">
+      <Panel heading="By a slot">
         if (this.local.get().filter) {
-          <p>Filtre : {this.local.get().filter}</p>
+          <p>Filter: {this.local.get().filter}</p>
         }
         <:footer>
-          <small>{this.local.get().items.length} éléments</small>
+          <small>{this.local.get().items.length} items</small>
         </:footer>
       </Panel>
     </section>

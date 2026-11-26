@@ -1,11 +1,11 @@
 /**
- * Déclaration (`.d.ts`) d'un fichier `.super`, pour les `.ts` qui l'importent, avec sa source map
- * (`.d.ts.map`) qui renvoie chaque nom exporté au `.super`.
+ * Declaration (`.d.ts`) of a `.super` file, for the `.ts` files that import it, with its source map
+ * (`.d.ts.map`) that maps each exported name back to the `.super` file.
  *
- * Les types viennent du TS virtuel (importé en type seulement) ; la déclaration ne fait que
- * redéclarer les exports à des positions connues. Le serveur TypeScript suit la source map des
- * déclarations : « aller à la définition » sur un composant depuis un `.ts` ouvre le `.super`, sans
- * relais devant le serveur (c'est le mécanisme qui mène au code source d'une bibliothèque).
+ * The types come from the virtual TS (imported as types only); the declaration only
+ * redeclares the exports at known positions. The TypeScript server follows the source map of
+ * declarations: "go to definition" on a component from a `.ts` file opens the `.super` file, with no
+ * relay in front of the server (it is the mechanism that leads to the source code of a library).
  */
 import { parse } from './parser.ts';
 import { encodeMappings, lineStarts, positionOf, type Segment } from './source-map.ts';
@@ -14,9 +14,9 @@ const EXPORT =
   /\bexport\s+(?:declare\s+)?(?:default\s+)?(?:abstract\s+)?(class|function|const|let|var|type|interface|enum)\s+([A-Za-z_$][\w$]*)/g;
 
 /**
- * `implementation` : le chemin d'import du TS virtuel depuis la déclaration ; `sourcePath` : le
- * chemin du `.super` depuis la déclaration (pour la source map) ; `name` : le nom de fichier de la
- * déclaration (`index.d.ts`).
+ * `implementation`: the import path of the virtual TS from the declaration; `sourcePath`: the
+ * path of the `.super` file from the declaration (for the source map); `name`: the file name of the
+ * declaration (`index.d.ts`).
  */
 export function declarationOf(source: string, implementation: string, sourcePath: string, name: string): { dts: string; map: string } {
   const sourceStarts = lineStarts(source);
@@ -25,7 +25,7 @@ export function declarationOf(source: string, implementation: string, sourcePath
   const typeOnly: string[] = [];
   const seen = new Set<string>();
 
-  // Les exports écrits dans le code du fichier (pas dans le texte d'un template).
+  // The exports written in the code of the file (not in the text of a template).
   for (const part of parse(source).parts) {
     if (part.kind !== 'code') continue;
     const code = source.slice(part.span.start, part.span.end);
@@ -37,16 +37,16 @@ export function declarationOf(source: string, implementation: string, sourcePath
         typeOnly.push(exported);
         continue;
       }
-      // Le nom dans la source, et sa place dans la déclaration (une ligne par nom déclaré).
+      // The name in the source, and its place in the declaration (one line per declared name).
       const at = positionOf(sourceStarts, part.span.start + (match.index as number) + match[0].length - exported.length);
       const mapped = (line: string, column: number) => {
         lines.push(line);
         segments.push([[column, 0, at.line, at.column]]);
       };
       if (kind === 'class') {
-        // Une seule déclaration, valeur et type à la fois : une classe qui hérite de celle du TS
-        // virtuel (statiques et fantômes compris). Une constante et un type donneraient deux
-        // définitions identiques.
+        // A single declaration, value and type at once: a class that extends the one in the virtual
+        // TS (statics and phantoms included). A constant and a type would give two
+        // identical definitions.
         lines.push(`declare const __${exported}: typeof __impl.${exported};`);
         segments.push([]);
         const declaration = `export declare class ${exported} extends __${exported} {}`;
@@ -62,7 +62,7 @@ export function declarationOf(source: string, implementation: string, sourcePath
       }
     }
   }
-  // Les types gardent leurs paramètres : réexportés tels quels (leur définition mène au TS virtuel).
+  // Types keep their parameters: re-exported as is (their definition leads to the virtual TS).
   if (typeOnly.length > 0) lines.push(`export type { ${typeOnly.join(', ')} } from '${implementation}';`);
   lines.push(`//# sourceMappingURL=${name}.map`);
   const map = { version: 3, file: name, sources: [sourcePath], names: [], mappings: encodeMappings(segments) };

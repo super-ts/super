@@ -84,7 +84,7 @@ describe('superPlugin', () => {
   test('signale une erreur de syntaxe d’un .super', async () => {
     const errors = await transform('export class A {\n  render() {\n    <p>for (x) y</p>\n  }\n}\n', '/app/src/@components/a/index.super');
     expect(errors).toHaveLength(1);
-    expect(errors[0]).toContain('Texte lu comme `for`');
+    expect(errors[0]).toContain('Text read as `for`');
   });
 });
 

@@ -1,27 +1,27 @@
 /**
- * Compilation d'un fichier `.super` en TS exécutable : chaque élément devient un gabarit lit
- * (`html\`…\``), le contrôle de flux des enfants devient du vrai contrôle de flux qui pousse des
- * gabarits dans une liste, et chaque méthode qui émet des éléments renvoie cette liste.
+ * Compiles a `.super` file to executable TS: each element becomes a lit template
+ * (`html\`…\``), the control flow of children becomes real control flow that pushes
+ * templates into a list, and each method that emits elements returns that list.
  *
- * Le code produit garde les numéros de ligne de la source (un élément remplacé garde ses sauts de
- * ligne) : une erreur à l'exécution pointe la bonne ligne du `.super`, sans table de correspondance.
+ * The generated code keeps the line numbers of the source (a replaced element keeps its line
+ * breaks): a runtime error points to the right line of the `.super` file, without a mapping table.
  */
 import { type Attribute, type ChildNode, type Diagnostic, type ElementNode, parse, type Span, type SuperMember } from './parser.ts';
 import type { Copied } from './source-map.ts';
 import { contentOf } from './virtual.ts';
 
-/** `copied` : les plages du code produit qui recopient la source, pour la source map. */
+/** `copied`: the ranges of the generated code that copy the source, for the source map. */
 export type Compiled = { code: string; copied: Copied[]; diagnostics: Diagnostic[] };
 
-// Repères posés devant chaque texte recopié de la source (`\uE000début,longueur\uE001`), retirés
-// à la fin en notant où ils étaient : c'est ce qui donne la source map.
+// Markers placed before each text copied from the source (`\uE000start,length\uE001`), removed
+// at the end while noting where they were: that is what gives the source map.
 const MARK_OPEN = '\uE000';
 const MARK_CLOSE = '\uE001';
 const MARK = /\uE000(\d+),(\d+)\uE001/g;
 const marked = (source: string, start: number, end: number) =>
   `${MARK_OPEN}${start},${end - start}${MARK_CLOSE}${source.slice(start, end)}`;
 
-/** Retire les repères ; renvoie le code et les plages recopiées. */
+/** Removes the markers; returns the code and the copied ranges. */
 function unmark(code: string): { code: string; copied: Copied[] } {
   const copied: Copied[] = [];
   let out = '';
@@ -34,7 +34,7 @@ function unmark(code: string): { code: string; copied: Copied[] } {
   return { code: out + code.slice(last), copied };
 }
 
-/** Attributs booléens HTML : `disabled={busy}` ajoute ou retire l'attribut. */
+/** HTML boolean attributes: `disabled={busy}` adds or removes the attribute. */
 const BOOLEAN_ATTRIBUTES = new Set([
   'allowfullscreen',
   'async',
@@ -63,7 +63,7 @@ const BOOLEAN_ATTRIBUTES = new Set([
   'selected',
 ]);
 
-/** Importés sur la première ligne du module, pour ne décaler aucune ligne. */
+/** Imported on the first line of the module, so that no line shifts. */
 const RUNTIME_IMPORT = "import { html as __html, nothing as __nothing, repeat as __repeat } from '@super-ts/dom';";
 
 export function compile(source: string): Compiled {
@@ -77,13 +77,13 @@ export function compile(source: string): Compiled {
   for (const part of file.parts) {
     if (part.kind === 'code') continue;
     const method = file.methods.filter((m) => m.start < part.span.start && part.span.end <= m.end).sort((a, b) => b.start - a.start)[0];
-    // Deux éléments de la méthode séparés seulement par des blancs : une espace entre eux, comme en HTML.
+    // Two elements of the method separated only by whitespace: one space between them, as in HTML.
     const spaced = previous !== null && /^\s+$/.test(source.slice(previous.span.end, part.span.start));
     previous = part;
     if (!method) {
       diagnostics.push({
         ...part.openSpan,
-        message: 'Un élément s’écrit dans une méthode de classe (`render()` ou une méthode qui émet des éléments)',
+        message: 'An element is written in a class method (`render()` or a method that emits elements)',
       });
       continue;
     }
@@ -94,7 +94,7 @@ export function compile(source: string): Compiled {
   }
   if (diagnostics.length > 0) return { code: '', copied: [], diagnostics };
 
-  // Les déclarations d'un composant (`@tag`, `@title`, `@prop`, `@emit`) : du code de classe ordinaire.
+  // The declarations of a component (`@tag`, `@title`, `@prop`, `@emit`): ordinary class code.
   for (const info of file.classes) {
     if (!info.element) continue;
     for (const member of info.members) {
@@ -102,14 +102,14 @@ export function compile(source: string): Compiled {
     }
   }
 
-  // Une méthode qui émet des éléments renvoie la liste de ce qu'elle a émis. Le corps est enveloppé
-  // dans une fonction fléchée (même `this`) : un `return;` anticipé garde ce qui est déjà émis.
+  // A method that emits elements returns the list of what it emitted. The body is wrapped
+  // in an arrow function (same `this`): an early `return;` keeps what has already been emitted.
   for (const method of emitting) {
     edits.push({ start: method.start + 1, end: method.start + 1, text: ' const __out: unknown[] = []; (() => {' });
     edits.push({ start: method.end, end: method.end, text: '})(); return __out; ' });
   }
 
-  // Le code hors éléments est recopié tel quel (avec un repère), les éléments sont remplacés.
+  // The code outside elements is copied verbatim (with a marker), the elements are replaced.
   let code = `${RUNTIME_IMPORT} `;
   let at = 0;
   for (const edit of edits.sort((a, b) => a.start - b.start || a.end - b.end)) {
@@ -122,15 +122,15 @@ export function compile(source: string): Compiled {
 }
 
 /**
- * Le code d'une déclaration de composant :
- * - `@tag = 'x';` → `static tag = 'x';` ;
- * - `@title = v;` → un champ qui pose `this.page.title` à la construction (repris à chaque montage) ;
- * - `@prop nom: T;` → un accesseur qui lit `this.props.nom` (toujours la valeur courante) ; avec une
- *   valeur par défaut, calculée une fois par instance, dans un champ ;
- * - `@emit` : rien (il n'existe que dans les types) ;
- * - `@contract`, `@selector`, `@state`, `@form`, `@ref` : le champ qu'on écrivait à la main
- *   (`cart = this.contract('cart')`) ;
- * - `@on('profile', 'save:done') onSaved(p) { … }` : `onSaved = this.contract('profile').on('save:done', (p) => { … })`.
+ * The code of a component declaration:
+ * - `@tag = 'x';` → `static tag = 'x';`;
+ * - `@title = v;` → a field that sets `this.page.title` at construction (reapplied on each mount);
+ * - `@prop name: T;` → a getter that reads `this.props.name` (always the current value); with a
+ *   default value, computed once per instance, in a field;
+ * - `@emit`: nothing (it only exists in the types);
+ * - `@contract`, `@selector`, `@state`, `@form`, `@ref`: the field that used to be written by hand
+ *   (`cart = this.contract('cart')`);
+ * - `@on('profile', 'save:done') onSaved(p) { … }`: `onSaved = this.contract('profile').on('save:done', (p) => { … })`.
  */
 function memberCode(source: string, member: SuperMember): string {
   switch (member.kind) {
@@ -161,8 +161,8 @@ function memberCode(source: string, member: SuperMember): string {
     case 'ref':
       return `${source.slice(member.name.start, member.name.end)} = this.ref();`;
     case 'on': {
-      // Un champ qui pose l'écouteur à la préparation (repris à chaque montage) ; la méthode devient
-      // une fonction fléchée (même `this`), ses lignes restent à leur place.
+      // A field that sets the listener at preparation (reapplied on each mount); the method becomes
+      // an arrow function (same `this`), its lines stay in place.
       const contract = source.slice(member.contract.start + 1, member.contract.end - 1);
       const target = contract === 'router' ? 'this.router' : `this.contract(${marked(source, member.contract.start, member.contract.end)})`;
       const breaks = '\n'.repeat(source.slice(member.span.start, member.name.start).split('\n').length - 1);
@@ -174,19 +174,19 @@ function memberCode(source: string, member: SuperMember): string {
   }
 }
 
-/** Complète `text` de sauts de ligne pour qu'il en ait autant que `original`. */
+/** Pads `text` with line breaks so that it has as many as `original`. */
 function keepLines(text: string, original: string): string {
   const missing = original.split('\n').length - text.split('\n').length;
   return missing > 0 ? text + '\n'.repeat(missing) : text;
 }
 
-/** Échappe un texte pour l'intérieur d'un gabarit `` `…` ``. */
+/** Escapes a text for the inside of a template literal `` `…` ``. */
 const escapeTemplate = (text: string) => text.replaceAll('\\', '\\\\').replaceAll('`', '\\`').replaceAll('${', '\\${');
 
 /**
- * Le texte d'un enfant selon les règles du HTML : chaque suite de blancs (retours à la ligne
- * compris) compte pour une espace. Les blancs au début et à la fin d'un élément ou d'un bloc sont
- * retirés à part (voir `TemplateWriter.run`).
+ * The text of a child according to HTML rules: each run of whitespace (line breaks
+ * included) counts as one space. Whitespace at the start and end of an element or a block is
+ * removed separately (see `TemplateWriter.run`).
  */
 export const normalizeText = (raw: string): string => raw.replace(/\s+/g, ' ');
 
@@ -199,17 +199,17 @@ class TemplateWriter {
     this.src = src;
   }
 
-  /** Une plage de la source recopiée dans le code produit (avec son repère de source map). */
+  /** A range of the source copied into the generated code (with its source map marker). */
   slice(span: Span) {
     return marked(this.src, span.start, span.end);
   }
 
-  /** Une plage de la source, sans repère (texte, valeurs d'attribut fixes). */
+  /** A range of the source, without a marker (text, fixed attribute values). */
   raw(span: Span) {
     return this.src.slice(span.start, span.end);
   }
 
-  /** L'expression qui rend un élément : un gabarit, ou l'appel `create` d'un composant. */
+  /** The expression that renders an element: a template, or the `create` call of a component. */
   element(node: ElementNode): string {
     return node.component ? this.component(node) : `__html\`${this.markup(node)}\``;
   }
@@ -228,8 +228,8 @@ class TemplateWriter {
       if (attribute.name.startsWith('on:')) events.push(`${JSON.stringify(attribute.name.slice(3))}: ${value}`);
       else props.push(`${JSON.stringify(attribute.name)}: ${value}`);
     }
-    // Les enfants et les emplacements nommés : des props, rendues ici, dans le rendu du parent (ses
-    // écouteurs et ses lectures de store restent les siens), puis placées par le composant.
+    // The children and named slots: props, rendered here, in the render of the parent (its
+    // listeners and store reads remain its own), then placed by the component.
     const { children, slots } = contentOf(this.src, node);
     if (children.length > 0) props.push(`"content": ${this.block(children)}`);
     for (const slot of slots) props.push(`${JSON.stringify(slot.slot)}: ${this.block(slot.children ?? [])}`);
@@ -238,7 +238,7 @@ class TemplateWriter {
     return `${this.slice(node.nameSpan)}.create(${args})`;
   }
 
-  /** Le HTML d'un élément natif, trous `${…}` compris, pour l'intérieur d'un gabarit. */
+  /** The HTML of a native element, `${…}` holes included, for the inside of a template. */
   markup(node: ElementNode): string {
     let out = `<${node.name}`;
     for (const attribute of node.attributes) out += this.attribute(attribute);
@@ -258,19 +258,19 @@ class TemplateWriter {
     if (name.startsWith('on:')) return ` @${name.slice(3)}=\${${expr}}`;
     if (name.startsWith('prop:')) return ` .${name.slice(5)}=\${${expr}}`;
     if (BOOLEAN_ATTRIBUTES.has(name)) return ` ?${name}=\${${expr}}`;
-    // `null` ou `undefined` retirent l'attribut.
+    // `null` or `undefined` remove the attribute.
     return ` ${name}=\${(${expr}) ?? __nothing}`;
   }
 
-  /** Des enfants dans un gabarit : en ligne, ou un trou calculé s'il y a des instructions. */
+  /** Children in a template: inline, or a computed hole if there are statements. */
   children(children: ChildNode[]): string {
     if (children.some(isStatement)) return `\${${this.block(children)}}`;
     return this.run(children);
   }
 
   /**
-   * Des enfants sans instruction, à la suite : les blancs au début et à la fin de la suite (début ou
-   * fin d'un élément, d'un bloc, ou voisins d'une instruction) ne rendent rien.
+   * Consecutive children without statements: whitespace at the start and end of the run (start or
+   * end of an element, of a block, or next to a statement) renders nothing.
    */
   run(children: ChildNode[]): string {
     const nodes = children.filter((child) => child.kind !== 'comment');
@@ -285,7 +285,7 @@ class TemplateWriter {
       .join('');
   }
 
-  /** Un enfant sans instruction, à l'intérieur d'un gabarit. */
+  /** A child without statements, inside a template. */
   inline(child: ChildNode): string {
     switch (child.kind) {
       case 'text':
@@ -297,16 +297,16 @@ class TemplateWriter {
       case 'element':
         return child.component ? `\${${this.component(child)}}` : this.markup(child);
       default:
-        throw new Error(`[super] enfant inattendu en ligne : ${child.kind}`);
+        throw new Error(`[super] unexpected inline child: ${child.kind}`);
     }
   }
 
-  /** Des enfants avec instructions : une fonction qui pousse des gabarits dans une liste. */
+  /** Children with statements: a function that pushes templates into a list. */
   block(children: ChildNode[]): string {
     return `(() => { const __o: unknown[] = []; ${this.statements(children)}return __o; })()`;
   }
 
-  /** Les instructions qui poussent `children` dans `__o`. */
+  /** The statements that push `children` into `__o`. */
   statements(children: ChildNode[]): string {
     let out = '';
     let run: ChildNode[] = [];
@@ -342,9 +342,9 @@ class TemplateWriter {
           .join(' ')} `;
       case 'for': {
         if (!node.key) return `for (${this.slice(node.head)}) { ${this.statements(node.body)}} `;
-        // `for (const x of xs; key x.id)` : `repeat` de lit, pour que le rendu suive les déplacements.
+        // `for (const x of xs; key x.id)`: lit's `repeat`, so that the render follows moves.
         const match = /^\s*(?:const|let)\s+([\s\S]+?)\s+of\s+([\s\S]+)$/d.exec(this.raw(node.head));
-        if (!match?.indices) throw new Error('[super] tête de boucle illisible');
+        if (!match?.indices) throw new Error('[super] unreadable loop head');
         const at = (group: 1 | 2) => {
           const [start, end] = match.indices?.[group] as [number, number];
           return this.slice({ start: node.head.start + start, end: node.head.start + end });
@@ -359,7 +359,7 @@ class TemplateWriter {
           .map((c) => `${c.test ? `case ${this.slice(c.test)}` : 'default'}: { ${this.statements(c.body)}break; }`)
           .join(' ')} } `;
       default:
-        throw new Error(`[super] instruction inattendue : ${node.kind}`);
+        throw new Error(`[super] unexpected statement: ${node.kind}`);
     }
   }
 }

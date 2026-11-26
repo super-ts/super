@@ -4,7 +4,7 @@ import { Badge } from './badge';
 type Item = { id: string; label: string };
 type Status = 'idle' | 'busy' | 'done';
 
-/** Chaque forme de la syntaxe, pour vérifier le code compilé dans le DOM. */
+/** Every form of the syntax, to check the compiled code in the DOM. */
 export class Showcase extends SuperElement {
   @tag = 'lang-showcase';
   @ref input: HTMLInputElement;
@@ -29,9 +29,9 @@ export class Showcase extends SuperElement {
     const { items, status, busy, title, clicks, picked } = this.local.get();
     if (this.local.get().hidden) return;
     <section title={title}>
-      <h1>Total : <strong>{items.length}</strong> éléments</h1> <p class="text">Une phrase sur deux lignes</p>
+      <h1>Total: <strong>{items.length}</strong> items</h1> <p class="text">A sentence over two lines</p>
       if (items.length === 0) {
-        <p class="empty">Vide</p>
+        <p class="empty">Empty</p>
       } else {
         <ul class="keyed">
           for (const item of items; key item.id) {
@@ -46,18 +46,16 @@ export class Showcase extends SuperElement {
         }
       </ol>
       switch (status) {
-        case 'idle': <p class="status">au repos</p>
-        case 'busy': <p class="status">occupé</p>
-        default: <p class="status">fini</p>
+        case 'idle': <p class="status">at rest</p>
+        case 'busy': <p class="status">busy</p>
+        default: <p class="status">finished</p>
       }
-      <button type="button" class="counter" disabled={busy} on:click={() => this.local.set({ clicks: clicks + 1 })}>
-        Cliquer {clicks}
-      </button>
-      <input ref={this.input} prop:value={'prérempli'} />
-      <Badge label="Nouveau" on:picked={({ label }) => this.local.set({ picked: label })} />
+      <button type="button" class="counter" disabled={busy} on:click={() => this.local.set({ clicks: clicks + 1 })}>Click {clicks}</button>
+      <input ref={this.input} prop:value={'prefilled'} />
+      <Badge label="New" on:picked={({ label }) => this.local.set({ picked: label })} />
       <p class="picked">{picked}</p>
-      <p class="literal">{'for (more) see below'} `$` \ fin</p>
+      <p class="literal">{'for (more) see below'} `$` \ end</p>
     </section>
-    <footer>après la section</footer>
+    <footer>after the section</footer>
   }
 }

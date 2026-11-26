@@ -1,7 +1,7 @@
 {
-  // Petit projet pour les tests de `check` : un composant .ts et des fichiers .super.
+  // Small project for the `check` tests: a .ts component and .super files.
   "extends": "../../../../../tsconfig.json",
   "include": ["."],
-  // Pas l'exclude de la racine, qui écarte justement ce dossier.
+  // Not the root exclude, which leaves out precisely this folder.
   "exclude": []
 }

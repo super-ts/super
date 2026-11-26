@@ -1,13 +1,13 @@
 import { SuperElement } from '@super-ts/dom';
 
-/** Ne rend rien du tout. */
+/** Renders nothing at all. */
 export class Empty extends SuperElement {
   @tag = 'lang-empty';
 
   render() {}
 }
 
-/** Ne rend rien tant que `shown` est faux, puis un paragraphe. */
+/** Renders nothing while `shown` is false, then a paragraph. */
 export class Toggled extends SuperElement {
   @tag = 'lang-toggled';
   @state local = { shown: false };

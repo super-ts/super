@@ -1,25 +1,25 @@
 /**
- * Où est le curseur dans un template, pour la complétion : sur un nom de balise, une balise
- * fermante, ou un nom d'attribut. Lecture lexicale : elle marche aussi sur un fichier en cours de
- * frappe, que le parser n'arrive pas encore à lire en entier.
+ * Where the cursor is in a template, for completion: on a tag name, a closing
+ * tag, or an attribute name. A lexical reading: it also works on a file being
+ * typed, which the parser cannot read in full yet.
  */
 import type { Span } from './parser.ts';
 
 export type TemplateContext =
-  /** `<Gre|` : nom de balise (ou de composant) ; `</|` : balise fermante, `open` est la balise à fermer. */
+  /** `<Gre|`: tag (or component) name; `</|`: closing tag, `open` is the tag to close. */
   | { kind: 'tag'; prefix: Span; closing: false }
   | { kind: 'tag'; prefix: Span; closing: true; open: string | null }
-  /** `<:fo|` dans un composant : un emplacement nommé de `parent` (la balise ouverte qui l'entoure). */
+  /** `<:fo|` in a component: a named slot of `parent` (the open tag around it). */
   | { kind: 'slot'; prefix: Span; parent: string | null }
-  /** `<a hr|`, `<Card on:|` : nom d'attribut, dans la balise `tag` ; `present` : attributs déjà écrits. */
+  /** `<a hr|`, `<Card on:|`: attribute name, in the tag `tag`; `present`: attributes already written. */
   | { kind: 'attribute'; tag: string; prefix: Span; present: string[] };
 
 const VOID = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
 const NAME = /[\w.$-]/;
 
 /**
- * Un `<` qui ouvre une balise : `</` (une balise fermante suit souvent du texte, `a</p>`), ou suivi
- * d'une lettre ou de rien et pas collé à un nom (`Map<string>` est du TS).
+ * A `<` that opens a tag: `</` (a closing tag often follows text, `a</p>`), or followed
+ * by a letter or by nothing and not glued to a name (`Map<string>` is TS).
  */
 function opensTag(source: string, i: number, offset: number): boolean {
   const next = source[i + 1];
@@ -29,9 +29,9 @@ function opensTag(source: string, i: number, offset: number): boolean {
 }
 
 /**
- * Parcourt une balise ouvrante à partir de `from` (juste après le nom) jusqu'à son `>` hors
- * accolades et guillemets. Renvoie la position du `>`, ou `null` si `limit` arrive avant, avec
- * l'état à `limit` (dans une valeur ou non).
+ * Walks an opening tag from `from` (just after the name) up to its `>` outside
+ * braces and quotes. Returns the position of the `>`, or `null` if `limit` comes first, with
+ * the state at `limit` (inside a value or not).
  */
 function scanTag(source: string, from: number, limit: number): { close: number | null; inValue: boolean } {
   let depth = 0;
@@ -48,7 +48,7 @@ function scanTag(source: string, from: number, limit: number): { close: number |
   return { close: null, inValue: quote !== null || depth > 0 };
 }
 
-/** Les balises ouvertes (pas encore fermées) avant `end`, de la plus extérieure à la plus intérieure. */
+/** The open tags (not closed yet) before `end`, from the outermost to the innermost. */
 export function openTagsBefore(source: string, end: number): string[] {
   const stack: string[] = [];
   for (let i = 0; i < end; i++) {
@@ -64,7 +64,7 @@ export function openTagsBefore(source: string, end: number): string[] {
       continue;
     }
     const { close } = scanTag(source, j, end);
-    if (close === null) break; // La balise ouvrante n'est pas finie : c'est elle qu'on est en train d'écrire.
+    if (close === null) break; // The opening tag is not finished: it is the one being written.
     if (source[close - 1] !== '/' && !VOID.has(name)) stack.push(name);
     i = close;
   }
@@ -72,10 +72,10 @@ export function openTagsBefore(source: string, end: number): string[] {
 }
 
 export function templateContext(source: string, offset: number): TemplateContext | null {
-  // Le `<` le plus proche avant le curseur dont la balise n'est pas encore refermée par `>`.
+  // The nearest `<` before the cursor whose tag is not closed by `>` yet.
   for (let i = offset - 1; i >= Math.max(0, offset - 4000); i--) {
     if (source[i] !== '<' || !opensTag(source, i, offset)) continue;
-    // `<:nom` : un emplacement nommé du composant ouvert autour.
+    // `<:name`: a named slot of the open component around it.
     if (source[i + 1] === ':') {
       let end = i + 2;
       while (end < offset && NAME.test(source[end] as string)) end++;
@@ -93,9 +93,9 @@ export function templateContext(source: string, offset: number): TemplateContext
     }
     if (closing) return null;
     const { close, inValue } = scanTag(source, nameEnd, offset);
-    if (close !== null) return null; // Cette balise est déjà fermée : le curseur est après.
-    if (inValue) return null; // Dans une valeur (`"…"` ou `{…}`) : c'est du texte ou du TS.
-    // Le nom d'attribut en cours, précédé d'un blanc.
+    if (close !== null) return null; // This tag is already closed: the cursor is after it.
+    if (inValue) return null; // Inside a value (`"…"` or `{…}`): it is text or TS.
+    // The attribute name being typed, preceded by whitespace.
     let start = offset;
     while (start > nameEnd && /[\w:.-]/.test(source[start - 1] as string)) start--;
     if (!/\s/.test(source[start - 1] ?? '')) return null;
@@ -109,7 +109,7 @@ export function templateContext(source: string, offset: number): TemplateContext
   return null;
 }
 
-/** Les noms d'attributs écrits dans un morceau de balise (valeurs retirées). */
+/** The attribute names written in a piece of tag (values removed). */
 function attributesIn(text: string): string[] {
   let bare = '';
   let depth = 0;

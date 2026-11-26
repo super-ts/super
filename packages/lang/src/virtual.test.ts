@@ -1,7 +1,7 @@
 import { toVirtual } from './virtual.ts';
 
-describe('TS virtuel : types des composants', () => {
-  test('chaque composant reçoit la route de son tag dans ses types', () => {
+describe('virtual TS: component types', () => {
+  test('each component receives the route of its tag in its types', () => {
     const source = `import { SuperElement } from '@super-ts/dom';
 
 export class CounterScreen extends SuperElement {
@@ -25,12 +25,12 @@ abstract class NoTag extends SuperElement {
     expect(code).toContain('class NoTag extends SuperElement {');
   });
 
-  test('@prop et @emit deviennent les types du composant, @prop une propriété, @title une affectation', () => {
+  test('@prop and @emit become the component types, @prop a property, @title an assignment', () => {
     const source = `import { type Children, SuperElement } from '@super-ts/dom';
 
 export class Dialog extends SuperElement {
   @tag = 'x-dialog';
-  @title = () => \`Confirmer \${this.question}\`;
+  @title = () => \`Confirm \${this.question}\`;
   @prop question: string;
   @prop tone: 'neutral' | 'danger' = 'neutral';
   @prop size?: number;
@@ -43,7 +43,7 @@ export class Dialog extends SuperElement {
     expect(code).toContain(
       "class Dialog extends SuperElement<{ route: __s.RouteOfTag<'x-dialog'> } & { props: { question: string; tone?: 'neutral' | 'danger'; size?: number; content?: Children; }; emits: { answered: { confirmed: boolean }; }; }> {",
     );
-    expect(code).toContain('protected readonly __superTitle = (this.page.title = (() => `Confirmer ${this.question}`));');
+    expect(code).toContain('protected readonly __superTitle = (this.page.title = (() => `Confirm ${this.question}`));');
     expect(code).toContain('declare readonly question: string;');
     expect(code).toContain("readonly tone: 'neutral' | 'danger' = ('neutral');");
     expect(code).toContain('declare readonly size?: number;');
@@ -54,7 +54,7 @@ export class Dialog extends SuperElement {
     expect(code).not.toContain('@emit');
   });
 
-  test('@contract, @selector, @state, @ref et @on deviennent les champs qu’on écrivait à la main', () => {
+  test('@contract, @selector, @state, @ref and @on become the fields that used to be written by hand', () => {
     const source = `import { SuperElement } from '@super-ts/dom';
 
 export class Shop extends SuperElement {

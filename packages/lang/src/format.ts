@@ -1,18 +1,18 @@
 /**
- * Formatage d'un fichier `.super` : le TS par Biome (avec les règles du dépôt), les templates par
- * ce module.
+ * Formatting of a `.super` file: the TS with Biome (with the repository's rules), the templates with
+ * this module.
  *
- * Chaque élément de premier niveau est remplacé par une instruction de substitution le temps que
- * Biome formate le TS ; Biome lui donne sa place et son indentation, puis le template y est imprimé.
+ * Each top-level element is replaced by a placeholder statement while
+ * Biome formats the TS; Biome gives it its place and indentation, then the template is printed there.
  *
- * Le rendu ne change jamais : une ligne n'est coupée que là où il y a déjà un blanc (qui compte
- * pour une espace, retour à la ligne ou non) ou au bord d'un élément, d'un bloc ou d'une
- * instruction (où les blancs ne rendent rien).
+ * The render never changes: a line is only broken where there is already whitespace (which counts
+ * as one space, line break or not) or at the edge of an element, a block or a
+ * statement (where whitespace renders nothing).
  */
 import { type Attribute, type ChildNode, type ElementNode, parse, type Span } from './parser.ts';
 
 export type FormatOptions = {
-  /** Formate du TS (Biome, en pratique). */
+  /** Formats TS (Biome, in practice). */
   formatTs: (code: string) => string;
   lineWidth?: number;
   indent?: string;
@@ -23,13 +23,13 @@ const PLACEHOLDER = /__super_element_(\d+)__;/g;
 const MEMBER_NAME = '_';
 const NAMED_MEMBER = /(@(?:tag|title)) _ =/g;
 
-/** Le fichier formaté, ou `null` s'il a des erreurs de syntaxe (on ne formate pas un fichier cassé). */
+/** The formatted file, or `null` if it has syntax errors (a broken file is not formatted). */
 export function formatSuper(source: string, { formatTs, lineWidth = 140, indent = '  ' }: FormatOptions): string | null {
   const file = parse(source);
   if (file.diagnostics.length > 0) return null;
   const elements = file.parts.filter((p): p is ElementNode => p.kind === 'element');
-  // `@tag = …` et `@title = …` ne sont pas du TS : le temps que Biome formate, ils prennent un nom
-  // (`@tag _ = …`, un champ décoré), retiré ensuite.
+  // `@tag = …` and `@title = …` are not TS: while Biome formats, they take a name
+  // (`@tag _ = …`, a decorated field), removed afterwards.
   const named = file.classes.flatMap((c) =>
     c.members.filter((m) => m.kind === 'tag' || m.kind === 'title').map((m) => m.span.start + m.kind.length + 1),
   );
@@ -55,7 +55,7 @@ export function formatSuper(source: string, { formatTs, lineWidth = 140, indent 
   });
 }
 
-/** Un morceau d'une suite d'enfants en ligne, et s'il est séparé du précédent par un blanc. */
+/** A piece of a run of inline children, and whether it is separated from the previous one by whitespace. */
 type Atom = { lines: string[]; spaceBefore: boolean; blankBefore: boolean; element: boolean; word?: true; slot?: true };
 
 const isStatement = (node: ChildNode) =>
@@ -77,8 +77,8 @@ class Printer {
   }
 
   /**
-   * Une expression telle qu'écrite ; ses lignes suivantes sont décalées pour suivre `column` (la
-   * colonne où elle commence désormais), en gardant leur retrait relatif.
+   * An expression as written; its following lines are shifted to follow `column` (the
+   * column where it now starts), keeping their relative indentation.
    */
   expression(span: Span, column: number): string {
     const raw = this.text(span).trim();
@@ -98,10 +98,10 @@ class Printer {
     return `${name}={${this.expression(value.span, column)}}`;
   }
 
-  /** Un élément sur une seule ligne, ou `null` s'il ne peut pas l'être (instruction, ligne trop longue, retour à la ligne). */
+  /** An element on a single line, or `null` if it cannot be (statement, line too long, line break). */
   flat(node: ElementNode, column: number): string | null {
-    // Un composant qui reçoit des enfants, et un emplacement `<:nom>`, toujours sur plusieurs lignes :
-    // ce qui va dans quel emplacement se lit d'un coup d'œil.
+    // A component that receives children, and a slot `<:name>`, always on several lines:
+    // what goes into which slot reads at a glance.
     if (node.slot !== undefined || (node.component && this.hasContent(node))) return null;
     const attributes = node.attributes.map((a) => ` ${this.attribute(a, column)}`).join('');
     let line: string;
@@ -115,12 +115,12 @@ class Printer {
     return line.includes('\n') || column + line.length > this.width ? null : line;
   }
 
-  /** Des enfants autres que des blancs et des commentaires. */
+  /** Children other than whitespace and comments. */
   hasContent(node: ElementNode): boolean {
     return (node.children ?? []).some((c) => c.kind !== 'comment' && !(c.kind === 'text' && this.text(c.span).trim() === ''));
   }
 
-  /** Des enfants en ligne sur une seule ligne (blancs réduits à une espace, bords retirés). */
+  /** Inline children on a single line (whitespace reduced to one space, edges removed). */
   flatRun(children: ChildNode[]): string | null {
     let out = '';
     for (const child of children) {
@@ -136,13 +136,13 @@ class Printer {
     return out.trim();
   }
 
-  /** Un élément à partir de `column` : la première ligne sans retrait, les suivantes avec. */
+  /** An element from `column`: the first line without indentation, the following ones with it. */
   element(node: ElementNode, column: number): string[] {
     const flat = this.flat(node, column);
     if (flat !== null) return [flat];
     const pad = ' '.repeat(column);
     const inner = column + this.unit.length;
-    // La balise ouvrante sur une ligne si elle tient, sinon un attribut par ligne.
+    // The opening tag on one line if it fits, otherwise one attribute per line.
     const attributes = node.attributes.map((a) => ` ${this.attribute(a, column)}`).join('');
     const close = node.children === null ? ' />' : '>';
     const opening = `<${node.name}${attributes}${close}`;
@@ -160,13 +160,13 @@ class Printer {
     return [...lines, ...body, `${pad}</${node.name}>`];
   }
 
-  /** Les enfants d'un élément ou d'un bloc, une ligne par entrée, avec leur retrait. */
+  /** The children of an element or a block, one line per entry, with their indentation. */
   children(children: ChildNode[], column: number): string[] {
     const lines: string[] = [];
     let run: ChildNode[] = [];
     let blank = false;
     const flush = () => {
-      // Ligne vide avant la suite : entre elle et l'enfant précédent, ou au début de son propre texte.
+      // Blank line before the run: between it and the previous child, or at the start of its own text.
       const first = run[0];
       const leading = first?.kind === 'text' && /^[ \t]*\n[ \t]*\n/.test(this.text(first.span));
       if (run.length > 0) lines.push(...this.run(run, column, (blank || leading) && lines.length > 0));
@@ -186,7 +186,7 @@ class Printer {
     return lines;
   }
 
-  /** Une ligne vide précède-t-elle `child` dans la source (dans les blancs entre lui et l'enfant précédent) ? */
+  /** Does a blank line precede `child` in the source (in the whitespace between it and the previous child)? */
   blankBefore(siblings: ChildNode[], child: ChildNode): boolean {
     const previous = siblings[siblings.indexOf(child) - 1];
     if (!previous) return false;
@@ -194,7 +194,7 @@ class Printer {
     return /\n[ \t]*\n[ \t]*$/.test((between.match(/\s*$/) as RegExpMatchArray)[0]);
   }
 
-  /** Une suite d'enfants en ligne, remplie mot à mot ; un élément séparé par un blanc va à la ligne. */
+  /** A run of inline children, filled word by word; an element separated by whitespace goes on a new line. */
   run(children: ChildNode[], column: number, blankFirst: boolean): string[] {
     const pad = ' '.repeat(column);
     const flat = this.flatRun(children);
@@ -226,8 +226,8 @@ class Printer {
         const raw = child.kind === 'expr' ? `{${this.expression(child.expr, column)}}` : this.text(child.span);
         atoms.push({ lines: raw.split('\n'), spaceBefore: space, blankBefore: blank, element: false });
       } else if (child.kind === 'element') {
-        // Un emplacement `<:nom>` n'est pas rendu à cet endroit (il part dans une prop) : on peut aller
-        // à la ligne avant et après lui sans changer le rendu, sauf s'il est collé à du texte.
+        // A slot `<:name>` is not rendered at this place (it goes into a prop): a line can be broken
+        // before and after it without changing the render, unless it is glued to text.
         const slot = child.slot !== undefined;
         const previous = atoms.at(-1);
         const glued = slot && previous !== undefined && !previous.element && !space;
@@ -243,9 +243,9 @@ class Printer {
       blank = false;
     }
 
-    // La ligne vide de tête est celle de `blankFirst`, pas une seconde.
+    // The leading blank line is that of `blankFirst`, not a second one.
     if (atoms[0]) atoms[0].blankBefore = false;
-    // Du texte suivi : les éléments s'y placent comme des mots (`<code>`, `<strong>`). Sans texte : un élément par ligne.
+    // Running text: elements are placed in it like words (`<code>`, `<strong>`). Without text: one element per line.
     const prose = atoms.some((a) => a.word);
     const lines: string[] = blankFirst ? [''] : [];
     let current: string | null = null;
@@ -257,7 +257,7 @@ class Printer {
     };
     for (const atom of atoms) {
       const [first, ...rest] = atom.lines as [string, ...string[]];
-      // Une ligne neuve : tout début, ou un blanc qui le permet (élément, trop long, ligne vide).
+      // A new line: the very start, or whitespace that allows it (element, too long, blank line).
       const breakable = current === null || atom.spaceBefore;
       const tooLong = current !== null && (current as string).length + 1 + first.length > this.width;
       const ownLine = (!prose && (atom.element || previous?.element === true)) || atom.slot === true || previous?.slot === true;

@@ -1,17 +1,17 @@
 /**
- * Parser des fichiers `.super` : repère les éléments écrits comme des instructions dans du TS, et
- * analyse leurs enfants (texte, interpolations, `if` / `for` / `switch`, déclarations).
+ * Parser for `.super` files: finds the elements written as statements in TS, and
+ * parses their children (text, interpolations, `if` / `for` / `switch`, declarations).
  *
- * Le TS lui-même n'est pas analysé : un petit lexer saute chaînes, gabarits, commentaires et
- * expressions régulières, et équilibre les parenthèses. Les expressions sont gardées comme des
- * plages de la source, que le générateur recopie telles quelles.
+ * The TS itself is not parsed: a small lexer skips strings, template literals, comments and
+ * regular expressions, and balances brackets. Expressions are kept as ranges of the source,
+ * which the generator copies verbatim.
  */
 
 export type Span = { start: number; end: number };
 
 export type Diagnostic = Span & {
   message: string;
-  /** Correction proposée : remplacer la plage par `text`. */
+  /** Suggested fix: replace the range with `text`. */
   fix?: Span & { text: string; title: string };
 };
 
@@ -26,19 +26,19 @@ export type ElementNode = {
   kind: 'element';
   name: string;
   nameSpan: Span;
-  /** Commence par une majuscule : une classe SuperElement. */
+  /** Starts with a capital letter: a SuperElement class. */
   component: boolean;
-  /** `<:footer>…</:footer>` : un emplacement nommé, rempli dans un composant (son nom sans `:`). */
+  /** `<:footer>…</:footer>`: a named slot, filled inside a component (its name without `:`). */
   slot?: string;
   attributes: Attribute[];
-  /** `null` pour un élément fermé par `/>` (ou un élément vide HTML). */
+  /** `null` for an element closed by `/>` (or an HTML void element). */
   children: ChildNode[] | null;
-  /** De `<` au `>` de la balise ouvrante. */
+  /** From `<` to the `>` of the opening tag. */
   openSpan: Span;
   span: Span;
 };
 
-/** `partial` : un `else if (` en cours de frappe, déjà signalé ; sa condition ne sert qu'à la complétion. */
+/** `partial`: an `else if (` being typed, already reported; its condition only serves completion. */
 export type IfBranch = { test: Span | null; body: ChildNode[]; span: Span; partial?: true };
 export type SwitchCase = { test: Span | null; body: ChildNode[]; span: Span };
 
@@ -52,60 +52,60 @@ export type ChildNode =
   | { kind: 'switch'; discriminant: Span; cases: SwitchCase[]; span: Span }
   | { kind: 'declaration'; span: Span }
   /**
-   * Un `if (`, `for (` ou `switch (` incomplet (en cours de frappe, ou texte ambigu) : déjà signalé
-   * comme erreur, il garde son expression pour que l'éditeur puisse compléter dedans.
+   * An incomplete `if (`, `for (` or `switch (` (being typed, or ambiguous text): already reported
+   * as an error, it keeps its expression so that the editor can complete inside it.
    */
   | { kind: 'partial'; keyword: 'if' | 'for' | 'switch'; expr: Span; key: Span | null; span: Span };
 
 /**
- * Une déclaration de composant, dans le corps de sa classe :
- * - `@tag = 'confirm-dialog';` et `@title = 'Confirmation';` (ou une fonction, suivie) ;
- * - `@prop question: string;`, `@prop size?: number;`, `@prop tone: Tone = 'neutral';` ;
- * - `@emit answered: { confirmed: boolean };` ;
- * - `@contract cart;` (ou `@contract basket = 'cart';`), `@selector lines = this.cart.selectors.lines;`,
- *   `@state local = { … };`, `@form edit = { … };`, `@ref input: HTMLInputElement;` ;
- * - `@on('profile', 'save:done') onSaved({ result }) { … }` : un écouteur, sur une méthode.
- * `span` va du `@` au `;` compris (ou à la fin de la ligne sans `;`), ou au `}` de la méthode.
+ * A component declaration, in the body of its class:
+ * - `@tag = 'confirm-dialog';` and `@title = 'Confirmation';` (or a function, tracked);
+ * - `@prop question: string;`, `@prop size?: number;`, `@prop tone: Tone = 'neutral';`;
+ * - `@emit answered: { confirmed: boolean };`;
+ * - `@contract cart;` (or `@contract basket = 'cart';`), `@selector lines = this.cart.selectors.lines;`,
+ *   `@state local = { … };`, `@form edit = { … };`, `@ref input: HTMLInputElement;`;
+ * - `@on('profile', 'save:done') onSaved({ result }) { … }`: a listener, on a method.
+ * `span` runs from the `@` to the `;` inclusive (or to the end of the line without `;`), or to the `}` of the method.
  */
 export type SuperMember =
   | { kind: 'tag' | 'title'; span: Span; value: Span }
   | { kind: 'prop'; span: Span; name: Span; optional: boolean; type: Span; init: Span | null }
   | { kind: 'emit'; span: Span; name: Span; type: Span }
-  /** `value` : la chaîne du contrat (`'cart'`), `null` pour `@contract cart;` (le nom du champ). */
+  /** `value`: the contract string (`'cart'`), `null` for `@contract cart;` (the field name). */
   | { kind: 'contract'; span: Span; name: Span; value: Span | null }
   | { kind: 'selector' | 'state' | 'form'; span: Span; name: Span; value: Span }
   | { kind: 'ref'; span: Span; name: Span; type: Span }
   /**
-   * `contract`, `event` : les chaînes (guillemets compris) ; `head` : des paramètres au type de retour
-   * compris ; `body` : du `{` au `}` de la méthode.
+   * `contract`, `event`: the strings (quotes included); `head`: from the parameters to the return type
+   * inclusive; `body`: from the `{` to the `}` of the method.
    */
   | { kind: 'on'; span: Span; contract: Span; event: Span; async: boolean; name: Span; head: Span; body: Span };
 
-/** Les déclarations qui remplacent une méthode de préparation (`cart = this.contract('cart')`). */
+/** The declarations that replace a preparation method (`cart = this.contract('cart')`). */
 export const PREPARATION_KINDS = ['contract', 'selector', 'state', 'ref', 'form'] as const;
 
-/** Une classe du fichier. */
+/** A class of the file. */
 export type ClassInfo = {
-  /** Le nom de la classe (`null` pour une classe anonyme). */
+  /** The class name (`null` for an anonymous class). */
   name: Span | null;
   abstract: boolean;
   /**
-   * `extends SuperElement` : `end`, la fin du mot `SuperElement` ; `generic`, le `<…>` écrit à la
-   * main. `null` : la classe n'est pas un composant.
+   * `extends SuperElement`: `end`, the end of the word `SuperElement`; `generic`, the hand-written
+   * `<…>`. `null`: the class is not a component.
    */
   element: { end: number; generic: Span | null } | null;
-  /** Du `{` au `}` du corps. */
+  /** From the `{` to the `}` of the body. */
   body: Span;
   members: SuperMember[];
-  /** `static tag` écrit à la main (le `.super` demande `@tag`). */
+  /** A hand-written `static tag` (a `.super` file requires `@tag`). */
   staticTag: Span | null;
 };
 
-/** Le fichier : des morceaux de TS entre lesquels s'intercalent des éléments. */
+/** The file: chunks of TS with elements interleaved between them. */
 export type SuperFile = {
   source: string;
   parts: Array<{ kind: 'code'; span: Span } | ElementNode>;
-  /** Corps des méthodes de classe : du `{` au `}` (positions des accolades). */
+  /** Bodies of class methods: from the `{` to the `}` (positions of the braces). */
   methods: Span[];
   classes: ClassInfo[];
   diagnostics: Diagnostic[];
@@ -115,7 +115,7 @@ const MEMBER_WORDS = new Set(['@tag', '@title', '@prop', '@emit', '@contract', '
 
 const VOID_ELEMENTS = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
 
-// Après ces mots, un `/` ouvre une expression régulière (et non une division).
+// After these words, a `/` opens a regular expression (not a division).
 const REGEX_AFTER_WORD = new Set([
   'return',
   'typeof',
@@ -133,16 +133,16 @@ const REGEX_AFTER_WORD = new Set([
   'instanceof',
 ]);
 
-/** Devant ces mots, `( … ) {` ouvre un bloc, pas le corps d'une fonction. */
+/** After these words, `( … ) {` opens a block, not a function body. */
 const CONTROL_WORDS = new Set(['if', 'for', 'while', 'switch', 'catch', 'with']);
 
 const isIdentStart = (c: string | undefined) => c !== undefined && /[A-Za-z_$]/.test(c);
 const isIdentPart = (c: string | undefined) => c !== undefined && /[\w$]/.test(c);
 const isSpace = (c: string | undefined) => c !== undefined && /\s/.test(c);
 
-/** Levée pour abandonner une tentative (texte pris pour une instruction, par exemple). */
+/** Thrown to abandon an attempt (text mistaken for a statement, for example). */
 class ParseFailure extends Error {
-  /** Levée dans le corps d'une instruction déjà reconnue : ce n'est plus une ambiguïté de texte. */
+  /** Thrown in the body of an already recognised statement: it is no longer a text ambiguity. */
   committed = false;
 
   readonly at: number;
@@ -160,28 +160,28 @@ export function parse(source: string): SuperFile {
 class Parser {
   diagnostics: Diagnostic[] = [];
   readonly src: string;
-  /** Posé par `scanTo(…, newlineEnds)` quand l'instruction s'arrête en fin de ligne, sans `;`. */
+  /** Set by `scanTo(…, newlineEnds)` when the statement stops at the end of a line, without `;`. */
   endedAtNewline = false;
 
   constructor(src: string) {
     this.src = src;
   }
 
-  // Lexer TS minimal ------------------------------------------------------------------------
+  // Minimal TS lexer ------------------------------------------------------------------------
 
-  /** Saute une chaîne `'…'` ou `"…"` qui commence en `i`. Une chaîne ne passe pas la ligne. */
+  /** Skips a `'…'` or `"…"` string starting at `i`. A string does not span lines. */
   skipString(i: number): number {
     const quote = this.src[i];
     for (let j = i + 1; j < this.src.length; j++) {
       const c = this.src[j];
       if (c === '\\') j++;
       else if (c === quote) return j + 1;
-      else if (c === '\n') throw new ParseFailure(i, 'Chaîne non terminée');
+      else if (c === '\n') throw new ParseFailure(i, 'Unterminated string');
     }
-    throw new ParseFailure(i, 'Chaîne non terminée');
+    throw new ParseFailure(i, 'Unterminated string');
   }
 
-  /** Saute un gabarit `` `…${…}…` `` qui commence en `i`. */
+  /** Skips a template literal `` `…${…}…` `` starting at `i`. */
   skipTemplate(i: number): number {
     for (let j = i + 1; j < this.src.length; j++) {
       const c = this.src[j];
@@ -189,7 +189,7 @@ class Parser {
       else if (c === '`') return j + 1;
       else if (c === '$' && this.src[j + 1] === '{') j = this.scanTo(j + 2, '}');
     }
-    throw new ParseFailure(i, 'Gabarit non terminé');
+    throw new ParseFailure(i, 'Unterminated template literal');
   }
 
   skipRegex(i: number): number {
@@ -205,10 +205,10 @@ class Parser {
         return j;
       } else if (c === '\n') break;
     }
-    throw new ParseFailure(i, 'Expression régulière non terminée');
+    throw new ParseFailure(i, 'Unterminated regular expression');
   }
 
-  /** Saute espaces et commentaires TS. */
+  /** Skips whitespace and TS comments. */
   skipTrivia(i: number): number {
     while (i < this.src.length) {
       const c = this.src[i];
@@ -218,7 +218,7 @@ class Parser {
         i = end === -1 ? this.src.length : end + 1;
       } else if (c === '/' && this.src[i + 1] === '*') {
         const end = this.src.indexOf('*/', i + 2);
-        if (end === -1) throw new ParseFailure(i, 'Commentaire non terminé');
+        if (end === -1) throw new ParseFailure(i, 'Unterminated comment');
         i = end + 2;
       } else break;
     }
@@ -226,16 +226,16 @@ class Parser {
   }
 
   /**
-   * Parcourt une expression TS à partir de `i` jusqu'au premier `closer` hors de toute
-   * parenthèse, crochet ou accolade ; renvoie sa position. Lève si un crochet ne correspond pas.
+   * Walks a TS expression from `i` up to the first `closer` outside any parenthesis,
+   * bracket or brace; returns its position. Throws if a bracket does not match.
    */
   scanTo(i: number, closer: string, newlineEnds = false): number {
     const stack: string[] = [];
-    let previous = '('; // Début d'expression : un `/` y ouvre une expression régulière.
+    let previous = '('; // Start of an expression: a `/` there opens a regular expression.
     while (i < this.src.length) {
       const before = i;
       i = this.skipTrivia(i);
-      // Fin de ligne hors de toute parenthèse, sans opérateur de part et d'autre : fin de l'instruction.
+      // End of line outside any parenthesis, with no operator on either side: end of the statement.
       if (newlineEnds && stack.length === 0 && this.src.slice(before, i).includes('\n') && previous !== '(') {
         const continues = /[.?+\-*/%&|^=,:]/.test(this.src[i] ?? '') || /[=+\-*/%&|^,.?:]/.test(previous);
         if (!continues) {
@@ -270,7 +270,7 @@ class Parser {
         previous = c;
         i++;
       } else if (c === ')' || c === ']' || c === '}') {
-        if (stack.pop() !== c) throw new ParseFailure(i, `\`${c}\` inattendu`);
+        if (stack.pop() !== c) throw new ParseFailure(i, `Unexpected \`${c}\``);
         previous = c;
         i++;
       } else {
@@ -278,39 +278,39 @@ class Parser {
         i++;
       }
     }
-    throw new ParseFailure(i, `\`${closer}\` manquant`);
+    throw new ParseFailure(i, `Missing \`${closer}\``);
   }
 
-  // Fichier : TS avec des éléments en position d'instruction --------------------------------
+  // File: TS with elements in statement position --------------------------------------------
 
   file(): SuperFile {
     const parts: SuperFile['parts'] = [];
     let codeStart = 0;
     let i = 0;
-    let previous = ';'; // Dernier jeton significatif.
-    let inCase = false; // Un `case` ou `default` est ouvert : son `:` précède une instruction.
-    // Accolades ouvertes : corps de classe, corps de méthode, ou autre bloc.
-    // `function` : le corps d'une fonction imbriquée (fléchée, `function`, méthode d'objet), où un
-    // `return x;` ne concerne pas la méthode qui émet des éléments.
+    let previous = ';'; // Last significant token.
+    let inCase = false; // A `case` or `default` is open: its `:` precedes a statement.
+    // Open braces: class body, method body, or another block.
+    // `function`: the body of a nested function (arrow, `function`, object method), where a
+    // `return x;` does not concern the method that emits elements.
     const braces: Array<{ kind: 'class' | 'method' | 'function' | 'block'; start: number; info?: ClassInfo }> = [];
     const classes: ClassInfo[] = [];
-    let classWord = 0; // Position du dernier mot `class`.
-    const parens: string[] = []; // Le mot devant chaque `(` ouverte (`if`, `foo`…).
+    let classWord = 0; // Position of the last `class` word.
+    const parens: string[] = []; // The word before each open `(` (`if`, `foo`…).
     let lastWord = '';
-    let parenOwner = ''; // Le mot devant la dernière `(` fermée.
-    let beforePrevious = ''; // Le jeton avant `previous` (pour reconnaître `=>`).
-    let methodHeader = false; // `nom(…)` vient de se fermer dans un corps de classe (type de retour possible).
-    const valueReturns: Array<{ at: number; method: number }> = []; // `return x;` au niveau d'une méthode.
+    let parenOwner = ''; // The word before the last closed `(`.
+    let beforePrevious = ''; // The token before `previous` (to recognise `=>`).
+    let methodHeader = false; // `name(…)` has just closed in a class body (a return type may follow).
+    const valueReturns: Array<{ at: number; method: number }> = []; // `return x;` at the level of a method.
     const methods: Span[] = [];
-    let sawClass = false; // Le mot `class` attend son corps.
-    let classDepth = 0; // Profondeur d'accolades où `class` a été vu (un `;` d'un type `<{ a; b }>` ne compte pas).
+    let sawClass = false; // The `class` word is waiting for its body.
+    let classDepth = 0; // Brace depth where `class` was seen (a `;` in a type `<{ a; b }>` does not count).
     try {
       while (i < this.src.length) {
         i = this.skipTrivia(i);
         const c = this.src[i];
         if (c === undefined) break;
-        // Un `<` suivi d'une lettre en début de ligne ouvre toujours un élément : pendant la frappe
-        // (`const user = this.` puis `<section>` à la ligne), le template reste lisible.
+        // A `<` followed by a letter at the start of a line always opens an element: while typing
+        // (`const user = this.` then `<section>` on the next line), the template stays readable.
         const lineStart = /(^|\n)[ \t]*$/.test(this.src.slice(Math.max(0, i - 200), i));
         if (
           c === '<' &&
@@ -340,7 +340,7 @@ class Parser {
           while (isIdentPart(this.src[i])) i++;
           const word = this.src.slice(start, i);
           const top = braces[braces.length - 1];
-          // Une déclaration de composant (`@prop nom: Type;`) au niveau du corps de la classe.
+          // A component declaration (`@prop name: Type;`) at the level of the class body.
           if (MEMBER_WORDS.has(word) && top?.kind === 'class' && (lineStart || previous === '{' || previous === '}' || previous === ';')) {
             i = this.member(start, word, top.info!);
             previous = ';';
@@ -348,7 +348,7 @@ class Parser {
             methodHeader = false;
             continue;
           }
-          // L'ancienne forme (`cart = this.contract('cart')`) : refusée dans un composant, avec sa réécriture.
+          // The old form (`cart = this.contract('cart')`): rejected in a component, with its rewrite.
           if (top?.kind === 'class' && top.info?.element && (lineStart || previous === '{' || previous === '}' || previous === ';')) {
             this.oldPreparation(start);
           }
@@ -379,10 +379,10 @@ class Parser {
             if (parens.length === 0 && braces[braces.length - 1]?.kind === 'class') methodHeader = true;
           } else if ((c === ';' || c === '=') && braces[braces.length - 1]?.kind === 'class') methodHeader = false;
           if (c === '{') {
-            // `class A extends B<{ … }> {` : seul le `{` qui suit un nom, `>` ou `)` ouvre le corps.
+            // `class A extends B<{ … }> {`: only the `{` that follows a name, `>` or `)` opens the body.
             const parent = braces[braces.length - 1]?.kind;
             const nested = (previous === ')' && !CONTROL_WORDS.has(parenOwner)) || (previous === '>' && beforePrevious === '=');
-            // Corps de méthode : `nom(…) {`, ou `nom(…): Type {` (type de retour).
+            // Method body: `name(…) {`, or `name(…): Type {` (return type).
             const kind =
               sawClass && /[a>)\]]/.test(previous)
                 ? 'class'
@@ -414,21 +414,21 @@ class Parser {
       return { source: this.src, parts, methods, classes, diagnostics: this.diagnostics };
     }
     if (codeStart < this.src.length) parts.push({ kind: 'code', span: { start: codeStart, end: this.src.length } });
-    // Une méthode qui émet des éléments renvoie ce qu'elle émet : un `return x;` y serait ignoré.
+    // A method that emits elements returns what it emits: a `return x;` there would be ignored.
     for (const r of valueReturns) {
       const method = methods.find((m) => m.start === r.method);
       const emits = method && parts.some((p) => p.kind === 'element' && method.start < p.span.start && p.span.end <= method.end);
       if (emits)
-        this.error(r.at, r.at + 6, 'Une méthode qui émet des éléments renvoie ce qu’elle émet : ici, `return` s’écrit sans valeur');
+        this.error(r.at, r.at + 6, 'A method that emits elements returns what it emits: here, `return` is written without a value');
     }
     this.checkClasses(classes);
     this.checkConstructors(classes, methods);
     return { source: this.src, parts, methods, classes, diagnostics: this.diagnostics };
   }
 
-  // Classes et déclarations de composant ------------------------------------------------------
+  // Classes and component declarations ------------------------------------------------------
 
-  /** La classe dont le mot `class` est en `start` et le corps s'ouvre en `open`. */
+  /** The class whose `class` word is at `start` and whose body opens at `open`. */
   classInfo(start: number, open: number): ClassInfo {
     const header = this.src.slice(start, open);
     const name = /^class\s+([A-Za-z_$][\w$]*)/d.exec(header);
@@ -449,7 +449,7 @@ class Parser {
     };
   }
 
-  /** Lit une déclaration (`@tag`, `@prop`, `@contract`, `@on`…) ; renvoie la position qui la suit. */
+  /** Reads a declaration (`@tag`, `@prop`, `@contract`, `@on`…); returns the position after it. */
   member(start: number, word: string, info: ClassInfo): number {
     const kind = word.slice(1) as SuperMember['kind'];
     try {
@@ -459,23 +459,22 @@ class Parser {
         const name = this.memberName(i, kind);
         i = this.skipTrivia(name.end);
         if (kind === 'ref') {
-          if (this.src[i] !== ':')
-            throw new ParseFailure(i, 'Une référence déclare le type de son élément : `@ref input: HTMLInputElement;`');
+          if (this.src[i] !== ':') throw new ParseFailure(i, 'A ref declares the type of its element: `@ref input: HTMLInputElement;`');
           const typeStart = this.skipTrivia(i + 1);
           const end = this.scanTo(typeStart, ';', true);
           if (this.assignment(typeStart, end) !== null)
-            throw new ParseFailure(typeStart, 'Une référence n’a pas de valeur : `@ref input: HTMLInputElement;`');
+            throw new ParseFailure(typeStart, 'A ref has no value: `@ref input: HTMLInputElement;`');
           const type = { start: typeStart, end: this.trimBack(end) };
-          if (type.end <= type.start) throw new ParseFailure(typeStart, 'Type manquant');
+          if (type.end <= type.start) throw new ParseFailure(typeStart, 'Missing type');
           const after = this.src[end] === ';' ? end + 1 : end;
           info.members.push({ kind, span: { start, end: after }, name, type });
           return after;
         }
         if (this.src[i] === ':') {
-          throw new ParseFailure(i, `Pas de type sur \`@${kind}\` : il vient ${kind === 'contract' ? 'du contrat' : 'de la valeur'}`);
+          throw new ParseFailure(i, `No type on \`@${kind}\`: it comes from the ${kind === 'contract' ? 'contract' : 'value'}`);
         }
         if (kind === 'contract' && this.src[i] !== '=') {
-          // `@contract cart;` : le contrat porte le nom du champ.
+          // `@contract cart;`: the contract has the name of the field.
           let after = name.end;
           while (this.src[after] === ' ' || this.src[after] === '\t') after++;
           if (this.src[after] === ';') after++;
@@ -484,29 +483,29 @@ class Parser {
           return after;
         }
         if (this.src[i] !== '=' || /[=>]/.test(this.src[i + 1] ?? ''))
-          throw new ParseFailure(i, `\`@${kind}\` s’écrit \`@${kind} nom = …;\``);
+          throw new ParseFailure(i, `\`@${kind}\` is written \`@${kind} name = …;\``);
         const valueStart = this.skipTrivia(i + 1);
         const end = this.scanTo(valueStart, ';', true);
         const value = { start: valueStart, end: this.trimBack(end) };
         if (value.end <= value.start)
-          throw new ParseFailure(i, `Valeur manquante après \`@${kind} ${this.src.slice(name.start, name.end)} =\``);
+          throw new ParseFailure(i, `Missing value after \`@${kind} ${this.src.slice(name.start, name.end)} =\``);
         const after = this.src[end] === ';' ? end + 1 : end;
         info.members.push({ kind, span: { start, end: after }, name, value });
         return after;
       }
       if (kind === 'tag' || kind === 'title') {
         if (this.src[i] !== '=' || /[=>]/.test(this.src[i + 1] ?? '')) {
-          throw new ParseFailure(start, `\`@${kind}\` s’écrit \`@${kind} = …;\``);
+          throw new ParseFailure(start, `\`@${kind}\` is written \`@${kind} = …;\``);
         }
         const valueStart = this.skipTrivia(i + 1);
         const end = this.scanTo(valueStart, ';', true);
         const value = { start: valueStart, end: this.trimBack(end) };
-        if (value.end <= value.start) throw new ParseFailure(i, `Valeur manquante après \`@${kind} =\``);
+        if (value.end <= value.start) throw new ParseFailure(i, `Missing value after \`@${kind} =\``);
         const after = this.src[end] === ';' ? end + 1 : end;
         info.members.push({ kind, span: { start, end: after }, value });
         return after;
       }
-      if (!isIdentStart(this.src[i])) throw new ParseFailure(i, `Nom attendu après \`@${kind}\` : \`@${kind} nom: Type;\``);
+      if (!isIdentStart(this.src[i])) throw new ParseFailure(i, `Name expected after \`@${kind}\`: \`@${kind} name: Type;\``);
       const nameStart = i;
       while (isIdentPart(this.src[i])) i++;
       const name = { start: nameStart, end: i };
@@ -520,27 +519,27 @@ class Parser {
         throw new ParseFailure(
           i,
           kind === 'prop'
-            ? 'Une prop déclare son type : `@prop nom: Type;`'
-            : 'Un événement déclare ce qu’il transporte : `@emit nom: Type;` (`void` s’il ne transporte rien)',
+            ? 'A prop declares its type: `@prop name: Type;`'
+            : 'An event declares what it carries: `@emit name: Type;` (`void` if it carries nothing)',
         );
       }
       const typeStart = this.skipTrivia(i + 1);
       const end = this.scanTo(typeStart, ';', true);
       const assign = this.assignment(typeStart, end);
       const type = { start: typeStart, end: this.trimBack(assign ?? end) };
-      if (type.end <= type.start) throw new ParseFailure(typeStart, 'Type manquant');
+      if (type.end <= type.start) throw new ParseFailure(typeStart, 'Missing type');
       const after = this.src[end] === ';' ? end + 1 : end;
       const span = { start, end: after };
       if (kind === 'emit') {
-        if (assign !== null) throw new ParseFailure(assign, 'Un événement n’a pas de valeur par défaut');
+        if (assign !== null) throw new ParseFailure(assign, 'An event has no default value');
         info.members.push({ kind, span, name, type });
         return after;
       }
       let init: Span | null = null;
       if (assign !== null) {
-        if (optional) throw new ParseFailure(assign, 'Une prop qui a une valeur par défaut est déjà facultative : retire le `?`');
+        if (optional) throw new ParseFailure(assign, 'A prop with a default value is already optional: remove the `?`');
         init = { start: this.skipTrivia(assign + 1), end: this.trimBack(end) };
-        if (init.end <= init.start) throw new ParseFailure(assign, 'Valeur par défaut manquante après `=`');
+        if (init.end <= init.start) throw new ParseFailure(assign, 'Missing default value after `=`');
       }
       info.members.push({ kind, span, name, optional, type, init });
       return after;
@@ -552,18 +551,18 @@ class Parser {
     }
   }
 
-  /** Le nom d'une déclaration (`cart`, ou `#cart` pour un champ privé). */
+  /** The name of a declaration (`cart`, or `#cart` for a private field). */
   memberName(i: number, kind: string): Span {
     const start = i;
     if (this.src[i] === '#') i++;
-    if (!isIdentStart(this.src[i])) throw new ParseFailure(i, `Nom attendu après \`@${kind}\``);
+    if (!isIdentStart(this.src[i])) throw new ParseFailure(i, `Name expected after \`@${kind}\``);
     while (isIdentPart(this.src[i])) i++;
     return { start, end: i };
   }
 
-  /** `@on('profile', 'save:done') onSaved({ result }) { … }` : la décoration et sa méthode. */
+  /** `@on('profile', 'save:done') onSaved({ result }) { … }`: the decoration and its method. */
   listener(start: number, info: ClassInfo): number {
-    const usage = "`@on` s’écrit `@on('contrat', 'événement')`, au-dessus d’une méthode";
+    const usage = "`@on` is written `@on('contract', 'event')`, above a method";
     let i = this.skipTrivia(start + 3);
     if (this.src[i] !== '(') throw new ParseFailure(start, usage);
     const close = this.scanTo(i + 1, ')');
@@ -580,11 +579,11 @@ class Parser {
     }
     const name = this.memberName(i, 'on');
     const headStart = this.skipTrivia(name.end);
-    if (this.src[headStart] !== '(') throw new ParseFailure(headStart, `${usage} : \`onSaved(payload) { … }\``);
+    if (this.src[headStart] !== '(') throw new ParseFailure(headStart, `${usage}: \`onSaved(payload) { … }\``);
     const paramsEnd = this.scanTo(headStart + 1, ')');
     let open = this.skipTrivia(paramsEnd + 1);
     if (this.src[open] === ':') open = this.scanTo(open + 1, '{');
-    if (this.src[open] !== '{') throw new ParseFailure(open, `${usage} : \`onSaved(payload) { … }\``);
+    if (this.src[open] !== '{') throw new ParseFailure(open, `${usage}: \`onSaved(payload) { … }\``);
     const close2 = this.scanTo(open + 1, '}');
     const end = close2 + 1;
     info.members.push({
@@ -601,8 +600,8 @@ class Parser {
   }
 
   /**
-   * Un champ de composant écrit à l'ancienne (`cart = this.contract('cart');`) : une erreur, avec sa
-   * réécriture en déclaration (`@contract cart;`).
+   * A component field written the old way (`cart = this.contract('cart');`): an error, with its
+   * rewrite as a declaration (`@contract cart;`).
    */
   oldPreparation(start: number) {
     const match = /^(#?[A-Za-z_$][\w$]*)\s*=\s*this\.(contract|selector|state|ref|form)\s*(?:<([^<>()]*)>)?\s*\(/.exec(
@@ -614,7 +613,7 @@ class Parser {
     try {
       argsEnd = this.scanTo(start + whole.length, ')');
     } catch {
-      return; // la suite est déjà incomplète : le reste de l'analyse le signalera
+      return; // what follows is already incomplete: the rest of the parse will report it
     }
     const args = this.src.slice(start + whole.length, argsEnd).trim();
     let end = argsEnd + 1;
@@ -630,17 +629,17 @@ class Parser {
       } else if (method === 'ref') text = `@ref ${name}: ${typeArg?.trim() || 'Element'};`;
       else if (args !== '') text = `@${method} ${name} = ${args};`;
     }
-    const message = `Dans un \`.super\`, \`this.${method}(…)\` se déclare par \`@${method}\` : \`@${method} ${name}${method === 'ref' ? ': Type' : method === 'contract' ? '' : ' = …'};\``;
-    this.error(start, end, message, text ? { start, end, text, title: `Écrire \`@${method}\`` } : undefined);
+    const message = `In a \`.super\` file, \`this.${method}(…)\` is declared with \`@${method}\`: \`@${method} ${name}${method === 'ref' ? ': Type' : method === 'contract' ? '' : ' = …'};\``;
+    this.error(start, end, message, text ? { start, end, text, title: `Write \`@${method}\`` } : undefined);
   }
 
-  /** Recule devant les blancs qui précèdent `end`. */
+  /** Steps back over the whitespace that precedes `end`. */
   trimBack(end: number): number {
     while (end > 0 && isSpace(this.src[end - 1])) end--;
     return end;
   }
 
-  /** Le `=` d'une valeur par défaut entre `start` et `end` (hors parenthèses, `=>`, `==`…), ou `null`. */
+  /** The `=` of a default value between `start` and `end` (outside parentheses, `=>`, `==`…), or `null`. */
   assignment(start: number, end: number): number | null {
     let depth = 0;
     for (let j = start; j < end; j++) {
@@ -654,7 +653,7 @@ class Parser {
     return null;
   }
 
-  /** Un écouteur posé dans le constructeur d'un composant (`this.cart.on(…)`) : il se déclare par `@on`. */
+  /** A listener set in the constructor of a component (`this.cart.on(…)`): it is declared with `@on`. */
   checkConstructors(classes: ClassInfo[], methods: Span[]) {
     for (const method of methods) {
       const owner = classes
@@ -667,52 +666,47 @@ class Parser {
         this.error(
           at,
           at + call[0].length,
-          `Dans un \`.super\`, un écouteur se déclare sur une méthode : \`@on('${call[1]!.replace('#', '')}', 'événement') onEvent(payload) { … }\``,
+          `In a \`.super\` file, a listener is declared on a method: \`@on('${call[1]!.replace('#', '')}', 'event') onEvent(payload) { … }\``,
         );
       }
     }
   }
 
-  /** Les règles des composants d'un `.super` : un tag, déclaré par `@tag`, et pas de générique. */
+  /** The rules for components in a `.super` file: a tag, declared with `@tag`, and no generic. */
   checkClasses(classes: ClassInfo[]) {
     for (const info of classes) {
       const at = (m: SuperMember) => [m.span.start, m.span.start + m.kind.length + 1] as const;
       if (!info.element) {
-        for (const m of info.members) this.error(...at(m), `\`@${m.kind}\` ne s’écrit que dans un composant (\`extends SuperElement\`)`);
+        for (const m of info.members) this.error(...at(m), `\`@${m.kind}\` is only written in a component (\`extends SuperElement\`)`);
         continue;
       }
       if (info.element.generic) {
         this.error(
           info.element.generic.start,
           info.element.generic.end,
-          'Dans un `.super`, les props et les événements se déclarent dans la classe : `@prop nom: Type;` et `@emit nom: Type;`',
+          'In a `.super` file, props and events are declared in the class: `@prop name: Type;` and `@emit name: Type;`',
         );
       }
       const tags = info.members.filter((m): m is Extract<SuperMember, { kind: 'tag' | 'title' }> => m.kind === 'tag');
       if (info.staticTag) {
-        this.error(info.staticTag.start, info.staticTag.end, "Dans un `.super`, le tag se déclare par `@tag = '…';`", {
+        this.error(info.staticTag.start, info.staticTag.end, "In a `.super` file, the tag is declared with `@tag = '…';`", {
           ...info.staticTag,
           text: '@tag',
-          title: 'Écrire `@tag`',
+          title: 'Write `@tag`',
         });
       } else if (tags.length === 0 && !info.abstract) {
         const where = info.name ?? { start: info.body.start, end: info.body.start + 1 };
-        this.error(where.start, where.end, "Un composant déclare son tag : `@tag = 'mon-composant';`");
+        this.error(where.start, where.end, "A component declares its tag: `@tag = 'my-component';`");
       }
       for (const tag of tags) {
         if (!/^(['"])[a-z][\w.-]*-[\w.-]*\1$/.test(this.src.slice(tag.value.start, tag.value.end))) {
-          this.error(
-            tag.value.start,
-            tag.value.end,
-            "Le tag est une chaîne écrite telle quelle, en minuscules, avec un tiret : `@tag = 'mon-composant';`",
-          );
+          this.error(tag.value.start, tag.value.end, "The tag is a literal string, in lower case, with a hyphen: `@tag = 'my-component';`");
         }
       }
       for (const kind of ['tag', 'title'] as const) {
-        for (const extra of info.members.filter((m) => m.kind === kind).slice(1))
-          this.error(...at(extra), `\`@${kind}\` déclaré deux fois`);
+        for (const extra of info.members.filter((m) => m.kind === kind).slice(1)) this.error(...at(extra), `\`@${kind}\` declared twice`);
       }
-      // Un contrat ne se déclare qu'une fois, et jamais le router (`this.router`).
+      // A contract is declared only once, and never the router (`this.router`).
       const contracts = new Map<string, string>();
       for (const m of info.members) {
         if (m.kind !== 'contract') continue;
@@ -720,16 +714,16 @@ class Parser {
         const literal = m.value ? /^(['"])([^'"]+)\1$/.exec(this.src.slice(m.value.start, m.value.end))?.[2] : field;
         const where = m.value ?? m.name;
         if (literal === undefined) {
-          this.error(where.start, where.end, "Le contrat est une chaîne écrite telle quelle : `@contract basket = 'cart';`");
+          this.error(where.start, where.end, "The contract is a literal string: `@contract basket = 'cart';`");
           continue;
         }
         if (literal === 'router') {
-          this.error(where.start, where.end, 'Le router se lit par `this.router`, sans `@contract`');
+          this.error(where.start, where.end, 'The router is read through `this.router`, without `@contract`');
           continue;
         }
         const first = contracts.get(literal);
         if (first !== undefined)
-          this.error(where.start, where.end, `Le contrat \`${literal}\` est déjà déclaré par \`@contract ${first}\``);
+          this.error(where.start, where.end, `The contract \`${literal}\` is already declared by \`@contract ${first}\``);
         else contracts.set(literal, field);
       }
       for (const kind of ['prop', 'emit'] as const) {
@@ -737,7 +731,7 @@ class Parser {
         for (const m of info.members) {
           if (m.kind !== kind) continue;
           const name = this.src.slice(m.name.start, m.name.end);
-          if (seen.has(name)) this.error(m.name.start, m.name.end, `\`@${kind} ${name}\` déclaré deux fois`);
+          if (seen.has(name)) this.error(m.name.start, m.name.end, `\`@${kind} ${name}\` declared twice`);
           seen.add(name);
         }
       }
@@ -748,9 +742,9 @@ class Parser {
     this.diagnostics.push(fix ? { start, end, message, fix } : { start, end, message });
   }
 
-  // Éléments --------------------------------------------------------------------------------
+  // Elements --------------------------------------------------------------------------------
 
-  /** Un élément qui commence en `start` (sur le `<`). */
+  /** An element that starts at `start` (on the `<`). */
   element(start: number): ElementNode {
     let i = start + 1;
     const nameStart = i;
@@ -764,7 +758,7 @@ class Parser {
     for (;;) {
       i = this.skipTrivia(i);
       const c = this.src[i];
-      if (c === undefined) throw new ParseFailure(start, `Balise <${name}> non fermée`);
+      if (c === undefined) throw new ParseFailure(start, `Unclosed tag <${name}>`);
       if (c === '/' && this.src[i + 1] === '>') {
         const end = i + 2;
         return { kind: 'element', name, nameSpan, component, attributes, children: null, openSpan: { start, end }, span: { start, end } };
@@ -775,7 +769,7 @@ class Parser {
       }
       if (c === '{') {
         const close = this.scanTo(i + 1, '}');
-        if (component) this.error(i, close + 1, `Un composant ne prend pas encore de directive : {…} se place sur un élément HTML`);
+        if (component) this.error(i, close + 1, `A component does not take directives yet: {…} goes on an HTML element`);
         attributes.push({ kind: 'directive', expr: { start: i + 1, end: close }, span: { start: i, end: close + 1 } });
         i = close + 1;
         continue;
@@ -803,21 +797,20 @@ class Parser {
   }
 
   /**
-   * Un emplacement `<:nom>` se place directement dans un composant, sans attribut, et une seule
-   * fois par nom ; `<:content>` n'existe pas (les enfants directs remplissent `content`).
+   * A slot `<:name>` goes directly inside a component, without attributes, and only once
+   * per name; `<:content>` does not exist (the direct children fill `content`).
    */
   checkSlots(name: string, component: boolean, slot: string | undefined, attributes: Attribute[], nameSpan: Span, children: ChildNode[]) {
     if (slot !== undefined) {
-      if (!/^[A-Za-z_$][\w$]*$/.test(slot)) this.error(nameSpan.start, nameSpan.end, `Nom d’emplacement invalide : <${name}>`);
+      if (!/^[A-Za-z_$][\w$]*$/.test(slot)) this.error(nameSpan.start, nameSpan.end, `Invalid slot name: <${name}>`);
       if (slot === 'content')
         this.error(
           nameSpan.start,
           nameSpan.end,
-          'Pas de <:content> : les enfants écrits directement dans le composant remplissent déjà `content`',
+          'No <:content>: the children written directly inside the component already fill `content`',
         );
       const first = attributes[0];
-      if (first)
-        this.error(first.span.start, (attributes.at(-1) as Attribute).span.end, `Un emplacement <${name}> ne prend pas d’attribut`);
+      if (first) this.error(first.span.start, (attributes.at(-1) as Attribute).span.end, `A slot <${name}> takes no attributes`);
     }
     const seen = new Set<string>();
     for (const child of children) {
@@ -826,14 +819,14 @@ class Parser {
         this.error(
           child.nameSpan.start,
           child.nameSpan.end,
-          `L’emplacement <${child.name}> se place directement dans un composant, pas dans <${name}>`,
+          `The slot <${child.name}> goes directly inside a component, not inside <${name}>`,
         );
-      else if (seen.has(child.slot)) this.error(child.nameSpan.start, child.nameSpan.end, `L’emplacement <${child.name}> est déjà rempli`);
+      else if (seen.has(child.slot)) this.error(child.nameSpan.start, child.nameSpan.end, `The slot <${child.name}> is already filled`);
       seen.add(child.slot);
     }
   }
 
-  /** Un attribut en `i` ; renvoie la position qui le suit. */
+  /** An attribute at `i`; returns the position after it. */
   attribute(i: number, attributes: Attribute[]): number {
     const start = i;
     const c = this.src[i];
@@ -842,12 +835,12 @@ class Parser {
       let j = i + 1;
       while (/[\w:-]/.test(this.src[j] ?? '')) j++;
       const bare = this.src.slice(i + 1, j);
-      this.error(i, j, `Syntaxe de lit : écris \`${hint}${bare}={…}\``);
+      this.error(i, j, `lit syntax: write \`${hint}${bare}={…}\``);
     }
     let j = c === '@' || c === '?' || c === '.' ? i + 1 : i;
     const nameStart = j;
     while (/[\w:-]/.test(this.src[j] ?? '')) j++;
-    if (j === nameStart) throw new ParseFailure(i, `Caractère inattendu \`${c}\` dans une balise`);
+    if (j === nameStart) throw new ParseFailure(i, `Unexpected character \`${c}\` in a tag`);
     const name = this.src.slice(nameStart, j);
     const nameSpan = { start: nameStart, end: j };
     j = this.skipTrivia(j);
@@ -859,7 +852,7 @@ class Parser {
     const v = this.src[j];
     if (v === '"' || v === "'") {
       const close = this.src.indexOf(v, j + 1);
-      if (close === -1) throw new ParseFailure(j, 'Valeur d’attribut non terminée');
+      if (close === -1) throw new ParseFailure(j, 'Unterminated attribute value');
       attributes.push({
         kind: 'attr',
         name,
@@ -880,31 +873,31 @@ class Parser {
       });
       return close + 1;
     }
-    throw new ParseFailure(j, `Valeur attendue pour \`${name}\` : "…" ou {…}`);
+    throw new ParseFailure(j, `Value expected for \`${name}\`: "…" or {…}`);
   }
 
-  // Enfants ---------------------------------------------------------------------------------
+  // Children --------------------------------------------------------------------------------
 
   /**
-   * Les enfants à partir de `i`, jusqu'à la fin du conteneur : `</name>` pour un élément (consommé),
-   * `}` pour un bloc (non consommé), `case` / `default` / `}` pour un `case` (non consommés).
+   * The children from `i` to the end of the container: `</name>` for an element (consumed),
+   * `}` for a block (not consumed), `case` / `default` / `}` for a `case` (not consumed).
    */
   children(
     i: number,
     container: { kind: 'element'; name: string } | { kind: 'block' } | { kind: 'case' },
   ): { nodes: ChildNode[]; end: number; unclosed?: true } {
     const nodes: ChildNode[] = [];
-    // Vrai au début d'un enfant de texte : c'est là qu'une instruction peut commencer.
+    // True at the start of a text child: that is where a statement can begin.
     for (;;) {
       const c = this.src[i];
       if (c === undefined) {
-        const what = container.kind === 'element' ? `Balise <${container.name}> non fermée` : 'Bloc non fermé : `}` manquant';
+        const what = container.kind === 'element' ? `Unclosed tag <${container.name}>` : 'Unclosed block: missing `}`';
         throw new ParseFailure(i, what);
       }
       if (c === '<' && this.src[i + 1] === '/') {
         if (container.kind !== 'element') {
-          // Un bloc pas encore fermé (en cours de frappe) : il s'arrête avant la balise fermante du parent.
-          this.error(i, i + 2, '`}` manquant : le bloc se termine avant cette balise fermante');
+          // A block not closed yet (being typed): it stops before the closing tag of the parent.
+          this.error(i, i + 2, 'Missing `}`: the block ends before this closing tag');
           return { nodes, end: i, unclosed: true };
         }
         const nameStart = i + 2;
@@ -912,24 +905,24 @@ class Parser {
         while (/[\w$.:-]/.test(this.src[j] ?? '')) j++;
         const closing = this.src.slice(nameStart, j);
         j = this.skipTrivia(j);
-        if (this.src[j] !== '>') throw new ParseFailure(j, '`>` attendu');
-        if (closing !== container.name) this.error(i, j + 1, `</${closing}> ferme <${container.name}>`);
+        if (this.src[j] !== '>') throw new ParseFailure(j, '`>` expected');
+        if (closing !== container.name) this.error(i, j + 1, `</${closing}> closes <${container.name}>`);
         return { nodes, end: j + 1 };
       }
       if (c === '}') {
         if (container.kind !== 'element') return { nodes, end: i };
-        this.error(i, i + 1, "`}` dans le texte : écris {'}'}", { start: i, end: i + 1, text: "{'}'}", title: 'Entourer d’accolades' });
+        this.error(i, i + 1, "`}` in text: write {'}'}", { start: i, end: i + 1, text: "{'}'}", title: 'Wrap in braces' });
         i++;
         continue;
       }
       if (c === '<') {
-        // `<a`, ou un emplacement nommé `<:footer`.
+        // `<a`, or a named slot `<:footer`.
         if (isIdentStart(this.src[i + 1]) || (this.src[i + 1] === ':' && isIdentStart(this.src[i + 2]))) {
           const element = this.element(i);
           nodes.push(element);
           i = element.span.end;
         } else {
-          this.error(i, i + 1, "`<` dans le texte : écris {'<'}", { start: i, end: i + 1, text: "{'<'}", title: 'Entourer d’accolades' });
+          this.error(i, i + 1, "`<` in text: write {'<'}", { start: i, end: i + 1, text: "{'<'}", title: 'Wrap in braces' });
           i++;
         }
         continue;
@@ -938,12 +931,12 @@ class Parser {
         const close = this.scanTo(i + 1, '}');
         const inner = this.src.slice(i + 1, close).trim();
         if (inner.startsWith('/*') && inner.endsWith('*/')) nodes.push({ kind: 'comment', span: { start: i, end: close + 1 } });
-        else if (inner === '') this.error(i, close + 1, 'Interpolation vide');
+        else if (inner === '') this.error(i, close + 1, 'Empty interpolation');
         else nodes.push({ kind: 'expr', expr: { start: i + 1, end: close }, span: { start: i, end: close + 1 } });
         i = close + 1;
         continue;
       }
-      // Texte, ou instruction en début d'enfant (après les espaces).
+      // Text, or a statement at the start of a child (after whitespace).
       let j = i;
       while (isSpace(this.src[j])) j++;
       if (container.kind === 'case' && /^(case\b|default\s*:)/.test(this.src.slice(j, j + 12))) return { nodes, end: j };
@@ -956,7 +949,7 @@ class Parser {
         i = statement;
         continue;
       }
-      // Texte jusqu'au prochain `<`, `{` ou `}`.
+      // Text up to the next `<`, `{` or `}`.
       let end = j;
       while (end < this.src.length && !'<{}'.includes(this.src[end] as string)) end++;
       if (end > i) nodes.push({ kind: 'text', span: { start: i, end } });
@@ -966,9 +959,9 @@ class Parser {
   }
 
   /**
-   * Tente de lire une instruction en `i`. Renvoie la position qui la suit, ou `null` si le texte
-   * ne commence pas par une forme réservée. Une forme réservée mal formée est une erreur, avec
-   * la correction « entourer d'accolades ».
+   * Tries to read a statement at `i`. Returns the position after it, or `null` if the text
+   * does not start with a reserved form. A malformed reserved form is an error, with
+   * the "wrap in braces" fix.
    */
   statement(i: number, nodes: ChildNode[]): number | null {
     const head = this.src.slice(i, i + 40);
@@ -976,7 +969,7 @@ class Parser {
     const declaration = /^(const|let)\s+([A-Za-z_$][\w$]*\s*(:[^=;<>{}]*)?=(?![=>])|[{[])/.test(head);
     if (!keyword && !declaration) return null;
 
-    // Une déstructuration ne compte que si elle est suivie de `=`.
+    // A destructuring only counts if it is followed by `=`.
     if (!keyword && /^(const|let)\s+[{[]/.test(head)) {
       try {
         const open = this.src.indexOf(head.match(/[{[]/)?.[0] as string, i);
@@ -991,8 +984,8 @@ class Parser {
       if (keyword === 'if') return this.ifStatement(i, nodes);
       if (keyword === 'for') return this.forStatement(i, nodes);
       if (keyword === 'switch') return this.switchStatement(i, nodes);
-      // Le `;` est attendu, mais une déclaration en cours de frappe (`const user = this.`) reste une
-      // déclaration : l'éditeur peut compléter, et l'erreur dit ce qui manque.
+      // The `;` is expected, but a declaration being typed (`const user = this.`) stays a
+      // declaration: the editor can complete, and the error says what is missing.
       this.endedAtNewline = false;
       let end: number;
       try {
@@ -1002,7 +995,7 @@ class Parser {
         end = this.src.length;
         this.endedAtNewline = true;
       }
-      // Une ligne qui commence par un élément, un bloc ou une instruction n'est plus la déclaration.
+      // A line that starts with an element, a block or a statement is no longer the declaration.
       const cut = this.declarationCut(i, end);
       if (cut !== null) {
         end = cut;
@@ -1011,7 +1004,7 @@ class Parser {
       if (this.endedAtNewline) {
         let last = end;
         while (isSpace(this.src[last - 1])) last--;
-        this.error(last - 1, last, '`;` manquant à la fin de la déclaration');
+        this.error(last - 1, last, 'Missing `;` at the end of the declaration');
         nodes.push({ kind: 'declaration', span: { start: i, end: last } });
         return end;
       }
@@ -1019,29 +1012,29 @@ class Parser {
       return end + 1;
     } catch (error) {
       if (!(error instanceof ParseFailure) || error.committed) throw error;
-      // Le texte jusqu'à la fin de la ligne (ou du prochain `<`, `{`, `}`) : c'est lui qu'on entoure.
+      // The text up to the end of the line (or the next `<`, `{`, `}`): that is what gets wrapped.
       let end = i;
       while (end < this.src.length && !'<{}\n'.includes(this.src[end] as string)) end++;
       const text = this.src.slice(i, end).trimEnd();
-      const what = keyword ? `\`${keyword}\`` : 'une déclaration';
+      const what = keyword ? `\`${keyword}\`` : 'a declaration';
       this.error(
         i,
         i + text.length,
-        `Texte lu comme ${what}, qui n’est pas valide (${error.message}). Si c’est du texte, entoure-le d’accolades : {'${text.replaceAll("'", "\\'")}'}`,
+        `Text read as ${what}, which is not valid (${error.message}). If it is text, wrap it in braces: {'${text.replaceAll("'", "\\'")}'}`,
         {
           start: i,
           end: i + text.length,
           text: `{'${text.replaceAll("'", "\\'")}'}`,
-          title: 'Entourer d’accolades',
+          title: 'Wrap in braces',
         },
       );
       if (keyword) {
-        // L'expression après la parenthèse, sans `)` final.
-        // Bornée au texte signalé (qui s'arrête avant `<`, `{`, `}` et la fin de la ligne).
+        // The expression after the parenthesis, without the final `)`.
+        // Bounded by the reported text (which stops before `<`, `{`, `}` and the end of the line).
         const open = this.src.indexOf('(', i) + 1;
         const line = this.src.slice(open, i + text.length).replace(/\)\s*$/, '');
         let expr = { start: open, end: open + line.length };
-        // `for (const x of xs; key x.` : la clé est une expression à part, après le `;`.
+        // `for (const x of xs; key x.`: the key is a separate expression, after the `;`.
         let key: Span | null = null;
         if (keyword === 'for') {
           let semicolon = -1;
@@ -1061,7 +1054,7 @@ class Parser {
     }
   }
 
-  /** Position du premier saut de ligne entre `start` et `end` suivi d'un élément ou d'une instruction. */
+  /** Position of the first line break between `start` and `end` followed by an element or a statement. */
   declarationCut(start: number, end: number): number | null {
     for (let n = this.src.indexOf('\n', start); n !== -1 && n < end; n = this.src.indexOf('\n', n + 1)) {
       const next = this.src.slice(n + 1, n + 41).trimStart();
@@ -1070,10 +1063,10 @@ class Parser {
     return null;
   }
 
-  /** `{ … }` en `i` (après espaces) : renvoie le corps et la position après `}`. */
+  /** `{ … }` at `i` (after whitespace): returns the body and the position after `}`. */
   block(i: number): { body: ChildNode[]; end: number } {
     const open = this.skipTrivia(i);
-    if (this.src[open] !== '{') throw new ParseFailure(open, '`{` attendu');
+    if (this.src[open] !== '{') throw new ParseFailure(open, '`{` expected');
     try {
       const { nodes, end, unclosed } = this.children(open + 1, { kind: 'block' });
       return { body: nodes, end: unclosed ? end : end + 1 };
@@ -1083,7 +1076,7 @@ class Parser {
     }
   }
 
-  /** `(…)` dont le `(` est le premier après `i` : renvoie l'intérieur et la position après `)`. */
+  /** `(…)` whose `(` is the first after `i`: returns the inside and the position after `)`. */
   parens(i: number): { inner: Span; end: number } {
     const open = this.src.indexOf('(', i);
     const close = this.scanTo(open + 1, ')');
@@ -1107,8 +1100,8 @@ class Parser {
       try {
         if (elseIf) {
           const parens = this.parens(afterElse);
-          // Le bloc est lu ici pour qu'un `else if (x)` sans `{` soit, lui aussi, en cours de frappe.
-          if (this.src[this.skipTrivia(parens.end)] !== '{') throw new ParseFailure(this.skipTrivia(parens.end), '`{` attendu');
+          // The block is read here so that an `else if (x)` without `{` also counts as being typed.
+          if (this.src[this.skipTrivia(parens.end)] !== '{') throw new ParseFailure(this.skipTrivia(parens.end), '`{` expected');
           test = parens.inner;
           i = parens.end;
         } else {
@@ -1120,12 +1113,12 @@ class Parser {
         }
       } catch (error) {
         if (!(error instanceof ParseFailure) || error.committed) throw error;
-        // `} else if (this.` en cours de frappe : les branches lues restent, la suite de la ligne est
-        // signalée et sa condition gardée pour la complétion.
+        // `} else if (this.` being typed: the branches read so far stay, the rest of the line is
+        // reported and its condition kept for completion.
         let end = afterElse;
         while (end < this.src.length && !'<{}\n'.includes(this.src[end] as string)) end++;
         while (isSpace(this.src[end - 1]) && end > afterElse) end--;
-        this.error(next, Math.max(end, next + 4), `\`${elseIf ? 'else if' : 'else'}\` incomplet (${error.message})`);
+        this.error(next, Math.max(end, next + 4), `Incomplete \`${elseIf ? 'else if' : 'else'}\` (${error.message})`);
         if (elseIf) {
           const open = this.src.indexOf('(', afterElse) + 1;
           const expr = this.src.slice(open, end).replace(/\)\s*$/, '');
@@ -1141,7 +1134,7 @@ class Parser {
 
   forStatement(start: number, nodes: ChildNode[]): number {
     const { inner, end: afterParens } = this.parens(start);
-    // `const x of xs; key x.id` : le `;` de premier niveau sépare la clé.
+    // `const x of xs; key x.id`: the top-level `;` separates the key.
     let headEnd = inner.end;
     let key: Span | null = null;
     try {
@@ -1150,7 +1143,7 @@ class Parser {
         headEnd = semicolon;
         const keyStart = this.skipTrivia(semicolon + 1);
         if (!/^key\b/.test(this.src.slice(keyStart, keyStart + 4))) {
-          const failure = new ParseFailure(keyStart, '`key` attendu après `;`');
+          const failure = new ParseFailure(keyStart, '`key` expected after `;`');
           failure.committed = true;
           throw failure;
         }
@@ -1158,11 +1151,11 @@ class Parser {
       }
     } catch (error) {
       if (!(error instanceof ParseFailure) || error.committed) throw error;
-      // Pas de `;` de premier niveau entre les parenthèses : pas de clé.
+      // No top-level `;` between the parentheses: no key.
     }
     const head = { start: inner.start, end: headEnd };
     if (!/^\s*(const|let)\s+[\s\S]+\sof\s/.test(this.src.slice(head.start, head.end))) {
-      throw new ParseFailure(head.start, 'seul `for (const x of xs)` est accepté');
+      throw new ParseFailure(head.start, 'only `for (const x of xs)` is accepted');
     }
     const { body, end } = this.block(afterParens);
     nodes.push({ kind: 'for', head, key, body, span: { start, end } });
@@ -1172,14 +1165,14 @@ class Parser {
   switchStatement(start: number, nodes: ChildNode[]): number {
     const { inner, end: afterParens } = this.parens(start);
     let i = this.skipTrivia(afterParens);
-    if (this.src[i] !== '{') throw new ParseFailure(i, '`{` attendu');
+    if (this.src[i] !== '{') throw new ParseFailure(i, '`{` expected');
     i++;
     const cases: SwitchCase[] = [];
     for (;;) {
       i = this.skipTrivia(i);
       const c = this.src[i];
       if (c === '}') break;
-      if (c === undefined) throw new ParseFailure(i, '`}` manquant');
+      if (c === undefined) throw new ParseFailure(i, 'Missing `}`');
       const caseStart = i;
       let test: Span | null;
       if (/^case\b/.test(this.src.slice(i, i + 5))) {
@@ -1190,7 +1183,7 @@ class Parser {
         test = null;
         i = this.src.indexOf(':', i) + 1;
       } else {
-        throw new ParseFailure(i, '`case` ou `default` attendu');
+        throw new ParseFailure(i, '`case` or `default` expected');
       }
       const { nodes: body, end, unclosed } = this.children(i, { kind: 'case' });
       cases.push({ test, body, span: { start: caseStart, end } });

@@ -59,7 +59,7 @@ describe('serveur .super', () => {
     const lineOf = (message: string) => diagnostics.find((d) => d.message.includes(message))?.range.start.line;
     expect(lineOf("'nam' does not exist in type 'Props'")).toBe(at('<Greeting nam="Ada"'));
     expect(lineOf("Argument of type 'Item' is not assignable")).toBe(at('<li>{item}'));
-    expect(lineOf('Texte lu comme `for`')).toBe(at('for (more info)'));
+    expect(lineOf('Text read as `for`')).toBe(at('for (more info)'));
     expect(diagnostics).toHaveLength(3);
   }, 30000);
 
@@ -71,7 +71,7 @@ describe('serveur .super', () => {
       range: ambiguous?.range,
       context: { diagnostics: [ambiguous] },
     });
-    const fix = actions.find((a: { title: string }) => a.title === 'Entourer d’accolades');
+    const fix = actions.find((a: { title: string }) => a.title === 'Wrap in braces');
     expect(fix.edit.changes[uri]).toEqual([{ range: ambiguous?.range, newText: "{'for (more info) see below'}" }]);
   });
 
@@ -91,8 +91,8 @@ describe('serveur .super', () => {
   it('complète une déclaration en cours de frappe dans le template (sans `;`), et signale le `;` manquant', async () => {
     const typing = variant('      if (user) {', '      const label = this.\n      if (user) {');
     await show(typing);
-    const diagnostics = await client.diagnostics(uri, (d) => d.some((x) => x.message.includes('`;` manquant')));
-    expect(diagnostics.map((d) => d.message)).toEqual(['`;` manquant à la fin de la déclaration']);
+    const diagnostics = await client.diagnostics(uri, (d) => d.some((x) => x.message.includes('Missing `;`')));
+    expect(diagnostics.map((d) => d.message)).toEqual(['Missing `;` at the end of the declaration']);
     const completion = await client.request('textDocument/completion', {
       textDocument: { uri },
       position: positionOf(typing, 'const label = this.', 19),

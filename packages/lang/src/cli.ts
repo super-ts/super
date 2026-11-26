@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * `super-tsc` : vérifie les types d'un projet qui contient des fichiers `.super`.
+ * `super-tsc`: type checks a project that contains `.super` files.
  *
- * TypeScript 7 n'a pas d'API de plugin : on écrit le TS virtuel de chaque `.super` dans
- * `<projet>/.super/virtual/`, à la même place relative, et un tsconfig qui fusionne les deux
- * arborescences (`rootDirs`, `paths` doublés). On lance `tsc`, puis on ramène chaque erreur
- * du TS virtuel à sa position dans le `.super`.
+ * TypeScript 7 has no plugin API: the virtual TS of each `.super` file is written to
+ * `<project>/.super/virtual/`, at the same relative place, along with a tsconfig that merges the two
+ * trees (`rootDirs`, doubled `paths`). `tsc` is run, then each error in the virtual TS
+ * is mapped back to its position in the `.super` file.
  *
- * Usage : node packages/lang/src/cli.ts <tsconfig du projet>
+ * Usage: node packages/lang/src/cli.ts <project tsconfig>
  */
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
@@ -19,7 +19,7 @@ import { virtualPathOf, writeVirtualFile } from './virtual-files.ts';
 
 type Config = { extends?: string; compilerOptions?: { paths?: Record<string, string[]> }; include?: string[]; exclude?: string[] };
 
-/** JSON avec commentaires et virgules finales, comme un tsconfig. */
+/** JSON with comments and trailing commas, like a tsconfig. */
 function readJsonc(path: string): Config {
   const text = readFileSync(path, 'utf8');
   let out = '';
@@ -40,7 +40,7 @@ function readJsonc(path: string): Config {
   return JSON.parse(out.replace(/,(\s*[}\]])/g, '$1'));
 }
 
-/** Le `paths` effectif et le dossier du tsconfig qui le définit (les cibles sont relatives à lui). */
+/** The effective `paths` and the folder of the tsconfig that defines it (targets are relative to it). */
 function effectivePaths(configPath: string): { paths: Record<string, string[]>; dir: string } {
   const config = readJsonc(configPath);
   if (config.compilerOptions?.paths) return { paths: config.compilerOptions.paths, dir: dirname(configPath) };
@@ -48,7 +48,7 @@ function effectivePaths(configPath: string): { paths: Record<string, string[]>; 
   return { paths: {}, dir: dirname(configPath) };
 }
 
-/** Le `exclude` effectif, en chemins absolus (relatifs au tsconfig qui le définit). */
+/** The effective `exclude`, as absolute paths (relative to the tsconfig that defines it). */
 function effectiveExclude(configPath: string): string[] {
   const config = readJsonc(configPath);
   if (config.exclude) return config.exclude.map((p) => (p.startsWith('*') ? p : resolve(dirname(configPath), p)));
@@ -84,16 +84,16 @@ function offsetOf(text: string, line: number, column: number): number {
   return (lineStarts(text)[line - 1] ?? 0) + column - 1;
 }
 
-/** Le binaire `tsc` du paquet `typescript` que voit le projet. */
+/** The `tsc` binary of the `typescript` package that the project sees. */
 function tscOf(projectDir: string): string {
   try {
     return join(dirname(createRequire(join(projectDir, 'package.json')).resolve('typescript/package.json')), 'bin', 'tsc');
   } catch {
-    throw new Error(`[super] typescript est introuvable depuis ${projectDir} : installe-le dans le projet.`);
+    throw new Error(`[super] typescript cannot be found from ${projectDir}: install it in the project.`);
   }
 }
 
-/** Le chemin réel d'un fichier, ou le chemin tel quel s'il n'existe pas. */
+/** The real path of a file, or the path as is if it does not exist. */
 function realPath(path: string): string {
   try {
     return realpathSync(path);
@@ -102,11 +102,11 @@ function realPath(path: string): string {
   }
 }
 
-/** Vérifie le projet ; renvoie les erreurs, une par ligne, au format de `tsc --pretty false`. */
+/** Checks the project; returns the errors, one per line, in the format of `tsc --pretty false`. */
 export function check(configPath: string): string[] {
   const errors: string[] = [];
-  // Tout en chemins réels : tsc rapporte les fichiers par leur chemin réel, et un projet ouvert par
-  // un lien symbolique (`/tmp` → `/private/tmp` sur macOS) ne retrouverait plus son TS virtuel.
+  // Everything as real paths: tsc reports files by their real path, and a project opened through
+  // a symbolic link (`/tmp` → `/private/tmp` on macOS) would no longer find its virtual TS.
   const configFile = realpathSync(resolve(configPath));
   const projectDir = dirname(configFile);
   const shadowDir = join(projectDir, '.super');
@@ -120,10 +120,10 @@ export function check(configPath: string): string[] {
   mkdirSync(virtualDir, { recursive: true });
   writeFileSync(join(shadowDir, '.gitignore'), '*\n');
 
-  // Le TS virtuel de chaque `.super`, et les erreurs du parser.
+  // The virtual TS of each `.super` file, and the parser errors.
   const virtuals = new Map<string, { source: string; sourceText: string; virtual: VirtualCode }>();
-  // Les `.super` couverts par l'`include` du tsconfig et pas par son `exclude` (chemins simples,
-  // pas les motifs `*`).
+  // The `.super` files covered by the tsconfig's `include` and not by its `exclude` (plain paths,
+  // not `*` patterns).
   const within = (file: string, path: string) => file === path || file.startsWith(`${path}${sep}`);
   const included = (readJsonc(configPath).include ?? ['.']).map((p) => resolve(projectDir, p));
   const excluded = effectiveExclude(configFile).filter((p) => !p.includes('*'));
@@ -135,12 +135,12 @@ export function check(configPath: string): string[] {
       const { line, column } = position(sourceText, d.start);
       errors.push(`${relative(process.cwd(), source)}(${line},${column}): error SUPER: ${d.message}`);
     }
-    // Le TS virtuel (vérifié ici) et la déclaration (pour les `.ts` qui l'importent, et l'éditeur).
+    // The virtual TS (checked here) and the declaration (for the `.ts` files that import it, and the editor).
     writeVirtualFile(source, sourceText, projectDir);
     virtuals.set(virtualPathOf(projectDir, source), { source, sourceText, virtual });
   }
 
-  // Le tsconfig de l'ombre : celui du projet, avec la seconde arborescence.
+  // The shadow tsconfig: the project's own, with the second tree.
   const config = readJsonc(configPath);
   const { paths, dir: pathsDir } = effectivePaths(configFile);
   const shadowPaths: Record<string, string[]> = {};
@@ -159,7 +159,7 @@ export function check(configPath: string): string[] {
         extends: toShadow(configFile),
         compilerOptions: { rootDirs: [toShadow(projectDir), './virtual'], paths: shadowPaths },
         include: [...include, './virtual'],
-        // Un `exclude` hérité qui viserait `.super` (celui du tsconfig racine) cacherait le TS virtuel.
+        // An inherited `exclude` targeting `.super` (the root tsconfig's) would hide the virtual TS.
         exclude: effectiveExclude(configFile)
           .filter((p) => !p.includes('.super'))
           .map((p) => (p.startsWith('*') ? p : toShadow(p))),
@@ -169,9 +169,9 @@ export function check(configPath: string): string[] {
     ),
   );
 
-  // tsc écrit ses chemins relatifs à son dossier courant, qu'il lit dans PWD : on le lance depuis le
-  // dossier réel du projet, avec un PWD qui le dit, et on résout ses chemins depuis ce même dossier.
-  // Pas `npx tsc` : dans un workspace npm, npx se place à la racine du paquet, pas dans ce dossier.
+  // tsc writes its paths relative to its current folder, which it reads from PWD: it is run from the
+  // real folder of the project, with a PWD that says so, and its paths are resolved from that same folder.
+  // Not `npx tsc`: in an npm workspace, npx moves to the root of the package, not to this folder.
   const tsc = spawnSync(process.execPath, [tscOf(projectDir), '--noEmit', '--pretty', 'false', '-p', join(shadowDir, 'tsconfig.json')], {
     cwd: projectDir,
     env: { ...process.env, PWD: projectDir },
@@ -181,7 +181,7 @@ export function check(configPath: string): string[] {
   for (const raw of output ? output.split('\n') : []) {
     const match = /^(.+?)\((\d+),(\d+)\): (.*)$/.exec(raw);
     if (!match) {
-      // Suite d'un message sur plusieurs lignes.
+      // Continuation of a multi-line message.
       errors[errors.length - 1] += `\n${raw}`;
       continue;
     }
@@ -199,11 +199,11 @@ export function check(configPath: string): string[] {
   return errors;
 }
 
-// Lancé directement, y compris par le lien de `node_modules/.bin`, qui n'a pas le même chemin.
+// Run directly, including through the `node_modules/.bin` link, which does not have the same path.
 if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const configPath = process.argv[2];
   if (!configPath) {
-    console.error('Usage : super-tsc <tsconfig.json>');
+    console.error('Usage: super-tsc <tsconfig.json>');
     process.exit(2);
   }
   const errors = check(configPath);

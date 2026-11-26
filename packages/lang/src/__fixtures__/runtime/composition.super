@@ -1,6 +1,6 @@
 import { type Children, SuperElement } from '@super-ts/dom';
 
-/** Reçoit des enfants et un emplacement nommé, et les place. */
+/** Receives children and a named slot, and places them. */
 export class Panel extends SuperElement {
   @tag = 'lang-panel';
   @prop heading: string;
@@ -10,7 +10,7 @@ export class Panel extends SuperElement {
 
   render() {
     <section class="panel">
-      <h2>{this.heading} <button class="toggle" on:click={() => this.local.set({ open: !this.local.get().open })}>basculer</button></h2>
+      <h2>{this.heading} <button class="toggle" on:click={() => this.local.set({ open: !this.local.get().open })}>toggle</button></h2>
       if (this.local.get().open) {
         <div class="body">{this.content}</div>
       }
@@ -21,24 +21,24 @@ export class Panel extends SuperElement {
   }
 }
 
-/** Remplit le panneau : enfants, pied par une méthode, pied par un emplacement. */
+/** Fills the panel: children, a footer from a method, a footer from a slot. */
 export class Composition extends SuperElement {
   @tag = 'lang-composition';
   @state local = { clicks: 0 };
 
   #footer() {
-    <small class="by-method">par une méthode ({this.local.get().clicks})</small>
+    <small class="by-method">by a method ({this.local.get().clicks})</small>
   }
 
   render() {
     const { clicks } = this.local.get();
-    <Panel heading="Premier" footer={this.#footer()}>
-      <p class="child">Clics : {clicks}</p> <button class="add" on:click={() => this.local.set({ clicks: clicks + 1 })}>+1</button>
+    <Panel heading="First" footer={this.#footer()}>
+      <p class="child">Clicks: {clicks}</p> <button class="add" on:click={() => this.local.set({ clicks: clicks + 1 })}>+1</button>
     </Panel>
     <Panel heading="Second">
-      <p class="second">sans pied par méthode</p>
+      <p class="second">no footer from a method</p>
       <:footer>
-        <em class="by-slot">par un emplacement</em>
+        <em class="by-slot">by a slot</em>
       </:footer>
     </Panel>
   }

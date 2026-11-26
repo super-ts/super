@@ -1,9 +1,9 @@
 import { SuperElement } from '@super-ts/dom';
 
-/** Un composant qui déclare tout dans sa classe : tag, titre de page, props (avec défaut) et événement. */
+/** A component that declares everything in its class: tag, page title, props (with a default) and event. */
 export class Declared extends SuperElement {
   @tag = 'lang-declared';
-  @title = () => `Étiquette ${this.label}`;
+  @title = () => `Label ${this.label}`;
   @prop label: string;
   @prop tone: 'neutral' | 'danger' = 'neutral';
   @prop tags: string[] = [];

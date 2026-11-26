@@ -1,6 +1,6 @@
 import { SuperElement } from '@super-ts/dom';
 
-/** Un composant enfant écrit en .super, avec props et événement. */
+/** A child component written in .super, with props and an event. */
 export class Badge extends SuperElement {
   @tag = 'lang-badge';
   @prop label: string;

@@ -6,7 +6,7 @@ import { check } from './cli.ts';
 
 const fixture = (name: string) => join(import.meta.dirname, '__fixtures__/project', name);
 
-describe('check (TS virtuel vérifié par tsc)', () => {
+describe('check (virtual TS checked by tsc)', () => {
   const errors = check(fixture('tsconfig.json'));
   const linesOf = (file: string) =>
     errors
@@ -14,27 +14,25 @@ describe('check (TS virtuel vérifié par tsc)', () => {
       .map((e) => Number(/\((\d+),\d+\)/.exec(e)?.[1]))
       .sort((a, b) => a - b);
 
-  it('signale chaque ligne marquée ERREUR, à sa position dans le .super, et aucune autre', () => {
+  it('reports each line marked ERROR, at its position in the .super file, and no other', () => {
     const expected = readFileSync(fixture('errors.super'), 'utf8')
       .split('\n')
-      .flatMap((line, index) => (line.includes('{/* ERREUR') ? [index + 1] : []));
+      .flatMap((line, index) => (line.includes('{/* ERROR') ? [index + 1] : []));
     expect(expected).toHaveLength(16);
     expect(linesOf('errors.super')).toEqual(expected);
   });
 
-  it('ne signale rien dans un fichier .super valide ni dans les .ts du projet', () => {
+  it('reports nothing in a valid .super file nor in the .ts files of the project', () => {
     expect(errors.filter((e) => !e.includes('project/errors.super('))).toEqual([]);
   });
 
-  it('rapporte le message de TS tel quel', () => {
+  it('reports the TS message as is', () => {
     expect(errors.find((e) => e.includes('TS2561'))).toContain("'nam' does not exist in type 'Props'. Did you mean to write 'name'?");
     expect(errors.find((e) => e.includes('TS2345') && e.includes('never'))).toContain('"busy" | "done"');
-    expect(errors.find((e) => e.includes('"title"'))).toContain(
-      '« title » est déjà une propriété des éléments HTML : choisis un autre nom',
-    );
+    expect(errors.find((e) => e.includes('"title"'))).toContain("'title' is already a property of HTML elements: choose another name");
   });
 
-  it('ramène les erreurs au .super quand le projet est ouvert par un lien symbolique', () => {
+  it('maps errors back to the .super file when the project is opened through a symbolic link', () => {
     const dir = mkdtempSync(join(tmpdir(), 'super-check-'));
     try {
       const link = join(dir, 'project');
@@ -49,12 +47,12 @@ describe('check (TS virtuel vérifié par tsc)', () => {
     }
   });
 
-  it('ramène les erreurs au .super quand super-tsc est lancé depuis un dossier atteint par un lien', () => {
+  it('maps errors back to the .super file when super-tsc is run from a folder reached through a link', () => {
     const dir = mkdtempSync(join(tmpdir(), 'super-check-'));
     try {
       const link = join(dir, 'project');
       symlinkSync(join(import.meta.dirname, '__fixtures__/project'), link, 'dir');
-      // Comme un shell : le dossier courant logique (PWD) passe par le lien.
+      // Like a shell: the logical current folder (PWD) goes through the link.
       const cli = spawnSync(process.execPath, [join(import.meta.dirname, 'cli.ts'), 'tsconfig.json'], {
         cwd: link,
         env: { ...process.env, PWD: link },

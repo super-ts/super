@@ -1,12 +1,12 @@
 /**
- * Fonctions appelées par le TS virtuel d'un fichier `.super`. Elles n'existent que pour le
- * compilateur : le TS virtuel n'est jamais exécuté.
+ * Functions called by the virtual TS of a `.super` file. They exist only for the
+ * compiler: the virtual TS is never executed.
  */
 
 type HtmlTag = keyof HTMLElementTagNameMap;
 type SvgTag = keyof SVGElementTagNameMap;
 
-/** Une balise HTML ou SVG connue, ou un élément personnalisé (avec un tiret). */
+/** A known HTML or SVG tag, or a custom element (with a hyphen). */
 export type Tag = HtmlTag | SvgTag | `${string}-${string}`;
 
 export type TagElement<K extends string> = K extends HtmlTag
@@ -17,24 +17,24 @@ export type TagElement<K extends string> = K extends HtmlTag
 
 type EventsOf<E> = E extends SVGElement ? SVGElementEventMap : HTMLElementEventMap;
 
-/** Ce qu'un attribut peut recevoir ; `null` et `undefined` le retirent. */
+/** What an attribute can receive; `null` and `undefined` remove it. */
 export type AttributeValue = string | number | boolean | null | undefined;
 
-/** Des enfants passés à un composant (`{this.content}`, ou une méthode qui émet des éléments). */
+/** Children passed to a component (`{this.content}`, or a method that emits elements). */
 export type Children = import('@super-ts/dom').Children;
 
-/** La route d'un composant par son tag (voir `routeInserts` dans virtual.ts). */
+/** The route of a component by its tag (see `routeInserts` in virtual.ts). */
 export type RouteOfTag<T extends string> = import('@super-ts/dom').RouteOfTag<T>;
 
-/** Ce qu'une interpolation peut afficher. */
+/** What an interpolation can display. */
 export type TextValue = string | number | boolean | null | undefined | void | Children;
 
-/** Ce que renvoie une méthode qui émet des éléments, et ce que reçoit une prop remplie par des enfants. */
+/** What a method that emits elements returns, and what a prop filled by children receives. */
 export declare const CHILDREN: Children;
 
 /**
- * Une référence d'élément (`this.ref<T>()`) n'accepte qu'un élément du bon type. `refFor` rend
- * l'erreur lisible (et nominale : un `HTMLInputElement` a tout ce qu'a un `HTMLDivElement`).
+ * An element ref (`this.ref<T>()`) only accepts an element of the right type. `refFor` makes
+ * the error readable (and nominal: an `HTMLInputElement` has everything an `HTMLDivElement` has).
  */
 type DirectiveFor<D, E> = D extends { readonly value: infer T | undefined }
   ? T extends Element
@@ -57,9 +57,9 @@ export declare function text(value: TextValue): void;
 export declare function key(value: unknown): void;
 
 /**
- * Le nom d'une prop (`@prop nom: Type;`) devient une propriété du composant : il ne doit pas être
- * déjà une propriété d'un élément HTML (`id`, `title`, `hidden`…).
+ * The name of a prop (`@prop name: Type;`) becomes a property of the component: it must not
+ * already be a property of an HTML element (`id`, `title`, `hidden`…).
  */
 export declare function ownName<K extends string>(
-  name: K extends keyof HTMLElement ? `« ${K} » est déjà une propriété des éléments HTML : choisis un autre nom` : K,
+  name: K extends keyof HTMLElement ? `'${K}' is already a property of HTML elements: choose another name` : K,
 ): void;

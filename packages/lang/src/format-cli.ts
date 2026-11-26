@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * `super-fmt` : formate les fichiers `.super` (le TS par Biome, les templates par `format.ts`).
+ * `super-fmt`: formats `.super` files (the TS with Biome, the templates with `format.ts`).
  *
- * Usage : node packages/lang/src/format-cli.ts --write|--check [dossiers…]   (par défaut : examples packages)
- * `--check` sort en erreur si un fichier n'est pas formaté. Un fichier qui a des erreurs de syntaxe
- * est laissé tel quel (`npm run typecheck` les signale).
+ * Usage: node packages/lang/src/format-cli.ts --write|--check [folders…]   (default: examples packages)
+ * `--check` exits with an error if a file is not formatted. A file that has syntax errors
+ * is left as is (`npm run typecheck` reports them).
  */
 import { readdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
@@ -23,7 +23,7 @@ function superFiles(dir: string): string[] {
   return found;
 }
 
-/** Les fichiers pas encore formatés (et formatés si `write`), et ceux laissés de côté. */
+/** The files not formatted yet (and formatted if `write`), and those left aside. */
 export function formatFiles(dirs: string[], write: boolean): { changed: string[]; skipped: string[] } {
   const changed: string[] = [];
   const skipped: string[] = [];
@@ -39,22 +39,22 @@ export function formatFiles(dirs: string[], write: boolean): { changed: string[]
   return { changed, skipped };
 }
 
-// Lancé directement, y compris par le lien de `node_modules/.bin`, qui n'a pas le même chemin.
+// Run directly, including through the `node_modules/.bin` link, which does not have the same path.
 if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
   const write = args.includes('--write');
   const check = args.includes('--check');
   if (write === check) {
-    console.error('Usage : super-fmt --write|--check [dossiers…]');
+    console.error('Usage: super-fmt --write|--check [folders…]');
     process.exit(2);
   }
   const dirs = args.filter((a) => !a.startsWith('--'));
   const { changed, skipped } = formatFiles(dirs.length > 0 ? dirs : ['examples', 'packages'], write);
   const shown = (f: string) => relative(process.cwd(), f);
-  if (write) for (const f of skipped) console.log(`${shown(f)} : erreurs de syntaxe, non formaté`);
+  if (write) for (const f of skipped) console.log(`${shown(f)}: syntax errors, not formatted`);
   if (check && changed.length > 0) {
-    for (const f of changed) console.log(`${shown(f)} : pas formaté (npm run format)`);
+    for (const f of changed) console.log(`${shown(f)}: not formatted (npm run format)`);
     process.exit(1);
   }
-  if (write) for (const f of changed) console.log(`${shown(f)} : formaté`);
+  if (write) for (const f of changed) console.log(`${shown(f)}: formatted`);
 }

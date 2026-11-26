@@ -10,13 +10,13 @@ describe('declarationOf', () => {
     'export class Card extends SuperElement {',
     "  @tag = 'x-card';",
     '  render() {',
-    '    <p>export class Faux dans du texte</p>',
+    '    <p>export class Fake in some text</p>',
     '  }',
     '}',
   ].join('\n');
   const { dts, map } = declarationOf(source, './impl', '../card.super', 'card.d.ts');
 
-  it('redéclare les exports du code (pas ceux écrits dans un template), types tirés du TS virtuel', () => {
+  it('redeclares the exports of the code (not those written in a template), types drawn from the virtual TS', () => {
     expect(dts).toBe(
       [
         "import type * as __impl from './impl';",
@@ -31,7 +31,7 @@ describe('declarationOf', () => {
     );
   });
 
-  it('renvoie chaque nom déclaré à sa place dans le .super', () => {
+  it('maps each declared name to its place in the .super file', () => {
     const { sources, mappings } = JSON.parse(map);
     expect(sources).toEqual(['../card.super']);
     const lines = decodeMappings(mappings);

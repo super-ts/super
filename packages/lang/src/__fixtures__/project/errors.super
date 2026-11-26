@@ -5,7 +5,7 @@ import { Panel } from './panel';
 type Status = 'idle' | 'busy' | 'done';
 type Item = { id: string; label: string };
 
-/** Chaque ligne marquée ERREUR doit être signalée par `check`, et aucune autre. */
+/** Every line marked ERROR must be reported by `check`, and no other. */
 export class ErrorsFixture extends SuperElement {
   @tag = 'lang-errors';
   @ref input: HTMLInputElement;
@@ -13,18 +13,18 @@ export class ErrorsFixture extends SuperElement {
 
   render() {
     <main>
-      <dvi>typo</dvi> {/* ERREUR balise inconnue */}
-      <p>{this.local.get().user.name}</p> {/* ERREUR null possible */}
+      <dvi>typo</dvi> {/* ERROR unknown tag */}
+      <p>{this.local.get().user.name}</p> {/* ERROR possibly null */}
       const user = this.local.get().user;
       if (user) {
         <p>{user.name}</p>
       }
-      for (const item of this.local.get().items; key item.idd) { {/* ERREUR clé */}
-        <li>{item}</li> {/* ERREUR objet interpolé */}
+      for (const item of this.local.get().items; key item.idd) { {/* ERROR key */}
+        <li>{item}</li> {/* ERROR interpolated object */}
       }
-      <button on:clik={() => {}}>x</button> {/* ERREUR événement inconnu */}
-      <input on:input={(e) => e.currentTarget.value.toFixed()} /> {/* ERREUR value est une chaîne */}
-      <div ref={this.input}></div> {/* ERREUR référence sur le mauvais élément */}
+      <button on:clik={() => {}}>x</button> {/* ERROR unknown event */}
+      <input on:input={(e) => e.currentTarget.value.toFixed()} /> {/* ERROR value is a string */}
+      <div ref={this.input}></div> {/* ERROR ref on the wrong element */}
       <input ref={this.input} />
       const status = this.local.get().status;
       switch (status) {
@@ -35,15 +35,15 @@ export class ErrorsFixture extends SuperElement {
       }
       switch (status) {
         case 'idle': <p>idle</p>
-        default: {assertNever(status)} {/* ERREUR switch non exhaustif */}
+        default: {assertNever(status)} {/* ERROR non-exhaustive switch */}
       }
-      <Greeting nam="Ada" on:closed={(e) => e.reason} /> {/* ERREUR prop inconnue */}
-      <Greeting name={42} /> {/* ERREUR prop mal typée */}
-      <Greeting name="Ada" on:open={() => {}} /> {/* ERREUR événement inconnu du composant */}
-      <p>for (more info) see below</p> {/* ERREUR texte ambigu */}
-      <Greeting name="Ada"><p>Greeting ne prend pas d’enfants</p></Greeting> {/* ERREUR enfants refusés */}
-      <Panel heading="Sans enfants" /> {/* ERREUR enfants obligatoires */}
-      <Panel heading="x"><p>a</p><:header>h</:header></Panel> {/* ERREUR emplacement inconnu */}
+      <Greeting nam="Ada" on:closed={(e) => e.reason} /> {/* ERROR unknown prop */}
+      <Greeting name={42} /> {/* ERROR wrongly typed prop */}
+      <Greeting name="Ada" on:open={() => {}} /> {/* ERROR event unknown to the component */}
+      <p>for (more info) see below</p> {/* ERROR ambiguous text */}
+      <Greeting name="Ada"><p>Greeting takes no children</p></Greeting> {/* ERROR children rejected */}
+      <Panel heading="No children" /> {/* ERROR children required */}
+      <Panel heading="x"><p>a</p><:header>h</:header></Panel> {/* ERROR unknown slot */}
     </main>
   }
 }
@@ -52,10 +52,10 @@ function assertNever(x: never): void {
   throw new Error(String(x));
 }
 
-/** Une prop ne peut pas porter le nom d'une propriété des éléments HTML. */
+/** A prop cannot have the name of a property of HTML elements. */
 export class NativeName extends SuperElement {
   @tag = 'lang-native-name';
-  @prop title: string; // {/* ERREUR nom déjà pris par les éléments HTML */}
+  @prop title: string; // {/* ERROR name already taken by HTML elements */}
 
   render() {
     <p>{this.title}</p>

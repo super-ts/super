@@ -1,6 +1,6 @@
 import { type Children, SuperElement } from '@super-ts/dom';
 
-/** Un composant qui reçoit des enfants (obligatoires) et un emplacement nommé (facultatif). */
+/** A component that receives children (required) and a named slot (optional). */
 export class Panel extends SuperElement {
   @tag = 'lang-project-panel';
   @prop heading: string;

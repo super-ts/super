@@ -1,12 +1,12 @@
-# Fichiers `.super` : spécification
+# `.super` files: specification
 
-Un fichier `.super` est un module TypeScript dont les méthodes de classe peuvent contenir des
-éléments HTML écrits comme des instructions. Tout le reste du fichier est du TS ordinaire.
+A `.super` file is a TypeScript module whose class methods can contain
+HTML elements written as statements. The rest of the file is ordinary TS.
 
-Statut : brouillon, version 0. Les points marqués « v0 » sont des limites assumées de cette
-première version.
+Status: draft, version 0. Points marked "v0" are deliberate limits of this
+first version.
 
-## Exemple
+## Example
 
 ```tsx
 import { SuperElement } from '@super-ts/dom';
@@ -14,15 +14,15 @@ import { ConfirmDialog } from '../shared/confirm-dialog';
 
 export class ShopScreen extends SuperElement {
   @tag = 'shop-screen';
-  @title = 'Boutique';
+  @title = 'Shop';
   @contract cart;
   @selector lines = this.cart.selectors.lines;
 
   render() {
     <main class="screen">
-      <h1>Boutique</h1>
+      <h1>Shop</h1>
       if (this.lines.value.length === 0) {
-        <p class="empty">Aucun article pour l’instant.</p>
+        <p class="empty">No items yet.</p>
       } else {
         <ul>
           for (const l of this.lines.value; key l.product.sku) {
@@ -36,10 +36,10 @@ export class ShopScreen extends SuperElement {
 }
 ```
 
-## Déclarations d'un composant
+## Component declarations
 
-Une classe qui étend `SuperElement` déclare dans son corps son tag, ses props, ses événements et
-le titre de la page, sans générique :
+A class that extends `SuperElement` declares in its body its tag, its props, its events and
+the page title, without a generic:
 
 ```tsx
 export class ConfirmDialog extends SuperElement {
@@ -52,40 +52,40 @@ export class ConfirmDialog extends SuperElement {
 }
 ```
 
-| Déclaration              | Sens                                                                                      |
-| ------------------------ | ----------------------------------------------------------------------------------------- |
-| `@tag = 'x-y';`          | Le tag du custom element. Obligatoire (sauf classe `abstract`), une chaîne avec un tiret. |
-| `@title = …;`            | Le titre de la page tant que le composant est monté : une chaîne, ou une fonction suivie. |
-| `@prop nom: T;`          | Une prop obligatoire, lue par `this.nom` (toujours la valeur courante).                   |
-| `@prop nom?: T;`         | Une prop facultative (`T \| undefined`).                                                  |
-| `@prop nom: T = valeur;` | Une prop facultative avec une valeur par défaut, calculée une fois par instance.          |
-| `@emit nom: T;`          | Un événement, émis par `this.emit('nom', …)` (`void` s'il ne transporte rien).            |
+| Declaration              | Meaning                                                                                    |
+| ------------------------ | ------------------------------------------------------------------------------------------ |
+| `@tag = 'x-y';`          | The custom element tag. Required (except for an `abstract` class), a string with a hyphen. |
+| `@title = …;`            | The page title while the component is mounted: a string, or a tracked function.            |
+| `@prop name: T;`         | A required prop, read through `this.name` (always the current value).                      |
+| `@prop name?: T;`        | An optional prop (`T \| undefined`).                                                       |
+| `@prop name: T = value;` | An optional prop with a default value, computed once per instance.                         |
+| `@emit name: T;`         | An event, emitted with `this.emit('name', …)` (`void` if it carries nothing).              |
 
-- `@prop` et `@emit` sont du TS valide (des champs décorés) ; `@tag = …` et `@title = …` ne le sont
-  pas : le formateur et la grammaire Tree-sitter les connaissent.
-- Le compilateur en tire les types du composant (`SuperElement<{ props; emits }>`), vérifiés aux
-  balises qui l'utilisent (`<ConfirmDialog question="…" on:answered={…} />`).
-- Une prop ne peut pas porter le nom d'une propriété des éléments HTML (`id`, `title`, `hidden`…) :
-  c'est une erreur de type. C'est pour ça que le contenu écrit entre les balises remplit `content`
-  (et non `children`, propriété native).
-- `this.props` reste disponible (toutes les props, en lecture seule).
-- `@title = () => …` est recalculé après chaque rendu, avec les mêmes lectures que `render`
-  (`@title = () => this.label.value`). Le dernier composant monté qui pose un titre l'emporte ; à
-  son démontage, le titre précédent revient. Ailleurs (gestionnaire, `mounted`),
-  `this.page.title = …` fait de même.
-- Erreurs : tag manquant ou écrit `static tag`, générique `SuperElement<…>` écrit à la main,
-  déclaration en double, prop sans type, `?` avec une valeur par défaut, déclaration hors d'un
-  composant.
+- `@prop` and `@emit` are valid TS (decorated fields); `@tag = …` and `@title = …` are
+  not: the formatter and the Tree-sitter grammar know about them.
+- The compiler draws the component types from them (`SuperElement<{ props; emits }>`), checked at
+  the tags that use it (`<ConfirmDialog question="…" on:answered={…} />`).
+- A prop cannot have the name of a property of HTML elements (`id`, `title`, `hidden`…):
+  it is a type error. That is why the content written between the tags fills `content`
+  (and not `children`, a native property).
+- `this.props` remains available (all props, read-only).
+- `@title = () => …` is recomputed after each render, with the same reads as `render`
+  (`@title = () => this.label.value`). The last mounted component that sets a title wins; when
+  it unmounts, the previous title comes back. Elsewhere (handler, `mounted`),
+  `this.page.title = …` does the same.
+- Errors: missing tag or tag written as `static tag`, hand-written `SuperElement<…>` generic,
+  duplicate declaration, prop without a type, `?` with a default value, declaration outside a
+  component.
 
-### Préparation : stores, lectures, état, formulaire, références, écouteurs
+### Preparation: stores, reads, state, form, refs, listeners
 
-Ce que le composant prépare une fois (à sa construction) se déclare aussi dans le corps de sa classe :
+What the component prepares once (at construction) is also declared in the body of its class:
 
 ```tsx
 export class ProfileScreen extends SuperElement {
   @tag = 'profile-screen';
   @contract profile;                                   // this.contract('profile')
-  @contract shop = 'catalog';                          // un autre nom de champ
+  @contract shop = 'catalog';                          // another field name
   @selector saving = () => this.profile.selectors.pending('save');
   @state local = { saved: null as string | null };
   @form edit = { initial: { name: '' }, submit: { to: this.profile, command: 'save' } };
@@ -98,156 +98,156 @@ export class ProfileScreen extends SuperElement {
 }
 ```
 
-| Déclaration                        | Équivaut à                                    | Se lit par                            |
-| ---------------------------------- | --------------------------------------------- | ------------------------------------- |
-| `@contract cart;`                  | `cart = this.contract('cart')`                | `this.cart.selectors`, `.send`, `.on` |
-| `@contract shop = 'catalog';`      | `shop = this.contract('catalog')`             | idem                                  |
-| `@selector nom = …;`               | `nom = this.selector(…)`                      | `this.nom.value`                      |
-| `@state nom = { … };`              | `nom = this.state({ … })`                     | `this.nom.get()`, `this.nom.set(…)`   |
-| `@form nom = { … };`               | `nom = this.form({ … })`                      | `this.nom.bind()`, `.field('x')`…     |
-| `@ref nom: T;`                     | `nom = this.ref<T>()`                         | `ref={this.nom}`, `this.nom.value`    |
-| `@on('contrat', 'événement') m(p)` | `this.contract('contrat').on('événement', …)` | appelée à chaque événement, monté     |
+| Declaration                     | Equivalent to                              | Read through                          |
+| ------------------------------- | ------------------------------------------ | ------------------------------------- |
+| `@contract cart;`               | `cart = this.contract('cart')`             | `this.cart.selectors`, `.send`, `.on` |
+| `@contract shop = 'catalog';`   | `shop = this.contract('catalog')`          | same                                  |
+| `@selector name = …;`           | `name = this.selector(…)`                  | `this.name.value`                     |
+| `@state name = { … };`          | `name = this.state({ … })`                 | `this.name.get()`, `this.name.set(…)` |
+| `@form name = { … };`           | `name = this.form({ … })`                  | `this.name.bind()`, `.field('x')`…    |
+| `@ref name: T;`                 | `name = this.ref<T>()`                     | `ref={this.name}`, `this.name.value`  |
+| `@on('contract', 'event') m(p)` | `this.contract('contract').on('event', …)` | called on each event, while mounted   |
 
-- `@on` n'exige pas de `@contract` : il ouvre lui-même l'accès au contrat. Le paramètre de la méthode
-  est typé par l'événement (`save:done` : `{ input, result }`). `@on('router', 'navigated')` écoute
-  le router. Le nom de l'événement est écrit tel quel (pas de gabarit `` `${x}:done` ``).
-- Un contrat se déclare une fois par composant ; `@contract router` est refusé (`this.router`).
-- Pas de type sur `@contract`, `@selector`, `@state`, `@form` : il vient de la valeur (élargir avec
-  `as`). `@ref` déclare le type de son élément et n'a pas de valeur.
-- L'ordre compte comme pour des champs : un `@selector` qui lit `this.cart` vient après `@contract cart`.
-- Les anciennes formes (`cart = this.contract('cart')`, `this.cart.on(…)` dans le constructeur)
-  sont des erreurs dans un `.super`, avec une correction rapide qui réécrit la ligne (sauf pour les
-  écouteurs).
-- Dans l'éditeur, `@` propose toutes les déclarations avec un gabarit et leur documentation au
-  survol ; `@contract ` propose les contrats de l'app pas encore déclarés (`@contract cart;`, ou
-  `errorLog = 'error-log';` pour un nom qui n'est pas un identifiant) ; `@contract x = '…'` et
-  `@on('…', '…')` complètent les noms de contrats et d'événements.
+- `@on` does not require a `@contract`: it opens access to the contract itself. The method parameter
+  is typed by the event (`save:done`: `{ input, result }`). `@on('router', 'navigated')` listens to
+  the router. The event name is written literally (no template literal `` `${x}:done` ``).
+- A contract is declared once per component; `@contract router` is rejected (`this.router`).
+- No type on `@contract`, `@selector`, `@state`, `@form`: it comes from the value (widen with
+  `as`). `@ref` declares the type of its element and has no value.
+- Order matters as for fields: a `@selector` that reads `this.cart` comes after `@contract cart`.
+- The old forms (`cart = this.contract('cart')`, `this.cart.on(…)` in the constructor)
+  are errors in a `.super` file, with a quick fix that rewrites the line (except for
+  listeners).
+- In the editor, `@` offers all declarations with a snippet and their documentation on
+  hover; `@contract ` offers the app's contracts not declared yet (`@contract cart;`, or
+  `errorLog = 'error-log';` for a name that is not an identifier); `@contract x = '…'` and
+  `@on('…', '…')` complete contract and event names.
 
-Un composant écrit dans un `.ts` garde `static tag`, le générique `SuperElement<{ props; emits }>`
-et les méthodes (`this.contract(…)`, `this.selector(…)`, `this.state(…)`, `this.form(…)`,
-`this.ref<T>()`, `.on(…)` dans le constructeur).
+A component written in a `.ts` file keeps `static tag`, the `SuperElement<{ props; emits }>` generic
+and the methods (`this.contract(…)`, `this.selector(…)`, `this.state(…)`, `this.form(…)`,
+`this.ref<T>()`, `.on(…)` in the constructor).
 
-## Où peut-on écrire un élément
+## Where an element can be written
 
-Un élément est une instruction : il s'écrit là où une instruction est attendue, dans le corps
-d'une méthode, et il est émis à cet endroit. `render()` ne renvoie rien.
+An element is a statement: it is written where a statement is expected, in the body
+of a method, and it is emitted at that place. `render()` returns nothing.
 
-En TS, un `<` ouvre un élément quand il est suivi d'une lettre et que le jeton précédent est `{`,
-`}`, `;`, ou le `:` d'un `case` / `default`, ou quand il est en début de ligne (ce qui garde le
-template lisible pendant la frappe d'une ligne inachevée). Ailleurs (`a < b`, `Map<K, V>`, `<T>(x: T) => x`),
-c'est du TS.
+In TS, a `<` opens an element when it is followed by a letter and the previous token is `{`,
+`}`, `;`, or the `:` of a `case` / `default`, or when it is at the start of a line (which keeps the
+template readable while an unfinished line is being typed). Elsewhere (`a < b`, `Map<K, V>`, `<T>(x: T) => x`),
+it is TS.
 
-Un élément dans une expression (`const x = <p />`, `() => <p />`) n'est pas permis : on écrit
-une méthode qui émet ses éléments, et on l'appelle (voir « Interpolation »).
+An element in an expression (`const x = <p />`, `() => <p />`) is not allowed: write
+a method that emits its elements, and call it (see "Interpolation").
 
-Limite v0 : une signature d'appel générique dans un type littéral (`{ <T>(x: T): T }`) est prise
-pour un élément. On la sort dans un `type` ou une `interface` d'un fichier `.ts`.
+v0 limit: a generic call signature in a type literal (`{ <T>(x: T): T }`) is mistaken
+for an element. Move it into a `type` or an `interface` in a `.ts` file.
 
-## Enfants d'un élément
+## Children of an element
 
-Entre `<tag>` et `</tag>`, chaque enfant est l'une de ces formes.
+Between `<tag>` and `</tag>`, each child is one of these forms.
 
-| Forme         | Exemple                                     |
+| Form          | Example                                     |
 | ------------- | ------------------------------------------- |
-| Texte brut    | `Total : `                                  |
+| Plain text    | `Total: `                                   |
 | Interpolation | `{formatPrice(total)}`                      |
-| Commentaire   | `{/* … */}`                                 |
-| Élément       | `<strong>…</strong>`, `<br />`              |
+| Comment       | `{/* … */}`                                 |
+| Element       | `<strong>…</strong>`, `<br />`              |
 | Condition     | `if (x) { … } else if (y) { … } else { … }` |
-| Boucle        | `for (const x of xs; key x.id) { … }`       |
-| Choix         | `switch (s) { case 'a': … default: … }`     |
-| Déclaration   | `const { product } = line;` ou `let n = 0;` |
+| Loop          | `for (const x of xs; key x.id) { … }`       |
+| Choice        | `switch (s) { case 'a': … default: … }`     |
+| Declaration   | `const { product } = line;` or `let n = 0;` |
 
-Le corps d'un `if`, d'un `for` ou d'un `case` suit les mêmes règles que les enfants d'un élément.
+The body of an `if`, a `for` or a `case` follows the same rules as the children of an element.
 
-### Le texte et ses ambiguïtés
+### Text and its ambiguities
 
-Le texte s'écrit brut. Un enfant est lu comme une instruction seulement s'il commence par :
+Text is written plain. A child is read as a statement only if it starts with:
 
-- `if (`, `for (`, `switch (` (espaces permis avant la parenthèse) ;
-- `const` ou `let`, suivi d'un nom ou d'une déstructuration, puis de `=` ;
-- `else` juste après le `}` d'un `if` ;
-- `case`, `default:` ou `break;` dans un `switch`.
+- `if (`, `for (`, `switch (` (spaces allowed before the parenthesis);
+- `const` or `let`, followed by a name or a destructuring, then `=`;
+- `else` right after the `}` of an `if`;
+- `case`, `default:` or `break;` in a `switch`.
 
-Un texte qui commence ainsi (`for (more info) see below`) est lu comme une instruction ; s'il
-n'en est pas une, c'est une erreur, avec la correction proposée : l'entourer d'accolades,
-`{'for (more info) see below'}`. Le parser ne devine jamais.
+Text that starts this way (`for (more info) see below`) is read as a statement; if it
+is not one, it is an error, with a suggested fix: wrap it in braces,
+`{'for (more info) see below'}`. The parser never guesses.
 
-Pendant la frappe, une instruction incomplète (`if (this.` sans `)` ni `{`, un bloc sans `}`) est
-signalée, mais l'éditeur complète déjà dans sa condition. Cette aide n'existe que dans l'éditeur :
-`super-tsc` vérifie le code tel qu'il est.
+While typing, an incomplete statement (`if (this.` without `)` or `{`, a block without `}`) is
+reported, but the editor already completes inside its condition. This help only exists in the editor:
+`super-tsc` checks the code as it is.
 
-Les caractères `<`, `{` et `}` ne s'écrivent pas dans le texte : `{'<'}`, `{'{'}`, `{'}'}`.
+The characters `<`, `{` and `}` are not written in text: `{'<'}`, `{'{'}`, `{'}'}`.
 
-Les espaces suivent les règles du HTML : chaque suite de blancs, retours à la ligne compris, compte
-pour une espace (`contenant` puis `<code>` à la ligne suivante donne « contenant offline »). Les
-blancs au début et à la fin d'un élément, d'un bloc (`if`, `for`, `case`) ou à côté d'une
-instruction ne rendent rien. Deux éléments de la méthode séparés seulement par des blancs sont
-séparés par une espace ; s'il y a du code entre eux, non.
+Whitespace follows HTML rules: each run of whitespace, line breaks included, counts
+as one space (`containing` then `<code>` on the next line gives "containing offline"). Whitespace
+at the start and end of an element, of a block (`if`, `for`, `case`) or next to a
+statement renders nothing. Two elements of the method separated only by whitespace are
+separated by a space; if there is code between them, they are not.
 
-### Ne rien rendre
+### Rendering nothing
 
-Une méthode qui n'émet aucun élément ne rend rien : `render() {}` est l'équivalent du
-`return null` de lit.
+A method that emits no element renders nothing: `render() {}` is the equivalent of lit's
+`return null`.
 
 ### Interpolation
 
-`{expr}` affiche une chaîne, un nombre ou un booléen ; `null` et `undefined` n'affichent rien.
-Un objet est refusé à la compilation (fini les `[object Object]`). L'appel d'une méthode qui émet
-des éléments (`{this.#row(line)}`) est permis : elle ne renvoie rien, c'est accepté.
+`{expr}` displays a string, a number or a boolean; `null` and `undefined` display nothing.
+An object is rejected at compile time (no more `[object Object]`). Calling a method that emits
+elements (`{this.#row(line)}`) is allowed: it returns nothing, which is accepted.
 
-### Boucle
+### Loop
 
-Seul `for…of` est accepté. `key expr`, après un `;` dans les parenthèses, identifie chaque
-élément pour que le rendu suive les déplacements ; sans `key`, le rendu est positionnel.
+Only `for…of` is accepted. `key expr`, after a `;` inside the parentheses, identifies each
+item so that the render follows moves; without `key`, the render is positional.
 
-### Choix
+### Choice
 
-Chaque `case` s'arrête au `case` ou au `default` suivant, ou à la fin du `switch` : pas de
-cascade d'un `case` à l'autre. `break;` est permis mais inutile. Pour un choix exhaustif, un
-`default: {assertNever(x)}` suffit, TS le vérifie.
+Each `case` stops at the next `case` or `default`, or at the end of the `switch`: no
+fall-through from one `case` to the next. `break;` is allowed but pointless. For an exhaustive choice, a
+`default: {assertNever(x)}` is enough, TS checks it.
 
-## Attributs
+## Attributes
 
-| Forme                  | Effet                                                                        |
-| ---------------------- | ---------------------------------------------------------------------------- |
-| `class="screen"`       | Attribut fixe                                                                |
-| `href={url}`           | Attribut calculé ; `null` ou `undefined` le retire                           |
-| `disabled={busy}`      | Attribut booléen (liste HTML connue) : présent si vrai                       |
-| `disabled`             | Attribut booléen toujours présent                                            |
-| `prop:value={v}`       | Propriété DOM plutôt qu'attribut (`el.value = v`)                            |
-| `on:click={handler}`   | Écouteur ; le type de l'événement vient de la balise                         |
-| `ref={this.input}`     | Référence (`@ref input: T;`) : refusée si `T` n'est pas le type de la balise |
-| `{order.field('nom')}` | Directive d'élément : `form.bind()`, `form.field('nom')`                     |
+| Form                    | Effect                                                             |
+| ----------------------- | ------------------------------------------------------------------ |
+| `class="screen"`        | Fixed attribute                                                    |
+| `href={url}`            | Computed attribute; `null` or `undefined` removes it               |
+| `disabled={busy}`       | Boolean attribute (known HTML list): present if true               |
+| `disabled`              | Boolean attribute, always present                                  |
+| `prop:value={v}`        | DOM property rather than attribute (`el.value = v`)                |
+| `on:click={handler}`    | Listener; the event type comes from the tag                        |
+| `ref={this.input}`      | Ref (`@ref input: T;`): rejected if `T` is not the type of the tag |
+| `{order.field('name')}` | Element directive: `form.bind()`, `form.field('name')`             |
 
-Une balise sans tiret doit être une balise HTML ou SVG connue (une faute de frappe est une
-erreur) ; une balise avec tiret est un élément personnalisé.
+A tag without a hyphen must be a known HTML or SVG tag (a typo is an
+error); a tag with a hyphen is a custom element.
 
-Une valeur d'attribut est une chaîne, un nombre, un booléen, `null` ou `undefined`.
+An attribute value is a string, a number, a boolean, `null` or `undefined`.
 
-`on:` sur un élément natif n'accepte que les événements de cette balise (`HTMLElementEventMap`).
-Limite v0 : écouter sur un `<div>` un événement personnalisé remonté d'un enfant n'est pas permis.
+`on:` on a native element only accepts the events of that tag (`HTMLElementEventMap`).
+v0 limit: listening on a `<div>` to a custom event bubbling up from a child is not allowed.
 
-Les préfixes de lit (`@click`, `?disabled`, `.value`) sont refusés, avec la forme à utiliser.
+lit prefixes (`@click`, `?disabled`, `.value`) are rejected, with the form to use.
 
-## Composants enfants
+## Child components
 
-Une balise qui commence par une majuscule est une classe SuperElement en portée :
+A tag that starts with a capital letter is a SuperElement class in scope:
 
 ```tsx
-<ConfirmDialog question="Vider le panier ?" on:answered={this.onClearAnswered} />;
+<ConfirmDialog question="Empty the basket?" on:answered={this.onClearAnswered} />;
 ```
 
-Les attributs sont ses props, vérifiés contre ses `@prop` (prop manquante ou en trop, mauvais type) ;
-`on:x` s'abonne à ses `@emit`. C'est l'équivalent de
+The attributes are its props, checked against its `@prop` declarations (missing or extra prop, wrong type);
+`on:x` subscribes to its `@emit` declarations. It is the equivalent of
 `ConfirmDialog.create({ question }, { on: { answered } })`.
 
-Limite v0 : pas de directive sur un composant (`<Card {…} />` est une erreur).
+v0 limit: no directive on a component (`<Card {…} />` is an error).
 
-### Enfants et emplacements nommés
+### Children and named slots
 
-Un composant qui accepte des enfants le déclare dans ses props, avec le type `Children` de
-`@super-ts/dom`, et les place où il veut par une interpolation :
+A component that accepts children declares it in its props, with the `Children` type from
+`@super-ts/dom`, and places them where it wants with an interpolation:
 
 ```tsx
 @prop heading: string;
@@ -265,86 +265,86 @@ render() {
 }
 ```
 
-- Les enfants écrits entre les balises du composant remplissent `content`.
-- Un emplacement nommé est une autre prop de type `Children`, remplie de l'une de deux façons :
-  par un emplacement `<:footer>…</:footer>` écrit entre les balises du composant, ou par l'appel
-  d'une méthode qui émet des éléments (`footer={this.#footer()}`, une telle méthode renvoie
+- The children written between the component tags fill `content`.
+- A named slot is another prop of type `Children`, filled in one of two ways:
+  by a slot `<:footer>…</:footer>` written between the component tags, or by calling
+  a method that emits elements (`footer={this.#footer()}`, such a method returns
   `Children`).
-- Tout est vérifié contre les `@prop` du composant : des enfants pour un composant qui n'en
-  déclare pas, des enfants ou un emplacement obligatoires qui manquent, un emplacement inconnu.
-- Un emplacement `<:nom>` se place directement dans un composant, sans attribut, une seule fois par
-  nom ; `<:content>` n'existe pas (les enfants directs remplissent déjà `content`).
-- Les enfants et les emplacements sont rendus dans le rendu du parent : leurs écouteurs, leurs
-  lectures de store et leur état sont ceux du parent, et ils suivent son rendu. Le composant qui
-  les reçoit les garde quand il se re-rend seul.
-- Une liste d'emplacements (des onglets) est une prop `Children[]`, remplie par des appels de
-  méthodes : `panels={[this.#profile(), this.#security()]}`.
+- Everything is checked against the component's `@prop` declarations: children for a component that does not
+  declare any, required children or slots that are missing, an unknown slot.
+- A slot `<:name>` goes directly inside a component, without attributes, only once per
+  name; `<:content>` does not exist (the direct children already fill `content`).
+- Children and slots are rendered in the render of the parent: their listeners, their
+  store reads and their state are those of the parent, and they follow its render. The component that
+  receives them keeps them when it re-renders on its own.
+- A list of slots (tabs) is a `Children[]` prop, filled by method
+  calls: `panels={[this.#profile(), this.#security()]}`.
 
-## Éléments vides
+## Void elements
 
-`<br>`, `<input>`, `<img>` et les autres éléments vides HTML peuvent s'écrire sans `/>`. Tout
-autre élément sans enfant s'écrit `<tag />`.
+`<br>`, `<input>`, `<img>` and the other HTML void elements can be written without `/>`. Any
+other element without children is written `<tag />`.
 
-## Vérification des types
+## Type check
 
-En ligne de commande, `node packages/lang/src/cli.ts <tsconfig>` (utilisé par `npm run typecheck`)
-vérifie avec le TypeScript 7 du dépôt. Dans l'éditeur, `packages/lang-server` est un serveur de
-langage Volar sur TypeScript 6 (Volar ne supporte pas encore TypeScript 7) : erreurs, correction
-rapide « entourer d'accolades », complétion, survol, aller à la définition.
+On the command line, `node packages/lang/src/cli.ts <tsconfig>` (used by `npm run typecheck`)
+checks with the repository's TypeScript 7. In the editor, `packages/lang-server` is a Volar language
+server on TypeScript 6 (Volar does not support TypeScript 7 yet): errors, the "wrap in braces"
+quick fix, completion, hover, go to definition.
 
-L'outillage transforme chaque fichier `.super` en TS virtuel que le compilateur vérifie, avec une
-correspondance de positions pour rapporter les erreurs dans le `.super`.
+The tooling turns each `.super` file into virtual TypeScript that the compiler checks, with a
+position mapping to report errors in the `.super` file.
 
-- Les instructions (`if`, `for`, `switch`, déclarations) sont recopiées telles quelles.
-- Chaque élément devient une suite d'appels typés à plat (`open`, `attr`, `on`, `use`, `text`)
-  dans un bloc : pas de fonction fléchée, sinon TS oublierait le rétrécissement de
-  `this.x.value` établi par un `if`.
-- Un composant devient `Composant.create(props, { on })`, dont le typage existe déjà.
-- Les déclarations des appels (`check.ts`) sont ajoutées à la fin, dans un `declare namespace __s` :
-  le TS virtuel n'importe rien et se vérifie avec le tsconfig du projet tel quel.
+- Statements (`if`, `for`, `switch`, declarations) are copied verbatim.
+- Each element becomes a sequence of flat typed calls (`open`, `attr`, `on`, `use`, `text`)
+  in a block: no arrow function, otherwise TS would forget the narrowing of
+  `this.x.value` established by an `if`.
+- A component becomes `Component.create(props, { on })`, which is already typed.
+- The declarations of the calls (`check.ts`) are appended in a `declare namespace __s`:
+  the virtual TS imports nothing and is checked with the project's tsconfig as is.
 
 ## Compilation
 
-Le plugin Vite (`superPlugin`) compile chaque `.super` en TS, puis oxc en retire les types. Un
-import sans extension trouve un `.super` (`@components/shop` → `shop/index.super`).
+The Vite plugin (`superPlugin`) compiles each `.super` file to TS, then oxc strips the types. An
+import without an extension finds a `.super` file (`@components/shop` → `shop/index.super`).
 
-- Une méthode qui contient des éléments (`render()`, `#row(item)`…) renvoie la liste de ce
-  qu'elle émet. Son corps est enveloppé dans une fonction fléchée : un `return;` anticipé garde ce
-  qui est déjà émis. `return x;` y est refusé à la compilation (la méthode renvoie ce qu'elle
-  émet) ; une fonction imbriquée (`xs.map((x) => { return x * 2; })`) reste libre.
-- Chaque élément devient un gabarit lit (`html\`…\``) ; des enfants sans instruction restent dans
-  le gabarit du parent.
-- Des enfants avec instructions deviennent un trou calculé : une fonction qui pousse des gabarits
-  dans une liste, avec le vrai `if` / `for` / `switch`, et les déclarations telles quelles.
-- `for (… ; key k)` devient `repeat` de lit (les éléments suivent les déplacements) ; sans `key`,
-  une simple boucle.
-- `on:x` → `@x`, `prop:x` → `.x`, `ref={r}` et `{d}` → directive d'élément, un attribut booléen
-  connu → `?x`, un autre attribut calculé → `x=${v ?? nothing}`.
-- Le code produit garde les numéros de ligne de la source, et le plugin fournit une source map
-  (JS final → `.super`, ligne et colonne) : traces d'erreur et débogueur pointent la source.
+- A method that contains elements (`render()`, `#row(item)`…) returns the list of what
+  it emits. Its body is wrapped in an arrow function: an early `return;` keeps what
+  has already been emitted. `return x;` there is rejected at compile time (the method returns what it
+  emits); a nested function (`xs.map((x) => { return x * 2; })`) stays free.
+- Each element becomes a lit template (`html\`…\``); children without statements stay in
+  the parent's template.
+- Children with statements become a computed hole: a function that pushes templates
+  into a list, with the real `if` / `for` / `switch`, and the declarations as they are.
+- `for (… ; key k)` becomes lit's `repeat` (the items follow moves); without `key`,
+  a plain loop.
+- `on:x` → `@x`, `prop:x` → `.x`, `ref={r}` and `{d}` → element directive, a known boolean
+  attribute → `?x`, another computed attribute → `x=${v ?? nothing}`.
+- The generated code keeps the line numbers of the source, and the plugin provides a source map
+  (final JS → `.super`, line and column): error traces and the debugger point to the source.
 
-## Types des `.super` vus depuis un `.ts`
+## Types of `.super` files seen from a `.ts` file
 
-Pour chaque `.super`, `super-tsc`, le serveur de langage (à chaque frappe) et Vite (en dev)
-écrivent sous `<dossier du tsconfig>/.super/` (ignoré par git) :
+For each `.super` file, `super-tsc`, the language server (on each keystroke) and Vite (in dev)
+write under `<tsconfig folder>/.super/` (ignored by git):
 
-- `virtual/…/index.ts` : le TS virtuel ;
-- `types/…/index.d.ts` : la déclaration des exports du fichier, dont les types sont tirés du TS
-  virtuel (une classe y devient `declare class X extends <la classe du TS virtuel> {}`), et
-  `index.d.ts.map`, sa source map vers le `.super`.
+- `virtual/…/index.ts`: the virtual TS;
+- `types/…/index.d.ts`: the declaration of the file's exports, whose types are drawn from the virtual
+  TS (a class becomes `declare class X extends <the class in the virtual TS> {}`), and
+  `index.d.ts.map`, its source map to the `.super` file.
 
-Les tsconfig déclarent `types` dans `paths` et `rootDirs` (puis `virtual` dans `rootDirs`, pour les
-imports relatifs du TS virtuel) : `routes.ts` importe `@components/shop` et en voit les types, pour
-`tsc` comme pour le serveur TS de l'éditeur. Le serveur TS suit la source map de la déclaration :
-« aller à la définition » depuis un `.ts` ouvre le composant `.super`.
+The tsconfigs declare `types` in `paths` and `rootDirs` (then `virtual` in `rootDirs`, for the
+relative imports of the virtual TS): `routes.ts` imports `@components/shop` and sees its types, for
+`tsc` as well as for the editor's TS server. The TS server follows the source map of the declaration:
+"go to definition" from a `.ts` file opens the `.super` component.
 
-## Formatage
+## Formatting
 
-`npm run format` formate les `.super` (et `npm run lint` le vérifie) : le TS par Biome, avec la
-configuration du dépôt, les templates par `packages/lang/src/format.ts`. Une balise tient sur une
-ligne si elle entre dans la largeur, sinon un attribut par ligne ; un composant qui reçoit des
-enfants, et un emplacement `<:nom>`, s'écrivent toujours sur plusieurs lignes ; le texte suivi remplit les
-lignes ; une liste d'éléments sans texte garde un élément par ligne ; les lignes vides entre
-enfants sont gardées (une au plus). Une ligne n'est coupée que là où il y a déjà un blanc, ou au
-bord d'un élément, d'un bloc ou d'une instruction : le rendu ne change jamais. Un fichier qui a des
-erreurs de syntaxe n'est pas formaté.
+`npm run format` formats `.super` files (and `npm run lint` checks it): the TS with Biome, with the
+repository's configuration, the templates with `packages/lang/src/format.ts`. A tag stays on one
+line if it fits within the width, otherwise one attribute per line; a component that receives
+children, and a slot `<:name>`, are always written on several lines; running text fills the
+lines; a list of elements without text keeps one element per line; blank lines between
+children are kept (one at most). A line is only broken where there is already whitespace, or at the
+edge of an element, a block or a statement: the render never changes. A file that has
+syntax errors is not formatted.
