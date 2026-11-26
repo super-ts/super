@@ -17,7 +17,9 @@ import { classes } from './shared.ts';
 
 /** Une commande d'un contrat, avec son entrée : `commandOf(this.counter, 'reset', { id })`. */
 export interface CommandRef {
-  readonly view: ContractView<any>;
+  // Une vue de n'importe quel contrat. Pas `ContractView<any>` : sans contrat déclaré (le build du
+  // kit), `ContractName` vaut `never` et TypeScript 7 refuse `any` pour cette contrainte.
+  readonly view: { readonly selectors: unknown; readonly send: unknown };
   readonly name: string;
   readonly input: unknown;
 }
