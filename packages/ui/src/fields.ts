@@ -4,19 +4,19 @@ import { classes, uniqueId } from './shared.ts';
 declare const VALUE: unique symbol;
 
 /**
- * Un champ d'un formulaire, pour un composant du kit : `fieldOf(this.edit, 'email')`. Le nom est
- * vérifié contre le formulaire là où on l'écrit ; `T` est le type de sa valeur.
+ * A form field, for a kit component: `fieldOf(this.edit, 'email')`. The name is
+ * checked against the form where you write it; `T` is the type of its value.
  */
 export interface FieldRef<T> {
   readonly form: FormHandle<any>;
   readonly name: string;
-  /** Fantôme : le type de la valeur du champ. */
+  /** Phantom: the type of the field's value. */
   readonly [VALUE]?: T;
 }
 
 /**
- * Relie un composant du kit à un champ de `this.form(…)`. À écrire dans le rendu du composant qui
- * possède le formulaire : c'est lui qui se re-rend quand le formulaire change, et le champ avec lui.
+ * Binds a kit component to a field of `this.form(…)`. Write it in the render of the component that
+ * owns the form: that component re-renders when the form changes, and the field with it.
  *
  * ```tsx
  * <Field field={fieldOf(this.edit, 'email')} label="E-mail" type="email" />
@@ -26,17 +26,17 @@ export function fieldOf<V, F extends FieldName<V>>(form: FormHandle<V>, name: F)
   return { form, name };
 }
 
-/** Une option d'une liste de choix : sa valeur et son libellé. */
+/** An option of a list of choices: its value and its label. */
 export type Choice<T> = { value: T; label: string };
 
 type Common = {
   label: string;
-  /** Une aide affichée sous le champ, reliée à lui pour les lecteurs d'écran. */
+  /** A hint shown under the field, linked to it for screen readers. */
   hint?: string;
   class?: string;
 };
 
-/** Ce que les champs partagent : le libellé, l'aide, l'erreur, la vérification en cours, et leurs liens ARIA. */
+/** What fields share: the label, the hint, the error, the pending check, and their ARIA links. */
 abstract class FieldBase<P extends Common & { field: FieldRef<any> }> extends SuperElement<{ props: P }> {
   protected readonly controlId = uniqueId('super-field');
 
@@ -45,7 +45,7 @@ abstract class FieldBase<P extends Common & { field: FieldRef<any> }> extends Su
     return form.error(name);
   }
 
-  /** Les attributs ARIA du contrôle : invalide, et décrit par l'aide et l'erreur. */
+  /** The control's ARIA attributes: invalid, and described by the hint and the error. */
   protected described() {
     const error = this.error();
     const ids = [this.props.hint && `${this.controlId}-hint`, error && `${this.controlId}-error`].filter(Boolean).join(' ');
@@ -56,7 +56,7 @@ abstract class FieldBase<P extends Common & { field: FieldRef<any> }> extends Su
     const { field, hint } = this.props;
     const error = this.error();
     return html`${hint ? html`<p class="super-field-hint" id=${`${this.controlId}-hint`}>${hint}</p>` : nothing}
-    ${field.form.checking(field.name) ? html`<p class="super-field-checking">Vérification…</p>` : nothing}
+    ${field.form.checking(field.name) ? html`<p class="super-field-checking">Checking…</p>` : nothing}
     ${error ? html`<p class="super-field-error" id=${`${this.controlId}-error`}>${error}</p>` : nothing}`;
   }
 }
@@ -65,9 +65,9 @@ abstract class FieldBase<P extends Common & { field: FieldRef<any> }> extends Su
 
 type FieldProps = Common & {
   field: FieldRef<string | number | null>;
-  /** Le type du champ (défaut `text`). Avec `number` ou `range`, la valeur est un nombre. */
+  /** The field type (default `text`). With `number` or `range`, the value is a number. */
   type?: 'text' | 'email' | 'password' | 'number' | 'url' | 'tel' | 'search' | 'date' | 'time' | 'datetime-local' | 'color' | 'range';
-  /** Une zone de texte sur plusieurs lignes, avec `rows` lignes. */
+  /** A multi-line text area, with `rows` lines. */
   multiline?: boolean;
   rows?: number;
   placeholder?: string;
@@ -75,8 +75,8 @@ type FieldProps = Common & {
 };
 
 /**
- * Un champ de saisie relié au formulaire : libellé, aide, erreur de la règle, « Vérification… »
- * pendant une vérification asynchrone, `aria-invalid` et `aria-describedby`.
+ * An input field bound to the form: label, hint, rule error, "Checking…"
+ * during an asynchronous check, `aria-invalid` and `aria-describedby`.
  */
 export class Field extends FieldBase<FieldProps> {
   static tag = 'super-field';
@@ -114,11 +114,11 @@ export class Field extends FieldBase<FieldProps> {
 type SelectProps = Common & {
   field: FieldRef<string | readonly string[]>;
   options: readonly Choice<string>[];
-  /** Plusieurs choix : la valeur du champ est une liste. */
+  /** Several choices: the field's value is a list. */
   multiple?: boolean;
 };
 
-/** Une liste déroulante reliée au formulaire. */
+/** A drop-down list bound to the form. */
 export class Select extends FieldBase<SelectProps> {
   static tag = 'super-select';
 
@@ -143,12 +143,12 @@ export class Select extends FieldBase<SelectProps> {
 }
 
 type CheckboxProps = Common & {
-  /** Une case seule pour un booléen ; avec `value`, une case d'un groupe dont le champ est une liste. */
+  /** A single checkbox for a boolean; with `value`, a checkbox in a group whose field is a list. */
   field: FieldRef<boolean | readonly unknown[]>;
   value?: string;
 };
 
-/** Une case à cocher reliée au formulaire. */
+/** A checkbox bound to the form. */
 export class Checkbox extends FieldBase<CheckboxProps> {
   static tag = 'super-checkbox';
 
@@ -175,7 +175,7 @@ type RadioGroupProps = Common & {
   options: readonly Choice<string>[];
 };
 
-/** Un groupe de boutons radio relié au formulaire, dans un `<fieldset>` dont `label` est la légende. */
+/** A group of radio buttons bound to the form, in a `<fieldset>` whose legend is `label`. */
 export class RadioGroup extends FieldBase<RadioGroupProps> {
   static tag = 'super-radio-group';
 

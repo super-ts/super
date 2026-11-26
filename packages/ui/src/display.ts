@@ -8,15 +8,15 @@ import { classes } from './shared.ts';
 type ButtonProps = {
   content: Children;
   variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
-  /** `submit` dans un formulaire (défaut `button`). */
+  /** `submit` in a form (default `button`). */
   type?: 'button' | 'submit' | 'reset';
   disabled?: boolean;
-  /** Nom pour les lecteurs d'écran, si le contenu n'en est pas un (une icône). */
+  /** Name for screen readers, if the content is not one (an icon). */
   label?: string;
   class?: string;
 };
 
-/** Un bouton du kit. Émet `press` au clic. */
+/** A kit button. Emits `press` on click. */
 export class Button extends SuperElement<{ props: ButtonProps; emits: { press: void } }> {
   static tag = 'super-button';
 
@@ -41,7 +41,7 @@ export class Button extends SuperElement<{ props: ButtonProps; emits: { press: v
 
 type BadgeProps = { content: Children; tone?: 'neutral' | 'info' | 'success' | 'warning' | 'danger'; class?: string };
 
-/** Une étiquette courte : un statut, un compte. */
+/** A short label: a status, a count. */
 export class Badge extends SuperElement<{ props: BadgeProps }> {
   static tag = 'super-badge';
 
@@ -53,12 +53,12 @@ export class Badge extends SuperElement<{ props: BadgeProps }> {
 
 type SpinnerProps = { label?: string; size?: 'small' | 'medium' | 'large'; class?: string };
 
-/** Un indicateur de chargement, annoncé par les lecteurs d'écran (défaut : « Chargement… »). */
+/** A loading indicator, announced by screen readers (default: "Loading…"). */
 export class Spinner extends SuperElement<{ props: SpinnerProps }> {
   static tag = 'super-spinner';
 
   render() {
-    const { label = 'Chargement…', size = 'medium' } = this.props;
+    const { label = 'Loading…', size = 'medium' } = this.props;
     return html`<span class=${classes('super-spinner', this.props.class)} data-size=${size} role="status">
       <span class="super-spinner-circle" aria-hidden="true"></span>
       <span class="super-visually-hidden">${label}</span>
@@ -67,15 +67,15 @@ export class Spinner extends SuperElement<{ props: SpinnerProps }> {
 }
 
 type SkeletonProps = {
-  /** Nombre de lignes (défaut 1). */
+  /** Number of lines (default 1). */
   lines?: number;
-  /** Largeur et hauteur CSS d'une ligne (défaut : toute la largeur, une ligne de texte). */
+  /** CSS width and height of a line (default: full width, one line of text). */
   width?: string;
   height?: string;
   class?: string;
 };
 
-/** La silhouette d'un contenu en cours de chargement. Décorative : ignorée par les lecteurs d'écran. */
+/** The outline of content being loaded. Decorative: ignored by screen readers. */
 export class Skeleton extends SuperElement<{ props: SkeletonProps }> {
   static tag = 'super-skeleton';
 
@@ -90,14 +90,14 @@ export class Skeleton extends SuperElement<{ props: SkeletonProps }> {
 
 type EmptyStateProps = {
   title: string;
-  /** Une explication, sous le titre. */
+  /** An explanation, under the title. */
   content?: Children;
-  /** Une action pour en sortir : `<:action><button>…</button></:action>`. */
+  /** An action to get out of it: `<:action><button>…</button></:action>`. */
   action?: Children;
   class?: string;
 };
 
-/** Ce qu'on affiche quand il n'y a rien : un titre, une explication, une action. */
+/** What to display when there is nothing: a title, an explanation, an action. */
 export class EmptyState extends SuperElement<{ props: EmptyStateProps }> {
   static tag = 'super-empty-state';
 

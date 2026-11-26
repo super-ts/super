@@ -1,5 +1,5 @@
-// Le kit d'interface de Super. Ses styles vivent dans la couche CSS `super-ui`, pilotée par les
-// variables `--super-*` : toute règle de l'app passe devant, sans `!important`.
+// Super's UI kit. Its styles live in the `super-ui` CSS layer, driven by the
+// `--super-*` variables: any app rule takes precedence, without `!important`.
 import './styles.css';
 
 export type { CommandRef, Toast, ToastOptions, ToastTone } from './app.ts';

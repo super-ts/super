@@ -9,38 +9,38 @@ class Profile extends SuperElement {
   library = this.contract('ui-library');
   edit = this.form({
     initial: { name: '', age: null as number | null, country: 'FR', newsletter: false, tags: [] as string[], plan: 'free' },
-    rules: { name: (v) => v.trim() !== '' || 'Nom obligatoire' },
+    rules: { name: (v) => v.trim() !== '' || 'Name required' },
     checks: {
-      name: { command: 'checkName', toInput: (name) => ({ name }), accept: ({ available }) => available || 'Déjà pris', delay: 0 },
+      name: { command: 'checkName', toInput: (name) => ({ name }), accept: ({ available }) => available || 'Already taken', delay: 0 },
     },
     submit: { to: this.library, command: 'save', toInput: (values) => values },
-    failures: { fields: {}, form: { network: 'Connexion impossible' } },
+    failures: { fields: {}, form: { network: 'Cannot connect' } },
   });
 
   render() {
     const { edit } = this;
     return html`<form ${edit.bind()}>
-      ${Field.create({ field: fieldOf(edit, 'name'), label: 'Nom', hint: 'Tel qu’affiché' })}
-      ${Field.create({ field: fieldOf(edit, 'age'), label: 'Âge', type: 'number' })}
+      ${Field.create({ field: fieldOf(edit, 'name'), label: 'Name', hint: 'As displayed' })}
+      ${Field.create({ field: fieldOf(edit, 'age'), label: 'Age', type: 'number' })}
       ${Select.create({
         field: fieldOf(edit, 'country'),
-        label: 'Pays',
+        label: 'Country',
         options: [
           { value: 'FR', label: 'France' },
-          { value: 'BE', label: 'Belgique' },
+          { value: 'BE', label: 'Belgium' },
         ],
       })}
       ${Checkbox.create({ field: fieldOf(edit, 'newsletter'), label: 'Newsletter' })}
       ${Checkbox.create({ field: fieldOf(edit, 'tags'), label: 'Sport', value: 'sport' })}
       ${RadioGroup.create({
         field: fieldOf(edit, 'plan'),
-        label: 'Offre',
+        label: 'Plan',
         options: [
-          { value: 'free', label: 'Gratuite' },
+          { value: 'free', label: 'Free' },
           { value: 'pro', label: 'Pro' },
         ],
       })}
-      <button type="submit">Enregistrer</button>
+      <button type="submit">Save</button>
     </form>`;
   }
 }
@@ -50,7 +50,7 @@ const type = (input: HTMLInputElement, value: string) => {
   input.dispatchEvent(new Event('input', { bubbles: true }));
 };
 
-describe('champs reliés à un formulaire', () => {
+describe('fields bound to a form', () => {
   async function setup() {
     const library = fakeStore('ui-library', {
       state: { books: [], total: 0, suggestions: [] },
@@ -64,20 +64,20 @@ describe('champs reliés à un formulaire', () => {
     return { container, element, library, byLabel };
   }
 
-  test('le libellé désigne le champ, l’aide le décrit', async () => {
+  test('the label names the field, the hint describes it', async () => {
     const { container, byLabel } = await setup();
-    const name = byLabel('Nom');
+    const name = byLabel('Name');
     expect(name.tagName).toBe('INPUT');
     const hint = container.querySelector('.super-field-hint')!;
     expect(name.getAttribute('aria-describedby')).toBe(hint.id);
     expect(name.hasAttribute('aria-invalid')).toBe(false);
   });
 
-  test('la saisie remplit le formulaire, avec le type de chaque champ', async () => {
+  test('typing fills the form, with the type of each field', async () => {
     const { element, byLabel } = await setup();
-    type(byLabel('Nom'), 'Ada');
-    type(byLabel('Âge'), '36');
-    const country = byLabel('Pays') as unknown as HTMLSelectElement;
+    type(byLabel('Name'), 'Ada');
+    type(byLabel('Age'), '36');
+    const country = byLabel('Country') as unknown as HTMLSelectElement;
     country.value = 'BE';
     country.dispatchEvent(new Event('change', { bubbles: true }));
     byLabel('Newsletter').click();
@@ -87,24 +87,24 @@ describe('champs reliés à un formulaire', () => {
     expect(element.edit.values()).toMatchObject({ name: 'Ada', age: 36, country: 'BE', newsletter: true, tags: ['sport'] });
   });
 
-  test('un radio par option, dans un fieldset dont le libellé est la légende', async () => {
+  test('one radio per option, in a fieldset whose legend is the label', async () => {
     const { container, element } = await setup();
     const radios = container.querySelectorAll<HTMLInputElement>('.super-radio-group input[type=radio]');
-    expect(container.querySelector('.super-radio-group legend')!.textContent).toBe('Offre');
+    expect(container.querySelector('.super-radio-group legend')!.textContent).toBe('Plan');
     expect([...radios].map((r) => r.checked)).toEqual([true, false]);
     radios[1]!.click();
     await flush();
     expect(element.edit.values().plan).toBe('pro');
   });
 
-  test('l’erreur de la règle s’affiche sous le champ, qui devient invalide et décrit par elle', async () => {
+  test('the rule error is shown under the field, which becomes invalid and described by it', async () => {
     const { container, byLabel } = await setup();
     container.querySelector('form')!.requestSubmit();
     await flush();
 
-    const name = byLabel('Nom');
+    const name = byLabel('Name');
     const error = container.querySelector('.super-field-error')!;
-    expect(error.textContent).toBe('Nom obligatoire');
+    expect(error.textContent).toBe('Name required');
     expect(name.getAttribute('aria-invalid')).toBe('true');
     expect(name.getAttribute('aria-describedby')!.split(' ')).toContain(error.id);
   });

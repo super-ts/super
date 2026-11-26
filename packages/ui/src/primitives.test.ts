@@ -6,7 +6,7 @@ import { describe, expect, test, vi } from 'vitest';
 const text = (strings: TemplateStringsArray, ...values: unknown[]) => html(strings, ...values) as unknown as Children;
 const key = (target: Element, name: string) =>
   target.dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true }));
-/** Laisse passer le rendu, puis le déplacement du focus qui le suit. */
+/** Lets the render through, then the focus move that follows it. */
 const settle = async () => {
   await flush();
   await flush();
@@ -14,12 +14,12 @@ const settle = async () => {
 
 describe('Menu', () => {
   const items = [
-    { id: 'rename', label: 'Renommer' },
-    { id: 'archive', label: 'Archiver', disabled: true },
-    { id: 'delete', label: 'Supprimer' },
+    { id: 'rename', label: 'Rename' },
+    { id: 'archive', label: 'Archive', disabled: true },
+    { id: 'delete', label: 'Delete' },
   ];
 
-  test('le bouton ouvre le menu au clavier, les flèches sautent les entrées désactivées, Entrée choisit', async () => {
+  test('the button opens the menu from the keyboard, the arrows skip disabled entries, Enter chooses', async () => {
     const select = vi.fn();
     const { container } = await mount(Menu, { props: { label: 'Actions', items }, on: { select } });
     const trigger = container.querySelector('button')!;
@@ -29,11 +29,11 @@ describe('Menu', () => {
     key(trigger, 'ArrowDown');
     await settle();
     expect(trigger.getAttribute('aria-expanded')).toBe('true');
-    expect(document.activeElement!.textContent!.trim()).toBe('Renommer');
+    expect(document.activeElement!.textContent!.trim()).toBe('Rename');
 
     key(list, 'ArrowDown');
     await settle();
-    expect(document.activeElement!.textContent!.trim()).toBe('Supprimer');
+    expect(document.activeElement!.textContent!.trim()).toBe('Delete');
 
     key(list, 'Enter');
     await settle();
@@ -42,7 +42,7 @@ describe('Menu', () => {
     expect(document.activeElement).toBe(trigger);
   });
 
-  test('Échap et un clic hors du menu le ferment', async () => {
+  test('Escape and a click outside the menu close it', async () => {
     const { container } = await mount(Menu, { props: { label: 'Actions', items } });
     const trigger = container.querySelector('button')!;
     trigger.click();
@@ -61,52 +61,52 @@ describe('Menu', () => {
 
 describe('Tabs', () => {
   const tabs = [
-    { id: 'profile', label: 'Profil' },
-    { id: 'security', label: 'Sécurité' },
+    { id: 'profile', label: 'Profile' },
+    { id: 'security', label: 'Security' },
   ];
 
-  test('un panneau visible à la fois ; clic et flèches changent d’onglet', async () => {
+  test('one panel visible at a time; click and arrows change tab', async () => {
     const change = vi.fn();
     const { container } = await mount(Tabs, {
-      props: { tabs, panels: [text`Panneau profil`, text`Panneau sécurité`], label: 'Compte' },
+      props: { tabs, panels: [text`Profile panel`, text`Security panel`], label: 'Account' },
       on: { change },
     });
     const visible = () => [...container.querySelectorAll('[role=tabpanel]:not([hidden])')].map((p) => p.textContent!.trim());
     const [profile, security] = container.querySelectorAll<HTMLButtonElement>('[role=tab]');
-    expect(visible()).toEqual(['Panneau profil']);
+    expect(visible()).toEqual(['Profile panel']);
     expect(profile!.getAttribute('aria-selected')).toBe('true');
     expect(security!.tabIndex).toBe(-1);
 
     key(profile!, 'ArrowRight');
     await settle();
-    expect(visible()).toEqual(['Panneau sécurité']);
+    expect(visible()).toEqual(['Security panel']);
     expect(document.activeElement).toBe(security);
 
     profile!.click();
     await flush();
-    expect(visible()).toEqual(['Panneau profil']);
+    expect(visible()).toEqual(['Profile panel']);
     expect(change.mock.calls).toEqual([[{ id: 'security' }], [{ id: 'profile' }]]);
   });
 
-  test('piloté par le parent avec selected', async () => {
+  test('driven by the parent with selected', async () => {
     const { container } = await mount(Tabs, { props: { tabs, panels: [text`A`, text`B`], selected: 'security' } });
     expect(container.querySelector('[role=tabpanel]:not([hidden])')!.textContent!.trim()).toBe('B');
   });
 });
 
 describe('Disclosure', () => {
-  test('replié par défaut, open pour l’ouvrir', async () => {
-    const closed = await mount(Disclosure, { props: { summary: 'Plus', content: text`Détail` } });
+  test('collapsed by default, open to open it', async () => {
+    const closed = await mount(Disclosure, { props: { summary: 'More', content: text`Detail` } });
     expect(closed.container.querySelector('details')!.open).toBe(false);
-    expect(closed.container.querySelector('summary')!.textContent).toBe('Plus');
-    const open = await mount(Disclosure, { props: { summary: 'Plus', content: text`Détail`, open: true } });
+    expect(closed.container.querySelector('summary')!.textContent).toBe('More');
+    const open = await mount(Disclosure, { props: { summary: 'More', content: text`Detail`, open: true } });
     expect(open.container.querySelector('details')!.open).toBe(true);
   });
 });
 
 describe('Tooltip', () => {
-  test('relie l’élément décrit, s’affiche au focus, se masque avec Échap', async () => {
-    const { container } = await mount(Tooltip, { props: { text: 'Supprime définitivement', content: text`<button>Supprimer</button>` } });
+  test('links the described element, shows on focus, hides with Escape', async () => {
+    const { container } = await mount(Tooltip, { props: { text: 'Deletes permanently', content: text`<button>Delete</button>` } });
     const button = container.querySelector('button')!;
     const tip = container.querySelector('[role=tooltip]')!;
     expect(button.getAttribute('aria-describedby')).toBe(tip.id);
@@ -123,9 +123,9 @@ describe('Tooltip', () => {
 });
 
 describe('Popover', () => {
-  test('le bouton ouvre, Échap ferme et rend le focus', async () => {
+  test('the button opens, Escape closes and returns focus', async () => {
     const toggle = vi.fn();
-    const { container } = await mount(Popover, { props: { label: 'Filtres', content: text`<p>Contenu</p>` }, on: { toggle } });
+    const { container } = await mount(Popover, { props: { label: 'Filters', content: text`<p>Content</p>` }, on: { toggle } });
     const trigger = container.querySelector('button')!;
     const panel = container.querySelector('[role=dialog]')!;
 
@@ -145,25 +145,25 @@ describe('Popover', () => {
 describe('Combobox', () => {
   const countries = [
     { value: 'FR', label: 'France' },
-    { value: 'BE', label: 'Belgique' },
-    { value: 'EC', label: 'Équateur' },
+    { value: 'BE', label: 'Belgium' },
+    { value: 'CI', label: "Côte d'Ivoire" },
   ];
   const typeIn = (input: HTMLInputElement, value: string) => {
     input.value = value;
     input.dispatchEvent(new Event('input', { bubbles: true }));
   };
 
-  test('statique : filtre sans accents ni casse, flèches puis Entrée choisissent', async () => {
+  test('static: filters ignoring accents and case, arrows then Enter choose', async () => {
     const select = vi.fn();
     const search = vi.fn();
-    const { container } = await mount(Combobox, { props: { label: 'Pays', options: countries }, on: { select, search } });
+    const { container } = await mount(Combobox, { props: { label: 'Country', options: countries }, on: { select, search } });
     const input = container.querySelector('input')!;
     const options = () => [...container.querySelectorAll('[role=option]')].map((o) => o.textContent!.trim());
 
-    typeIn(input, 'equa');
+    typeIn(input, 'cote');
     await flush();
-    expect(options()).toEqual(['Équateur']);
-    expect(search).toHaveBeenCalledWith({ text: 'equa' });
+    expect(options()).toEqual(["Côte d'Ivoire"]);
+    expect(search).toHaveBeenCalledWith({ text: 'cote' });
 
     key(input, 'ArrowDown');
     await flush();
@@ -171,13 +171,13 @@ describe('Combobox', () => {
 
     key(input, 'Enter');
     await flush();
-    expect(select).toHaveBeenCalledWith({ value: 'EC', label: 'Équateur' });
-    expect(input.value).toBe('Équateur');
+    expect(select).toHaveBeenCalledWith({ value: 'CI', label: "Côte d'Ivoire" });
+    expect(input.value).toBe("Côte d'Ivoire");
     expect(input.getAttribute('aria-expanded')).toBe('false');
   });
 
-  test('rien de tapé et rien à proposer : le focus n’ouvre pas une liste vide', async () => {
-    const { container } = await mount(Combobox, { props: { label: 'Livre', options: [], filter: false } });
+  test('nothing typed and nothing to offer: focus does not open an empty list', async () => {
+    const { container } = await mount(Combobox, { props: { label: 'Book', options: [], filter: false } });
     const input = container.querySelector('input')!;
     input.dispatchEvent(new FocusEvent('focus'));
     await flush();
@@ -185,17 +185,17 @@ describe('Combobox', () => {
     expect(input.getAttribute('aria-expanded')).toBe('false');
   });
 
-  test('venu d’un store : les options passent telles quelles, pendant le chargement et sans résultat', async () => {
-    const { container, setProps } = await mount(Combobox, { props: { label: 'Livre', options: [], filter: false, loading: true } });
+  test('from a store: the options pass through as is, while loading and with no results', async () => {
+    const { container, setProps } = await mount(Combobox, { props: { label: 'Book', options: [], filter: false, loading: true } });
     const input = container.querySelector('input')!;
     typeIn(input, 'zzz');
     await flush();
-    expect(container.querySelector('[role=listbox]')!.textContent!.trim()).toBe('Chargement…');
+    expect(container.querySelector('[role=listbox]')!.textContent!.trim()).toBe('Loading…');
 
-    await setProps({ label: 'Livre', options: [{ value: '1', label: 'Dune' }], filter: false, loading: false });
+    await setProps({ label: 'Book', options: [{ value: '1', label: 'Dune' }], filter: false, loading: false });
     expect([...container.querySelectorAll('[role=option]')].map((o) => o.textContent!.trim())).toEqual(['Dune']);
 
-    await setProps({ label: 'Livre', options: [], filter: false });
-    expect(container.querySelector('[role=listbox]')!.textContent!.trim()).toBe('Aucun résultat');
+    await setProps({ label: 'Book', options: [], filter: false });
+    expect(container.querySelector('[role=listbox]')!.textContent!.trim()).toBe('No results');
   });
 });

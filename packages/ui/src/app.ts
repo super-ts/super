@@ -15,10 +15,10 @@ import { classes } from './shared.ts';
 /* CommandButton                                                                               */
 /* ------------------------------------------------------------------------------------------ */
 
-/** Une commande d'un contrat, avec son entrée : `commandOf(this.counter, 'reset', { id })`. */
+/** A contract command, with its input: `commandOf(this.counter, 'reset', { id })`. */
 export interface CommandRef {
-  // Une vue de n'importe quel contrat. Pas `ContractView<any>` : sans contrat déclaré (le build du
-  // kit), `ContractName` vaut `never` et TypeScript 7 refuse `any` pour cette contrainte.
+  // A view of any contract. Not `ContractView<any>`: with no declared contract (the kit's
+  // build), `ContractName` is `never` and TypeScript 7 rejects `any` for this constraint.
   readonly view: { readonly selectors: unknown; readonly send: unknown };
   readonly name: string;
   readonly input: unknown;
@@ -27,8 +27,8 @@ export interface CommandRef {
 type InputArgs<F> = F extends (...args: infer A) => any ? A : never;
 
 /**
- * Prépare une commande pour un composant du kit. Le contrat, le nom de la commande et son entrée
- * sont vérifiés là où on l'écrit.
+ * Prepares a command for a kit component. The contract, the command name and its input
+ * are checked where you write it.
  */
 export function commandOf<N extends StoreContractName, K extends keyof ContractCommands<Contracts[N]> & string>(
   view: ContractView<N>,
@@ -41,7 +41,7 @@ export function commandOf<N extends StoreContractName, K extends keyof ContractC
 type CommandButtonProps = {
   command: CommandRef;
   content: Children;
-  /** Texte affiché pendant que la commande est en cours (défaut : le contenu). */
+  /** Text shown while the command is pending (default: the content). */
   pendingLabel?: string;
   variant?: 'primary' | 'secondary' | 'danger';
   disabled?: boolean;
@@ -49,11 +49,11 @@ type CommandButtonProps = {
 };
 
 /**
- * Un bouton qui envoie une commande, et se désactive tant qu'elle est en cours (`aria-busy`).
- * L'issue revient comme pour tout envoi : par les sélecteurs, ou par `nom:done` / `nom:failed`.
+ * A button that sends a command, and is disabled while it is pending (`aria-busy`).
+ * The outcome comes back as for any send: through the selectors, or through `name:done` / `name:failed`.
  *
  * ```tsx
- * <CommandButton command={commandOf(this.counter, 'reset', { id })}>Remettre à zéro</CommandButton>
+ * <CommandButton command={commandOf(this.counter, 'reset', { id })}>Reset</CommandButton>
  * ```
  */
 export class CommandButton extends SuperElement<{ props: CommandButtonProps }> {
@@ -86,12 +86,12 @@ export class CommandButton extends SuperElement<{ props: CommandButtonProps }> {
 /* ------------------------------------------------------------------------------------------ */
 
 type RouteLinkProps = {
-  /** La route visée, typée comme `navigate` : `{ to: 'counter', params: { id } }`. */
+  /** The target route, typed like `navigate`: `{ to: 'counter', params: { id } }`. */
   to: NavigateTargetOf<AppRoutes>;
   content: Children;
-  /** D'autres routes pour lesquelles le lien est aussi actif (une section : la liste et son détail). */
+  /** Other routes for which the link is also active (a section: the list and its detail). */
   activeFor?: readonly (keyof AppRoutes & string)[];
-  /** Actif seulement si la query est aussi la même (par défaut, le chemin suffit). */
+  /** Active only if the query is the same too (by default, the path is enough). */
   exact?: boolean;
   class?: string;
 };
@@ -103,8 +103,8 @@ const pathnameOf = (url: string) =>
     .replace(/(.)\/+$/, '$1');
 
 /**
- * Un lien vers une route, marqué `aria-current="page"` quand il mène à la page affichée. Le router
- * gère le clic, comme pour tout lien interne.
+ * A link to a route, marked `aria-current="page"` when it leads to the displayed page. The router
+ * handles the click, as for any internal link.
  */
 export class RouteLink extends SuperElement<{ props: RouteLinkProps }> {
   static tag = 'super-route-link';
@@ -131,17 +131,17 @@ export class RouteLink extends SuperElement<{ props: RouteLinkProps }> {
 
 export type ToastTone = 'info' | 'success' | 'error';
 export type Toast = { readonly id: number; readonly message: string; readonly tone: ToastTone };
-export type ToastOptions = { tone?: ToastTone /** En millisecondes ; `0` : reste jusqu'à sa fermeture. Défaut 5000. */; duration?: number };
+export type ToastOptions = { tone?: ToastTone /** In milliseconds; `0`: stays until closed. Default 5000. */; duration?: number };
 
 /**
- * La file des messages affichés par `<Toasts>`. Le composant qui la crée y pousse les issues des
- * commandes qu'il veut signaler :
+ * The queue of messages displayed by `<Toasts>`. The component that creates it pushes into it the outcomes of the
+ * commands it wants to report:
  *
  * ```ts
  * notices = createToasts();
  * constructor() {
  *   super();
- *   this.profile.on('save:done', () => this.notices.show('Profil enregistré', { tone: 'success' }));
+ *   this.profile.on('save:done', () => this.notices.show('Profile saved', { tone: 'success' }));
  *   this.profile.on('save:failed', ({ reason }) => this.notices.show(FAILED[reason], { tone: 'error' }));
  * }
  * ```
@@ -151,7 +151,7 @@ export class ToastQueue {
   #listeners = new Set<(toasts: readonly Toast[]) => void>();
   #nextId = 0;
 
-  /** Les messages affichés. */
+  /** The displayed messages. */
   list(): readonly Toast[] {
     return this.#toasts;
   }
@@ -167,7 +167,7 @@ export class ToastQueue {
     if (this.#toasts.some((toast) => toast.id === id)) this.#set(this.#toasts.filter((toast) => toast.id !== id));
   }
 
-  /** Suit les changements de la file ; renvoie de quoi arrêter. */
+  /** Follows the queue's changes; returns a function to stop. */
   subscribe(listener: (toasts: readonly Toast[]) => void): () => void {
     this.#listeners.add(listener);
     return () => this.#listeners.delete(listener);
@@ -179,20 +179,20 @@ export class ToastQueue {
   }
 }
 
-/** Une file de messages pour `<Toasts of={…} />`. */
+/** A message queue for `<Toasts of={…} />`. */
 export const createToasts = () => new ToastQueue();
 
 type ToastsProps = {
   of: ToastQueue;
-  /** Nom de la zone pour les lecteurs d'écran (défaut : « Notifications »). */
+  /** Name of the region for screen readers (default: "Notifications"). */
   label?: string;
   closeLabel?: string;
   class?: string;
 };
 
 /**
- * Affiche les messages d'une file : annoncés par les lecteurs d'écran (une erreur tout de suite,
- * le reste poliment), chacun avec sa croix.
+ * Displays the messages of a queue: announced by screen readers (an error immediately,
+ * the rest politely), each with its close button.
  */
 export class Toasts extends SuperElement<{ props: ToastsProps }> {
   static tag = 'super-toasts';
@@ -209,7 +209,7 @@ export class Toasts extends SuperElement<{ props: ToastsProps }> {
   }
 
   render() {
-    const { label = 'Notifications', closeLabel = 'Fermer', of } = this.props;
+    const { label = 'Notifications', closeLabel = 'Close', of } = this.props;
     return html`<section class=${classes('super-toasts', this.props.class)} aria-label=${label}>
       ${this.#shown.get().toasts.map(
         (toast) => html`<div class="super-toast" data-tone=${toast.tone} role=${toast.tone === 'error' ? 'alert' : 'status'}>
@@ -227,30 +227,30 @@ export class Toasts extends SuperElement<{ props: ToastsProps }> {
 
 type ErrorPanelProps = {
   error: Error;
-  /** Le chemin où l'erreur est survenue (fourni à l'écran `'!'` du router). */
+  /** The path where the error occurred (provided to the router's `'!'` screen). */
   path?: string;
   title?: string;
-  /** Affiche un bouton « Réessayer », qui émet `retry`. */
+  /** Shows a "Retry" button, which emits `retry`. */
   canRetry?: boolean;
   retryLabel?: string;
   class?: string;
 };
 
 /**
- * Une erreur présentée à l'utilisateur : un titre, le message, et le détail technique replié.
- * S'utilise dans un `renderError`, ou tel quel comme écran `'!'` du router (`'!': ErrorPanel`).
+ * An error presented to the user: a title, the message, and the collapsed technical detail.
+ * Used in a `renderError`, or as is as the router's `'!'` screen (`'!': ErrorPanel`).
  */
 export class ErrorPanel extends SuperElement<{ props: ErrorPanelProps; emits: { retry: void } }> {
   static tag = 'super-error-panel';
 
   render() {
-    const { error, path, title = 'Une erreur est survenue', canRetry = false, retryLabel = 'Réessayer' } = this.props;
+    const { error, path, title = 'Something went wrong', canRetry = false, retryLabel = 'Retry' } = this.props;
     return html`<section class=${classes('super-error-panel', this.props.class)} role="alert">
       <h2 class="super-error-panel-title">${title}</h2>
       <p class="super-error-panel-message">${error.message}</p>
       <details class="super-error-panel-details">
-        <summary>Détails</summary>
-        ${path ? html`<p>Sur <code>${path}</code></p>` : nothing}
+        <summary>Details</summary>
+        ${path ? html`<p>At <code>${path}</code></p>` : nothing}
         <pre>${error.stack ?? String(error)}</pre>
       </details>
       ${canRetry ? html`<button type="button" class="super-button" data-variant="primary" @click=${() => this.emit('retry')}>${retryLabel}</button>` : nothing}

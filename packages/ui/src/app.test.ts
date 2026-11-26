@@ -13,11 +13,11 @@ describe('CommandButton', () => {
     static tag = 'ui-t-shelf';
     library = this.contract('ui-library');
     render() {
-      return html`${CommandButton.create({ command: commandOf(this.library, 'remove', { id: 7 }), content: text`Retirer`, pendingLabel: 'Retrait…' })}`;
+      return html`${CommandButton.create({ command: commandOf(this.library, 'remove', { id: 7 }), content: text`Remove`, pendingLabel: 'Removing…' })}`;
     }
   }
 
-  test('envoie sa commande, et reste désactivé tant qu’elle est en cours', async () => {
+  test('sends its command, and stays disabled while it is pending', async () => {
     let finish = () => {};
     const store = library({ remove: () => new Promise<void>((resolve) => (finish = resolve)) });
     const { container } = await mount(Shelf, { stores: [store] });
@@ -28,12 +28,12 @@ describe('CommandButton', () => {
     expect(store.sent).toEqual([{ name: 'remove', args: [{ id: 7 }] }]);
     expect(button.disabled).toBe(true);
     expect(button.getAttribute('aria-busy')).toBe('true');
-    expect(button.textContent!.trim()).toBe('Retrait…');
+    expect(button.textContent!.trim()).toBe('Removing…');
 
     finish();
     await flush();
     expect(button.disabled).toBe(false);
-    expect(button.textContent!.trim()).toBe('Retirer');
+    expect(button.textContent!.trim()).toBe('Remove');
   });
 });
 
@@ -41,10 +41,10 @@ describe('RouteLink', () => {
   class Nav extends SuperElement {
     static tag = 'ui-t-nav';
     render() {
-      return html`${RouteLink.create({ to: { to: 'home' }, content: text`Accueil` })}
-      ${RouteLink.create({ to: { to: 'list' }, content: text`Liste`, activeFor: ['item'] })}
-      ${RouteLink.create({ to: { to: 'list', query: { sort: 'value' } }, content: text`Par valeur`, exact: true })}
-      ${RouteLink.create({ to: { to: 'item', params: { id: 3 } }, content: text`Article 3` })}`;
+      return html`${RouteLink.create({ to: { to: 'home' }, content: text`Home` })}
+      ${RouteLink.create({ to: { to: 'list' }, content: text`List`, activeFor: ['item'] })}
+      ${RouteLink.create({ to: { to: 'list', query: { sort: 'value' } }, content: text`By value`, exact: true })}
+      ${RouteLink.create({ to: { to: 'item', params: { id: 3 } }, content: text`Item 3` })}`;
     }
   }
   const start = async (path: string) => {
@@ -66,40 +66,40 @@ describe('RouteLink', () => {
     }
   }
 
-  test('href typé, et aria-current sur le lien de la page affichée', async () => {
+  test('typed href, and aria-current on the link of the displayed page', async () => {
     const { container, current } = await start('/list?sort=label');
     expect([...container.querySelectorAll('a')].map((a) => a.getAttribute('href'))).toEqual(['/', '/list', '/list?sort=value', '/items/3']);
-    expect(current()).toEqual(['Liste']);
+    expect(current()).toEqual(['List']);
   });
 
-  test('exact compare aussi la query ; activeFor étend le lien à d’autres routes', async () => {
+  test('exact also compares the query; activeFor extends the link to other routes', async () => {
     const { router, current } = await start('/list?sort=value');
-    expect(current()).toEqual(['Liste', 'Par valeur']);
+    expect(current()).toEqual(['List', 'By value']);
 
     await router.send('visit', '/items/3');
     await flush();
-    expect(current()).toEqual(['Liste', 'Article 3']);
+    expect(current()).toEqual(['List', 'Item 3']);
   });
 });
 
 describe('Toasts', () => {
-  test('affiche les messages de la file, chacun avec sa croix ; une erreur est une alerte', async () => {
+  test('displays the messages of the queue, each with its close button; an error is an alert', async () => {
     const notices = createToasts();
     const { container } = await mount(Toasts, { props: { of: notices } });
-    notices.show('Enregistré', { tone: 'success', duration: 10 });
-    notices.show('Connexion impossible', { tone: 'error', duration: 0 });
+    notices.show('Saved', { tone: 'success', duration: 10 });
+    notices.show('Cannot connect', { tone: 'error', duration: 0 });
     await flush();
 
     const toasts = () =>
       [...container.querySelectorAll('.super-toast')].map((t) => [t.getAttribute('role'), t.textContent!.replace('×', '').trim()]);
     expect(toasts()).toEqual([
-      ['status', 'Enregistré'],
-      ['alert', 'Connexion impossible'],
+      ['status', 'Saved'],
+      ['alert', 'Cannot connect'],
     ]);
 
     await new Promise((resolve) => setTimeout(resolve, 20));
     await flush();
-    expect(toasts()).toEqual([['alert', 'Connexion impossible']]);
+    expect(toasts()).toEqual([['alert', 'Cannot connect']]);
 
     container.querySelector<HTMLButtonElement>('.super-toast-close')!.click();
     await flush();
@@ -108,22 +108,22 @@ describe('Toasts', () => {
 });
 
 describe('ErrorPanel', () => {
-  test('titre, message, détails repliés ; Réessayer sur demande', async () => {
+  test('title, message, collapsed details; Retry on request', async () => {
     const retry = vi.fn();
     const { container } = await mount(ErrorPanel, {
-      props: { error: new Error('Panne'), path: '/items/1', canRetry: true },
+      props: { error: new Error('Outage'), path: '/items/1', canRetry: true },
       on: { retry },
     });
-    expect(container.querySelector('h2')!.textContent).toBe('Une erreur est survenue');
-    expect(container.querySelector('.super-error-panel-message')!.textContent).toBe('Panne');
+    expect(container.querySelector('h2')!.textContent).toBe('Something went wrong');
+    expect(container.querySelector('.super-error-panel-message')!.textContent).toBe('Outage');
     expect(container.querySelector('details')!.open).toBe(false);
     expect(container.querySelector('details code')!.textContent).toBe('/items/1');
     container.querySelector('button')!.click();
     expect(retry).toHaveBeenCalledOnce();
   });
 
-  test('sans canRetry, pas de bouton : il convient comme écran « ! » du router', async () => {
-    const { container } = await mount(ErrorPanel, { props: { error: new Error('Panne'), path: '/' } });
+  test('without canRetry, no button: it works as the "!" screen of the router', async () => {
+    const { container } = await mount(ErrorPanel, { props: { error: new Error('Outage'), path: '/' } });
     expect(container.querySelector('button')).toBeNull();
   });
 });

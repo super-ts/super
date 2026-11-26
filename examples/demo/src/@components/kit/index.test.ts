@@ -149,7 +149,7 @@ describe('kit : table', () => {
     const { productCatalog, router, ui } = await setup('/kit/table?sort=price&order=desc&page=2&size=5');
     const table = within(ui.getByRole('table', { name: 'Produits' }));
     expect(productCatalog.queries.at(-1)).toEqual({ page: 2, pageSize: 5, sort: 'price', order: 'desc' });
-    expect(ui.getByText('Page 2 sur 4')).toBeTruthy();
+    expect(ui.getByText('Page 2 of 4')).toBeTruthy();
     expect(table.getAllByRole('row')).toHaveLength(6);
 
     await userEvent.click(table.getByRole('button', { name: 'Produit' }));
@@ -159,13 +159,13 @@ describe('kit : table', () => {
     expect(cells(table)[0]).toBe('Produit 01');
 
     const products = within(ui.getByRole('table', { name: 'Produits' }).closest<HTMLElement>('.super-table')!);
-    await userEvent.click(products.getByRole('button', { name: 'Suivant' }));
+    await userEvent.click(products.getByRole('button', { name: 'Next' }));
     await flush();
     expect(router.state().path).toBe('/kit/table?sort=title&order=asc&page=2&size=5');
     expect(cells(table)[0]).toBe('Produit 06');
 
     // Le nombre de lignes par page passe aussi par l'URL, et ramène à la première page.
-    const size = products.getByLabelText('Lignes par page') as HTMLSelectElement;
+    const size = products.getByLabelText('Rows per page') as HTMLSelectElement;
     expect(size.value).toBe('5');
     await userEvent.selectOptions(size, '20');
     await flush();

@@ -1,57 +1,57 @@
 import { html, nothing, SuperElement } from '@super-ts/dom';
 import { classes, uniqueId } from './shared.ts';
 
-/** Une colonne : sa clé, son titre, et comment lire sa valeur dans une ligne. */
+/** A column: its key, its heading, and how to read its value in a row. */
 export type Column<Row> = {
   key: string;
   label: string;
-  /** La valeur affichée et triée (défaut : `row[key]`). */
+  /** The displayed and sorted value (default: `row[key]`). */
   value?: (row: Row) => string | number | boolean | null | undefined;
   sortable?: boolean;
-  /** Alignement : `end` pour les nombres. */
+  /** Alignment: `end` for numbers. */
   align?: 'start' | 'end';
 };
 
-/** Les colonnes d'une table, typées par ses lignes : `columns<Book>([{ key: 'title', label: 'Titre' }])`. */
+/** A table's columns, typed by its rows: `columns<Book>([{ key: 'title', label: 'Title' }])`. */
 export function columns<Row>(list: readonly Column<Row>[]): readonly Column<any>[] {
   return list;
 }
 
 export type Sort = { key: string; direction: 'asc' | 'desc' };
-/** Ce que la table demande à ses données : le tri et la page affichés. */
+/** What the table asks of its data: the displayed sort and page. */
 export type TableRequest = { sort: Sort | null; page: number; pageSize: number | null };
 
 type TableProps = {
   columns: readonly Column<any>[];
   rows: readonly any[];
-  /** L'identité d'une ligne, pour que le rendu suive ses déplacements. */
+  /** A row's identity, so that rendering follows its moves. */
   rowKey: (row: any) => string | number;
-  /** Le titre de la table, lu par les lecteurs d'écran. */
+  /** The table's caption, read by screen readers. */
   caption?: string;
-  /** Le tri, si le parent le pilote (depuis la query de la route, par exemple). `null` : aucun tri. */
+  /** The sort, if the parent drives it (from the route query, for example). `null`: no sort. */
   sort?: Sort | null;
-  /** La page (à partir de 1), si le parent la pilote. */
+  /** The page (from 1), if the parent drives it. */
   page?: number;
-  /** Lignes par page ; sans elle, pas de pagination. */
+  /** Rows per page; without it, no pagination. */
   pageSize?: number;
   /**
-   * Les nombres de lignes par page proposés à l'utilisateur (`[10, 20, 50]`) : un choix « Lignes
-   * par page » s'ajoute à la pagination, et émet `pageSize`. Le parent qui le garde dans l'URL
-   * repasse la valeur choisie en `pageSize`.
+   * The numbers of rows per page offered to the user (`[10, 20, 50]`): a "Rows per page" choice
+   * is added to the pagination, and emits `pageSize`. A parent that keeps it in the URL
+   * passes the chosen value back as `pageSize`.
    */
   pageSizes?: readonly number[];
   pageSizeLabel?: string;
   /**
-   * Le nombre total de lignes côté serveur. Avec lui, la table est branchée : `rows` est la page
-   * déjà triée, et la table demande les données par `request`. Sans lui, la table est statique :
-   * elle trie et pagine `rows` elle-même.
+   * The total number of rows on the server side. With it, the table is connected: `rows` is the page
+   * already sorted, and the table requests data through `request`. Without it, the table is static:
+   * it sorts and paginates `rows` itself.
    */
   total?: number;
   loading?: boolean;
   /**
-   * Trop large pour la place disponible, la table défile de gauche à droite dans sa propre zone,
-   * cellules sur une ligne, la pagination restant en place (défaut `true`). `false` : la table
-   * prend la largeur de son conteneur, et son débordement est laissé à l'app.
+   * When too wide for the available space, the table scrolls horizontally in its own region,
+   * cells on one line, the pagination staying in place (default `true`). `false`: the table
+   * takes its container's width, and its overflow is left to the app.
    */
   scroll?: boolean;
   emptyLabel?: string;
@@ -69,16 +69,16 @@ const compare = (a: unknown, b: unknown) => {
 };
 
 /**
- * Une table de données, statique ou branchée.
+ * A data table, static or connected.
  *
- * - **Statique** : `rows` contient toutes les lignes ; la table trie et pagine elle-même, sans
- *   rien demander à personne.
- * - **Branchée** (`total` donné) : la table émet `request` (`{ sort, page }`) au montage puis à
- *   chaque changement de tri ou de page ; le parent la relie à une commande, et passe la page reçue.
+ * - **Static**: `rows` contains all the rows; the table sorts and paginates itself, without
+ *   asking anyone for anything.
+ * - **Connected** (`total` given): the table emits `request` (`{ sort, page }`) on mount then on
+ *   every sort or page change; the parent binds it to a command, and passes the received page.
  *
- * Le tri, la page et la taille des pages sont gardés par la table, ou pilotés par le parent
- * (`sort`, `page`, `pageSize`), prévenu
- * par `sort` et `page` : il les écrit alors dans la query de la route, par exemple.
+ * The sort, the page and the page size are kept by the table, or driven by the parent
+ * (`sort`, `page`, `pageSize`), notified
+ * through `sort` and `page`: it then writes them into the route query, for example.
  *
  * ```tsx
  * <Table columns={BOOK_COLUMNS} rows={this.books.value} rowKey={(b) => b.id} total={this.total.value} pageSize={20}
@@ -89,11 +89,11 @@ const compare = (a: unknown, b: unknown) => {
  */
 export class Table extends SuperElement<{ props: TableProps; emits: TableEmits }> {
   static tag = 'super-table';
-  // `pageSize` choisi ici, et la prop telle qu'elle était à ce moment : si le parent change la
-  // prop ensuite (l'URL a changé), c'est elle qui l'emporte.
+  // `pageSize` chosen here, and the prop as it was at that moment: if the parent changes the
+  // prop afterwards (the URL changed), the prop wins.
   #ui = this.state({ sort: null as Sort | null, page: 1, pageSize: null as number | null, pageSizeFrom: undefined as number | undefined });
   #lastRequest: string | null = null;
-  // Le titre est hors de la zone qui défile (il reste visible), et nomme la table par aria-labelledby.
+  // The caption is outside the scrolling region (it stays visible), and names the table through aria-labelledby.
   #captionId = uniqueId('super-table-caption');
 
   #sort(): Sort | null {
@@ -124,7 +124,7 @@ export class Table extends SuperElement<{ props: TableProps; emits: TableEmits }
     return column.value ? column.value(row) : row[column.key];
   }
 
-  /** Les lignes affichées : telles quelles si la table est branchée, triées et découpées sinon. */
+  /** The displayed rows: as is if the table is connected, sorted and sliced otherwise. */
   #shown(): readonly any[] {
     const { rows, columns } = this.props;
     const pageSize = this.#pageSize();
@@ -142,14 +142,14 @@ export class Table extends SuperElement<{ props: TableProps; emits: TableEmits }
   #toggleSort(column: Column<any>) {
     const current = this.#sort();
     const next: Sort = { key: column.key, direction: current?.key === column.key && current.direction === 'asc' ? 'desc' : 'asc' };
-    // Trier ramène à la première page.
+    // Sorting goes back to the first page.
     this.#ui.set({ sort: next, page: 1 });
     this.emit('sort', next);
   }
 
   #resize = (event: Event) => {
     const pageSize = Number((event.currentTarget as HTMLSelectElement).value);
-    // Changer la taille des pages ramène à la première.
+    // Changing the page size goes back to the first page.
     this.#ui.set({ pageSize, pageSizeFrom: this.props.pageSize, page: 1 });
     this.emit('pageSize', { pageSize });
   };
@@ -159,14 +159,14 @@ export class Table extends SuperElement<{ props: TableProps; emits: TableEmits }
     this.emit('page', { page });
   }
 
-  /** Branchée : demande les données quand le tri ou la page affichés changent (et au premier rendu). */
+  /** Connected: requests the data when the displayed sort or page changes (and on the first render). */
   #requestIfChanged() {
     if (!this.#remote()) return;
     const request: TableRequest = { sort: this.#sort(), page: this.#page(), pageSize: this.#pageSize() ?? null };
     const key = JSON.stringify(request);
     if (key === this.#lastRequest) return;
     this.#lastRequest = key;
-    // Émis après le rendu : un rendu ne déclenche rien lui-même.
+    // Emitted after rendering: a render triggers nothing itself.
     queueMicrotask(() => this.emit('request', request));
   }
 
@@ -177,9 +177,9 @@ export class Table extends SuperElement<{ props: TableProps; emits: TableEmits }
       caption,
       loading = false,
       scroll = true,
-      emptyLabel = 'Aucune donnée',
+      emptyLabel = 'No data',
       pageSizes,
-      pageSizeLabel = 'Lignes par page',
+      pageSizeLabel = 'Rows per page',
     } = this.props;
     const pageSize = this.#pageSize();
     this.#requestIfChanged();
@@ -206,7 +206,7 @@ export class Table extends SuperElement<{ props: TableProps; emits: TableEmits }
         <tbody>
           ${
             shown.length === 0
-              ? html`<tr><td class="super-table-empty" colspan=${columns.length}>${loading ? 'Chargement…' : emptyLabel}</td></tr>`
+              ? html`<tr><td class="super-table-empty" colspan=${columns.length}>${loading ? 'Loading…' : emptyLabel}</td></tr>`
               : shown.map(
                   (row) => html`<tr data-key=${rowKey(row)}>
                     ${columns.map((column) => html`<td data-align=${column.align ?? 'start'}>${this.#valueOf(column, row) ?? ''}</td>`)}
@@ -238,11 +238,11 @@ export class Table extends SuperElement<{ props: TableProps; emits: TableEmits }
                   : nothing
               }
               <button type="button" class="super-button" data-variant="secondary" ?disabled=${page <= 1} @click=${() => this.#goTo(page - 1)}>
-                Précédent
+                Previous
               </button>
-              <span class="super-table-page" aria-current="page">Page ${page} sur ${pages}</span>
+              <span class="super-table-page" aria-current="page">Page ${page} of ${pages}</span>
               <button type="button" class="super-button" data-variant="secondary" ?disabled=${page >= pages} @click=${() => this.#goTo(page + 1)}>
-                Suivant
+                Next
               </button>
             </nav>`
           : nothing

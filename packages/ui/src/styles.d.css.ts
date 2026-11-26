@@ -1,3 +1,3 @@
-// Types de `import './styles.css'` (index.ts) : la feuille de style n'exporte rien, c'est le
-// bundler de l'app qui la charge. Livré dans dist/ pour les projets qui lisent dist/index.d.ts.
+// Types for `import './styles.css'` (index.ts): the stylesheet exports nothing, the app's
+// bundler loads it. Shipped in dist/ for projects that read dist/index.d.ts.
 export {};

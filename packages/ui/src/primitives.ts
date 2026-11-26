@@ -2,10 +2,10 @@ import { type Children, html, nothing, SuperElement } from '@super-ts/dom';
 import type { Choice } from './fields.ts';
 import { classes, uniqueId } from './shared.ts';
 
-/** Après le prochain rendu : pour déplacer le focus sur un élément que le rendu vient d'afficher. */
+/** After the next render: to move focus to an element the render has just displayed. */
 const afterRender = (run: () => void) => void Promise.resolve().then(() => queueMicrotask(run));
 
-/** Ferme sur un clic hors du composant, tant qu'il est monté. */
+/** Closes on a click outside the component, while it is mounted. */
 function onOutsideClick(host: HTMLElement, signal: AbortSignal, close: () => void) {
   document.addEventListener(
     'pointerdown',
@@ -16,7 +16,7 @@ function onOutsideClick(host: HTMLElement, signal: AbortSignal, close: () => voi
   );
 }
 
-/** L'élément suivant d'une liste, en sautant les éléments désactivés, et en bouclant. */
+/** The next item of a list, skipping disabled items, and wrapping around. */
 function step(items: readonly object[], from: number, delta: 1 | -1): number {
   for (let i = 1; i <= items.length; i++) {
     const index = (from + delta * i + items.length * 2) % items.length;
@@ -32,15 +32,15 @@ function step(items: readonly object[], from: number, delta: 1 | -1): number {
 export type MenuItem = { id: string; label: string; disabled?: boolean };
 
 type MenuProps = {
-  /** Le texte du bouton qui ouvre le menu. */
+  /** The text of the button that opens the menu. */
   label: string;
   items: readonly MenuItem[];
   class?: string;
 };
 
 /**
- * Un menu d'actions derrière un bouton. Clavier : flèches, Début, Fin, Entrée, Échap ; un clic
- * hors du menu le ferme. Le choix est émis par `select`.
+ * A menu of actions behind a button. Keyboard: arrows, Home, End, Enter, Escape; a click
+ * outside the menu closes it. The choice is emitted through `select`.
  */
 export class Menu extends SuperElement<{ props: MenuProps; emits: { select: { id: string } } }> {
   static tag = 'super-menu';
@@ -156,18 +156,18 @@ export type Tab = { id: string; label: string; disabled?: boolean };
 
 type TabsProps = {
   tabs: readonly Tab[];
-  /** Un panneau par onglet, dans le même ordre : `panels={[this.#profile(), this.#security()]}`. */
+  /** One panel per tab, in the same order: `panels={[this.#profile(), this.#security()]}`. */
   panels: Children[];
-  /** L'onglet affiché, si le parent le pilote (sinon, le premier, puis le dernier choisi). */
+  /** The displayed tab, if the parent drives it (otherwise, the first, then the last chosen). */
   selected?: string;
-  /** Nom de la liste d'onglets pour les lecteurs d'écran. */
+  /** Name of the tab list for screen readers. */
   label?: string;
   class?: string;
 };
 
 /**
- * Des onglets : un panneau visible à la fois. Clavier : flèches gauche et droite, Début, Fin.
- * Sans `selected`, les onglets gardent eux-mêmes leur choix ; avec, c'est le parent, prévenu par
+ * Tabs: one panel visible at a time. Keyboard: left and right arrows, Home, End.
+ * Without `selected`, the tabs keep their choice themselves; with it, the parent does, notified through
  * `change`.
  */
 export class Tabs extends SuperElement<{ props: TabsProps; emits: { change: { id: string } } }> {
@@ -241,15 +241,15 @@ export class Tabs extends SuperElement<{ props: TabsProps; emits: { change: { id
 /* ------------------------------------------------------------------------------------------ */
 
 type DisclosureProps = {
-  /** Le texte toujours visible, qui ouvre et ferme. */
+  /** The always visible text, which opens and closes. */
   summary: string;
   content: Children;
-  /** Ouvert au premier affichage. */
+  /** Open on first display. */
   open?: boolean;
   class?: string;
 };
 
-/** Un contenu repliable, sur `<details>` et `<summary>` : le navigateur en fait déjà un élément accessible. */
+/** Collapsible content, on `<details>` and `<summary>`: the browser already makes it an accessible element. */
 export class Disclosure extends SuperElement<{ props: DisclosureProps; emits: { toggle: { open: boolean } } }> {
   static tag = 'super-disclosure';
 
@@ -269,9 +269,9 @@ export class Disclosure extends SuperElement<{ props: DisclosureProps; emits: { 
 /* ------------------------------------------------------------------------------------------ */
 
 type TooltipProps = {
-  /** Le texte de l'info-bulle. */
+  /** The tooltip's text. */
   text: string;
-  /** L'élément décrit : un bouton, un lien, un champ. */
+  /** The described element: a button, a link, a field. */
   content: Children;
   class?: string;
 };
@@ -279,8 +279,8 @@ type TooltipProps = {
 const FOCUSABLE = 'a[href], button, input, select, textarea, [tabindex]';
 
 /**
- * Une info-bulle sur un élément : affichée au survol et au focus, masquée par Échap. L'élément
- * décrit (le premier élément focusable du contenu) est relié à elle par `aria-describedby`.
+ * A tooltip on an element: shown on hover and focus, hidden by Escape. The described
+ * element (the first focusable element of the content) is linked to it through `aria-describedby`.
  */
 export class Tooltip extends SuperElement<{ props: TooltipProps }> {
   static tag = 'super-tooltip';
@@ -318,17 +318,17 @@ export class Tooltip extends SuperElement<{ props: TooltipProps }> {
 /* ------------------------------------------------------------------------------------------ */
 
 type PopoverProps = {
-  /** Le texte du bouton qui ouvre le contenu. */
+  /** The text of the button that opens the content. */
   label: string;
   content: Children;
-  /** Nom du contenu pour les lecteurs d'écran (défaut : `label`). */
+  /** Name of the content for screen readers (default: `label`). */
   title?: string;
   class?: string;
 };
 
 /**
- * Un contenu flottant derrière un bouton, non modal : le reste de la page reste utilisable. Échap
- * ou un clic hors du contenu le ferme.
+ * Floating content behind a button, non-modal: the rest of the page stays usable. Escape
+ * or a click outside the content closes it.
  */
 export class Popover extends SuperElement<{ props: PopoverProps; emits: { toggle: { open: boolean } } }> {
   static tag = 'super-popover';
@@ -381,22 +381,22 @@ export class Popover extends SuperElement<{ props: PopoverProps; emits: { toggle
 type ComboboxProps = {
   label: string;
   /**
-   * Les choix proposés. Statiques : le combobox les filtre lui-même selon la saisie. Venus d'un
-   * store : le parent les filtre (sur `search`) et passe `filter={false}`.
+   * The offered choices. Static: the combobox filters them itself based on the input. From a
+   * store: the parent filters them (on `search`) and passes `filter={false}`.
    */
   options: readonly Choice<string>[];
-  /** Filtre les options sur la saisie (défaut `true`). `false` quand le parent les fournit déjà filtrées. */
+  /** Filters the options on the input (default `true`). `false` when the parent provides them already filtered. */
   filter?: boolean;
-  /** La valeur choisie au départ. */
+  /** The initially chosen value. */
   value?: string;
   placeholder?: string;
-  /** Les options arrivent (une recherche est en cours). */
+  /** The options are on their way (a search is pending). */
   loading?: boolean;
   emptyLabel?: string;
   class?: string;
 };
 
-/** Sans accents ni casse : « eléphant » trouve « Éléphant ». */
+/** Ignoring accents and case: "cote" finds "Côte d'Ivoire". */
 const fold = (text: string) =>
   text
     .normalize('NFD')
@@ -404,14 +404,14 @@ const fold = (text: string) =>
     .toLowerCase();
 
 /**
- * Une saisie avec suggestions. Clavier : flèches, Entrée pour choisir, Échap pour fermer. Émet
- * `search` à chaque saisie (pour charger des options), et `select` au choix.
+ * An input with suggestions. Keyboard: arrows, Enter to choose, Escape to close. Emits
+ * `search` on every input (to load options), and `select` on choice.
  *
  * ```tsx
- * // Statique
- * <Combobox label="Pays" options={COUNTRIES} on:select={…} />
- * // Venu d'un store : le parent cherche, le combobox affiche
- * <Combobox label="Livre" options={this.results.value} filter={false} loading={this.searching.value}
+ * // Static
+ * <Combobox label="Country" options={COUNTRIES} on:select={…} />
+ * // From a store: the parent searches, the combobox displays
+ * <Combobox label="Book" options={this.results.value} filter={false} loading={this.searching.value}
  *   on:search={({ text }) => this.library.send('search', { text })} on:select={…} />
  * ```
  */
@@ -470,10 +470,10 @@ export class Combobox extends SuperElement<{
   };
 
   render() {
-    const { label, placeholder, loading = false, emptyLabel = 'Aucun résultat' } = this.props;
+    const { label, placeholder, loading = false, emptyLabel = 'No results' } = this.props;
     const { open, active } = this.#ui.get();
     const shown = this.#shown();
-    // Rien de tapé et rien à proposer (des options qui viendront d'une recherche) : la liste reste fermée.
+    // Nothing typed and nothing to offer (options that will come from a search): the list stays closed.
     const visible = open && (shown.length > 0 || loading || this.#text() !== '');
     const listId = `${this.#id}-list`;
     const optionId = (i: number) => `${this.#id}-option-${i}`;
@@ -498,7 +498,7 @@ export class Combobox extends SuperElement<{
       <ul class="super-combobox-list" role="listbox" id=${listId} aria-label=${label} ?hidden=${!visible}>
         ${
           loading
-            ? html`<li class="super-combobox-status" role="presentation">Chargement…</li>`
+            ? html`<li class="super-combobox-status" role="presentation">Loading…</li>`
             : shown.length === 0
               ? html`<li class="super-combobox-status" role="presentation">${emptyLabel}</li>`
               : shown.map(

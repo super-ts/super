@@ -1,15 +1,15 @@
 /*
- * Styles du kit @super-ts/ui.
+ * Styles of the @super-ts/ui kit.
  *
- * Tout est dans la couche `super-ui`, avec des sélecteurs `:where(…)` de spécificité nulle : la
- * moindre règle de l'app passe devant, sans `!important`. Le thème se règle par les variables
- * `--super-*`, sur `:root` (toute l'app), sur une zone (`.shop { … }`) ou sur un composant.
+ * Everything is in the `super-ui` layer, with zero-specificity `:where(…)` selectors: the
+ * smallest app rule takes precedence, without `!important`. The theme is set through the `--super-*`
+ * variables, on `:root` (the whole app), on a region (`.shop { … }`) or on a component.
  */
 @layer super-ui {
   /*
-   * Chaque couleur a une valeur claire et une valeur sombre (`light-dark`), choisie selon le
-   * `color-scheme` de l'élément : le kit suit le thème de l'app (`color-scheme: light dark` suit
-   * celui du système), et une zone peut forcer le sien (`.zone { color-scheme: dark }`).
+   * Each colour has a light value and a dark value (`light-dark`), chosen by the element's
+   * `color-scheme`: the kit follows the app's theme (`color-scheme: light dark` follows
+   * the system's), and a region can force its own (`.zone { color-scheme: dark }`).
    */
   :where(:root) {
     --super-font: system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -32,7 +32,7 @@
     --super-backdrop: rgb(0 0 0 / 0.55);
   }
 
-  /* Utilitaire : présent pour les lecteurs d'écran, invisible à l'écran. */
+  /* Utility: present for screen readers, invisible on screen. */
   :where(.super-visually-hidden) {
     position: absolute;
     width: 1px;
@@ -42,7 +42,7 @@
     white-space: nowrap;
   }
 
-  /* Boutons ---------------------------------------------------------------------------------- */
+  /* Buttons ----------------------------------------------------------------------------------- */
   :where(.super-button) {
     display: inline-flex;
     align-items: center;
@@ -77,7 +77,7 @@
     box-shadow: var(--super-focus);
   }
 
-  /* Champs ----------------------------------------------------------------------------------- */
+  /* Fields ------------------------------------------------------------------------------------ */
   :where(.super-field) {
     display: grid;
     gap: calc(var(--super-space) / 2);
@@ -130,7 +130,7 @@
     color: var(--super-danger);
   }
 
-  /* Liens ------------------------------------------------------------------------------------ */
+  /* Links ------------------------------------------------------------------------------------ */
   :where(.super-link) {
     color: var(--super-accent);
     border-radius: var(--super-radius);
@@ -139,7 +139,7 @@
     font-weight: 600;
   }
 
-  /* Fenêtres : Dialog, Modal, ConfirmDialog -------------------------------------------------- */
+  /* Dialogs: Dialog, Modal, ConfirmDialog ---------------------------------------------------- */
   :where(.super-window) {
     width: min(32rem, calc(100vw - 2rem));
     padding: 0;
@@ -219,7 +219,7 @@
     flex: 1;
   }
 
-  /* Erreur ----------------------------------------------------------------------------------- */
+  /* Error ------------------------------------------------------------------------------------ */
   :where(.super-error-panel) {
     display: grid;
     gap: var(--super-space);
@@ -243,7 +243,7 @@
     color: var(--super-muted);
   }
 
-  /* Menu, Popover, Tooltip, Combobox : des contenus flottants ----------------------------------- */
+  /* Menu, Popover, Tooltip, Combobox: floating content --------------------------------------- */
   :where(.super-menu, .super-popover, .super-tooltip, .super-combobox) {
     position: relative;
     display: inline-block;
@@ -298,7 +298,7 @@
     white-space: nowrap;
   }
 
-  /* Onglets ---------------------------------------------------------------------------------- */
+  /* Tabs ------------------------------------------------------------------------------------- */
   :where(.super-tabs-list) {
     display: flex;
     gap: calc(var(--super-space) / 2);
@@ -402,7 +402,7 @@
   }
 
   /* Table ------------------------------------------------------------------------------------ */
-  /* L'élément du composant ne s'élargit jamais au-delà de son conteneur. */
+  /* The component's element never grows beyond its container. */
   :where(super-table) {
     display: block;
     min-width: 0;
@@ -420,7 +420,7 @@
     width: 100%;
     border-collapse: collapse;
   }
-  /* Défilement de gauche à droite : la table garde sa largeur naturelle, cellules sur une ligne. */
+  /* Horizontal scrolling: the table keeps its natural width, cells on one line. */
   :where(.super-table-scroll) {
     max-width: 100%;
     overflow-x: auto;
@@ -468,7 +468,7 @@
     white-space: nowrap;
     cursor: pointer;
   }
-  /* La place de la flèche est réservée sur toute colonne triable : trier ne change aucune largeur. */
+  /* The arrow's space is reserved on every sortable column: sorting changes no width. */
   :where(.super-table-sort)::after {
     content: '↕';
     display: inline-block;

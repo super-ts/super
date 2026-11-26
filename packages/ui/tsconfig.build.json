@@ -1,6 +1,6 @@
 {
   "extends": "../../tsconfig.build.json",
-  // allowArbitraryExtensions : `import './styles.css'` est typé par styles.d.css.ts.
+  // allowArbitraryExtensions: `import './styles.css'` is typed by styles.d.css.ts.
   "compilerOptions": { "rootDir": "src", "outDir": "dist", "types": [], "allowArbitraryExtensions": true },
   "include": ["src"],
   "exclude": ["src/**/*.test.ts", "src/**/*.test-d.ts", "src/**/__fixtures__"]

@@ -1,17 +1,17 @@
 import { type Children, html, nothing, SuperElement } from '@super-ts/dom';
 import { classes, uniqueId } from './shared.ts';
 
-/** Ce qui ferme la fenêtre : Échap, un clic sur le fond, la croix. */
+/** What closes the dialog: Escape, a click on the backdrop, the close button. */
 export type CloseReason = 'escape' | 'backdrop' | 'button';
 
-/** Les moyens de fermer la fenêtre. Par défaut : Échap et la croix, pas le clic sur le fond. */
+/** The ways to close the dialog. By default: Escape and the close button, not a click on the backdrop. */
 export type CloseOn = { escape?: boolean; backdrop?: boolean; button?: boolean };
 
 type BaseProps = {
-  /** Titre affiché en tête, et nom de la fenêtre pour les lecteurs d'écran. */
+  /** Title shown at the top, and name of the dialog for screen readers. */
   title?: string;
   closeOn?: CloseOn;
-  /** Texte de la croix pour les lecteurs d'écran (défaut : « Fermer »). */
+  /** Text of the close button for screen readers (default: "Close"). */
   closeLabel?: string;
   class?: string;
 };
@@ -19,24 +19,24 @@ type BaseProps = {
 const DEFAULT_CLOSE_ON: Required<CloseOn> = { escape: true, backdrop: false, button: true };
 
 /**
- * La mécanique commune des fenêtres : un `<dialog>` natif ouvert en modal au montage (le reste de
- * la page devient inerte, le focus y reste), fermé au démontage, le focus rendu à l'élément qui
- * l'avait. Comme tout composant Super, une fenêtre montée est ouverte : c'est le parent qui décide
- * de la rendre ou non, et elle lui demande de la fermer par un événement.
+ * The shared mechanics of dialogs: a native `<dialog>` opened as modal on mount (the rest of
+ * the page becomes inert, focus stays inside), closed on unmount, focus returned to the element that
+ * had it. Like any Super component, a mounted dialog is open: the parent decides
+ * whether to render it, and the dialog asks it to close through an event.
  */
 abstract class WindowBase<P extends BaseProps, E extends Record<string, unknown>> extends SuperElement<{ props: P; emits: E }> {
   #dialog = this.ref<HTMLDialogElement>();
   #previousFocus: Element | null = null;
   #titleId = uniqueId('super-window-title');
 
-  /** Le parent est prié de fermer la fenêtre. */
+  /** The parent is asked to close the dialog. */
   protected abstract requestClose(reason: CloseReason): void;
-  /** Le contenu de la fenêtre, sous son titre. */
+  /** The content of the dialog, under its title. */
   protected abstract body(): unknown;
-  /** La classe propre à la fenêtre (`super-dialog`, `super-modal`…). */
+  /** The dialog's own class (`super-dialog`, `super-modal`…). */
   protected abstract readonly kind: string;
 
-  /** Le titre affiché. */
+  /** The displayed title. */
   protected heading(): string {
     return this.props.title ?? '';
   }
@@ -49,7 +49,7 @@ abstract class WindowBase<P extends BaseProps, E extends Record<string, unknown>
     this.#previousFocus = document.activeElement;
     const dialog = this.#dialog.value!;
     if (!dialog.open) dialog.showModal();
-    // Le focus entre dans la fenêtre (le navigateur le fait d'habitude ; on ne compte pas dessus).
+    // Focus enters the dialog (the browser usually does it; we do not rely on it).
     if (!dialog.contains(document.activeElement)) {
       (
         dialog.querySelector<HTMLElement>('[autofocus], a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])') ??
@@ -66,21 +66,21 @@ abstract class WindowBase<P extends BaseProps, E extends Record<string, unknown>
 
   #keydown = (event: KeyboardEvent) => {
     if (event.key !== 'Escape') return;
-    // Échap est géré ici, pas par le navigateur : la fenêtre ne se ferme que si le parent le décide.
+    // Escape is handled here, not by the browser: the dialog closes only if the parent decides so.
     event.preventDefault();
     if (this.closeOn().escape) this.requestClose('escape');
   };
 
-  // Le navigateur ferme un dialog sur `cancel` (Échap) : on garde la main.
+  // The browser closes a dialog on `cancel` (Escape): we keep control.
   #cancel = (event: Event) => event.preventDefault();
 
   #click = (event: MouseEvent) => {
-    // Un clic dont la cible est le <dialog> lui-même est un clic sur le fond (hors du contenu).
+    // A click whose target is the <dialog> itself is a click on the backdrop (outside the content).
     if (event.target === this.#dialog.value && this.closeOn().backdrop) this.requestClose('backdrop');
   };
 
   render() {
-    const { closeLabel = 'Fermer' } = this.props;
+    const { closeLabel = 'Close' } = this.props;
     const title = this.heading();
     const titleId = this.#titleId;
     return html`<dialog
@@ -113,18 +113,18 @@ abstract class WindowBase<P extends BaseProps, E extends Record<string, unknown>
 type DialogProps = BaseProps & {
   title: string;
   content: Children;
-  /** Les boutons d'action, en pied de fenêtre : `<:actions>…</:actions>`. */
+  /** The action buttons, at the foot of the dialog: `<:actions>…</:actions>`. */
   actions?: Children;
 };
 
 /**
- * Une fenêtre de dialogue : un titre, un contenu, et des actions en pied.
+ * A dialog: a title, content, and actions at the foot.
  *
  * ```tsx
  * if (this.local.get().editing) {
- *   <Dialog title="Renommer" on:close={() => this.local.set({ editing: false })}>
+ *   <Dialog title="Rename" on:close={() => this.local.set({ editing: false })}>
  *     <input … />
- *     <:actions><button on:click={this.save}>Enregistrer</button></:actions>
+ *     <:actions><button on:click={this.save}>Save</button></:actions>
  *   </Dialog>
  * }
  * ```
@@ -147,8 +147,8 @@ export class Dialog extends WindowBase<DialogProps, { close: { reason: CloseReas
 type ModalProps = BaseProps & { title: string; content: Children };
 
 /**
- * Une fenêtre sans actions : un titre, un contenu, et de quoi la fermer (Échap et la croix par
- * défaut, réglable par `closeOn`).
+ * A dialog without actions: a title, content, and a way to close it (Escape and the close button by
+ * default, configurable through `closeOn`).
  */
 export class Modal extends WindowBase<ModalProps, { close: { reason: CloseReason } }> {
   static tag = 'super-modal';
@@ -164,17 +164,17 @@ export class Modal extends WindowBase<ModalProps, { close: { reason: CloseReason
 }
 
 type ConfirmProps = BaseProps & {
-  /** La question posée. Titre par défaut : « Confirmation ». */
+  /** The question asked. Default title: "Confirmation". */
   question: string;
   confirmLabel?: string;
   cancelLabel?: string;
-  /** Action destructrice : le bouton de confirmation prend la couleur d'alerte. */
+  /** Destructive action: the confirm button takes the danger colour. */
   danger?: boolean;
 };
 
 /**
- * Une question à confirmer. Répond par `answered` : `{ confirmed: true }` pour le bouton de
- * confirmation, `false` pour l'annulation, Échap, la croix ou le fond.
+ * A question to confirm. Answers through `answered`: `{ confirmed: true }` for the confirm
+ * button, `false` for cancel, Escape, the close button or the backdrop.
  */
 export class ConfirmDialog extends WindowBase<ConfirmProps, { answered: { confirmed: boolean } }> {
   static tag = 'super-confirm-dialog';
@@ -189,7 +189,7 @@ export class ConfirmDialog extends WindowBase<ConfirmProps, { answered: { confir
   }
 
   protected body() {
-    const { question, confirmLabel = 'Confirmer', cancelLabel = 'Annuler', danger = false } = this.props;
+    const { question, confirmLabel = 'Confirm', cancelLabel = 'Cancel', danger = false } = this.props;
     return html`<p class="super-window-body">${question}</p>
       <footer class="super-window-actions">
         <button type="button" class="super-button" data-variant="secondary" @click=${() => this.emit('answered', { confirmed: false })}>
