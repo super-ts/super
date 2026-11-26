@@ -3,7 +3,8 @@
 // 1. build, puis `npm pack` de chaque paquet ;
 // 2. une app Vite vierge dans un dossier temporaire, qui installe les tarballs ;
 // 3. l'exemple de docs/demarrer.html : contrat, store, composant .super, test ;
-// 4. vite build, super-tsc, vitest, super-fmt, biome avec @super-ts/lint.
+// 4. vite build, super-tsc, vitest, super-fmt, biome avec @super-ts/lint ;
+// 5. les tests du serveur de langage, sur le serveur installé.
 //
 // `--keep` garde le dossier temporaire (il est gardé aussi en cas d'échec).
 import { spawnSync } from 'node:child_process';
@@ -13,7 +14,9 @@ import { dirname, join } from 'node:path';
 
 const root = join(import.meta.dirname, '..');
 const keep = process.argv.includes('--keep');
-const PACKAGES = ['core', 'dom', 'ui', 'testing', 'lang', 'vite', 'lint'];
+// Dossiers de packages/ ; le nom npm est lu dans leur package.json.
+const PACKAGES = ['core', 'dom', 'ui', 'testing', 'lang', 'vite', 'lint', 'lang-server'];
+const manifest = (dir) => JSON.parse(readFileSync(join(root, 'packages', dir, 'package.json'), 'utf8'));
 
 // Rien du dépôt ne doit fuir dans l'app : ni la condition `@super-ts/source` (le `.npmrc` du dépôt
 // la passe par NODE_OPTIONS aux scripts npm), ni la config npm du `npm run` parent.
@@ -46,10 +49,10 @@ function write(path, content) {
 // 1. build et tarballs
 run('build', 'npm', ['run', 'build'], root);
 mkdirSync(tarballs);
-for (const name of PACKAGES) run(`pack @super-ts/${name}`, 'npm', ['pack', '--pack-destination', tarballs, '--silent'], join(root, 'packages', name));
-const tarball = (name) => {
-  const { version } = JSON.parse(readFileSync(join(root, 'packages', name, 'package.json'), 'utf8'));
-  return `file:${join(tarballs, `super-ts-${name}-${version}.tgz`)}`;
+for (const dir of PACKAGES) run(`pack ${manifest(dir).name}`, 'npm', ['pack', '--pack-destination', tarballs, '--silent'], join(root, 'packages', dir));
+const tarball = (dir) => {
+  const { name, version } = manifest(dir);
+  return `file:${join(tarballs, `${name.replace('@', '').replace('/', '-')}-${version}.tgz`)}`;
 };
 
 // 2. l'app : les outils aux versions du dépôt, Super par ses tarballs
@@ -68,6 +71,7 @@ write(
         '@super-ts/lang': tarball('lang'),
         '@super-ts/vite': tarball('vite'),
         '@super-ts/lint': tarball('lint'),
+        '@super-ts/language-server': tarball('lang-server'),
         ...Object.fromEntries(tools.map((tool) => [tool, devVersions[tool]])),
       },
     },
@@ -288,9 +292,9 @@ test('le bouton bascule le thème', async () => {
 
 // 4. ce que fait un utilisateur
 run('npm install (tarballs)', 'npm', ['install', '--no-audit', '--no-fund', '--prefer-offline'], app);
-for (const name of PACKAGES) {
-  if (existsSync(join(app, 'node_modules', '@super-ts', name, 'src'))) {
-    fail(`@super-ts/${name} ships its src/ folder`);
+for (const dir of PACKAGES) {
+  if (existsSync(join(app, 'node_modules', manifest(dir).name, 'src'))) {
+    fail(`${manifest(dir).name} ships its src/ folder`);
   }
 }
 run('vite build', 'npx', ['vite', 'build'], app);
@@ -316,6 +320,16 @@ run('biome format --write', 'npx', ['biome', 'format', '--write'], app);
 run('super-fmt --write', 'npx', ['super-fmt', '--write', 'src'], app);
 run('super-fmt --check', 'npx', ['super-fmt', '--check', 'src'], app);
 run('biome check (@super-ts/lint)', 'npx', ['biome', 'check'], app);
+
+// Le serveur de langage installé (TypeScript 6 et Volar venus de npm), piloté par les tests du dépôt.
+console.log('\nsmoke: language server tests on the installed server');
+const server = join(app, 'node_modules', '@super-ts', 'language-server', 'dist', 'server.js');
+const tests = spawnSync('npm', ['run', 'test', '--', 'packages/lang-server/src/server.test.ts'], {
+  cwd: root,
+  env: { ...process.env, SUPER_LS_SERVER: server },
+  stdio: 'inherit',
+});
+if (tests.status !== 0) fail('the language server tests failed on the installed server');
 
 if (keep) console.log(`\nsmoke: OK. App kept in ${app}`);
 else {

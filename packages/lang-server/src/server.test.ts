@@ -34,8 +34,11 @@ const show = async (text: string) => {
 const labels = (completion: any): string[] =>
   (Array.isArray(completion) ? completion : (completion?.items ?? [])).map((i: { label: string }) => i.label);
 
+/** Le serveur piloté : ses sources, ou un serveur assemblé (`SUPER_LS_SERVER`, voir `npm run smoke`). */
+const SERVER = process.env.SUPER_LS_SERVER ?? join(import.meta.dirname, 'server.ts');
+
 beforeAll(async () => {
-  client = new TestClient(join(import.meta.dirname, 'server.ts'), ['--stdio']);
+  client = new TestClient(SERVER, ['--stdio']);
   await client.initialize(ROOT);
   uri = client.open(CARD, 'typescriptreact');
 }, 30000);
