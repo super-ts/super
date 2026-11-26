@@ -161,16 +161,17 @@ Préparé le 2026-11-26 dans `editors/tree-sitter-super` (commits locaux, à pou
 - [x] `.github/workflows/release.yml` (push sur main) : `changesets/action@v1`, `version: npm run version-packages`, titre et commit `chore: version packages`, `NPM_CONFIG_PROVENANCE`, `id-token: write`, npm mis à jour en ^11.5.1 (trusted publishing), `registry-url`, pas de `NODE_AUTH_TOKEN`. La publication ne part que si la variable de dépôt `RELEASE_ENABLED` vaut `'true'` (sinon `publish` est vide) : **l'utilisateur la met à `true` après la phase 9**.
 - À savoir : la PR « Version packages » ouverte avec `GITHUB_TOKEN` ne déclenche pas les workflows (limite GitHub) : pas de CI sur cette PR.
 
-## Phase 9 : première publication npm (l'utilisateur ; publiée le 2026-11-26)
+## Phase 9 : première publication npm (faite le 2026-11-26)
 
 - [x] Répétition avec Verdaccio (2026-11-26) : `npx changeset publish --no-git-tag` vers un Verdaccio jetable (config dans /tmp : `publish: $all`, utilisateur créé par `PUT /-/user/org.couchdb.user:<nom>` pour obtenir un jeton ; un jeton inventé est refusé) publie les 8 paquets en 0.1.0 ; `npm run smoke -- --registry http://127.0.0.1:4873/` (nouvelle option) passe en entier. Tout nettoyé ensuite (~/.npmrc temporaire, Verdaccio, apps de test).
 - [x] READMEs des 8 paquets (logo servi par le dépôt public de la grammaire). L'utilisateur accepte de publier avec `repository`/`homepage`/`bugs` vers le dépôt privé (404 jusqu'au passage en public).
 - [x] `npm login` (compte `dimitrilahaye`). Sa 2FA est une **clé de sécurité (Touch ID)**, pas un code TOTP : `--otp` est inutilisable (un code d'exemple `123456` tapé tel quel × 8 publications parallèles a déclenché `E429 rate limited otp`, ma faute : ne jamais donner un code d'exemple qui ressemble à un vrai). Avec une clé, npm valide par une page web.
 - [x] Première publication faite le 2026-11-26 par l'utilisateur (`npm run release`) : les 8 paquets en **0.1.0** (`latest`). npm l'a fait passer par la **publication en attente** (staged publishing) : un paquet provisoire public `0.0.0-stage` (« Temporary package placeholder for staged publishing ») est créé pour chaque nouveau paquet, la vraie version arrive après validation ; le registre a mis quelques minutes à servir 0.1.0. `npm stage` existe à partir de npm 11.15 (`npx -y "npm@>=11.15.0 <12" stage list`), npm 12 ne supporte pas Node 25. Vérifié : `npm run smoke -- --registry https://registry.npmjs.org/` passe en entier sur les paquets publiés.
-  - Changesets a créé les 8 tags locaux `@super-ts/<nom>@0.1.0` : **à pousser** (`git push --tags`).
   - Les versions `0.0.0-stage` restent listées : les déprécier (`npm deprecate @super-ts/<nom>@0.0.0-stage "Placeholder of the first staged publication"`) si on veut les cacher des outils.
   - Entre-temps corrigé : bin des paquets écrits sans `./` (npm les normalisait avec un avertissement trompeur « was invalid and removed ») ; READMEs dom/ui reformatés (Biome formate le Markdown, extraits `.super` marqués `super`).
-- [ ] Sur npmjs.com, pour chaque paquet : Settings, puis Trusted publishers, puis GitHub Actions (dépôt + `release.yml`). Ensuite, interdire la publication par token.
+- [x] Trusted publishing configuré par l'utilisateur sur les 8 paquets (2026-11-26) : GitHub Actions, `super-ts` / `super` / `release.yml`, sans environnement, **« Allow npm publish » coché** (sinon seul `npm stage publish` est permis et `changeset publish` serait refusé ; le merge de la PR de version tient lieu de validation humaine), « Allow npm dist-tag » décoché. Publishing access : « Require two-factor authentication and disallow bypass 2fa tokens ».
+- [x] Variable de dépôt `RELEASE_ENABLED=true` posée par l'utilisateur : `release.yml` publie désormais au merge de la PR « chore: version packages ».
+- [x] Tags `@super-ts/<nom>@0.1.0` poussés.
 
 ## Phase 10 : première publication Zed (l'utilisateur)
 
