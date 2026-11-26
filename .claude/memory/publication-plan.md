@@ -139,14 +139,14 @@ Préparé le 2026-11-26 dans `editors/tree-sitter-super` (commits locaux, à pou
 - [x] `[grammars.super]` de `extension.toml` en `https://github.com/super-ts/tree-sitter-super`, `rev` = `b8c59a9` (tag v0.1.0, même grammaire compilée que l'ancienne rev). Vérifié : clone HTTPS à la rev, compilation de `parser.c` + `scanner.c`, `generate` sans diff, `npm test`. L'utilisateur doit réinstaller l'extension dev. Conséquence : pour voir une modification de grammaire dans Zed, il faut maintenant la **pousser** (le script `use-local-grammar.sh` prévu plus bas permettrait de repasser en `file://` le temps d'itérer).
 - [x] CI de la grammaire (`.github/workflows/ci.yml`, `actions/checkout@v6` et `setup-node@v6`, Node 24) : `npm ci`, `tree-sitter generate` puis `git diff --exit-code -- src`, `npm test`. Commit `93e5cfc`, à pousser pour la voir tourner.
 
-## Phase 7 : extension Zed publiable (faite le 2026-11-26, sauf le test du chemin npm)
+## Phase 7 : extension Zed publiable (faite le 2026-11-26)
 
 - [x] `lib.rs` : réglage `lsp.super-language-server.binary` prioritaire ; sinon version de `node_modules/@super-ts/lang/package.json` du projet (via `serde_json` réexporté par `zed_extension_api` 0.7.0) ; `npm_install_package("@super-ts/language-server", version)` si absent ou d'une autre version (`npm_package_installed_version`, version gardée en mémoire pour la session), ou `npm_package_latest_version` sans Super ; statuts d'installation (CheckingForUpdate, Downloading, Failed, None) ; lancement de `<current_dir>/node_modules/@super-ts/language-server/dist/server.js --stdio` avec `zed::node_binary_path()`. Recherche dans `packages/lang-server` et l'ancien nom `super-language-server` retirées.
 - [x] Le dépôt Super passe par `.zed/settings.json` : `binary` = `node packages/lang-server/src/server.ts --stdio` (chemin relatif : Zed démarre les serveurs à la racine du projet ; Node du PATH ≥ 23.6). Vérifié : ce serveur répond à `initialize` sans la condition `@super-ts/source`.
 - [x] `extension.toml` : id `super-lang` (choix de l'utilisateur), `authors = ["Dimitri Lahaye"]` (sans e-mail), `repository = "https://github.com/super-ts/super"`, `[[capabilities]] kind = "npm:install"`, `package = "@super-ts/language-server"` (forme de la doc Zed actuelle).
 - [x] README de l'extension et `docs/tooling.html#zed` réécrits ; licence déjà là ; textes en anglais (traduction).
 - [x] CI `.github/workflows/zed-extension.yml` dans Super : `rustup target add wasm32-wasip2` puis `cargo build --release --target wasm32-wasip2` sur `editors/zed/**`. Build local vérifié (`cargo build --release --target wasm32-wasip2`) ; premier passage sur GitHub vert (confirmé par l'utilisateur, 2026-11-26 : dépôt privé, je ne peux pas lire les runs sans `gh`).
-- [ ] Le chemin npm (installation du serveur par l'extension) n'est testable qu'avec le paquet publié, ou avec Verdaccio (voir « Travailler en local ») : à faire avant la phase 10.
+- [x] Chemin npm testé le 2026-11-26 avec Verdaccio : dans l'app du smoke test (paquets installés depuis Verdaccio, sans réglage `binary`), l'extension dev `super-lang` a installé `@super-ts/language-server@0.1.0` dans `~/Library/Application Support/Zed/extensions/work/super-lang/` et le serveur marche (langage « Super », erreur soulignée ; confirmé par l'utilisateur). Ensuite, copie de Verdaccio supprimée de ce dossier : même numéro 0.1.0, l'extension l'aurait gardée au lieu de télécharger la vraie.
 - L'utilisateur doit désinstaller l'ancienne extension dev d'id `super`, puis `zed: install dev extension` sur `editors/zed`.
 - `repository` pointe vers le dépôt privé : à changer pour le futur dépôt public avant la PR Zed (phase 10).
 
@@ -163,7 +163,8 @@ Préparé le 2026-11-26 dans `editors/tree-sitter-super` (commits locaux, à pou
 
 ## Phase 9 : première publication npm (l'utilisateur)
 
-- [ ] Vérification préalable de bout en bout avec Verdaccio (voir « Travailler en local »).
+- [x] Répétition avec Verdaccio (2026-11-26) : `npx changeset publish --no-git-tag` vers un Verdaccio jetable (config dans /tmp : `publish: $all`, utilisateur créé par `PUT /-/user/org.couchdb.user:<nom>` pour obtenir un jeton ; un jeton inventé est refusé) publie les 8 paquets en 0.1.0 ; `npm run smoke -- --registry http://127.0.0.1:4873/` (nouvelle option) passe en entier. Tout nettoyé ensuite (~/.npmrc temporaire, Verdaccio, apps de test).
+- [x] READMEs des 8 paquets (logo servi par le dépôt public de la grammaire). L'utilisateur accepte de publier avec `repository`/`homepage`/`bugs` vers le dépôt privé (404 jusqu'au passage en public).
 - [ ] `npm login`, avec un compte membre de l'org `super-ts` et la 2FA activée.
 - [ ] `npm run build && npx changeset publish` depuis sa machine. Le trusted publishing exige que le paquet existe déjà sur npm, d'où cette première publication à la main.
 - [ ] Sur npmjs.com, pour chaque paquet : Settings, puis Trusted publishers, puis GitHub Actions (dépôt + `release.yml`). Ensuite, interdire la publication par token.
