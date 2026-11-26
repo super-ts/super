@@ -135,22 +135,20 @@ Préparé le 2026-11-26 dans `editors/tree-sitter-super` (commits locaux, à pou
 - [x] Versionnage par **release-please** (choix de l'utilisateur, après essai de Changesets) : `release-please-config.json` (type node, tag `vX.Y.Z`, `bump-minor-pre-major`, `extra-files` pour `$.metadata.version` de `tree-sitter.json`, `bootstrap-sha` = commit des tests), `.release-please-manifest.json` à 0.1.0, workflow `.github/workflows/release-please.yml` (`googleapis/release-please-action@v4`), `CHANGELOG.md` avec l'entrée 0.1.0, `version` dans `package.json`.
   - Pourquoi pas Changesets : @manypkg/find-root prend comme racine le premier parent qui déclare des workspaces ; depuis le sous-module, toute commande `changeset` remonte à la racine de Super et y écrit (`"workspaces": []` → aucun paquet ; `["."]` → npm casse).
 - [x] Dépôt `super-ts/tree-sitter-super` passé en public par l'utilisateur ; commits poussés et tag annoté `v0.1.0` (sur `b8c59a9`) poussé le 2026-11-26 ; pointeur du sous-module avancé dans Super.
-- [ ] L'utilisateur : cocher « Allow GitHub Actions to create and approve pull requests » dans les réglages Actions de l'**organisation** `super-ts` (grisé au niveau du dépôt, verrouillé par l'org). La permission par défaut peut rester en lecture : le workflow déclare `contents: write` et `pull-requests: write`. Sans ce réglage, release-please échoue à ouvrir sa PR.
+- [x] (fait par l'utilisateur, 2026-11-26) cocher « Allow GitHub Actions to create and approve pull requests » dans les réglages Actions de l'**organisation** `super-ts` (grisé au niveau du dépôt, verrouillé par l'org). La permission par défaut peut rester en lecture : le workflow déclare `contents: write` et `pull-requests: write`. Sans ce réglage, release-please échoue à ouvrir sa PR.
 - [x] `[grammars.super]` de `extension.toml` en `https://github.com/super-ts/tree-sitter-super`, `rev` = `b8c59a9` (tag v0.1.0, même grammaire compilée que l'ancienne rev). Vérifié : clone HTTPS à la rev, compilation de `parser.c` + `scanner.c`, `generate` sans diff, `npm test`. L'utilisateur doit réinstaller l'extension dev. Conséquence : pour voir une modification de grammaire dans Zed, il faut maintenant la **pousser** (le script `use-local-grammar.sh` prévu plus bas permettrait de repasser en `file://` le temps d'itérer).
 - [x] CI de la grammaire (`.github/workflows/ci.yml`, `actions/checkout@v6` et `setup-node@v6`, Node 24) : `npm ci`, `tree-sitter generate` puis `git diff --exit-code -- src`, `npm test`. Commit `93e5cfc`, à pousser pour la voir tourner.
 
-## Phase 7 : extension Zed publiable (moi)
+## Phase 7 : extension Zed publiable (faite le 2026-11-26, sauf le test du chemin npm)
 
-- [ ] `lib.rs`, dans l'ordre :
-  1. le réglage `lsp.super-language-server.binary` l'emporte ;
-  2. sinon, lire la version de `node_modules/@super-ts/lang/package.json` dans le projet ;
-  3. `zed::npm_install_package("@super-ts/language-server", version)`, ou `zed::npm_package_latest_version` si le projet n'a pas Super ;
-  4. lancer `dist/server.js` avec `zed::node_binary_path()`.
-
-  Retirer la recherche dans `packages/lang-server` : le dépôt Super passe par le réglage `binary` dans son `.zed/settings.json`.
-- [ ] `extension.toml` : nouvel id, `name`, description en anglais, `authors`, `repository`, capacité `npm:install`.
-- [ ] Les messages de `lib.rs` en anglais, la licence dans `editors/zed`, le README de l'extension en anglais.
-- [ ] Un job CI qui compile l'extension en `wasm32-wasip2`.
+- [x] `lib.rs` : réglage `lsp.super-language-server.binary` prioritaire ; sinon version de `node_modules/@super-ts/lang/package.json` du projet (via `serde_json` réexporté par `zed_extension_api` 0.7.0) ; `npm_install_package("@super-ts/language-server", version)` si absent ou d'une autre version (`npm_package_installed_version`, version gardée en mémoire pour la session), ou `npm_package_latest_version` sans Super ; statuts d'installation (CheckingForUpdate, Downloading, Failed, None) ; lancement de `<current_dir>/node_modules/@super-ts/language-server/dist/server.js --stdio` avec `zed::node_binary_path()`. Recherche dans `packages/lang-server` et l'ancien nom `super-language-server` retirées.
+- [x] Le dépôt Super passe par `.zed/settings.json` : `binary` = `node packages/lang-server/src/server.ts --stdio` (chemin relatif : Zed démarre les serveurs à la racine du projet ; Node du PATH ≥ 23.6). Vérifié : ce serveur répond à `initialize` sans la condition `@super-ts/source`.
+- [x] `extension.toml` : id `super-lang` (choix de l'utilisateur), `authors = ["Dimitri Lahaye"]` (sans e-mail), `repository = "https://github.com/super-ts/super"`, `[[capabilities]] kind = "npm:install"`, `package = "@super-ts/language-server"` (forme de la doc Zed actuelle).
+- [x] README de l'extension et `docs/tooling.html#zed` réécrits ; licence déjà là ; textes en anglais (traduction).
+- [x] CI `.github/workflows/zed-extension.yml` dans Super : `rustup target add wasm32-wasip2` puis `cargo build --release --target wasm32-wasip2` sur `editors/zed/**`. Build local vérifié (`cargo build --release --target wasm32-wasip2`).
+- [ ] Le chemin npm (installation du serveur par l'extension) n'est testable qu'avec le paquet publié, ou avec Verdaccio (voir « Travailler en local ») : à faire avant la phase 10.
+- L'utilisateur doit désinstaller l'ancienne extension dev d'id `super`, puis `zed: install dev extension` sur `editors/zed`.
+- `repository` pointe vers le dépôt privé : à changer pour le futur dépôt public avant la PR Zed (phase 10).
 
 ## Phase 8 : Changesets, version et CI (moi)
 
