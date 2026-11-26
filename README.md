@@ -146,7 +146,7 @@ The packages are npm workspaces (`packages/*`). In this repository, `@super-ts/â
 
 For errors and completion in `.super` files, connect your editor to the language server in `packages/lang-server`. In Zed, install the extension in `editors/zed` as a dev extension (`zed: install dev extension`). See [Tooling](docs/tooling.html).
 
-The Tree-sitter grammar for `.super` files, used by the Zed extension, lives in its own repository: [super-ts/tree-sitter-super](https://github.com/super-ts/tree-sitter-super). It is plugged in here as a submodule, in `editors/tree-sitter-super`: clone with `git clone --recurse-submodules`, or run `git submodule update --init` afterwards.
+The Zed extension and the Tree-sitter grammar for `.super` files live in their own public repositories, [super-ts/super-extension-zed](https://github.com/super-ts/super-extension-zed) and [super-ts/tree-sitter-super](https://github.com/super-ts/tree-sitter-super). They are plugged in here as submodules, in `editors/zed` and `editors/tree-sitter-super`: clone with `git clone --recurse-submodules`, or run `git submodule update --init` afterwards.
 
 ## Documentation
 
@@ -188,7 +188,7 @@ packages/lang      the .super language: parser, compilation to lit, virtual Type
 packages/lang-server  the .super language server (Volar on TypeScript 6)
 packages/lint      the Biome configuration (import order)
 examples/demo      the demo app: counters, form, shop, errors, widget, composition, kit
-editors/zed        the Zed extension for .super files ("Super" language and language server launch)
+editors/zed        the Zed extension for .super files (submodule, super-ts/super-extension-zed repository)
 editors/tree-sitter-super  the Tree-sitter grammar for .super files (submodule, super-ts/tree-sitter-super repository)
 docs/              the documentation site and the llms*.txt files (docs/tools: generation of the index and llms*.txt)
 ```

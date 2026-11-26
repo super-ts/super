@@ -6,7 +6,7 @@ Version 0.1.0 of the `@super-ts/*` packages, published on npm. Status: explorato
 
 ## Documentation in one file
 
-- [Full documentation](llms-full.txt): all the pages in markdown, code included (420 KB).
+- [Full documentation](llms-full.txt): all the pages in markdown, code included (421 KB).
 - [Short documentation](llms-small.txt): the same, without the references to the examples app or the secondary passages, for small context windows (358 KB).
 
 ## Start here
