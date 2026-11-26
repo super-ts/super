@@ -5,16 +5,16 @@
   </picture>
 </p>
 
-Un framework front minimaliste, typé de bout en bout. Il encadre trois choses, les **stores**, les **composants** et le **routing**, et laisse tout le reste à ton projet.
+A minimalist front-end framework, typed end to end. It frames three things, **stores**, **components** and **routing**, and leaves everything else to your project.
 
-Avec Super, l'IDE connaît le body de chaque commande, le payload de chaque événement et les paramètres de chaque route. Un lien sans son paramètre, un écran aux mauvaises props, une commande inconnue ou une faute dans un template ne compilent pas.
+With Super, the IDE knows the body of every command, the payload of every event and the parameters of every route. A link without its parameter, a screen with the wrong props, an unknown command or a typo in a template do not compile.
 
-> Statut : draft exploratoire. L'API peut encore bouger, et les paquets ne sont pas publiés sur npm.
+> Status: exploratory draft. The API may still change, and the packages are not published on npm.
 
-## En un coup d'œil
+## At a glance
 
 ```ts
-// src/@core/counter/contract.ts : ce qu'on lit, ce qu'on demande, ce qu'on écoute
+// src/@core/counter/contract.ts: what you read, what you ask for, what you listen to
 type CounterState = { counts: Readonly<Record<string, number>> };
 
 export class CounterContract extends SuperContract<{
@@ -29,7 +29,7 @@ export class CounterContract extends SuperContract<{
   }
 }
 
-// src/@core/counter/store.ts : l'implémentation, et le seul endroit où l'on attend
+// src/@core/counter/store.ts: the implementation, and the only place where you await
 export class CounterStore extends SuperStore<CounterContract> implements Commands<CounterStore> {
   #repository: CounterRepository;
 
@@ -42,15 +42,15 @@ export class CounterStore extends SuperStore<CounterContract> implements Command
     const count = this.selectors.count(id) + 1;
     await this.#repository.save(id, count).catch(() => this.fail('storage'));
     this.set((s) => ({ counts: { ...s.counts, [id]: count } }));
-    return { count }; // Super publie increment:done, ou increment:failed avec la raison
+    return { count }; // Super publishes increment:done, or increment:failed with the reason
   }
 }
 ```
 
-Un composant s'écrit dans un fichier `.super` : du TypeScript dont les méthodes écrivent leurs éléments comme des instructions, avec `if`, `for` et `switch` au milieu du HTML. Il déclare dans sa classe son tag (`@tag`), ses props (`@prop`), ses événements (`@emit`) et, s'il en pose un, le titre de la page (`@title`). Ce qu'il prépare une fois s'y déclare aussi : les stores (`@contract`), les lectures (`@selector`), l'état local (`@state`), les formulaires (`@form`), les références (`@ref`) et les écouteurs (`@on`).
+A component is written in a `.super` file: TypeScript whose methods write their elements as statements, with `if`, `for` and `switch` in the middle of the HTML. Its class declares its tag (`@tag`), its props (`@prop`), its events (`@emit`) and, if it sets one, the page title (`@title`). What it prepares once is declared there too: stores (`@contract`), reads (`@selector`), local state (`@state`), forms (`@form`), references (`@ref`) and listeners (`@on`).
 
 ```tsx
-// src/@components/shared/counter-button.super : demande le store par son nom, n'attend jamais
+// src/@components/shared/counter-button.super: asks for the store by name, never awaits
 import { SuperElement } from '@super-ts/dom';
 
 export class CounterButton extends SuperElement {
@@ -65,77 +65,77 @@ export class CounterButton extends SuperElement {
 }
 ```
 
-## Pourquoi Super
+## Why Super
 
-- **Le contrat est la seule porte d'un store.** Un composant demande le store par le nom de son contrat (`@contract counter;`), lit par les sélecteurs, envoie des commandes et écoute des événements, rien d'autre. Il se teste donc avec un faux store.
-- **La vue envoie et laisse filer.** Une commande ne renvoie rien à l'appelant. Le store fait le travail asynchrone ; Super suit chaque commande (« en cours », réussie, échouée avec une raison typée) et publie son issue.
-- **Préparer, puis afficher.** Les déclarations d'un composant préparent une fois (stores, état local, lectures, écouteurs), `render` affiche à chaque rendu. On ne peut pas créer d'abonnement pendant le rendu par erreur.
-- **On ne re-rend que ce qu'on affiche.** Un composant se re-rend seulement si la valeur qu'il lit a changé.
-- **Une architecture minimale, vérifiée.** Deux dossiers imposés (`src/@core/`, `src/@components/`), et le plugin Vite refuse ce qui sort du cadre. Tout le reste reste à toi.
-- **Des templates typés.** Dans un `.super`, une balise inconnue, une prop manquante ou mal typée, un événement que l'enfant n'émet pas ou un objet affiché par erreur sont des erreurs de compilation, signalées dans l'éditeur et par `npm run typecheck`.
-- **Le titre de la page suit les données.** ``@title = () => `Compteur ${this.label.value}`;`` est recalculé à chaque rendu ; le dernier composant monté qui pose un titre l'emporte, et le précédent revient à son démontage.
-- **Le standard web d'abord.** Un store est un `EventTarget`, un composant est un custom element. Les `.super` sont compilés vers lit-html, sans que tu l'importes jamais. L'app d'exemples complète (six exemples) pèse 24,6 Ko gzip, lit-html compris.
+- **The contract is a store's only door.** A component asks for the store by its contract's name (`@contract counter;`), reads through selectors, sends commands and listens to events, nothing else. So it can be tested with a fake store.
+- **The view sends and lets go.** A command returns nothing to the caller. The store does the asynchronous work; Super tracks each command ("pending", succeeded, failed with a typed reason) and publishes its outcome.
+- **Prepare, then display.** A component's declarations prepare once (stores, local state, reads, listeners), `render` displays on every render. You cannot create a subscription during render by mistake.
+- **Only what is displayed re-renders.** A component re-renders only if the value it reads has changed.
+- **A minimal, checked architecture.** Two required folders (`src/@core/`, `src/@components/`), and the Vite plugin rejects anything outside the frame. Everything else is up to you.
+- **Typed templates.** In a `.super` file, an unknown tag, a missing or mistyped prop, an event the child does not emit or an object displayed by mistake are compile errors, reported in the editor and by `npm run typecheck`.
+- **The page title follows the data.** ``@title = () => `Counter ${this.label.value}`;`` is recomputed on every render; the last mounted component that sets a title wins, and the previous one comes back when it unmounts.
+- **The web standard first.** A store is an `EventTarget`, a component is a custom element. `.super` files are compiled to lit-html, without you ever importing it. The complete demo app (six examples) weighs 24.6 KB gzipped, lit-html included.
 
-## Démarrer
+## Getting started
 
 ```bash
 npm install
-npm run dev        # l'app d'exemples (examples/demo) sur http://localhost:5173
-npm test           # les tests (Vitest, happy-dom)
-npm run typecheck  # super-tsc : les types des .ts et des .super
-npm run lint       # Biome (ordre des imports, formatage) et formatage des .super
-npm run format     # formate tout (.ts par Biome, .super par le formateur des .super)
-npm run check      # lint, typecheck, tests, puis index de la doc
-npm run docs       # la documentation sur http://localhost:5174
+npm run dev        # the demo app (examples/demo) on http://localhost:5173
+npm test           # the tests (Vitest, happy-dom)
+npm run typecheck  # super-tsc: the types of .ts and .super files
+npm run lint       # Biome (import order, formatting) and formatting of .super files
+npm run format     # formats everything (.ts by Biome, .super by the .super formatter)
+npm run check      # lint, typecheck, tests, then the docs index
+npm run docs       # the documentation on http://localhost:5174
 ```
 
-Les paquets sont des workspaces npm (`packages/*`). Dans ce dépôt, `@super-ts/…` se résout vers les sources (`packages/*/src`), sans build : par les alias de `tsconfig.json` et `vite.config.ts` dans l'app et les tests, et par la condition d'export `@super-ts/source` pour Node (le `.npmrc` la passe à tous les scripts npm, et Vite charge sa config avec `--configLoader native` pour en profiter). Lance donc Vite et Vitest par `npm run …`.
+The packages are npm workspaces (`packages/*`). In this repository, `@super-ts/…` resolves to the sources (`packages/*/src`), without a build: through the aliases in `tsconfig.json` and `vite.config.ts` in the app and the tests, and through the `@super-ts/source` export condition for Node (`.npmrc` passes it to every npm script, and Vite loads its config with `--configLoader native` to benefit from it). So run Vite and Vitest through `npm run …`.
 
-Pour les erreurs et la complétion dans les `.super`, branche ton éditeur sur le serveur de langage de `packages/lang-server`. Sous Zed, installe l'extension de `editors/zed` comme extension de développement (`zed: install dev extension`). Voir [Outillage](docs/tooling.html).
+For errors and completion in `.super` files, connect your editor to the language server in `packages/lang-server`. In Zed, install the extension in `editors/zed` as a dev extension (`zed: install dev extension`). See [Tooling](docs/tooling.html).
 
-La grammaire Tree-sitter des `.super`, utilisée par l'extension Zed, vit dans son propre dépôt : [super-ts/tree-sitter-super](https://github.com/super-ts/tree-sitter-super). Elle est branchée ici en sous-module, dans `editors/tree-sitter-super` : clone avec `git clone --recurse-submodules`, ou lance `git submodule update --init` après coup.
+The Tree-sitter grammar for `.super` files, used by the Zed extension, lives in its own repository: [super-ts/tree-sitter-super](https://github.com/super-ts/tree-sitter-super). It is plugged in here as a submodule, in `editors/tree-sitter-super`: clone with `git clone --recurse-submodules`, or run `git submodule update --init` afterwards.
 
 ## Documentation
 
-La documentation est un site statique dans [`docs/`](docs/index.html). Ouvre `docs/index.html` dans un navigateur, ou lance `npm run docs`. Elle a une recherche intégrée (touche `/`).
+The documentation is a static site in [`docs/`](docs/index.html). Open `docs/index.html` in a browser, or run `npm run docs`. It has built-in search (`/` key).
 
-- [Démarrer](docs/getting-started.html) : ta première fonctionnalité, du contrat au test.
-- [Exemples](docs/examples.html) : ce que montre chaque fichier de l'app d'exemples.
-- [Architecture](docs/architecture.html) : ce que Super impose, ce qui reste à toi.
-- [Commandes et événements](docs/commands-and-events.html) : le trajet d'une action, du clic à l'écran.
-- [Composants](docs/components.html) : préparation et `render`, et où mettre quoi.
-- [Templates](docs/templates.html) : la syntaxe des fichiers `.super` ; et [Outillage](docs/tooling.html) : `super-tsc`, serveur de langage, éditeur, Vite.
-- [Router](docs/router.html) : chemins typés, redirections, guards ; et [Gérer les erreurs](docs/errors.html).
-- [Formulaires](docs/forms.html) : tous les types de champs, règles, vérifications asynchrones, listes, erreurs du serveur.
-- [Questions fréquentes](docs/faq.html) et [API](docs/api.html).
-- [Limites](docs/limitations.html).
-- [Chantiers et questions ouvertes](docs/roadmap.html).
+- [Getting started](docs/getting-started.html): your first feature, from contract to test.
+- [Examples](docs/examples.html): what each file of the demo app shows.
+- [Architecture](docs/architecture.html): what Super enforces, what is left to you.
+- [Commands and events](docs/commands-and-events.html): the path of an action, from click to screen.
+- [Components](docs/components.html): preparation and `render`, and where to put what.
+- [Templates](docs/templates.html): the syntax of `.super` files; and [Tooling](docs/tooling.html): `super-tsc`, language server, editor, Vite.
+- [Router](docs/router.html): typed paths, redirects, guards; and [Handling errors](docs/errors.html).
+- [Forms](docs/forms.html): every field type, rules, asynchronous checks, lists, server errors.
+- [Frequently asked questions](docs/faq.html) and [API](docs/api.html).
+- [Limitations](docs/limitations.html).
+- [Roadmap and open questions](docs/roadmap.html).
 
-### Pour un LLM ou un agent de code
+### For an LLM or a coding agent
 
-La doc existe aussi en markdown, au format [llms.txt](https://llmstxt.org) :
+The docs also exist in markdown, in the [llms.txt](https://llmstxt.org) format:
 
-- [`docs/llms.txt`](docs/llms.txt) : l'index, une ligne par page.
-- [`docs/llms-full.txt`](docs/llms-full.txt) : toute la doc en un fichier, code compris.
-- [`docs/llms-small.txt`](docs/llms-small.txt) : la même, sans la FAQ, le catalogue des exemples ni les renvois vers l'app d'exemples, pour les petites fenêtres de contexte.
+- [`docs/llms.txt`](docs/llms.txt): the index, one line per page.
+- [`docs/llms-full.txt`](docs/llms-full.txt): all the docs in one file, code included.
+- [`docs/llms-small.txt`](docs/llms-small.txt): the same, without the FAQ, the examples catalogue or the references to the demo app, for small context windows.
 
-Ces fichiers sont générés à partir des pages HTML, comme l'index de recherche. Pour retirer un passage de la version courte, marque-le `data-llm="skip"` dans le HTML (voir `docs/tools/llms.mjs`).
+These files are generated from the HTML pages, like the search index. To remove a passage from the short version, mark it `data-llm="skip"` in the HTML (see `docs/tools/llms.mjs`).
 
-L'index de recherche et les fichiers pour les LLM se régénèrent à chaque `npm run check` (ou `npm run docs:index`). `npm run docs:check` échoue s'ils ne sont plus à jour, et la génération échoue si une page contient une balise HTML que le convertisseur ne sait pas traduire.
+The search index and the LLM files are regenerated on every `npm run check` (or `npm run docs:index`). `npm run docs:check` fails if they are out of date, and generation fails if a page contains an HTML tag the converter cannot translate.
 
-## Le dépôt
+## The repository
 
 ```
-packages/core      SuperContract, SuperStore : contrats, sélecteurs, stores
-packages/dom       SuperElement, rendu, createApp, router
+packages/core      SuperContract, SuperStore: contracts, selectors, stores
+packages/dom       SuperElement, rendering, createApp, router
 packages/testing   mount, fakeStore, record
-packages/ui        le kit d'interface @super-ts/ui : champs reliés aux formulaires, CommandButton, RouteLink, fenêtres, table…
-packages/vite      le plugin : compilation des .super, règles d'architecture, alias @core / @components, contracts.d.ts
-packages/lang      le langage .super : parser, compilation vers lit, TS virtuel, super-tsc (SPEC.md)
-packages/lang-server  le serveur de langage des .super (Volar sur TypeScript 6)
-packages/lint      la configuration Biome (ordre des imports)
-examples/demo      l'app d'exemples : compteurs, formulaire, boutique, erreurs, widget, composition, kit
-editors/zed        l'extension Zed des .super (langage « Super » et lancement du serveur de langage)
-editors/tree-sitter-super  la grammaire Tree-sitter des .super (sous-module, dépôt super-ts/tree-sitter-super)
-docs/              le site de documentation et les fichiers llms*.txt (docs/tools : génération de l'index et des llms*.txt)
+packages/ui        the @super-ts/ui UI kit: fields bound to forms, CommandButton, RouteLink, dialogs, table…
+packages/vite      the plugin: .super compilation, architecture rules, @core / @components aliases, contracts.d.ts
+packages/lang      the .super language: parser, compilation to lit, virtual TypeScript, super-tsc (SPEC.md)
+packages/lang-server  the .super language server (Volar on TypeScript 6)
+packages/lint      the Biome configuration (import order)
+examples/demo      the demo app: counters, form, shop, errors, widget, composition, kit
+editors/zed        the Zed extension for .super files ("Super" language and language server launch)
+editors/tree-sitter-super  the Tree-sitter grammar for .super files (submodule, super-ts/tree-sitter-super repository)
+docs/              the documentation site and the llms*.txt files (docs/tools: generation of the index and llms*.txt)
 ```
