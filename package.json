@@ -19,6 +19,8 @@
     "dev": "vite --configLoader native",
     "build": "node scripts/build.mjs",
     "smoke": "node scripts/smoke-install.mjs",
+    "changeset": "changeset",
+    "release": "npm run build && changeset publish",
     "build:example": "vite build --configLoader native",
     "test": "vitest run --configLoader native",
     "test:watch": "vitest --configLoader native",
@@ -33,6 +35,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.6.9",
+    "@changesets/cli": "^2.31.1",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/user-event": "^14.6.13",
     "happy-dom": "^21.0.4",
