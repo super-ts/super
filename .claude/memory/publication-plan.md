@@ -102,14 +102,17 @@ But : versionner et sauvegarder, sans rien publier. Le câblage local reste tel 
   - CORRIGÉ le 2026-11-26 : `super-tsc` ne ramenait pas les erreurs sur les `.super` si le chemin du projet passait par un lien symbolique (ex. `/tmp` → `/private/tmp` sur macOS). `cli.ts` part maintenant du chemin réel du tsconfig et ramène les fichiers cités par tsc à leur chemin réel ; test dans `check.test.ts`.
 - Pas de source maps ni de declaration maps : `src` n'est pas publié, elles pointeraient dans le vide. À rouvrir si on publie `src`.
 
-## Phase 4 : test d'installation comme un vrai utilisateur (moi)
+## Phase 4 : test d'installation comme un vrai utilisateur (faite le 2026-11-26, sauf la CI)
 
-- [ ] Un script `scripts/smoke-install.mjs` :
-  1. `npm pack` de chaque paquet ;
-  2. création d'une app Vite vierge dans un dossier temporaire et installation des tarballs ;
-  3. écriture d'un contrat, d'un store, d'un composant `.super` et d'un test ;
-  4. `super-tsc`, `vite build`, `vitest run`.
-- [ ] Ce script tourne en CI. C'est lui qui attrape les erreurs que les alias cachent.
+- [x] `npm run smoke` → `scripts/smoke-install.mjs` : build, `npm pack` des 7 paquets, app Vite vierge dans un dossier temporaire qui installe les tarballs (outils aux versions du dépôt, `--prefer-offline`), l'exemple du bouton de thème de `docs/demarrer.html` (contrat, store, `.super`, test) plus un `.super` qui utilise `Button` du kit, puis `vite build`, `super-tsc`, `super-tsc` sur un `.super` cassé (doit signaler l'erreur sur le `.super`), `vitest run`, `biome format`, `super-fmt --write/--check`, `biome check` avec `@super-ts/lint`. Contrôles en plus : aucun paquet ne livre `src/`, le plugin écrit `contracts.d.ts`, la CSS du kit est dans le build. `--keep` garde l'app ; elle est gardée en cas d'échec.
+  - Le script retire `NODE_OPTIONS` et les variables `npm_*` de l'environnement : sinon la condition `@super-ts/source` du `.npmrc` du dépôt fuit dans l'app et pointe vers des `src/` absents des tarballs.
+- [ ] Le faire tourner en CI : avec la phase 8 (il n'y a pas encore de workflow).
+- Bugs trouvés et corrigés par ce test :
+  - **CSS du kit absente du build** dès qu'une app n'importe que certains composants : avec `sideEffects: ["**/*.css"]`, le bundler saute `index.js` (sans effet de bord) et perd son `import './styles.css'`. La démo avait le même bug en production (CSS 9,9 → 21 Ko après correction ; invisible en dev). Corrigé : `sideEffects` liste aussi `./dist/index.js` et `./src/index.ts`.
+  - **`super-tsc` lancé depuis un dossier atteint par un lien** (`/var` → `/private/var` sur macOS, donc tout dossier temporaire) : erreurs rapportées sur le TS virtuel. tsc écrit ses chemins relatifs à son dossier courant logique (PWD) et `npx` se replace à la racine du paquet dans un workspace. Corrigé : `cli.ts` lance le `bin/tsc` du `typescript` résolu depuis le projet, avec `cwd` et `PWD` au dossier réel du projet, et résout ses chemins depuis ce dossier. Test CLI dans `check.test.ts`.
+- Remarques, non corrigées :
+  - `super-fmt` exige `biome.json` et `node_modules/.bin/biome` dans le même dossier (`biome.ts`) : à revoir pour les monorepos où Biome est hissé plus haut.
+  - `super-tsc` sur un projet neuf échoue tant que `src/@core/contracts.d.ts` n'existe pas : il est écrit par le plugin Vite (`vite build` ou `vite`). La doc dit de le committer ; le smoke lance `vite build` d'abord.
 
 ## Phase 5 : serveur de langage publiable (moi)
 
